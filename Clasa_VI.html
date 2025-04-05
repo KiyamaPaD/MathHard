@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasa a VI-a – Formule MathHard</title>
+  <style>
+    /* Reset global */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.85);
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    section h2 {
+      margin-bottom: 15px;
+      font-size: 2rem;
+      border-bottom: 1px solid #FFD700;
+      padding-bottom: 5px;
+    }
+    ul {
+      list-style: none;
+      margin-left: 20px;
+    }
+    ul li {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    ul li p {
+      margin-left: 20px;
+      font-style: italic;
+    }
+    ul li strong {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clasa a VI-a</h1>
+    <p>Aici sunt prezentate conceptele și formulele esențiale din materialul didactic pentru Clasa a VI-a.</p>
+  </header>
+  
+  <main>
+    
+    <!-- Capitolul Unu: Mulțimi. Mulțimea numerelor naturale -->
+    <section id="capitolul1">
+      <h2>Capitolul Unu – Mulțimi. Mulțimea numerelor naturale</h2>
+      <ul>
+        <li>
+          <strong>1.</strong> Mulțimi  
+          <p>Definiție: O mulțime este o colecție de elemente distincte.</p>
+        </li>
+        <li>
+          <strong>3.</strong> Relații între mulțimi  
+          <p>Concept: se pot compara mulțimile prin egalitate, submulțime și intersecție.</p>
+        </li>
+        <li>
+          <strong>5.</strong> Operații cu mulțimi – Intersecția și reuniunea  
+          <p>Formule: A ∩ B = {x | x ∈ A și x ∈ B}; A ∪ B = {x | x ∈ A sau x ∈ B}.</p>
+        </li>
+        <li>
+          <strong>6.</strong> Operații cu mulțimi – Diferența dintre două mulțimi  
+          <p>Formulă: A \ B = {x | x ∈ A și x ∉ B}.</p>
+        </li>
+        <li>
+          <strong>7.</strong> Numere prime. Numere compuse  
+          <p>Definiție: Un număr prim are exact doi divizori (1 și el însuși); un număr compus are mai mulți.</p>
+        </li>
+        <li>
+          <strong>8.</strong> Descompunerea numerelor naturale în produs de factori primi  
+          <p>Exemplu: 12 = 2² · 3.</p>
+        </li>
+        <li>
+          <strong>9.</strong> Cel mai mare divizor comun (c.m.m.d.c.)  
+          <p>Definiție: cmmdc(a, b) este cel mai mare număr care divide a și b; dacă a și b sunt prime între ele, cmmdc(a, b)=1.</p>
+        </li>
+        <li>
+          <strong>10.</strong> Cel mai mic multiplu comun (c.m.m.m.c.)  
+          <p>Formulă: cmmmc(a, b) = (a · b) / cmmdc(a, b).</p>
+        </li>
+        <li>
+          <strong>11.</strong> Proprietăți ale divizibilității în N  
+          <p>Concepție: a | b dacă există k ∈ ℕ astfel încât b = a · k.</p>
+        </li>
+        <li>
+          <strong>12.</strong> Proprietăți ale divizibilității  
+          <p>Concept: regulile de tranziție în divizibilitate (dacă a | b și b | c, atunci a | c).</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Doi: Rapoarte. Proporţii -->
+    <section id="capitolul2">
+      <h2>Capitolul Doi – Rapoarte. Proporţii</h2>
+      <ul>
+        <li>
+          <strong>13.</strong> Rapoarte  
+          <p>Definiție: Raportul dintre a și b se scrie a:b sau a/b.</p>
+        </li>
+        <li>
+          <strong>15.</strong> Proporții  
+          <p>Definiție: a:b = c:d, echivalent cu a/b = c/d.</p>
+        </li>
+        <li>
+          <strong>17.</strong> Proporții derivate  
+          <p>Concept: relații obținute prin manipularea proporțiilor inițiale.</p>
+        </li>
+        <li>
+          <strong>19.</strong> Șir de rapoarte egale  
+          <p>Concepție: dacă a₁:a₂ = a₂:a₃ = ... = aₙ₋₁:aₙ = k, atunci a<sub>i+1</sub> = k · a<sub>i</sub>.</p>
+        </li>
+        <li>
+          <strong>22.</strong> Mărimi direct proporționale  
+          <p>Definiție: y ∝ x, adică y = k · x, unde k este constanta de proporționalitate.</p>
+        </li>
+        <li>
+          <strong>23.</strong> Mărimi invers proporționale  
+          <p>Definiție: y ∝ 1/x, adică y = k/x.</p>
+        </li>
+        <li>
+          <strong>24.</strong> Regula de trei simplă  
+          <p>Formulă: dacă a:b = c:x, atunci x = (b · c) / a.</p>
+        </li>
+        <li>
+          <strong>25.</strong> Elemente de organizare a datelor  
+          <p>Concepte: medie, mediană, mod.</p>
+        </li>
+        <li>
+          <strong>26.</strong> Probabilități  
+          <p>Formulă: P(E) = (număr cazuri favorabile) / (număr total cazuri).</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Trei: Mulţimea numerelor întregi -->
+    <section id="capitolul3">
+      <h2>Capitolul Trei – Mulțimea numerelor întregi</h2>
+      <ul>
+        <li>
+          <strong>27.</strong> Mulțimea numerelor întregi. Partea I  
+          <p>Definiție: ℤ = {…, -3, -2, -1, 0, 1, 2, 3, …}.</p>
+        </li>
+        <li>
+          <strong>28.</strong> Mulțimea numerelor întregi. Partea II  
+          <p>Extinderea proprietăților lui ℤ.</p>
+        </li>
+        <li>
+          <strong>29.</strong> Adunarea numerelor întregi  
+          <p>Operație: se efectuează ca la numerele naturale, ținând cont de semn.</p>
+        </li>
+        <li>
+          <strong>30.</strong> Adunarea numerelor întregi – Proprietăți  
+          <p>Concepte: comutativitate, asociativitate și element neutru (0).</p>
+        </li>
+        <li>
+          <strong>32.</strong> Scăderea numerelor întregi  
+          <p>Operație: a − b = a + (-b).</p>
+        </li>
+        <li>
+          <strong>35.</strong> Înmulțirea numerelor întregi  
+          <p>Operație: a × b, se aplică regulile de semn.</p>
+        </li>
+        <li>
+          <strong>36.</strong> Înmulțirea numerelor întregi – Proprietăți  
+          <p>Concepte: comutativitate, asociativitate și element neutru (1).</p>
+        </li>
+        <li>
+          <strong>38.</strong> Împărțirea numerelor întregi  
+          <p>Operație: a : b = a/b, cu b ≠ 0.</p>
+        </li>
+        <li>
+          <strong>40.</strong> Puterea cu exponent natural a unui număr întreg nenul  
+          <p>Formulă: aⁿ = a · a · … · a (n factori).</p>
+        </li>
+        <li>
+          <strong>41.</strong> Operații cu puteri – Partea I  
+          <p>Regulă: a^m · a^n = a^(m+n).</p>
+        </li>
+        <li>
+          <strong>42.</strong> Operații cu puteri – Partea II  
+          <p>Regulă: (a^m)^n = a^(m·n).</p>
+        </li>
+        <li>
+          <strong>45.</strong> Operații cu numere întregi – Adunare și scădere  
+          <p>Concept: combinarea operațiilor de adunare și scădere.</p>
+        </li>
+        <li>
+          <strong>46.</strong> Operații cu numere întregi – Adunare, scădere, înmulțire și împărțire  
+          <p>Concept: integrarea tuturor operațiilor în ℤ.</p>
+        </li>
+        <li>
+          <strong>47.</strong> Operații cu numere întregi  
+          <p>Exemple de calcule în ℤ.</p>
+        </li>
+        <li>
+          <strong>48.</strong> Ecuații  
+          <p>Formule: ecuații liniare de forma a·x + b = 0.</p>
+        </li>
+        <li>
+          <strong>51.</strong> Inecuații în ℤ  
+          <p>Concepție: rezolvarea inecuațiilor în mulțimea ℤ.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Patru: Mulțimea numerelor raționale -->
+    <section id="capitolul4">
+      <h2>Capitolul Patru – Mulțimea numerelor raționale</h2>
+      <ul>
+        <li>
+          <strong>54.</strong> Număr rațional. Mulțimea numerelor raționale  
+          <p>Definiție: ℚ = {a/b | a ∈ ℤ, b ∈ ℤ \ {0}}.</p>
+        </li>
+        <li>
+          <strong>56.</strong> Adunarea și scăderea numerelor raționale  
+          <p>Operație: se aduc fracțiile la același numitor.</p>
+        </li>
+        <li>
+          <strong>58.</strong> Înmulțirea și împărțirea numerelor raționale  
+          <p>Formule: (a/b) × (c/d) = (a·c)/(b·d) și (a/b) ÷ (c/d) = (a·d)/(b·c), c ≠ 0.</p>
+        </li>
+        <li>
+          <strong>61.</strong> Puterea cu exponent natural a unui număr rațional nenul  
+          <p>Formulă: (a/b)ⁿ = aⁿ / bⁿ, cu b ≠ 0.</p>
+        </li>
+        <li>
+          <strong>65.</strong> Ordinea efectuării operațiilor și folosirea parantezelor  
+          <p>Regula PEMDAS se aplică și în ℚ.</p>
+        </li>
+        <li>
+          <strong>67.</strong> Ecuații în mulțimea numerelor raționale  
+          <p>Formulă: ecuații de forma (a/b)·x + (c/d) = 0.</p>
+        </li>
+        <li>
+          <strong>69.</strong> Probleme rezolvate cu ecuații în ℚ  
+          <p>Concept: aplicarea ecuațiilor pentru rezolvarea problemelor.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Cinci: Geometrie -->
+    <section id="capitolul5">
+      <h2>Capitolul Cinci – Geometrie</h2>
+      <ul>
+        <li>
+          <strong>72.</strong> Unghiuri suplementare și complementare  
+          <p>Formule: unghiuri complementare: A + B = 90°; suplimentare: A + B = 180°.</p>
+        </li>
+        <li>
+          <strong>75.</strong> Unghiuri adiacente. Bisectoarea unui unghi  
+          <p>Formulă: bisectoarea împarte un unghi în două unghiuri egale.</p>
+        </li>
+        <li>
+          <strong>77.</strong> Unghiuri opuse la vârf. Unghiuri formate în jurul unui punct  
+          <p>Concepție: unghiurile opuse la vârf sunt egale; suma unghiurilor din jurul unui punct este 360°.</p>
+        </li>
+        <li>
+          <strong>80.</strong> Drepte perpendiculare în plan. Mediatoarea unui segment – Partea I  
+          <p>Definiție: mediatoarea intersectează segmentul la mijloc și este perpendiculară pe acesta.</p>
+        </li>
+        <li>
+          <strong>81.</strong> Drepte perpendiculare în plan. Mediatoarea unui segment – Partea II  
+          <p>Continuare: proprietăți suplimentare ale mediatoarelor.</p>
+        </li>
+        <li>
+          <strong>84.</strong> Criterii de paralelism – Partea I  
+          <p>Condiție: dacă o transversala intersectează două drepte și unghiurile corespondente sunt egale, atunci dreptele sunt paralele.</p>
+        </li>
+        <li>
+          <strong>86.</strong> Cerc. Elemente în cerc – Partea I  
+          <p>Formule: diametru d = 2r, circumferință C = 2πr, arie A = πr².</p>
+        </li>
+        <li>
+          <strong>87.</strong> Cerc. Elemente în cerc – Partea II  
+          <p>Continuare: proprietăți suplimentare ale cercului.</p>
+        </li>
+        <li>
+          <strong>88.</strong> Pozițiile unei drepte față de un cerc – Partea I  
+          <p>Concepte: dacă d > r, dreapta este externă; d = r, tangentă; d < r, intersectează cercul.</p>
+        </li>
+        <li>
+          <strong>90.</strong> Triunghi. Clasificare. Perimetru – Partea I  
+          <p>Formulă: perimetru = a + b + c.</p>
+        </li>
+        <li>
+          <strong>92.</strong> Suma măsurilor unghiurilor unui triunghi – Partea I  
+          <p>Formulă: A + B + C = 180°.</p>
+        </li>
+        <li>
+          <strong>95.</strong> Construcția triunghiurilor – Partea I  
+          <p>Concept: metode de construcție geometrică (fără formulă fixă).</p>
+        </li>
+        <li>
+          <strong>97.</strong> Linii importante în triunghi – Partea I  
+          <p>Definiții: mediană, bisectoare, înălțime.</p>
+        </li>
+        <li>
+          <strong>98.</strong> Linii importante în triunghi – Partea II  
+          <p>Continuare: proprietăți ale liniilor importante.</p>
+        </li>
+        <li>
+          <strong>99.</strong> Linii importante în triunghi – Partea III  
+          <p>Extindere: relații între elementele unui triunghi.</p>
+        </li>
+        <li>
+          <strong>100.</strong> Linii importante în triunghi – Partea IV  
+          <p>Concepte suplimentare de simetrie și structură.</p>
+        </li>
+        <li>
+          <strong>101.</strong> Congruența triunghiurilor oarecare – Partea I  
+          <p>Criterii: LUL, ULU, LLL.</p>
+        </li>
+        <li>
+          <strong>102.</strong> Congruența triunghiurilor oarecare – Partea II  
+          <p>Continuare: criterii suplimentare de congruență.</p>
+        </li>
+        <li>
+          <strong>103.</strong> Criteriile de congruență a triunghiurilor dreptunghice – Partea I  
+          <p>Condiții speciale pentru triunghiuri dreptunghice.</p>
+        </li>
+        <li>
+          <strong>104.</strong> Criteriile de congruență a triunghiurilor dreptunghice – Partea II  
+          <p>Continuare: condiții suplimentare.</p>
+        </li>
+        <li>
+          <strong>105.</strong> Metoda triunghiurilor congruente – Partea I  
+          <p>Metodă: verificarea congruenței prin criterii.</p>
+        </li>
+        <li>
+          <strong>106.</strong> Proprietăți ale triunghiului isoscel – Partea I  
+          <p>Concepte: laturi egale, unghiuri la bază egale.</p>
+        </li>
+        <li>
+          <strong>107.</strong> Proprietăți ale triunghiului echilateral – Partea I  
+          <p>Formulă: a = b = c și toate unghiurile sunt 60°.</p>
+        </li>
+        <li>
+          <strong>108.</strong> Proprietăți ale triunghiului dreptunghic – Partea I  
+          <p>Teorema lui Pitagora: a² + b² = c².</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Patru: (se pot include exerciții de recapitulare, dar aici le excludem) -->
+    
+  </main>
+</body>
+</html>

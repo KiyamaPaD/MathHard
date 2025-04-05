@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasa a IX-a – Formule MathHard</title>
+  <style>
+    /* Reset global */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.85);
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    section h2 {
+      margin-bottom: 15px;
+      font-size: 2rem;
+      border-bottom: 1px solid #FFD700;
+      padding-bottom: 5px;
+    }
+    ul {
+      list-style: none;
+      margin-left: 20px;
+    }
+    ul li {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    ul li p {
+      margin-left: 20px;
+      font-style: italic;
+    }
+    ul li strong {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clasa a IX-a</h1>
+    <p>Această pagină prezintă conceptele și formulele de bază din materia de matematică pentru Clasa a IX-a.</p>
+  </header>
+  
+  <main>
+    
+    <!-- Capitolul Unu: Mulțimi și elemente de logică matematică -->
+    <section id="capitolul1">
+      <h2>Capitolul Unu – Mulțimi și elemente de logică matematică</h2>
+      <ul>
+        <li>
+          <strong>1.</strong> Mulțimea numerelor reale  
+          <p>Definiție: ℝ reprezintă toate numerele reale (atât raționale, cât și iraționale).</p>
+        </li>
+        <li>
+          <strong>2.</strong> Ordonarea numerelor reale. Modulul unui număr real  
+          <p>Formulă: |a| = a, dacă a ≥ 0; |a| = −a, dacă a < 0.</p>
+        </li>
+        <li>
+          <strong>3.</strong> Aproximări prin lipsă și adaos ale unui număr real  
+          <p>Concept: Rotunjirea unui număr real se poate realiza prin scăderea (lipsă) sau adăugarea (adaos) unei valori mici.</p>
+        </li>
+        <li>
+          <strong>4.</strong> Operații cu numere reale  
+          <p>Operații: adunare (a + b), scădere (a − b), înmulțire (a × b), împărțire (a / b, b ≠ 0).</p>
+        </li>
+        <!-- Lecția 5 este "Aplicații" – ignorată -->
+        <li>
+          <strong>6.</strong> Compararea puterilor de numere reale  
+          <p>Concept: compararea valorilor exprimate ca puteri, în funcție de baza și exponentul acestora.</p>
+        </li>
+        <li>
+          <strong>7.</strong> Radicali din numere reale pozitive  
+          <p>Formulă: √a, unde a ≥ 0.</p>
+        </li>
+        <li>
+          <strong>8.</strong> Intervale. Operații cu intervale  
+          <p>Concept: definiția intervalelor (ex.: [a, b], (a, b)) și operații precum uniunea și intersecția.</p>
+        </li>
+        <li>
+          <strong>9.</strong> Elemente de logică matematică. Propoziții. Predicat. Cuantificatori  
+          <p>Definiții: Propoziție – enunț ce poate fi adevărat sau fals; Predicat – funcție care atribuie valoare adevărată sau falsă; Cuantificatori – ∀ (pentru orice), ∃ (există).</p>
+        </li>
+        <li>
+          <strong>10.</strong> Conectorii logici NON, ȘI, SAU  
+          <p>Formule: ¬p (NON), p ∧ q (ȘI), p ∨ q (SAU).</p>
+        </li>
+        <li>
+          <strong>11.</strong> Implicația și echivalența logică  
+          <p>Formule: p → q (implicație); p ↔ q (echivalență).</p>
+        </li>
+        <li>
+          <strong>12.</strong> Operații logice  
+          <p>Concept: combinarea conectorilor logici pentru a forma expresii complexe, de ex.: (p ∧ q) ∨ r.</p>
+        </li>
+        <li>
+          <strong>13.</strong> Inducția matematică  
+          <p>Principiul: dacă P(1) este adevărat și pentru orice k, P(k) → P(k+1), atunci P(n) este adevărat pentru toate n ∈ ℕ.</p>
+        </li>
+        <!-- Lecția 14 (Exerciții) este ignorată -->
+      </ul>
+    </section>
+    
+    <!-- Capitolul Doi: Șiruri -->
+    <section id="capitolul2">
+      <h2>Capitolul Doi – Șiruri</h2>
+      <ul>
+        <li>
+          <strong>15.</strong> Șiruri  
+          <p>Definiție: un șir este o funcție f: ℕ → ℝ.</p>
+        </li>
+        <li>
+          <strong>16.</strong> Progresii aritmetice  
+          <p>Formulă: aₙ = a₁ + (n − 1)d.</p>
+        </li>
+        <li>
+          <strong>17.</strong> Proprietățile progresiei aritmetice. Partea I  
+          <p>Formulă pentru sumă: Sₙ = n/2 · (2a₁ + (n − 1)d).</p>
+        </li>
+        <li>
+          <strong>18.</strong> Proprietățile progresiei aritmetice. Partea II  
+          <p>Concept: diferența constantă d.</p>
+        </li>
+        <li>
+          <strong>19.</strong> Progresii geometrice  
+          <p>Formulă: aₙ = a₁ · r^(n−1).</p>
+        </li>
+        <!-- Lecția 20 (Exerciții) este ignorată -->
+      </ul>
+    </section>
+    
+    <!-- Capitolul Trei: Funcții și lecturi grafice -->
+    <section id="capitolul3">
+      <h2>Capitolul Trei – Funcții și lecturi grafice</h2>
+      <ul>
+        <li>
+          <strong>21.</strong> Reper cartezian. Produs cartezian  
+          <p>Formulă: A × B = {(a, b) | a ∈ A, b ∈ B}.</p>
+        </li>
+        <li>
+          <strong>22.</strong> Produsul cartezian. Drepte orizontale și verticale  
+          <p>Concept: drepte orizontale: y = c; verticale: x = c.</p>
+        </li>
+        <li>
+          <strong>23.</strong> Funcția. Definiție. Exemple. Reprezentări  
+          <p>Definiție: f: A → B.</p>
+        </li>
+        <li>
+          <strong>24.</strong> Exemple și contraexemple de funcții  
+          <p>Concept: condiția funcției – fiecărui x ∈ A îi corespunde un singur y.</p>
+        </li>
+        <li>
+          <strong>25.</strong> Egalitatea a două funcții. Imaginea unei funcții  
+          <p>Definiție: f = g dacă f(x) = g(x) ∀x ∈ A; Imaginea: f(A) = {f(x) | x ∈ A}.</p>
+        </li>
+        <li>
+          <strong>26.</strong> Graficul unei funcții  
+          <p>Concept: setul de puncte {(x, f(x))}.</p>
+        </li>
+        <li>
+          <strong>27.</strong> Intersecții de grafice de funcții  
+          <p>Concept: punctele de intersecție satisfac f(x) = g(x).</p>
+        </li>
+        <li>
+          <strong>28.</strong> Funcții mărginite și monotone  
+          <p>Definiții: f este mărginită dacă ∃ m, M astfel încât m ≤ f(x) ≤ M; monotonică dacă f(x₁) ≤ f(x₂) (crescătoare) sau invers.</p>
+        </li>
+        <li>
+          <strong>31.</strong> Funcții pare și funcții impare  
+          <p>Formule: f(−x) = f(x) (par), f(−x) = −f(x) (impar).</p>
+        </li>
+        <li>
+          <strong>32.</strong> Funcții periodice  
+          <p>Definiție: f(x + T) = f(x) ∀x, unde T este perioada.</p>
+        </li>
+        <li>
+          <strong>33.</strong> Compunerea funcțiilor  
+          <p>Formulă: (f ∘ g)(x) = f(g(x)).</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Patru: Funcția de gradul I -->
+    <section id="capitolul4">
+      <h2>Capitolul Patru – Funcția de gradul I</h2>
+      <ul>
+        <li>
+          <strong>34.</strong> Ecuații liniare cu o necunoscută  
+          <p>Formulă: ax + b = 0 ⟹ x = −b/a.</p>
+        </li>
+        <li>
+          <strong>35.</strong> Funcția de gradul I  
+          <p>Formulă: f(x) = ax + b.</p>
+        </li>
+        <li>
+          <strong>37.</strong> Monotonia și semnul funcției de gradul I  
+          <p>Concept: f este crescătoare dacă a > 0, descrescătoare dacă a < 0.</p>
+        </li>
+        <li>
+          <strong>38.</strong> Inecuații de gradul I  
+          <p>Formulă: ax + b ≥ 0 (și variante similare).</p>
+        </li>
+        <li>
+          <strong>40.</strong> Sisteme de inecuații de gradul I  
+          <p>Concept: soluția comună a inecuațiilor liniare.</p>
+        </li>
+        <li>
+          <strong>41.</strong> Ecuații și inecuații cu modul  
+          <p>Formulă: |ax + b| = c.</p>
+        </li>
+        <li>
+          <strong>42.</strong> Sisteme de ecuații  
+          <p>Concept: soluțiile simultane ale ecuațiilor.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Cinci: Funcția de gradul al II-lea -->
+    <section id="capitolul5">
+      <h2>Capitolul Cinci – Funcția de gradul al II-lea</h2>
+      <ul>
+        <li>
+          <strong>43.</strong> Ecuația de gradul al II-lea  
+          <p>Formulă: ax² + bx + c = 0, x = [–b ± √(b² − 4ac)]/(2a).</p>
+        </li>
+        <li>
+          <strong>44.</strong> Relații între rădăcinile și coeficienții ecuației  
+          <p>Formule: x₁ + x₂ = −b/a și x₁ · x₂ = c/a.</p>
+        </li>
+        <li>
+          <strong>46.</strong> Descompunerea trinomului în factori de gradul I  
+          <p>Formulă: ax² + bx + c = a(x − x₁)(x − x₂).</p>
+        </li>
+        <li>
+          <strong>47.</strong> Funcția de gradul al II-lea – Forma canonică  
+          <p>Formulă: f(x) = a(x − h)² + k, unde (h,k) este vârful parabolei.</p>
+        </li>
+        <li>
+          <strong>48.</strong> Funcția de gradul al II-lea – Intervale de monotonie  
+          <p>Concept: se studiază semnul derivatelor; dacă a > 0, parabola are minim; dacă a < 0, maxim.</p>
+        </li>
+        <li>
+          <strong>50.</strong> Reprezentarea grafică a funcției de gradul al II-lea  
+          <p>Concept: graficul este o parabolă.</p>
+        </li>
+        <li>
+          <strong>52.</strong> Semnul funcției de gradul al II-lea  
+          <p>Concept: determinat de semnul coeficientului a.</p>
+        </li>
+        <li>
+          <strong>53.</strong> Inecuații de gradul al II-lea  
+          <p>Formulă: ax² + bx + c ≥ 0 (sau ≤ 0), în funcție de semnul lui a.</p>
+        </li>
+        <li>
+          <strong>56.</strong> Interpretarea geometrică a semnului funcției de gradul al II-lea  
+          <p>Concept: dacă a > 0, parabola se deschide în sus; dacă a < 0, în jos.</p>
+        </li>
+        <li>
+          <strong>57.</strong> Rezolvarea sistemelor simetrice  
+          <p>Concept: se folosesc proprietățile simetrice ale ecuațiilor pentru a reduce numărul necunoscuților.</p>
+        </li>
+        <li>
+          <strong>59.</strong> Sisteme formate dintr-o ecuație de gradul întâi și una de gradul al II-lea  
+          <p>Concept: soluția se obține prin intersecția graficelor.</p>
+        </li>
+        <li>
+          <strong>61.</strong> Sisteme omogene  
+          <p>Concept: se caută soluții non-triviale.</p>
+        </li>
+        <li>
+          <strong>62.</strong> Sisteme omogene II  
+          <p>Concept: extinderea sistemelor omogene.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Șase: Vectori în plan -->
+    <section id="capitolul6">
+      <h2>Capitolul Șase – Vectori în plan</h2>
+      <ul>
+        <li>
+          <strong>64.</strong> Segment orientat  
+          <p>Concept: un segment cu direcție, reprezentat de săgeți.</p>
+        </li>
+        <li>
+          <strong>65.</strong> Vectori. Regula triunghiului  
+          <p>Concept: suma vectorilor se poate reprezenta prin regula triunghiului.</p>
+        </li>
+        <li>
+          <strong>66.</strong> Adunarea vectorilor. Regula paralelogramului  
+          <p>Concept: suma vectorilor = diagonală a paralelogramului construit cu vectorii.</p>
+        </li>
+        <li>
+          <strong>67.</strong> Înmulțirea vectorilor cu un număr real  
+          <p>Formulă: k·(x, y) = (k·x, k·y).</p>
+        </li>
+        <li>
+          <strong>68.</strong> Descompunerea unui vector  
+          <p>Formulă: v = vₓ·i + v_y·j.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Șapte: Coliniaritate, concurență, paralelism -->
+    <section id="capitolul7">
+      <h2>Capitolul Șapte – Coliniaritate, concurență, paralelism</h2>
+      <ul>
+        <li>
+          <strong>72.</strong> Vectorul de poziție al unui punct  
+          <p>Definiție: Punctul (x, y) are vectorul de poziție v = (x, y).</p>
+        </li>
+        <li>
+          <strong>73.</strong> Vectorul de poziție al punctului care împarte un segment într-un raport dat  
+          <p>Formulă: P = ((mx₂ + nx₁)/(m+n), (my₂ + ny₁)/(m+n)).</p>
+        </li>
+        <li>
+          <strong>74.</strong> Teorema lui Thales  
+          <p>Formulă: în triunghiuri, raportul segmentelor corespunzătoare este constant.</p>
+        </li>
+        <li>
+          <strong>75.</strong> Vectorul de poziție al centrului de greutate al unui triunghi. Partea I  
+          <p>Formulă: G = ((x₁+x₂+x₃)/3, (y₁+y₂+y₃)/3).</p>
+        </li>
+        <li>
+          <strong>76.</strong> Vectorul de poziție al centrului de greutate al unui triunghi. Partea II  
+          <p>Concept: extinderea formulei pentru centrul de greutate.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Opt: Trigonometrie și aplicații ale trigonometriei -->
+    <section id="capitolul8">
+      <h2>Capitolul Opt – Trigonometrie</h2>
+      <ul>
+        <li>
+          <strong>77.</strong> Rezolvarea triunghiului dreptunghic  
+          <p>Formule: Teorema lui Pitagora: a² + b² = c²; relații: sinα = a/c, cosα = b/c, tanα = a/b.</p>
+        </li>
+        <li>
+          <strong>78.</strong> Rapoarte trigonometrice într-un triunghi dreptunghic  
+          <p>Formule: sinα = a/c, cosα = b/c, tanα = a/b.</p>
+        </li>
+        <li>
+          <strong>79.</strong> Unități de măsură pentru unghiuri și arce  
+          <p>Formule: 1 grad = 60 minute = 3600 secunde; 2π rad = 360°.</p>
+        </li>
+        <li>
+          <strong>80.</strong> Cercul trigonometric  
+          <p>Concept: cercul unitate, unde funcțiile trigonometrice sunt definite.</p>
+        </li>
+        <li>
+          <strong>81.</strong> Proprietățile funcțiilor sinus și cosinus  
+          <p>Formule: sin²θ + cos²θ = 1; periodicitate: sin(θ+2π)= sinθ, cos(θ+2π)= cosθ.</p>
+        </li>
+        <li>
+          <strong>83.</strong> Funcțiile trigonometrice tangentă și cotangentă. Partea I  
+          <p>Formulă: tanθ = sinθ/cosθ.</p>
+        </li>
+        <li>
+          <strong>84.</strong> Funcțiile trigonometrice tangentă și cotangentă. Partea II  
+          <p>Formulă: ctgθ = cosθ/sinθ.</p>
+        </li>
+        <li>
+          <strong>85.</strong> Proprietățile funcțiilor tangentă și cotangentă  
+          <p>Concept: periodicitate și simetrie.</p>
+        </li>
+        <li>
+          <strong>86.</strong> Graficele funcțiilor trigonometrice  
+          <p>Concept: reprezentarea grafică a funcțiilor sin, cos, tan, ctg.</p>
+        </li>
+        <li>
+          <strong>87.</strong> Reducerea la primul cadran. Formule trigonometrice. Partea I  
+          <p>Exemple: sin(θ)= sin(180°–θ), cos(θ)= –cos(180°–θ), etc.</p>
+        </li>
+        <li>
+          <strong>88.</strong> Reducerea la primul cadran. Partea II  
+          <p>Concept: transformarea unghiurilor în primul cadran.</p>
+        </li>
+        <li>
+          <strong>89.</strong> Formule trigonometrice pentru suma și diferența a două unghiuri. Partea I  
+          <p>Formule: sin(α±β)= sinα cosβ ± cosα sinβ.</p>
+        </li>
+        <li>
+          <strong>90.</strong> Formule trigonometrice pentru suma și diferența a două unghiuri. Partea II  
+          <p>Formule: cos(α±β)= cosα cosβ ∓ sinα sinβ.</p>
+        </li>
+        <li>
+          <strong>91.</strong> Egalități trigonometrice  
+          <p>Concept: identități precum 1 + tan²θ = sec²θ.</p>
+        </li>
+        <li>
+          <strong>92.</strong> Formule pentru substituția universală  
+          <p>Concept: de exemplu, t = tan(θ/2) folosită în rezolvarea anumitor ecuații trigonometrice.</p>
+        </li>
+        <li>
+          <strong>93.</strong> Transformarea sumelor în produse. Partea I  
+          <p>Formulă: sinα + sinβ = 2 sin[(α+β)/2] cos[(α–β)/2].</p>
+        </li>
+        <li>
+          <strong>94.</strong> Transformarea sumelor în produse. Partea II  
+          <p>Formulă: cosα + cosβ = 2 cos[(α+β)/2] cos[(α–β)/2].</p>
+        </li>
+        <li>
+          <strong>95.</strong> Formule pentru aria unui triunghi  
+          <p>Formulă: A = ½ · a · b · sin(C).</p>
+        </li>
+        <li>
+          <strong>96.</strong> Teorema sinusurilor  
+          <p>Formulă: a/sinα = b/sinβ = c/sinγ = 2R.</p>
+        </li>
+        <li>
+          <strong>97.</strong> Teorema cosinusului  
+          <p>Formulă: a² = b² + c² − 2bc cosα (și variante pentru celelalte laturi).</p>
+        </li>
+        <li>
+          <strong>98.</strong> Teorema medianei și alte formule de arii  
+          <p>Concept: utilizarea medianei pentru determinarea ariilor; nu există o formulă unică.</p>
+      </ul>
+    </section>
+    
+  </main>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasa X – Formule MathHard</title>
+  <style>
+    /* Reset global */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.85);
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    section h2 {
+      margin-bottom: 15px;
+      font-size: 2rem;
+      border-bottom: 1px solid #FFD700;
+      padding-bottom: 5px;
+    }
+    ul {
+      list-style: none;
+      margin-left: 20px;
+    }
+    ul li {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    ul li p {
+      margin-left: 20px;
+      font-style: italic;
+    }
+    ul li strong {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clasa X</h1>
+    <p>Această pagină prezintă formulele și conceptele esențiale din materialul didactic pentru Clasa X.</p>
+  </header>
+  
+  <main>
+    
+    <!-- Capitolul Unu: Mulțimi de numere -->
+    <section id="capitolul1">
+      <h2>Capitolul Unu – Mulțimi de numere</h2>
+      <ul>
+        <li>
+          <strong>1.</strong> Radicalul de ordin n  
+          <p>Formulă: √[n](a) reprezintă rădăcina n-a a lui a.</p>
+        </li>
+        <li>
+          <strong>2.</strong> Radicalul impar din numere negative  
+          <p>Concept: pentru n impar, √[n](a) este definit și pentru a < 0, cu relația √[n](a) = -√[n](-a).</p>
+        </li>
+        <li>
+          <strong>3.</strong> Proprietăți ale radicalilor  
+          <p>Exemple: √[n](ab) = √[n](a)·√[n](b), √[n](aⁿ) = |a| (dacă n este par) sau a (dacă n este impar).</p>
+        </li>
+        <li>
+          <strong>4.</strong> Aproximări raționale ale radicalilor de ordin n  
+          <p>Concept: se pot aproxima radicalii prin fracții, de exemplu prin metoda lui Newton.</p>
+        </li>
+        <li>
+          <strong>5.</strong> Radicali. Raționalizarea numitorilor  
+          <p>Exemplu: a/√b = (a√b)/b.</p>
+        </li>
+        <!-- Lecția 6 – Exerciții (ignorată) -->
+        <li>
+          <strong>7.</strong> Puteri cu exponent negativ și rațional  
+          <p>Formulă: a^(-p/q) = 1/(a^(p/q)).</p>
+        </li>
+        <li>
+          <strong>8.</strong> Puteri cu exponent real  
+          <p>Concept: a^(r), unde r ∈ ℝ.</p>
+        </li>
+        <!-- Lecția 9 – Exerciții (ignorată) -->
+        <li>
+          <strong>10.</strong> Logaritmi din numere reale pozitive  
+          <p>Definiție: logₐ(b) este numărul x astfel încât aˣ = b, pentru b > 0, a > 0 și a ≠ 1.</p>
+        </li>
+        <li>
+          <strong>11.</strong> Proprietățile logaritmilor  
+          <p>Exemple: logₐ(xy) = logₐ(x) + logₐ(y); logₐ(x/y) = logₐ(x) − logₐ(y); logₐ(x^r) = r·logₐ(x).</p>
+        </li>
+        <li>
+          <strong>12.</strong> Schimbarea bazei unui logaritm  
+          <p>Formulă: log_b(a) = log_c(a) / log_c(b), pentru orice bază c > 0, c ≠ 1.</p>
+        </li>
+        <li>
+          <strong>13.</strong> Logaritmarea unei expresii  
+          <p>Concept: aplicarea logaritmilor pentru simplificarea expresiilor algebrice.</p>
+        </li>
+        <!-- Lecția 14 – Exerciții (ignorată) -->
+        <li>
+          <strong>15.</strong> Numerele complexe. Forma algebrică  
+          <p>Formulă: z = a + bi, unde a, b ∈ ℝ și i² = -1.</p>
+        </li>
+        <li>
+          <strong>16.</strong> Operații algebrice cu numere complexe  
+          <p>Exemple: (a+bi)+(c+di) = (a+c)+(b+d)i; (a+bi)·(c+di) = (ac−bd)+(ad+bc)i.</p>
+        </li>
+        <li>
+          <strong>17.</strong> Conjugatul unui număr complex  
+          <p>Formulă: conjugatul lui z = a + bi este a - bi.</p>
+        </li>
+        <li>
+          <strong>18.</strong> Modulul unui număr complex  
+          <p>Formulă: |z| = √(a² + b²).</p>
+        </li>
+        <li>
+          <strong>19.</strong> Interpretarea geometrică a numerelor complexe  
+          <p>Concept: reprezentarea lui z = a + bi în planul complex (axa reală și imaginară).</p>
+        </li>
+        <li>
+          <strong>20.</strong> Operații cu numere complexe. Interpretarea geometrică  
+          <p>Concept: operațiile de adunare și înmulțire se interpretează ca translații și rotații în plan.</p>
+        </li>
+        <!-- Lecția 21 – Aplicații (ignorată) -->
+        <li>
+          <strong>22.</strong> Rezolvarea în C a ecuațiilor de gradul doi cu coeficienți reali  
+          <p>Formulă: x = [–b ± √(b² – 4ac)]/(2a) pentru ecuația ax²+bx+c=0.</p>
+        </li>
+        <li>
+          <strong>23.</strong> Ecuații bipatrate  
+          <p>Concept: se substituie y = x² pentru a transforma ecuația în una de gradul II, apoi se rezolvă.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Doi: Funcții și ecuații -->
+    <section id="capitolul2">
+      <h2>Capitolul Doi – Funcții și ecuații</h2>
+      <ul>
+        <li>
+          <strong>24.</strong> Recapitulare funcții  
+          <p>Concept: o funcție f: A → B asociază fiecărui x ∈ A un singur y ∈ B.</p>
+        </li>
+        <li>
+          <strong>25.</strong> Analizarea unui grafic de funcție. Partea I  
+          <p>Concept: identificarea punctelor cheie ale graficului (intersecții, maxim, minim).</p>
+        </li>
+        <li>
+          <strong>26.</strong> Analizarea unui grafic de funcție. Partea II  
+          <p>Concept: interpretarea variațiilor funcției pe baza graficului.</p>
+        </li>
+        <li>
+          <strong>28.</strong> Funcții injective  
+          <p>Definiție: f este injectivă dacă f(x₁) = f(x₂) implică x₁ = x₂.</p>
+        </li>
+        <li>
+          <strong>29.</strong> Funcții surjective  
+          <p>Definiție: f este surjectivă dacă pentru orice y ∈ B există x ∈ A astfel încât f(x) = y.</p>
+        </li>
+        <li>
+          <strong>30.</strong> Funcții bijective  
+          <p>Definiție: f este bijectivă dacă este atât injectivă, cât și surjectivă.</p>
+        </li>
+        <li>
+          <strong>33.</strong> Inversa unei funcții  
+          <p>Definiție: f⁻¹ este funcția inversă a lui f dacă f(f⁻¹(y)) = y, ∀y ∈ B.</p>
+        </li>
+        <li>
+          <strong>35.</strong> Funcția putere cu exponent natural  
+          <p>Formulă: f(x) = xⁿ, unde n ∈ ℕ.</p>
+        </li>
+        <li>
+          <strong>36.</strong> Funcția radical de ordin n  
+          <p>Formulă: f(x) = √[n](x).</p>
+        </li>
+        <li>
+          <strong>37.</strong> Ecuații iraționale ce conțin radicali  
+          <p>Concept: ecuații care includ termeni de forma √[n](expression); se ridică la putere pentru eliminare.</p>
+        </li>
+        <li>
+          <strong>38.</strong> Ecuații iraționale cu mai mulți radicali  
+          <p>Concept similar: se izolează radicalii și se ridică la putere.</p>
+        </li>
+        <li>
+          <strong>39.</strong> Funcția exponențială  
+          <p>Formulă: f(x) = a^x, de obicei f(x) = e^x pentru a = e.</p>
+        </li>
+        <li>
+          <strong>40.</strong> Ecuații exponențiale. Partea I  
+          <p>Concept: ecuații de forma a^x = b, se aplică logaritmi.</p>
+        </li>
+        <li>
+          <strong>41.</strong> Ecuații exponențiale. Partea II  
+          <p>Continuare: rezolvarea ecuațiilor exponențiale.</p>
+        </li>
+        <li>
+          <strong>42.</strong> Funcția logaritmică  
+          <p>Formulă: f(x) = logₐ(x), unde a > 0, a ≠ 1.</p>
+        </li>
+        <li>
+          <strong>43.</strong> Ecuații logaritmice. Partea I  
+          <p>Formulă: logₐ(x) = b ⟹ x = a^b.</p>
+        </li>
+        <li>
+          <strong>44.</strong> Ecuații logaritmice. Partea II  
+          <p>Continuare: rezolvarea ecuațiilor logaritmice.</p>
+        </li>
+        <li>
+          <strong>45.</strong> Creșterea exponențială  
+          <p>Concept: funcția exponențială este strict crescătoare pentru bază > 1.</p>
+        </li>
+        <li>
+          <strong>46.</strong> Descreșterea exponențială  
+          <p>Concept: funcția exponențială este descrescătoare pentru 0 &lt; bază &lt; 1.</p>
+        </li>
+        <li>
+          <strong>47.</strong> Creștere și descreștere logaritmică  
+          <p>Concept: funcția logaritmică este crescătoare dacă baza > 1, descrescătoare dacă 0 &lt; baza &lt; 1.</p>
+        </li>
+        <li>
+          <strong>48.</strong> Funcții trigonometrice. Introducere  
+          <p>Definiții de bază pentru sin, cos, tan etc.</p>
+        </li>
+        <li>
+          <strong>49.</strong> Funcțiile sinus și arcsinus  
+          <p>Formule: sin(x); arcsin(x) este funcția inversă a sinusului, definită pe [-1,1].</p>
+        </li>
+        <li>
+          <strong>50.</strong> Funcțiile cosinus și arccosinus  
+          <p>Formule: cos(x); arccos(x) este funcția inversă a cosinusului, definită pe [-1,1].</p>
+        </li>
+        <li>
+          <strong>51.</strong> Funcțiile tangentă și arctangentă  
+          <p>Formule: tan(x)= sin(x)/cos(x); arctan(x) este inversa tangentului.</p>
+        </li>
+        <li>
+          <strong>52.</strong> Funcțiile cotangentă și arccotangentă  
+          <p>Formule: cot(x)= cos(x)/sin(x); arccot(x) este inversa cotangentului.</p>
+        </li>
+        <li>
+          <strong>53.</strong> Valori trigonometrice importante  
+          <p>Exemple: sin(30°)=0.5, cos(60°)=0.5, tan(45°)=1, etc.</p>
+        </li>
+        <li>
+          <strong>54.</strong> Valori trigonometrice inverse  
+          <p>Concept: determinarea unghiurilor din valorile sin, cos, etc.</p>
+        </li>
+        <li>
+          <strong>57.</strong> Ecuații trigonometrice. Partea I  
+          <p>Exemplu: sin(x)= a, se rezolvă pentru x.</p>
+        </li>
+        <li>
+          <strong>58.</strong> Ecuații trigonometrice. Partea II  
+          <p>Continuare: rezolvarea ecuațiilor trigonometrice complexe.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Trei: Metode de numărare -->
+    <section id="capitolul3-metode">
+      <h2>Capitolul Trei – Metode de numărare</h2>
+      <ul>
+        <li>
+          <strong>59.</strong> Metoda inducției matematice  
+          <p>Principiul inducției: dacă P(1) este adevărat și P(k) → P(k+1), atunci P(n) este adevărat ∀ n.</p>
+        </li>
+        <li>
+          <strong>60.</strong> Numărul de funcții  
+          <p>Concept: numărul de funcții de la o mulțime A la o mulțime B este |B|^|A|.</p>
+        </li>
+        <li>
+          <strong>61.</strong> Permutări  
+          <p>Formulă: numărul de permutări ale unei mulțimi de n elemente este n!.</p>
+        </li>
+        <li>
+          <strong>64.</strong> Aranjamente și combinări  
+          <p>Formule: A(n, k)= n!/(n-k)! și C(n, k)= n!/(k!(n-k)!).</p>
+        </li>
+        <li>
+          <strong>67.</strong> Proprietățile combinărilor  
+          <p>Concept: simetria combinărilor: C(n, k) = C(n, n-k).</p>
+        </li>
+        <li>
+          <strong>68.</strong> Probleme de numărare  
+          <p>Concept: aplicarea principiilor de numărare pentru a determina numărul de aranjamente.</p>
+        </li>
+        <li>
+          <strong>69.</strong> Binomul lui Newton  
+          <p>Formulă: (a+b)^n = Σ (n choose k) a^(n-k) b^k, pentru k=0,...,n.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Patru: Matematici financiare -->
+    <section id="capitolul4-financiare">
+      <h2>Capitolul Patru – Matematici financiare</h2>
+      <ul>
+        <li>
+          <strong>72.</strong> Procente  
+          <p>Formulă: procent = (parte / întreg) × 100%.</p>
+        </li>
+        <li>
+          <strong>73.</strong> Scumpiri și ieftiniri  
+          <p>Concept: calculul modificărilor procentuale.</p>
+        </li>
+        <li>
+          <strong>74.</strong> Dobânda simplă și compusă  
+          <p>Formule: dobânda simplă: I = P · r · t; dobânda compusă: A = P(1 + r)^t.</p>
+        </li>
+        <li>
+          <strong>75.</strong> Constituirea de capital. Amortizarea unei datorii  
+          <p>Concept: calculul ratelor de amortizare.</p>
+        </li>
+        <li>
+          <strong>76.</strong> Taxa pe Valoare Adăugată (T.V.A.)  
+          <p>Formulă: TVA = preț × (TVA% / 100).</p>
+        </li>
+        <li>
+          <strong>77.</strong> Cost de producție și profit  
+          <p>Concept: diferența dintre cost și prețul de vânzare.</p>
+        </li>
+        <li>
+          <strong>78.</strong> Culegerea și clasificarea datelor statistice  
+          <p>Concept: organizarea datelor în funcție de categorii.</p>
+        </li>
+        <li>
+          <strong>79.</strong> Prelucrarea și reprezentarea datelor statistice  
+          <p>Concept: reprezentarea datelor prin grafice și tabele.</p>
+        </li>
+        <li>
+          <strong>80.</strong> Parametri de poziție: medii, dispersie, abateri  
+          <p>Formule: medie = (∑ xi)/n; deviație standard, etc.</p>
+        </li>
+        <li>
+          <strong>81.</strong> Probabilități – Evenimente egal probabile  
+          <p>Formulă: P(E) = număr cazuri favorabile / număr total cazuri.</p>
+        </li>
+        <li>
+          <strong>83.</strong> Variabile aleatoare  
+          <p>Concept: variabila aleatoare atribuie un număr fiecărui eveniment.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Cinci: Geometrie -->
+    <section id="capitolul5-geometrie">
+      <h2>Capitolul Cinci – Geometrie</h2>
+      <ul>
+        <li>
+          <strong>84.</strong> Distanța dintre două puncte în plan  
+          <p>Formulă: d = √[(x₂ − x₁)² + (y₂ − y₁)²].</p>
+        </li>
+        <li>
+          <strong>85.</strong> Ecuația explicită a unei drepte  
+          <p>Formulă: y = mx + c.</p>
+        </li>
+        <li>
+          <strong>86.</strong> Ecuația unei drepte determinate de un punct și o direcție  
+          <p>Formulă: y − y₀ = m(x − x₀).</p>
+        </li>
+        <li>
+          <strong>87.</strong> Ecuația unei drepte determinate de două puncte  
+          <p>Formulă: (y − y₁)/(x − x₁) = (y₂ − y₁)/(x₂ − x₁).</p>
+        </li>
+        <li>
+          <strong>88.</strong> Condiția de paralelism  
+          <p>Condiție: m₁ = m₂ (egalitatea pantelor).</p>
+        </li>
+        <li>
+          <strong>89.</strong> Condiția de perpendicularitate  
+          <p>Condiție: m₁ × m₂ = −1.</p>
+        </li>
+        <li>
+          <strong>91.</strong> Intersecția a două drepte în plan  
+          <p>Concept: se rezolvă sistemul de ecuații al drepților.</p>
+        </li>
+        <li>
+          <strong>92.</strong> Distanțe în plan  
+          <p>Exemplu: distanța de la un punct (x₀,y₀) la dreaptă Ax + By + C = 0: d = |Ax₀+By₀+C|/√(A²+B²).</p>
+        </li>
+        <li>
+          <strong>93.</strong> Arii în plan  
+          <p>Formule pentru triunghi: A = ½·base·height, pentru dreptunghi: A = l×L etc.</p>
+        </li>
+        <li>
+          <strong>94.</strong> Vectori de poziție. Operații  
+          <p>Concept: adunare, scădere, produs scalar (u·v = |u||v|cosθ).</p>
+        </li>
+        <li>
+          <strong>95.</strong> Vectori în plan  
+          <p>Definiție: un vector v = (x, y).</p>
+        </li>
+        <!-- Lecția 96 și 97 – Aplicații sunt ignorate -->
+      </ul>
+    </section>
+    
+    <!-- Capitolul Patru: (Exerciții de recapitulare ignorate) -->
+    
+    <!-- Capitolul Șase: (Pentru Clasa X se pot include numai lecții pure) -->
+    
+    <!-- Capitolul Șapte: Elemente de geometrie (continuare din recapitulari de Geometrie; se pot include și alte lecții pure, dar aici am acoperit majoritatea lecțiilor din capitolul Cinci pentru Geometrie) -->
+    
+  </main>
+</body>
+</html>

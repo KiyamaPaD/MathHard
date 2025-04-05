@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasa a XII‑a – Formule MathHard</title>
+  <style>
+    /* Reset global */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.85);
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    section h2 {
+      margin-bottom: 15px;
+      font-size: 2rem;
+      border-bottom: 1px solid #FFD700;
+      padding-bottom: 5px;
+    }
+    ul {
+      list-style: none;
+      margin-left: 20px;
+    }
+    ul li {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    ul li p {
+      margin-left: 20px;
+      font-style: italic;
+    }
+    ul li strong {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clasa a XII‑a</h1>
+    <p>Această pagină prezintă conceptele și formulele esențiale din materia de matematică pentru Clasa a XII‑a.</p>
+  </header>
+  
+  <main>
+    
+    <!-- Capitolul Unu: Grupuri -->
+    <section id="capitolul1">
+      <h2>Capitolul Unu – Grupuri</h2>
+      <ul>
+        <li>
+          <strong>1.</strong> Legi de compoziție  
+          <p>Concept: o lege de compoziție este o funcție binară care asociază fiecărei perechi de elemente un element din aceeași mulțime.</p>
+        </li>
+        <li>
+          <strong>2.</strong> Parte stabilă. Exemple  
+          <p>Concept: identificarea componentei stabile (elementul invariant) în operațiile de compoziție.</p>
+        </li>
+        <li>
+          <strong>3.</strong> Comutativitatea legilor de compoziție  
+          <p>Formulă: a • b = b • a pentru orice a, b din grup, dacă legea este comutativă.</p>
+        </li>
+        <li>
+          <strong>4.</strong> Asociativitatea legilor de compoziție  
+          <p>Formulă: (a • b) • c = a • (b • c) pentru orice a, b, c.</p>
+        </li>
+        <li>
+          <strong>5.</strong> Elementul neutru al unei legi de compoziție  
+          <p>Definiție: există un element e astfel încât e • a = a • e = a, ∀a.</p>
+        </li>
+        <li>
+          <strong>6.</strong> Elemente simetrizabile  
+          <p>Definiție: pentru fiecare a există un element a⁻¹ astfel încât a • a⁻¹ = e.</p>
+        </li>
+        <li>
+          <strong>8.</strong> Noțiunea de grup  
+          <p>Definiție: un grup este o mulțime G dotată cu o operație • care este asociativă, are element neutru și fiecare element are invers.</p>
+        </li>
+        <li>
+          <strong>10.</strong> Grupuri de matrice  
+          <p>Concept: mulțimi de matrici care, cu operația de înmulțire sau adunare, formează grupuri.</p>
+        </li>
+        <li>
+          <strong>11.</strong> Grupul matricelor pătratice cu operația de înmulțire  
+          <p>Condiție: matricea trebuie să fie inversabilă, iar operația de înmulțire este asociativă.</p>
+        </li>
+        <li>
+          <strong>12.</strong> Grupul matricelor pătratice cu operația de adunare  
+          <p>Formulă: adunarea matricelor se efectuează element cu element; elementul neutru este matricea nulă.</p>
+        </li>
+        <li>
+          <strong>14.</strong> Clase de resturi modulo n  
+          <p>Definiție: [a] = { x ∈ ℤ | x ≡ a (mod n) }.</p>
+        </li>
+        <li>
+          <strong>15.</strong> Grupuri de clase de resturi modulo n  
+          <p>Concept: mulțimea claselor de resturi modulo n formează un grup cu operația de adunare modulo n.</p>
+        </li>
+        <li>
+          <strong>16.</strong> Reguli de calcul într-un grup. Ridicarea la putere  
+          <p>Formulă: a^n = a • a • … • a (n factori); se aplică proprietățile grupurilor.</p>
+        </li>
+        <li>
+          <strong>17.</strong> Legi de simplificare într-un grup  
+          <p>Concept: dacă a • b = a • c, atunci b = c, în grupurile în care există invers.</p>
+        </li>
+        <li>
+          <strong>18.</strong> Morfism și izomorfism de grupuri  
+          <p>Definiții: un morfism de grupuri este o funcție f: G → H care respectă operația; izomorfismul este un morfism bijectiv.</p>
+        </li>
+        <li>
+          <strong>20.</strong> Noțiunea de inel  
+          <p>Definiție: un inel este o mulțime cu două operații (adunare și înmulțire) care respectă proprietăți specifice (adunare este un grup abelian, înmulțirea este asociativă și se distribuie peste adunare).</p>
+        </li>
+        <li>
+          <strong>21.</strong> Inele numerice  
+          <p>Exemple: ℤ, ℚ, ℝ.</p>
+        </li>
+        <li>
+          <strong>22.</strong> Inele de matrice  
+          <p>Concept: mulțimea matricelor de un anumit ordin, cu adunare și înmulțire, formează un inel.</p>
+        </li>
+        <li>
+          <strong>23.</strong> Inelul claselor de resturi modulo n  
+          <p>Definiție: ℤₙ, inelul format din clasele de resturi modulo n.</p>
+        </li>
+        <li>
+          <strong>24.</strong> Noțiunea de corp  
+          <p>Definiție: un corp este un inel în care fiecare element nenul este inversabil la înmulțire.</p>
+        </li>
+        <li>
+          <strong>25.</strong> Forma algebrică a unui polinom  
+          <p>Forma: P(x) = aₙxⁿ + ... + a₁x + a₀.</p>
+        </li>
+        <li>
+          <strong>26.</strong> Valoarea și rădăcina unui polinom  
+          <p>Concept: P(x₀) = 0, atunci x₀ este rădăcina polinomului P(x).</p>
+        </li>
+        <li>
+          <strong>27.</strong> Gradul unui polinom și egalitatea polinoamelor  
+          <p>Concept: gradul este cel mai mare exponent al lui x; două polinoame sunt egale dacă au aceleași coeficienți.</p>
+        </li>
+        <li>
+          <strong>28.</strong> Adunarea și înmulțirea polinoamelor  
+          <p>Operații efectuate termen cu termen.</p>
+        </li>
+        <li>
+          <strong>29.</strong> Teorema împărțirii cu rest a polinoamelor  
+          <p>Formulă: pentru polinoamele P(x) și divisorul D(x), există polinoame Q(x) și R(x) astfel încât P(x) = D(x)·Q(x) + R(x), cu deg R(x) < deg D(x).</p>
+        </li>
+        <li>
+          <strong>30.</strong> Schema lui Horner  
+          <p>Metodă: se folosește pentru evaluarea eficientă a polinoamelor și pentru împărțire cu rest.</p>
+        </li>
+        <li>
+          <strong>31.</strong> Divizibilitatea polinoamelor. Teorema lui Bezout  
+          <p>Formulă: P(x) are x – a ca factor dacă și numai dacă P(a)=0.</p>
+        </li>
+        <li>
+          <strong>33.</strong> Polinoame reductibile și ireductibile. Descompunerea polinoamelor  
+          <p>Concept: un polinom este ireductibil dacă nu se poate scrie ca produsul a doi polinoame de grad mai mic.</p>
+        </li>
+        <li>
+          <strong>36.</strong> Relațiile lui Viète  
+          <p>Formule: pentru ax²+bx+c=0, x₁+x₂ = −b/a și x₁·x₂ = c/a.</p>
+        </li>
+        <li>
+          <strong>38.</strong> Rădăcinile polinoamelor cu coeficienți reali. Partea I  
+          <p>Concept: se determină semnul și numărul rădăcinilor în funcție de discriminant.</p>
+        </li>
+        <li>
+          <strong>39.</strong> Rădăcinile polinoamelor cu coeficienți reali. Partea II  
+          <p>Continuare: aplicarea relațiilor lui Viète.</p>
+        </li>
+        <li>
+          <strong>40.</strong> Ecuații reciproce de gradul 3 și 4  
+          <p>Concept: ecuații simetrice în coeficienți, ce pot fi reduse prin substituție.</p>
+        </li>
+      </ul>
+    </section>
+    
+    <!-- Capitolul Doi: Analiză -->
+    <section id="capitolul2-analiza">
+      <h2>Capitolul Doi – Analiză</h2>
+      <ul>
+        <li>
+          <strong>41.</strong> Derivata unei funcții. Formule de derivare  
+          <p>Formule: f'(x) = limₕ→0 [f(x+h) – f(x)]/h; reguli: derivata sume, produs, lanț, etc.</p>
+        </li>
+        <li>
+          <strong>42.</strong> Formule de derivare. Funcții trigonometrice  
+          <p>Exemple: (sin x)' = cos x, (cos x)' = -sin x, (tan x)' = sec² x.</p>
+        </li>
+        <li>
+          <strong>43.</strong> Derivarea funcțiilor compuse  
+          <p>Regula lanțului: (f∘g)'(x) = f'(g(x))·g'(x).</p>
+        </li>
+        <li>
+          <strong>45.</strong> Primitive ale unei funcții  
+          <p>Concept: F este primitivă a lui f dacă F' = f.</p>
+        </li>
+        <li>
+          <strong>46.</strong> Existența primitivelor  
+          <p>Teorema fundamentală a analizei: dacă f este continuă pe [a, b], atunci are primitivă.</p>
+        </li>
+        <li>
+          <strong>48.</strong> Operații cu funcții care admit primitive  
+          <p>Concept: suma, produsul și scalarul de primitive sunt primitive ale operațiilor corespunzătoare.</p>
+        </li>
+        <li>
+          <strong>49.</strong> Primitive uzuale – Partea I  
+          <p>Exemple: ∫ x^n dx = x^(n+1)/(n+1), n ≠ -1.</p>
+        </li>
+        <li>
+          <strong>50.</strong> Primitive uzuale – Partea II  
+          <p>Continuare: primitive ale funcțiilor trigonometrice, exponentiale etc.</p>
+        </li>
+        <li>
+          <strong>51.</strong> Primitive uzuale – Partea III  
+          <p>Concept: liste de primitive standard.</p>
+        </li>
+        <li>
+          <strong>53.</strong> Metoda integrării prin părți – Partea I  
+          <p>Formulă: ∫ u dv = u·v − ∫ v du.</p>
+        </li>
+        <li>
+          <strong>54.</strong> Metoda integrării prin părți – Partea II  
+          <p>Continuare: aplicarea metodei integrării prin părți.</p>
+        </li>
+        <li>
+          <strong>55.</strong> Integrala definită. Formula Leibniz-Newton  
+          <p>Formulă: ∫ₐᵇ f(x) dx = F(b) − F(a), unde F este primitiva lui f.</p>
+        </li>
+        <li>
+          <strong>58.</strong> Proprietăți ale integralei definite – Partea I  
+          <p>Concepte: aditivitate, linearitate.</p>
+        </li>
+        <li>
+          <strong>59.</strong> Proprietăți ale integralei definite – Partea II  
+          <p>Continuare: relații între integrale.</p>
+        </li>
+        <li>
+          <strong>61.</strong> Integrare prin părți în calculul integralelor definite  
+          <p>Aplicarea metodei integrării prin părți la integrale definite.</p>
+        </li>
+        <li>
+          <strong>62.</strong> Integrarea prin schimbare de variabilă – Partea I  
+          <p>Formulă: ∫ f(g(x))·g'(x) dx = ∫ f(u) du, cu u = g(x).</p>
+        </li>
+        <li>
+          <strong>63.</strong> Integrarea prin schimbare de variabilă – Partea II  
+          <p>Continuare: aplicarea schimbării de variabilă.</p>
+        </li>
+        <li>
+          <strong>64.</strong> Integrarea prin schimbare de variabilă – Partea III  
+          <p>Concept: tehnici suplimentare de schimbare de variabilă.</p>
+        </li>
+        <li>
+          <strong>65.</strong> Integrarea funcțiilor raționale – Partea I  
+          <p>Concept: descompunerea în fracții simple.</p>
+        </li>
+        <li>
+          <strong>66.</strong> Integrarea funcțiilor raționale – Partea II  
+          <p>Continuare: metoda descompunerii în fracții simple.</p>
+        </li>
+        <li>
+          <strong>67.</strong> Integrarea funcțiilor raționale. Metoda descompunerii în fracții simple  
+          <p>Concept: scrierea funcției raționale ca sumă de fracții simple pentru integrare.</p>
+        </li>
+        <li>
+          <strong>68.</strong> Integrarea funcțiilor continue  
+          <p>Concept: integrarea funcțiilor continue se face prin metode clasice.</p>
+        </li>
+      </ul>
+    </section>
+    
+    
+  </main>
+</body>
+</html>

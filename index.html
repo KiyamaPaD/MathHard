@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathHard</title>
+  <style>
+    /* Reset global */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    /* Stil pentru corpul paginii */
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    /* Animație de fundal */
+    @keyframes backgroundAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%;
+      background: linear-gradient(45deg, #000, #222, #000);
+      background-size: 300% 300%;
+      animation: backgroundAnimation 20s ease infinite;
+      z-index: -1;
+    }
+    
+    /* Header: logo și titlu */
+    header {
+      background: #000;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      gap: 15px;
+    }
+    
+    header .logo {
+      height: 50px;
+      animation: logoSpin 4s linear infinite;
+    }
+    @keyframes logoSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    header .title {
+      font-size: 4rem;
+      font-weight: bold;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+      animation: titlePulse 3s ease-in-out infinite;
+      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    @keyframes titlePulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    /* Containerul principal */
+    main {
+      max-width: 1200px;
+      margin: 120px auto 40px; /* spațiu pentru header */
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+    }
+    
+    /* Secțiunea Home */
+    #home {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    #home p {
+      line-height: 1.6;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #FFD700;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.9);
+    }
+    
+    /* Stil sub-meniu */
+    .sub-menu {
+      margin: 20px 0; /* spațiere între text și butoane */
+    }
+    .sub-menu ul {
+      list-style: none;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .sub-menu ul li a {
+      text-decoration: none;
+      padding: 10px 15px;
+      border: 1px solid #FFD700;
+      border-radius: 5px;
+      color: #FFD700;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .sub-menu ul li a:hover {
+      background: #FFD700;
+      color: #000;
+      transform: scale(1.05);
+    }
+    
+    /* Stil pentru iframe-uri */
+    iframe {
+      width: 100%;
+      height: 400px;
+      border: 3px solid #FFD700;
+      border-radius: 10px;
+      transition: transform 0.3s;
+      margin-bottom: 20px;
+    }
+    iframe:hover {
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="LogoMathHard.jpeg" alt="MathHard Logo" class="logo">
+    <div class="title">MathHard</div>
+  </header>
+  
+  <main>
+    <!-- Secțiunea Home -->
+    <section id="home">
+      <h1>MathHard</h1>
+      <p></p>
+      <p>
+        Toate lecțiile din matematică le puteți găsi pe acest site, structurate pe baza nivelului de utilizare și de dificultate. De la numerele naturale și ce este o mulțime, până la lecții interesante despre teoria numerelor (care se fac în facultate).
+      </p>
+      <div class="section">
+        <h2>Formule / Teoreme Din Matematică</h2>
+        <p>De la Suma lui Gauss, până la formule din Teoria Numerelor.</p>
+      </div>
+      <div class="section">
+        <h2>Constante Din Matematică</h2>
+        <p>De la constanta π, până la constanta γ.</p>
+      </div>
+      <div class="section">
+        <h2>Definiții</h2>
+        <p>De la ce este un număr natural, până la funcții precum ψ(m), W sau ζ(s).</p>
+      </div>
+    </section>
+    
+    <!-- Secțiunea Școala -->
+    <section id="scoala">
+      <h2>Școala (Clasele V-VIII)</h2>
+      <p>Aici vei găsi resurse pentru clasele V-VIII.</p>
+      <div class="sub-menu">
+        <ul>
+          <li><a href="Clasa_V.html" target="iframeScoala">Clasa a V-a</a></li>
+          <li><a href="Clasa_VI.html" target="iframeScoala">Clasa a VI-a</a></li>
+          <li><a href="Clasa_VII.html" target="iframeScoala">Clasa a VII-a</a></li>
+          <li><a href="Clasa_VIII.html" target="iframeScoala">Clasa a VIII-a</a></li>
+        </ul>
+      </div>
+      <iframe name="iframeScoala"></iframe>
+    </section>
+    
+    <!-- Secțiunea Liceu -->
+    <section id="liceu">
+      <h2>Liceu (Clasele IX-XII)</h2>
+      <p>Aici vei găsi resurse pentru clasele IX-XII.</p>
+      <div class="sub-menu">
+        <ul>
+          <li><a href="Clasa_IX.html" target="iframeLiceu">Clasa a IX-a</a></li>
+          <li><a href="Clasa_X.html" target="iframeLiceu">Clasa a X-a</a></li>
+          <li><a href="Clasa_XI.html" target="iframeLiceu">Clasa a XI-a</a></li>
+          <li><a href="Clasa_XII.html" target="iframeLiceu">Clasa a XII-a</a></li>
+        </ul>
+      </div>
+      <iframe name="iframeLiceu"></iframe>
+    </section>
+    
+    <!-- Secțiunea Facultate -->
+    <section id="facultate">
+      <h2>Facultate</h2>
+      <p>Aici vei găsi resurse avansate pentru învățarea matematicii la nivel universitar.</p>
+      <div class="sub-menu">
+        <ul>
+          <li><a href="facultate1.html" target="iframeFacultate">Teoria Numerelor</a></li>
+          <li><a href="facultate2.html" target="iframeFacultate">Analiza Complexa</a></li>
+          <!-- Adaugă mai multe butoane după necesitate -->
+        </ul>
+      </div>
+      <iframe name="iframeFacultate"></iframe>
+    </section>
+    
+    <!-- Secțiunea Olimpiada pentru clasele 5-12 -->
+    <section id="olimpiada">
+      <h2>Olimpiada (Clasele V-XII)</h2>
+      <p>Aici vei găsi probleme și subiecte de pregătire pentru olimpiadele de matematică destinate claselor V până la XII.</p>
+      <div class="sub-menu">
+        <ul>
+          <li><a href="olimpiada5.html" target="iframeOlimpiada">Clasa a V-a</a></li>
+          <li><a href="olimpiada6.html" target="iframeOlimpiada">Clasa a VI-a</a></li>
+          <li><a href="olimpiada7.html" target="iframeOlimpiada">Clasa a VII-a</a></li>
+          <li><a href="olimpiada8.html" target="iframeOlimpiada">Clasa a VIII-a</a></li>
+          <li><a href="olimpiada9.html" target="iframeOlimpiada">Clasa a IX-a</a></li>
+          <li><a href="olimpiada10.html" target="iframeOlimpiada">Clasa a X-a</a></li>
+          <li><a href="olimpiada11.html" target="iframeOlimpiada">Clasa a XI-a</a></li>
+          <li><a href="olimpiada12.html" target="iframeOlimpiada">Clasa a XII-a</a></li>
+        </ul>
+      </div>
+      <iframe name="iframeOlimpiada"></iframe>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasa a XI‑a – Formule MathHard</title>
+  <style>
+    /* Reset global */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.85);
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    section h2 {
+      margin-bottom: 15px;
+      font-size: 2rem;
+      border-bottom: 1px solid #FFD700;
+      padding-bottom: 5px;
+    }
+    ul {
+      list-style: none;
+      margin-left: 20px;
+    }
+    ul li {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    ul li p {
+      margin-left: 20px;
+      font-style: italic;
+    }
+    ul li strong {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clasa a XI‑a</h1>
+    <p>Această pagină prezintă conceptele și formulele esențiale din materia de matematică pentru Clasa a XI‑a.</p>
+  </header>
+  
+  <main>
+    
+    <!-- Capitolul Unu: Matrice -->
+    <section id="capitolul1">
+      <h2>Capitolul Unu – Matrice</h2>
+      <ul>
+        <li>
+          <strong>1.</strong> Matrice  
+          <p>Definiție: O matrice este o tablă de numere dispuse în rânduri și coloane.</p>
+        </li>
+        <!-- Lecția 2 (Aplicații) este ignorată -->
+        <li>
+          <strong>3.</strong> Adunarea și scăderea matricelor  
+          <p>Formulă: (A ± B)₍ᵢⱼ₎ = A₍ᵢⱼ₎ ± B₍ᵢⱼ₎.</p>
+        </li>
+        <li>
+          <strong>4.</strong> Transpusa unei matrice. Înmulțirea unei matrice cu un scalar  
+          <p>Formule: Transpusa: Aᵀ, unde (Aᵀ)₍ᵢⱼ₎ = A₍ⱼᵢ₎; Scalar: (kA)₍ᵢⱼ₎ = k·A₍ᵢⱼ₎.</p>
+        </li>
+        <li>
+          <strong>5.</strong> Înmulțirea matricelor  
+          <p>Formulă: (AB)₍ᵢⱼ₎ = Σₖ A₍ᵢₖ₎·B₍ₖⱼ₎, unde suma se face peste toate valorile corespunzătoare.</p>
+        </li>
+        <li>
+          <strong>6.</strong> Proprietăți ale înmulțirii matricelor. Partea I  
+          <p>Concepte: asociativitate, distributivitate și existența unei matrice identitate.</p>
+        </li>
+        <li>
+          <strong>7.</strong> Proprietăți ale înmulțirii matricelor. Partea II  
+          <p>Concept: în general, AB ≠ BA; alte proprietăți legate de ordine și inversabilitate.</p>
+        </li>
+        <li>
+          <strong>8.</strong> Ridicarea la putere a matricelor pătratice  
+          <p>Formulă: Aⁿ = A · A · … · A (n factori), pentru o matrice pătratică A.</p>
+        </li>
+        <!-- Lecțiile 9 și 10 (Exerciții recapitulative) sunt ignorate -->
+      </ul>
+    </section>
+    
+    <!-- Capitolul Doi: Determinanți -->
+    <section id="capitolul2">
+      <h2>Capitolul Doi – Determinanți</h2>
+      <ul>
+        <li>
+          <strong>11.</strong> Determinanți de ordin 2  
+          <p>Formulă: det(A) = ad − bc pentru o matrice 2×2: A = [[a, b], [c, d]].</p>
+        </li>
+        <li>
+          <strong>12.</strong> Determinanți de ordin 3  
+          <p>Formulă: pentru A = [[a,b,c],[d,e,f],[g,h,i]], det(A) = a(ei − fh) − b(di − fg) + c(dh − eg).</p>
+        </li>
+        <li>
+          <strong>13.</strong> Regula triunghiurilor. Relația Hamilton-Cayley  
+          <p>Concept: o matrice satisface polinomul său caracteristic, conform teoremei Hamilton-Cayley.</p>
+        </li>
+        <li>
+          <strong>14.</strong> Minorul unui element dintr-o matrice  
+          <p>Definiție: minorul elementului A₍ᵢⱼ₎ este determinanțul submatricei obținute prin eliminarea rândului i și a coloanei j.</p>
+        </li>
+        <li>
+          <strong>15.</strong> Regula minorilor  
+          <p>Concept: determinanții pot fi calculați prin dezvoltare pe rând sau coloană folosind minorii.</p>
+        </li>
+        <li>
+          <strong>16.</strong> Ecuația dreptei determinate de două puncte  
+          <p>Formulă: dacă P₁(x₁,y₁) și P₂(x₂,y₂) sunt două puncte, ecuația dreptei este: (y – y₁) = ((y₂ – y₁)/(x₂ – x₁)) (x – x₁).</p>
+        </li>
+        <!-- Lecțiile 17 și 18 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>19.</strong> Coliniaritatea a trei puncte în plan  
+          <p>Formulă: punctele sunt coliniare dacă determinantul
+          <br> | x₁  y₁  1 |<br>| x₂  y₂  1 | = 0<br>| x₃  y₃  1 |</p>
+        </li>
+        <!-- Lecția 20 (Aplicații combinate) este ignorată -->
+        <li>
+          <strong>21.</strong> Proprietățile determinanților. Partea I  
+          <p>Concepte: linearitate, schimbarea semnului la interschimbarea rândurilor, etc.</p>
+        </li>
+        <li>
+          <strong>22.</strong> Proprietățile determinanților. Partea II  
+          <p>Continuare: efectul operațiilor elementare asupra determinanților.</p>
+        </li>
+        <li>
+          <strong>23.</strong> Proprietățile determinanților. Partea III  
+          <p>Concept: relații adiționale și utilizări ale determinanților.</p>
+        </li>
+        <!-- Lecțiile 24 și 25 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>26.</strong> Aria unui triunghi  
+          <p>Formulă: A = ½ · det([[x₁, y₁, 1], [x₂, y₂, 1], [x₃, y₃, 1]]), sau A = ½·b·h.</p>
+        </li>
+        <!-- Lecția 27 (Aplicații) este ignorată -->
+      </ul>
+    </section>
+    
+    <!-- Capitolul Trei: Sisteme de ecuații liniare -->
+    <section id="capitolul3">
+      <h2>Capitolul Trei – Sisteme de ecuații liniare</h2>
+      <ul>
+        <li>
+          <strong>28.</strong> Distanța de la un punct la o dreaptă  
+          <p>Formulă: d = |Ax₀ + By₀ + C| / √(A² + B²) pentru dreapta Ax + By + C = 0 și punctul (x₀,y₀).</p>
+        </li>
+        <li>
+          <strong>29.</strong> Inversa unei matrice. Semnificație  
+          <p>Concept: inversa unei matrice A (notată A⁻¹) este matricea astfel încât A·A⁻¹ = I.</p>
+        </li>
+        <li>
+          <strong>30.</strong> Inversa unei matrice  
+          <p>Formulă: pentru o matrice 2×2 A = [[a, b], [c, d]], A⁻¹ = (1/(ad–bc)) · [[d, -b], [-c, a]].</p>
+        </li>
+        <li>
+          <strong>31.</strong> Determinarea inversei unei matrice  
+          <p>Concept: se folosește formula de mai sus sau metoda adjugatei.</p>
+        </li>
+        <li>
+          <strong>32.</strong> Ecuații matriceale. Partea I  
+          <p>Concept: ecuații de forma A·X = B, cu soluția X = A⁻¹·B, dacă A este inversabilă.</p>
+        </li>
+        <li>
+          <strong>33.</strong> Ecuații matriceale. Partea II  
+          <p>Continuare: tehnici de rezolvare a ecuațiilor matriciale.</p>
+        </li>
+        <li>
+          <strong>34.</strong> Ecuații matriceale. Partea III  
+          <p>Concept: extinderea ecuațiilor la matrici de ordin superior.</p>
+        </li>
+        <li>
+          <strong>35.</strong> Ecuații matriceale. Partea IV  
+          <p>Continuare: metode de rezolvare.</p>
+        </li>
+        <li>
+          <strong>36.</strong> Sisteme de ecuații liniare  
+          <p>Concept: sistemul poate fi reprezentat în formă matricială.</p>
+        </li>
+        <li>
+          <strong>37.</strong> Metoda matriceală de rezolvare a sistemelor  
+          <p>Concept: scrierea sistemului ca A·X = B și soluționarea prin inversa lui A.</p>
+        </li>
+        <!-- Lecțiile 38 și 39 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>40.</strong> Metoda lui Cramer  
+          <p>Formulă: xᵢ = det(Aᵢ) / det(A), unde Aᵢ este matricea obținută înlocuind coloana i cu vectorul soluție.</p>
+        </li>
+        <!-- Lecțiile 41 și 42 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>43.</strong> Metoda lui Gauss  
+          <p>Concept: eliminarea variabilelor prin transformări elementare pe rânduri.</p>
+        </li>
+        <!-- Lecțiile 44 și 45 (Aplicații) sunt ignorate -->
+      </ul>
+    </section>
+    
+    <!-- Capitolul Patru: Analiză -->
+    <section id="capitolul4">
+      <h2>Capitolul Patru – Analiză</h2>
+      <ul>
+        <li>
+          <strong>46.</strong> Mulțimi de puncte pe dreapta reală  
+          <p>Concept: o mulțime de puncte pe linia reală.</p>
+        </li>
+        <li>
+          <strong>47.</strong> Ordinea numerelor reale. Intervale  
+          <p>Definiție: intervale deschise și închise, ex.: (a,b), [a,b].</p>
+        </li>
+        <li>
+          <strong>48.</strong> Mulțimi mărginite  
+          <p>Concept: mulțimi care au un minim și un maxim.</p>
+        </li>
+        <li>
+          <strong>49.</strong> Vecinătăți  
+          <p>Definiție: o vecinătate a unui punct x₀ este un interval (x₀ - ε, x₀ + ε), ε > 0.</p>
+        </li>
+        <li>
+          <strong>50.</strong> Limita funcției într-un punct  
+          <p>Formulă: limₓ→x₀ f(x) = L.</p>
+        </li>
+        <li>
+          <strong>51.</strong> Calculul limitelor prin trecere directă  
+          <p>Concept: dacă f este continuă la x₀, atunci limₓ→x₀ f(x) = f(x₀).</p>
+        </li>
+        <li>
+          <strong>52.</strong> Limite laterale  
+          <p>Definiție: limₓ→x₀⁺ f(x) și limₓ→x₀⁻ f(x).</p>
+        </li>
+        <li>
+          <strong>54.</strong> Operații cu limite de funcții  
+          <p>Concepte: limita sumei, produsului, etc.</p>
+        </li>
+        <li>
+          <strong>55.</strong> Limite de funcții. Metode de nedeterminare – Partea I  
+          <p>Concept: aplicarea regulilor de calcul a limitelor în cazuri nedeterminate (0/0, ∞/∞ etc.).</p>
+        </li>
+        <li>
+          <strong>56.</strong> Limite de funcții. Metode de nedeterminare – Partea II  
+          <p>Continuare: tehnici suplimentare de determinare a limitelor.</p>
+        </li>
+        <li>
+          <strong>57.</strong> Limitele funcțiilor iraționale. Cazuri de nedeterminare  
+          <p>Concept: identificarea tipurilor de nedeterminare la funcții iraționale.</p>
+        </li>
+        <li>
+          <strong>58.</strong> Limite fundamentale ale funcțiilor trigonometrice  
+          <p>Exemple: limₓ→0 (sin x)/x = 1.</p>
+        </li>
+        <li>
+          <strong>60.</strong> Limitele fundamentale ale funcțiilor trigonometrice inverse  
+          <p>Concept: se aplică tehnici similare limitelor funcțiilor trigonometrice.</p>
+        </li>
+        <li>
+          <strong>61.</strong> Limite: cazuri de nedeterminare (1 la infinit)  
+          <p>Concept: analiza comportamentului funcțiilor când x → ∞.</p>
+        </li>
+        <li>
+          <strong>63.</strong> Asimptote orizontale  
+          <p>Definiție: dacă limₓ→∞ f(x) = L, linia y = L este asimptotă orizontală.</p>
+        </li>
+        <li>
+          <strong>64.</strong> Asimptote verticale  
+          <p>Concept: dacă limₓ→x₀ f(x)= ±∞, dreapta x=x₀ este asimptotă verticală.</p>
+        </li>
+        <li>
+          <strong>65.</strong> Asimptote oblice  
+          <p>Formulă: dacă limₓ→∞ [f(x) – (ax+b)] = 0, atunci y = ax+b este asimptotă oblică.</p>
+        </li>
+        <!-- Lecțiile 66 (Exerciții) sunt ignorate -->
+        <li>
+          <strong>67.</strong> Funcții continue într-un punct  
+          <p>Definiție: f este continuă la x₀ dacă limₓ→x₀ f(x) = f(x₀).</p>
+        </li>
+        <!-- Lecția 68 (Aplicații) este ignorată -->
+        <li>
+          <strong>69.</strong> Puncte de discontinuitate  
+          <p>Concept: punctele unde funcția nu este continuă.</p>
+        </li>
+        <li>
+          <strong>70.</strong> Operații cu funcții continue  
+          <p>Concepte: suma, produsul și raportul funcțiilor continue sunt continue.</p>
+        </li>
+        <!-- Lecția 71 (Exerciții) este ignorată -->
+        <li>
+          <strong>72.</strong> Continuitatea funcțiilor compuse  
+          <p>Concept: compunerea funcțiilor continue este continuă.</p>
+        </li>
+        <li>
+          <strong>73.</strong> Proprietatea lui Darboux  
+          <p>Definiție: funcțiile continue au proprietatea de a atinge toate valorile intermediare.</p>
+        </li>
+        <!-- Lecția 74 (Aplicații) este ignorată -->
+        <li>
+          <strong>75.</strong> Semnul funcției continue pe un interval  
+          <p>Concept: determinarea semnului unei funcții continue pe un interval.</p>
+        </li>
+        <li>
+          <strong>76.</strong> Semnul unei funcții pe un interval; Proprietatea lui Darboux  
+          <p>Concept: se utilizează proprietatea lui Darboux pentru a stabili semnul.</p>
+        </li>
+        <li>
+          <strong>77.</strong> Consecințe ale proprietății lui Darboux  
+          <p>Concept: implicații în rezolvarea ecuațiilor și inecuațiilor.</p>
+        </li>
+        <li>
+          <strong>78.</strong> Rezolvarea inecuațiilor folosind continuitatea funcțiilor  
+          <p>Concept: dacă f este continuă, soluția inecuației se poate determina prin metoda valorilor intermediare.</p>
+        </li>
+        <li>
+          <strong>79.</strong> Funcții care admit derivată  
+          <p>Definiție: f este derivabilă la x₀ dacă limₓ→x₀ [f(x)-f(x₀)]/(x-x₀) există.</p>
+        </li>
+        <li>
+          <strong>80.</strong> Derivate laterale  
+          <p>Definiții: derivata dreaptă și derivata stângă.</p>
+        </li>
+        <!-- Lecțiile 81-82 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>83.</strong> Derivabilitate și continuitate  
+          <p>Concept: o funcție derivabilă este continuă, dar inversul nu este valabil.</p>
+        </li>
+        <li>
+          <strong>84.</strong> Ecuația tangentei într-un punct  
+          <p>Formulă: y - f(x₀) = f'(x₀)(x - x₀).</p>
+        </li>
+        <li>
+          <strong>85.</strong> Punct unghiular  
+          <p>Concept: punct unde graficul formează un unghi (de obicei discontinuitate în derivată).</p>
+        </li>
+        <li>
+          <strong>86.</strong> Punct de întoarcere  
+          <p>Definiție: punct unde funcția își schimbă concavitatea.</p>
+        </li>
+        <li>
+          <strong>87.</strong> Derivatele funcțiilor elementare – Partea I  
+          <p>Exemple: derivata lui sin x = cos x, derivata lui cos x = -sin x.</p>
+        </li>
+        <li>
+          <strong>88.</strong> Derivatele funcțiilor elementare – Partea II  
+          <p>Continuare: derivata lui tan x = sec² x, etc.</p>
+        </li>
+        <li>
+          <strong>89.</strong> Derivatele funcțiilor elementare – Partea III  
+          <p>Concept: alte derivate fundamentale.</p>
+        </li>
+        <!-- Lecția 90 (Aplicații) este ignorată -->
+        <!-- Lecția 91 (Aplicații) este ignorată -->
+        <!-- Lecția 92 (Aplicații) este ignorată -->
+        <li>
+          <strong>93.</strong> Derivarea unui cât  
+          <p>Concept: se aplică regula derivării raportului (dacă f = u/v, atunci f' = (u'v - uv')/v²).</p>
+        </li>
+        <li>
+          <strong>94.</strong> Derivarea funcțiilor elementare și a funcțiilor compuse  
+          <p>Reguli: regula lanțului, regula produsului și a diferenței.</p>
+        </li>
+        <!-- Lecțiile 95-96 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>97.</strong> Derivarea funcțiilor compuse (funcții trigonometrice inverse)  
+          <p>Concept: se aplică regula lanțului la funcțiile trigonometrice inverse.</p>
+        </li>
+        <li>
+          <strong>98.</strong> Derivata de ordinul al doilea  
+          <p>Formulă: f''(x) = (f'(x))'.</p>
+        </li>
+        <!-- Lecția 99 (Aplicații) este ignorată -->
+        <li>
+          <strong>100.</strong> Regula lui l'Hôpital (0/0)  
+          <p>Formulă: dacă limₓ→x₀ f(x)/g(x) are forma 0/0, atunci se calculează limₓ→x₀ f'(x)/g'(x), dacă există.</p>
+        </li>
+        <!-- Lecțiile 101-102 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>103.</strong> Regula lui l'Hôpital (infinit/infinit)  
+          <p>Concept: se aplică regula pentru forme de tip ∞/∞.</p>
+        </li>
+        <!-- Lecțiile 104-105 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>106.</strong> Regula lui l'Hôpital (0 ori infinit)  
+          <p>Concept: se transformă forma 0×∞ într-o formă 0/0 sau ∞/∞ pentru aplicarea regulii.</p>
+        </li>
+        <li>
+          <strong>107.</strong> Regula lui l'Hôpital (0 la 0; 1 la infinit; infinit la 0)  
+          <p>Concept: se analizează limite cu forme nedeterminate și se aplică regula corespunzătoare.</p>
+        </li>
+        <li>
+          <strong>108.</strong> Rolul derivatei întâi în studiul funcțiilor (monotonia) – Partea I  
+          <p>Concept: dacă f'(x) > 0, f este crescătoare; dacă f'(x) < 0, f este descrescătoare.</p>
+        </li>
+        <li>
+          <strong>109.</strong> Rolul derivatei întâi – Partea II  
+          <p>Continuare: determinarea intervalelor de monotonia.</p>
+        </li>
+        <li>
+          <strong>110.</strong> Rolul derivatei întâi – Partea III  
+          <p>Concept: utilizarea derivatei întâi pentru identificarea extremelor locale.</p>
+        </li>
+        <li>
+          <strong>111.</strong> Puncte de extrem – Partea I  
+          <p>Formulă: punctele unde f'(x) = 0 și schimbă semnul.</p>
+        </li>
+        <li>
+          <strong>112.</strong> Puncte de extrem – Partea II  
+          <p>Continuare: verificarea condițiilor de extrem local.</p>
+        </li>
+        <li>
+          <strong>113.</strong> Puncte de extrem – Partea III  
+          <p>Concept: analiza secundară a punctelor de extrem.</p>
+        </li>
+        <li>
+          <strong>114.</strong> Rolul derivatei a doua în studiul funcțiilor (convexitate, concavitate) – Partea I  
+          <p>Concept: dacă f''(x) > 0, funcția este convexă; dacă f''(x) < 0, este concavă.</p>
+        </li>
+        <li>
+          <strong>115.</strong> Rolul derivatei a doua – Partea II  
+          <p>Continuare: determinarea punctelor de inflexiune.</p>
+        </li>
+        <li>
+          <strong>116.</strong> Puncte de inflexiune  
+          <p>Definiție: puncte unde f''(x) schimbă semnul.</p>
+        </li>
+        <!-- Lecțiile 117-118 (Aplicații) sunt ignorate -->
+        <li>
+          <strong>119.</strong> Reprezentarea grafică a funcțiilor – Partea I  
+          <p>Concept: desenarea graficelor funcțiilor pe baza valorilor și a derivatelor.</p>
+        </li>
+        <li>
+          <strong>120.</strong> Reprezentarea grafică a funcțiilor – Partea II  
+          <p>Continuare: analiza detaliată a graficului funcției.</p>
+        </li>
+        <li>
+          <strong>121.</strong> Reprezentarea grafică a funcțiilor – Partea III  
+          <p>Concept: identificarea punctelor cheie, asimptotelor și a extremelor.</p>
+        </li>
+      </ul>
+    </section>
+    
+  </main>
+</body>
+</html>
