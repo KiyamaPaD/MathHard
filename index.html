@@ -201,6 +201,7 @@
       cursor: pointer;
       white-space: pre-wrap;
     }
+    
     .section {
       margin-bottom: 30px;
       padding: 20px;
@@ -218,7 +219,7 @@
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
-      justify-content: center; /* default: centrat pe ecrane mici */
+      justify-content: center;
     }
     .sub-menu ul li a {
       display: block;
@@ -236,10 +237,10 @@
       transform: scale(1.05);
     }
     
-    /* Stil pentru iframe-uri */
+    /* Stil pentru iframe-uri: latime fixă, înălțime mărită */
     iframe {
       width: 100%;
-      height: 400px;
+      height: 600px; /* Înălțime mărită pe desktop */
       border: 3px solid #FFD700;
       border-radius: 10px;
       transition: transform 0.3s;
@@ -272,14 +273,14 @@
         font-size: 1rem;
       }
       iframe {
-        height: 300px;
+        height: 400px; /* Înălțime redusă pentru mobil */
       }
       .sub-menu ul {
-        flex-direction: column;  /* pe telefon: butoane pe verticală */
+        flex-direction: column;
         align-items: center;
       }
       .sub-menu ul li {
-        width: 100%; /* fiecare buton să fie cât toată lățimea containerului */
+        width: 100%;
         margin-bottom: 10px;
       }
       .sub-menu ul li a {
@@ -290,10 +291,10 @@
       }
     }
     
-    /* Media Query pentru ecrane mai mari: butoanele la stânga */
+    /* Media Query pentru ecrane mai mari (PC): butoanele la stânga */
     @media (min-width: 769px) {
       .sub-menu ul {
-        justify-content: flex-start; /* butoanele la stânga pe desktop */
+        justify-content: flex-start;
       }
     }
   </style>
@@ -311,7 +312,8 @@
     <!-- Secțiunea Home -->
     <section id="home" class="visible">
       <h1>Bine ai venit pe MathHard!</h1>
-      <p>
+      <!-- Efectul se aplică doar pe acest paragraf -->
+      <p class="glitch-effect glow-text" data-text="Toate lecțiile din matematică le puteți găsi pe acest site, structurate pe baza nivelului de utilizare și de dificultate. De la numerele naturale și ce este o mulțime, până la lecții interesante despre teoria numerelor (care se fac în facultate).">
         Toate lecțiile din matematică le puteți găsi pe acest site, structurate pe baza nivelului de utilizare și de dificultate. De la numerele naturale și ce este o mulțime, până la lecții interesante despre teoria numerelor (care se fac în facultate).
       </p>
       <div class="section">
@@ -391,7 +393,6 @@
     </section>
   </main>
   
-  <!-- Script pentru animația de particule și dezvăluirea secțiunilor -->
   <script>
     const canvas = document.getElementById('particles');
     const ctx = canvas.getContext('2d');
