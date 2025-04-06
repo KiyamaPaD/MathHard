@@ -220,9 +220,13 @@
       flex-wrap: wrap;
       justify-content: center; /* pe ecrane mari: centrat */
     }
+    .sub-menu ul li {
+      /* Fără border sau background aici, doar container */
+    }
     .sub-menu ul li a {
+      display: block;          /* Face link-ul un buton bloc */
       text-decoration: none;
-      padding: 12px 20px; /* padding mai generos pentru acces pe telefon */
+      padding: 12px 20px;      /* padding mai generos pentru acces pe telefon */
       border: 1px solid #FFD700;
       border-radius: 5px;
       color: #FFD700;
