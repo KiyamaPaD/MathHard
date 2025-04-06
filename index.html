@@ -12,7 +12,6 @@
       box-sizing: border-box;
     }
     
-    /* Stil pentru corpul paginii */
     body {
       background: #000;
       color: #FFD700;
@@ -30,64 +29,159 @@
     body::before {
       content: "";
       position: fixed;
-      top: 0; 
+      top: 0;
       left: 0;
-      width: 100%; 
+      width: 100%;
       height: 100%;
       background: linear-gradient(45deg, #000, #222, #000);
       background-size: 300% 300%;
       animation: backgroundAnimation 20s ease infinite;
-      z-index: -1;
+      z-index: -3;
     }
     
-    /* Header: logo și titlu */
-    header {
-      background: #000;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* Canvas de particule */
+    #particles {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      z-index: 1000;
-      gap: 15px;
+      height: 100%;
+      z-index: -2;
     }
     
-    header .logo {
-      height: 50px;
-      animation: logoSpin 4s linear infinite;
+    /* Header: titlul este centrat, logo-ul poziționat absolut în stânga */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 20px;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
-    @keyframes logoSpin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+    
+    /* Logo-ul – poziționat complet în stânga */
+    header .logo {
+      position: absolute;
+      left: 20px;
+      height: 80px;
+      animation: newLogoAnimation3 8s ease-in-out infinite;
+      will-change: transform, filter;
+    }
+    
+    /* Noua animație pentru logo – fără efecte 3D, concentrată pe schimbările de culoare și o mică scalare */
+    @keyframes newLogoAnimation3 {
+      0% {
+        transform: scale(1) rotate(0deg);
+        filter: hue-rotate(0deg) contrast(100%);
+      }
+      25% {
+        transform: scale(1.05) rotate(2deg);
+        filter: hue-rotate(30deg) contrast(120%);
+      }
+      50% {
+        transform: scale(1) rotate(0deg);
+        filter: hue-rotate(60deg) contrast(80%);
+      }
+      75% {
+        transform: scale(0.95) rotate(-2deg);
+        filter: hue-rotate(30deg) contrast(120%);
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+        filter: hue-rotate(0deg) contrast(100%);
+      }
+    }
+    
+    /* Titlul – centrat și animat complex */
+    @keyframes complexTitle {
+      0% { 
+        transform: rotateX(0deg) rotateY(0deg) scale(1);
+        text-shadow: 0 0 10px #FFD700;
+      }
+      10% { 
+        transform: rotateX(10deg) rotateY(10deg) scale(1.1);
+        text-shadow: 0 0 15px #FFF200;
+      }
+      20% { 
+        transform: rotateX(-10deg) rotateY(-10deg) scale(0.9);
+        text-shadow: 0 0 20px #FFD700;
+      }
+      30% { 
+        transform: rotateX(15deg) rotateY(-15deg) scale(1.2);
+        text-shadow: 0 0 25px #FFF200;
+      }
+      40% { 
+        transform: rotateX(-15deg) rotateY(15deg) scale(0.8);
+        text-shadow: 0 0 30px #FFD700;
+      }
+      50% { 
+        transform: rotateX(0deg) rotateY(0deg) scale(1);
+        text-shadow: 0 0 35px #FFF200;
+      }
+      60% { 
+        transform: rotateX(10deg) rotateY(10deg) scale(1.1);
+        text-shadow: 0 0 20px #FFD700;
+      }
+      70% { 
+        transform: rotateX(-10deg) rotateY(-10deg) scale(0.9);
+        text-shadow: 0 0 25px #FFF200;
+      }
+      80% { 
+        transform: rotateX(15deg) rotateY(-15deg) scale(1.2);
+        text-shadow: 0 0 30px #FFD700;
+      }
+      90% { 
+        transform: rotateX(-15deg) rotateY(15deg) scale(0.8);
+        text-shadow: 0 0 35px #FFF200;
+      }
+      100% { 
+        transform: rotateX(0deg) rotateY(0deg) scale(1);
+        text-shadow: 0 0 10px #FFD700;
+      }
     }
     
     header .title {
       font-size: 4rem;
       font-weight: bold;
-      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-      animation: titlePulse 3s ease-in-out infinite;
-      background: linear-gradient(90deg, #FFD700, #FFF200, #FFD700);
-      background-size: 200% 200%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    @keyframes titlePulse {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      color: #FFD700;
+      animation: complexTitle 8s ease-in-out infinite;
+      will-change: transform, text-shadow;
+      cursor: default;
     }
     
     /* Containerul principal */
     main {
       max-width: 1200px;
-      margin: 120px auto 40px; /* spațiu pentru header */
+      margin: 120px auto 40px;
       padding: 20px;
       background: rgba(0, 0, 0, 0.8);
       border: 2px solid #FFD700;
       border-radius: 10px;
+    }
+    
+    /* Secțiuni și fade-in */
+    .section, section {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 1s forwards;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Efecte interactive la secțiuni */
+    section:hover, .section:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 15px #FFD700;
     }
     
     /* Secțiunea Home */
@@ -95,10 +189,16 @@
       text-align: center;
       padding: 40px 20px;
     }
+    #home h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
     #home p {
       line-height: 1.6;
       font-size: 1.1rem;
       margin-bottom: 20px;
+      cursor: pointer;
+      white-space: pre-wrap;
     }
     .section {
       margin-bottom: 30px;
@@ -108,15 +208,16 @@
       background: rgba(0, 0, 0, 0.9);
     }
     
-    /* Stil sub-meniu */
+    /* Meniu subsecțiuni */
     .sub-menu {
-      margin: 20px 0; /* spațiere între text și butoane */
+      margin: 20px 0;
     }
     .sub-menu ul {
       list-style: none;
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
+      justify-content: center;
     }
     .sub-menu ul li a {
       text-decoration: none;
@@ -144,9 +245,43 @@
     iframe:hover {
       transform: scale(1.02);
     }
+    
+    /* Media Queries pentru dispozitive mobile */
+    @media (max-width: 768px) {
+      header {
+        padding: 10px;
+      }
+      header .logo {
+        height: 60px;
+        left: 10px;
+      }
+      header .title {
+        font-size: 3rem;
+      }
+      main {
+        margin: 100px 10px 20px;
+        padding: 10px;
+      }
+      #home h1 {
+        font-size: 2rem;
+      }
+      #home p {
+        font-size: 1rem;
+      }
+      iframe {
+        height: 300px;
+      }
+      .sub-menu ul {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Canvas-ul pentru animația de particule -->
+  <canvas id="particles"></canvas>
+  
   <header>
     <img src="LogoMathHard.jpeg" alt="MathHard Logo" class="logo">
     <div class="title">MathHard</div>
@@ -154,9 +289,8 @@
   
   <main>
     <!-- Secțiunea Home -->
-    <section id="home">
-      <h1>MathHard</h1>
-      <p></p>
+    <section id="home" class="visible">
+      <h1>Bine ai venit pe MathHard!</h1>
       <p>
         Toate lecțiile din matematică le puteți găsi pe acest site, structurate pe baza nivelului de utilizare și de dificultate. De la numerele naturale și ce este o mulțime, până la lecții interesante despre teoria numerelor (care se fac în facultate).
       </p>
@@ -212,13 +346,12 @@
         <ul>
           <li><a href="facultate1.html" target="iframeFacultate">Teoria Numerelor</a></li>
           <li><a href="facultate2.html" target="iframeFacultate">Analiza Complexa</a></li>
-          <!-- Adaugă mai multe butoane după necesitate -->
         </ul>
       </div>
       <iframe name="iframeFacultate"></iframe>
     </section>
     
-    <!-- Secțiunea Olimpiada pentru clasele 5-12 -->
+    <!-- Secțiunea Olimpiada -->
     <section id="olimpiada">
       <h2>Olimpiada (Clasele V-XII)</h2>
       <p>Aici vei găsi probleme și subiecte de pregătire pentru olimpiadele de matematică destinate claselor V până la XII.</p>
@@ -237,5 +370,74 @@
       <iframe name="iframeOlimpiada"></iframe>
     </section>
   </main>
+  
+  <!-- Script pentru animația de particule și dezvăluirea secțiunilor -->
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particlesArray = [];
+    let canvasWidth = canvas.width = window.innerWidth;
+    let canvasHeight = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      canvasWidth = canvas.width = window.innerWidth;
+      canvasHeight = canvas.height = window.innerHeight;
+      initParticles();
+    });
+    
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvasWidth;
+        this.y = Math.random() * canvasHeight;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 1 - 0.5;
+        this.speedY = Math.random() * 1 - 0.5;
+        this.symbols = ['π', 'Σ', '√', '∑', '∫', 'Δ', '∂', '∞'];
+        this.symbol = this.symbols[Math.floor(Math.random() * this.symbols.length)];
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvasWidth) this.speedX = -this.speedX;
+        if (this.y < 0 || this.y > canvasHeight) this.speedY = -this.speedY;
+      }
+      draw() {
+        ctx.fillStyle = "#FFD700";
+        ctx.font = `${this.size * 10}px Arial`;
+        ctx.fillText(this.symbol, this.x, this.y);
+      }
+    }
+    
+    function initParticles() {
+      particlesArray = [];
+      const numberOfParticles = (canvasWidth * canvasHeight) / 8000;
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+      }
+    }
+    initParticles();
+    
+    function animate() {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      for (let particle of particlesArray) {
+        particle.update();
+        particle.draw();
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    function revealSections() {
+      const sections = document.querySelectorAll('section');
+      const triggerBottom = window.innerHeight * 0.85;
+      sections.forEach(section => {
+        const sectionTop = section.getBoundingClientRect().top;
+        if (sectionTop < triggerBottom) {
+          section.classList.add('visible');
+        }
+      });
+    }
+    window.addEventListener('scroll', revealSections);
+  </script>
 </body>
 </html>
