@@ -96,7 +96,7 @@
       }
     }
     
-    /* Titlul – centrat și animat complex */
+    /* Titlul (subtitlu) – centrat și animat complex */
     @keyframes complexTitle {
       0% { 
         transform: rotateX(0deg) rotateY(0deg) scale(1);
@@ -151,6 +151,7 @@
       animation: complexTitle 8s ease-in-out infinite;
       will-change: transform, text-shadow;
       cursor: default;
+      text-align: center;
     }
     
     /* Containerul principal */
@@ -163,7 +164,7 @@
       border-radius: 10px;
     }
     
-    /* Secțiuni și fade-in */
+    /* Animație de fade-in pentru secțiuni */
     .section, section {
       opacity: 0;
       transform: translateY(20px);
@@ -217,15 +218,16 @@
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
-      justify-content: center;
+      justify-content: center; /* pe ecrane mari: centrat */
     }
     .sub-menu ul li a {
       text-decoration: none;
-      padding: 10px 15px;
+      padding: 12px 20px; /* padding mai generos pentru acces pe telefon */
       border: 1px solid #FFD700;
       border-radius: 5px;
       color: #FFD700;
       transition: background 0.3s, transform 0.3s;
+      font-size: 1rem;
     }
     .sub-menu ul li a:hover {
       background: #FFD700;
@@ -256,14 +258,15 @@
         left: 10px;
       }
       header .title {
-        font-size: 3rem;
+        font-size: 2.5rem;
+        margin-left: 0; /* să nu fie decalat */
       }
       main {
         margin: 100px 10px 20px;
         padding: 10px;
       }
       #home h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
       }
       #home p {
         font-size: 1rem;
@@ -272,8 +275,18 @@
         height: 300px;
       }
       .sub-menu ul {
-        flex-direction: column;
+        flex-direction: column;  /* pe telefon: butoane pe verticală */
         align-items: center;
+      }
+      .sub-menu ul li {
+        width: 100%; /* fiecare buton să fie cât toată lățimea containerului */
+        margin-bottom: 10px;
+      }
+      .sub-menu ul li a {
+        width: 100%;
+        text-align: center;
+        font-size: 1rem;
+        padding: 14px;
       }
     }
   </style>
