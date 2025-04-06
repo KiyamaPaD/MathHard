@@ -218,15 +218,12 @@
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
-      justify-content: center; /* pe ecrane mari: centrat */
-    }
-    .sub-menu ul li {
-      /* Fără border sau background aici, doar container */
+      justify-content: center; /* default: centrat pe ecrane mici */
     }
     .sub-menu ul li a {
-      display: block;          /* Face link-ul un buton bloc */
+      display: block;
       text-decoration: none;
-      padding: 12px 20px;      /* padding mai generos pentru acces pe telefon */
+      padding: 12px 20px;
       border: 1px solid #FFD700;
       border-radius: 5px;
       color: #FFD700;
@@ -263,7 +260,6 @@
       }
       header .title {
         font-size: 2.5rem;
-        margin-left: 0; /* să nu fie decalat */
       }
       main {
         margin: 100px 10px 20px;
@@ -291,6 +287,13 @@
         text-align: center;
         font-size: 1rem;
         padding: 14px;
+      }
+    }
+    
+    /* Media Query pentru ecrane mai mari: butoanele la stânga */
+    @media (min-width: 769px) {
+      .sub-menu ul {
+        justify-content: flex-start; /* butoanele la stânga pe desktop */
       }
     }
   </style>
