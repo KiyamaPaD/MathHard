@@ -1,18 +1,1 @@
-[build]
-  publish = "public"  # directorul în care se află fișierele statice, ex. index.html, _headers etc.
 
-[[redirects]]
-  from = "http://*"
-  to = "https://:splat"
-  status = 301
-  force = true
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://trusted.cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'self'"
-    Referrer-Policy = "no-referrer-when-downgrade"
-    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
