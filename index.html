@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Meta SEO și informații suplimentare -->
+  <meta name="description" content="MathHard - lecții complete de matematică, de la învățământul primar până la nivel universitar, cu resurse interactive și animații.">
+  <meta name="keywords" content="Matematică, lecții, formule, teoreme, școală, liceu, facultate">
+  <meta name="author" content="Echipa MathHard">
+  <!-- Favicon (asigură-te că ai fișierul favicon.ico în același director sau modifică calea) -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <title>MathHard</title>
   <style>
     /* Reset global */
@@ -18,6 +24,12 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow-x: hidden;
       position: relative;
+      transition: background 0.3s, color 0.3s;
+    }
+    /* Stil pentru modul Light (dacă este activat) */
+    body.light-mode {
+      background: #fff;
+      color: #222;
     }
     
     /* Animație de fundal */
@@ -61,6 +73,28 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
+    }
+    /* Butonul de toggle pentru modul dark/light - poziționat în dreapta, discret */
+    header #themeToggle {
+      position: absolute;
+      right: 20px;
+      padding: 5px 10px;
+      border: 1px solid #FFD700;
+      background: transparent;
+      color: #FFD700;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    /* Câmpul de căutare, tot în header, sub forma unui input discret */
+    header #searchInput {
+      position: absolute;
+      right: 110px;
+      padding: 5px 10px;
+      border: 1px solid #FFD700;
+      border-radius: 3px;
+      background: transparent;
+      color: #FFD700;
+      font-size: 0.9rem;
     }
     
     /* Logo-ul – poziționat complet în stânga */
@@ -162,6 +196,8 @@
       background: rgba(0, 0, 0, 0.8);
       border: 2px solid #FFD700;
       border-radius: 10px;
+      position: relative;
+      z-index: 1;
     }
     
     /* Animație de fade-in pentru secțiuni */
@@ -210,18 +246,18 @@
       background: rgba(0, 0, 0, 0.9);
     }
     
-    /* Meniu subsecțiuni */
+    /* Meniu subsecțiuni - în interiorul unui <nav> semantic */
     .sub-menu {
       margin: 20px 0;
     }
-    .sub-menu ul {
+    .sub-menu nav ul {
       list-style: none;
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
       justify-content: center;
     }
-    .sub-menu ul li a {
+    .sub-menu nav ul li a {
       display: block;
       text-decoration: none;
       padding: 12px 20px;
@@ -231,13 +267,13 @@
       transition: background 0.3s, transform 0.3s;
       font-size: 1rem;
     }
-    .sub-menu ul li a:hover {
+    .sub-menu nav ul li a:hover {
       background: #FFD700;
       color: #000;
       transform: scale(1.05);
     }
     
-    /* Stil pentru iframe-uri: latime fixă, înălțime mărită */
+    /* Stil pentru iframe-uri: lățime fixă, înălțime mărită */
     iframe {
       width: 100%;
       height: 600px; /* Înălțime mărită pe desktop */
@@ -248,6 +284,38 @@
     }
     iframe:hover {
       transform: scale(1.02);
+    }
+    
+    /* Modal pentru Quiz */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .modal-content {
+      background: #222;
+      color: #FFD700;
+      padding: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal-content button {
+      margin-top: 15px;
+      padding: 5px 10px;
+      border: none;
+      background: #FFD700;
+      color: #000;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 5px;
     }
     
     /* Media Queries pentru dispozitive mobile */
@@ -262,6 +330,12 @@
       header .title {
         font-size: 2.5rem;
       }
+      header #themeToggle {
+        right: 10px;
+      }
+      header #searchInput {
+        right: 110px;
+      }
       main {
         margin: 100px 10px 20px;
         padding: 10px;
@@ -275,15 +349,15 @@
       iframe {
         height: 400px; /* Înălțime redusă pentru mobil */
       }
-      .sub-menu ul {
+      .sub-menu nav ul {
         flex-direction: column;
         align-items: center;
       }
-      .sub-menu ul li {
+      .sub-menu nav ul li {
         width: 100%;
         margin-bottom: 10px;
       }
-      .sub-menu ul li a {
+      .sub-menu nav ul li a {
         width: 100%;
         text-align: center;
         font-size: 1rem;
@@ -293,7 +367,7 @@
     
     /* Media Query pentru ecrane mai mari (PC): butoanele la stânga */
     @media (min-width: 769px) {
-      .sub-menu ul {
+      .sub-menu nav ul {
         justify-content: flex-start;
       }
     }
@@ -303,19 +377,26 @@
   <!-- Canvas-ul pentru animația de particule -->
   <canvas id="particles"></canvas>
   
+  <!-- Header-ul cu butoane de toggle și câmp de căutare adăugate -->
   <header>
-    <img src="LogoMathHard.jpeg" alt="MathHard Logo" class="logo">
+    <img src="LogoMathHard.jpeg" alt="Logo-ul MathHard" class="logo" aria-hidden="false">
     <div class="title">MathHard</div>
+    <!-- Câmpul de căutare din header -->
+    <input type="text" id="searchInput" placeholder="Caută lecții..." aria-label="Căutare lecții">
+    <!-- Toggle Dark/Light Mode -->
+    <button id="themeToggle" aria-label="Comută între modul întunecat și modul deschis">Light Mode</button>
   </header>
   
   <main>
     <!-- Secțiunea Home -->
-    <section id="home" class="visible">
-      <h1>Bine ai venit pe MathHard!</h1>
-      <!-- Efectul se aplică doar pe acest paragraf -->
+    <section id="home" class="visible" role="region" aria-labelledby="homeHeading">
+      <h1 id="homeHeading">Bine ai venit pe MathHard!</h1>
       <p class="glitch-effect glow-text" data-text="Toate lecțiile din matematică le puteți găsi pe acest site, structurate pe baza nivelului de utilizare și de dificultate. De la numerele naturale și ce este o mulțime, până la lecții interesante despre teoria numerelor (care se fac în facultate).">
         Toate lecțiile din matematică le puteți găsi pe acest site, structurate pe baza nivelului de utilizare și de dificultate. De la numerele naturale și ce este o mulțime, până la lecții interesante despre teoria numerelor (care se fac în facultate).
       </p>
+      <!-- Buton pentru a deschide Quiz-ul -->
+      <button id="openQuiz" style="padding:10px 20px; border: none; background: #FFD700; color:#000; cursor:pointer; border-radius:5px;">Începe Quiz-ul</button>
+      
       <div class="section">
         <h2>Formule / Teoreme Din Matematică</h2>
         <p>De la Suma lui Gauss, până la formule din Teoria Numerelor.</p>
@@ -331,69 +412,100 @@
     </section>
     
     <!-- Secțiunea Școala -->
-    <section id="scoala">
-      <h2>Școala (Clasele V-VIII)</h2>
+    <section id="scoala" role="region" aria-labelledby="scoalaHeading">
+      <h2 id="scoalaHeading">Școala (Clasele V-VIII)</h2>
       <p>Aici vei găsi resurse pentru clasele V-VIII.</p>
       <div class="sub-menu">
-        <ul>
-          <li><a href="Clasa_V.html" target="iframeScoala">Clasa a V-a</a></li>
-          <li><a href="Clasa_VI.html" target="iframeScoala">Clasa a VI-a</a></li>
-          <li><a href="Clasa_VII.html" target="iframeScoala">Clasa a VII-a</a></li>
-          <li><a href="Clasa_VIII.html" target="iframeScoala">Clasa a VIII-a</a></li>
-        </ul>
+        <nav aria-label="Meniu Școală">
+          <ul>
+            <li><a href="Clasa_V.html" target="iframeScoala">Clasa a V-a</a></li>
+            <li><a href="Clasa_VI.html" target="iframeScoala">Clasa a VI-a</a></li>
+            <li><a href="Clasa_VII.html" target="iframeScoala">Clasa a VII-a</a></li>
+            <li><a href="Clasa_VIII.html" target="iframeScoala">Clasa a VIII-a</a></li>
+          </ul>
+        </nav>
       </div>
-      <iframe name="iframeScoala"></iframe>
+      <iframe name="iframeScoala" title="Conținut Școală"></iframe>
     </section>
     
     <!-- Secțiunea Liceu -->
-    <section id="liceu">
-      <h2>Liceu (Clasele IX-XII)</h2>
+    <section id="liceu" role="region" aria-labelledby="liceuHeading">
+      <h2 id="liceuHeading">Liceu (Clasele IX-XII)</h2>
       <p>Aici vei găsi resurse pentru clasele IX-XII.</p>
       <div class="sub-menu">
-        <ul>
-          <li><a href="Clasa_IX.html" target="iframeLiceu">Clasa a IX-a</a></li>
-          <li><a href="Clasa_X.html" target="iframeLiceu">Clasa a X-a</a></li>
-          <li><a href="Clasa_XI.html" target="iframeLiceu">Clasa a XI-a</a></li>
-          <li><a href="Clasa_XII.html" target="iframeLiceu">Clasa a XII-a</a></li>
-        </ul>
+        <nav aria-label="Meniu Liceu">
+          <ul>
+            <li><a href="Clasa_IX.html" target="iframeLiceu">Clasa a IX-a</a></li>
+            <li><a href="Clasa_X.html" target="iframeLiceu">Clasa a X-a</a></li>
+            <li><a href="Clasa_XI.html" target="iframeLiceu">Clasa a XI-a</a></li>
+            <li><a href="Clasa_XII.html" target="iframeLiceu">Clasa a XII-a</a></li>
+          </ul>
+        </nav>
       </div>
-      <iframe name="iframeLiceu"></iframe>
+      <iframe name="iframeLiceu" title="Conținut Liceu"></iframe>
     </section>
     
     <!-- Secțiunea Facultate -->
-    <section id="facultate">
-      <h2>Facultate</h2>
+    <section id="facultate" role="region" aria-labelledby="facultateHeading">
+      <h2 id="facultateHeading">Facultate</h2>
       <p>Aici vei găsi resurse avansate pentru învățarea matematicii la nivel universitar.</p>
       <div class="sub-menu">
-        <ul>
-          <li><a href="facultate1.html" target="iframeFacultate">Teoria Numerelor</a></li>
-          <li><a href="facultate2.html" target="iframeFacultate">Analiza Complexa</a></li>
-        </ul>
+        <nav aria-label="Meniu Facultate">
+          <ul>
+            <li><a href="facultate1.html" target="iframeFacultate">Teoria Numerelor</a></li>
+            <li><a href="facultate2.html" target="iframeFacultate">Analiza Complexa</a></li>
+          </ul>
+        </nav>
       </div>
-      <iframe name="iframeFacultate"></iframe>
+      <iframe name="iframeFacultate" title="Conținut Facultate"></iframe>
     </section>
     
     <!-- Secțiunea Olimpiada -->
-    <section id="olimpiada">
-      <h2>Olimpiada (Clasele V-XII)</h2>
+    <section id="olimpiada" role="region" aria-labelledby="olimpiadaHeading">
+      <h2 id="olimpiadaHeading">Olimpiada (Clasele V-XII)</h2>
       <p>Aici vei găsi probleme și subiecte de pregătire pentru olimpiadele de matematică destinate claselor V până la XII.</p>
       <div class="sub-menu">
-        <ul>
-          <li><a href="olimpiada5.html" target="iframeOlimpiada">Clasa a V-a</a></li>
-          <li><a href="olimpiada6.html" target="iframeOlimpiada">Clasa a VI-a</a></li>
-          <li><a href="olimpiada7.html" target="iframeOlimpiada">Clasa a VII-a</a></li>
-          <li><a href="olimpiada8.html" target="iframeOlimpiada">Clasa a VIII-a</a></li>
-          <li><a href="olimpiada9.html" target="iframeOlimpiada">Clasa a IX-a</a></li>
-          <li><a href="olimpiada10.html" target="iframeOlimpiada">Clasa a X-a</a></li>
-          <li><a href="olimpiada11.html" target="iframeOlimpiada">Clasa a XI-a</a></li>
-          <li><a href="olimpiada12.html" target="iframeOlimpiada">Clasa a XII-a</a></li>
-        </ul>
+        <nav aria-label="Meniu Olimpiadă">
+          <ul>
+            <li><a href="olimpiada5.html" target="iframeOlimpiada">Clasa a V-a</a></li>
+            <li><a href="olimpiada6.html" target="iframeOlimpiada">Clasa a VI-a</a></li>
+            <li><a href="olimpiada7.html" target="iframeOlimpiada">Clasa a VII-a</a></li>
+            <li><a href="olimpiada8.html" target="iframeOlimpiada">Clasa a VIII-a</a></li>
+            <li><a href="olimpiada9.html" target="iframeOlimpiada">Clasa a IX-a</a></li>
+            <li><a href="olimpiada10.html" target="iframeOlimpiada">Clasa a X-a</a></li>
+            <li><a href="olimpiada11.html" target="iframeOlimpiada">Clasa a XI-a</a></li>
+            <li><a href="olimpiada12.html" target="iframeOlimpiada">Clasa a XII-a</a></li>
+          </ul>
+        </nav>
       </div>
-      <iframe name="iframeOlimpiada"></iframe>
+      <iframe name="iframeOlimpiada" title="Conținut Olimpiadă"></iframe>
     </section>
   </main>
   
+  <!-- Modal-ul pentru Quiz -->
+  <div class="modal" id="quizModal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-labelledby="quizTitle">
+      <h2 id="quizTitle">Quiz Matematic</h2>
+      <p id="quizQuestion">Cât este 2 + 2?</p>
+      <!-- Pentru exemplificare, un singur set de opțiuni -->
+      <div id="quizOptions">
+        <label><input type="radio" name="quizAnswer" value="3"> 3</label><br>
+        <label><input type="radio" name="quizAnswer" value="4"> 4</label><br>
+        <label><input type="radio" name="quizAnswer" value="5"> 5</label>
+      </div>
+      <button id="submitQuiz">Verifică răspunsul</button>
+      <p id="quizFeedback" style="margin-top:10px;"></p>
+      <button id="closeQuiz" style="margin-top:15px;">Închide Quiz-ul</button>
+    </div>
+  </div>
+  
+  <!-- Footer semantic pentru informații adiționale -->
+  <footer role="contentinfo" style="text-align:center; padding: 20px; background: #000; color: #FFD700;">
+    <p>&copy; 2025 MathHard. Toate drepturile rezervate.</p>
+  </footer>
+  
   <script>
+    // Funcționalitatea de particule (rămâne neschimbată)
     const canvas = document.getElementById('particles');
     const ctx = canvas.getContext('2d');
     let particlesArray = [];
@@ -448,6 +560,7 @@
     }
     animate();
     
+    // Functie pentru dezvăluirea secțiunilor la scroll (rămâne neschimbată)
     function revealSections() {
       const sections = document.querySelectorAll('section');
       const triggerBottom = window.innerHeight * 0.85;
@@ -459,6 +572,61 @@
       });
     }
     window.addEventListener('scroll', revealSections);
+    
+    // Toggle Dark/Light Mode
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', function(){
+      document.body.classList.toggle('light-mode');
+      // Actualizează textul butonului, fără a afecta stilul de bază
+      themeToggle.textContent = document.body.classList.contains('light-mode') ? 'Dark Mode' : 'Light Mode';
+    });
+    
+    // Funcționalitatea câmpului de căutare
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function(){
+      const query = this.value.toLowerCase();
+      // Căutăm doar în titlurile secțiunilor (h2 din secțiuni)
+      document.querySelectorAll('section h2').forEach(h2 => {
+        if (h2.textContent.toLowerCase().indexOf(query) !== -1) {
+          h2.parentElement.style.display = 'block';
+        } else {
+          h2.parentElement.style.display = 'none';
+        }
+      });
+    });
+    
+    // Funcționalitatea Quiz-ului
+    const quizModal = document.getElementById('quizModal');
+    const openQuiz = document.getElementById('openQuiz');
+    const closeQuiz = document.getElementById('closeQuiz');
+    const submitQuiz = document.getElementById('submitQuiz');
+    const quizFeedback = document.getElementById('quizFeedback');
+    
+    openQuiz.addEventListener('click', function(){
+      quizModal.style.display = 'flex';
+      quizModal.setAttribute('aria-hidden', 'false');
+      quizFeedback.textContent = '';
+      // Resetează selecția, dacă este cazul
+      document.querySelectorAll('input[name="quizAnswer"]').forEach(input => input.checked = false);
+    });
+    
+    closeQuiz.addEventListener('click', function(){
+      quizModal.style.display = 'none';
+      quizModal.setAttribute('aria-hidden', 'true');
+    });
+    
+    submitQuiz.addEventListener('click', function(){
+      const selected = document.querySelector('input[name="quizAnswer"]:checked');
+      if(selected) {
+        if(selected.value === "4") {
+          quizFeedback.textContent = "Corect!";
+        } else {
+          quizFeedback.textContent = "Greșit. Încearcă din nou!";
+        }
+      } else {
+        quizFeedback.textContent = "Te rog selectează un răspuns.";
+      }
+    });
   </script>
 </body>
 </html>
