@@ -36,11 +36,8 @@ The goal is simple: make mathematics feel more motivating, more organized, and m
 
 ## Screenshots
 
-![Home](./screenshots/home.png)
-![Lessons](./screenshots/lessons.png)
-![Problems](./screenshots/problems.png)
-![Profile](./screenshots/profile.png)
-![Exam Mode](./screenshots/exam.png)
+![Home](./img/Screenshot_6.png)
+![Lessons](./img/Screenshot_7.png)
 
 ---
 
