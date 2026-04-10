@@ -6898,6 +6898,16 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
     setTimeout(() => { MH_render(content); }, 0);
   }
 
+  function setLessonOnlyActionsVisible(show) {
+    const quizBtn = document.getElementById("quizBtn");
+    const goBtn = document.getElementById("goProblemsBtn");
+    const undBtn = document.getElementById("understoodBtn");
+
+    if (quizBtn) quizBtn.style.display = show ? "inline-flex" : "none";
+    if (goBtn) goBtn.style.display = show ? "inline-flex" : "none";
+    if (undBtn) undBtn.style.display = show ? "inline-flex" : "none";
+  }
+
   function openViewer(item){
 
     if (isGuestContentLocked()) {
@@ -6909,6 +6919,9 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
       showGlobalExamLockMessage();
       return;
     }
+
+    setLessonOnlyActionsVisible(false);
+    stopLessonTimer();
 
     // opresc instanța anterioară (dacă există)
     try{ if (window.MH_NumberLinePy) MH_NumberLinePy.unmount(WIDGET_ID); }catch(e){}
@@ -7068,7 +7081,10 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
 
       const quizBtn = document.getElementById("quizBtn");
       quizBtn.style.display = "inline-flex";
+
       mhUpdateLessonDrawerButtons();
+      setLessonOnlyActionsVisible(true);
+
       quizBtn.onclick = ()=> openLessonQuiz(item);
 
       const sentinel = content.querySelector('#bottomSentinel');
@@ -7153,8 +7169,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
     const content=document.getElementById("viewContent"); content.innerHTML = (LANG==='ro'?TIPS.body_ro:TIPS.body_en);
     setTimeout(()=>{ MH_render(content); },0);
 
-    document.getElementById("goProblemsBtn").style.display="none";
-    document.getElementById("understoodBtn").style.display="none";
+    setLessonOnlyActionsVisible(false);
     stopLessonTimer();
 
     document.getElementById("drawer").classList.add("open");
@@ -8445,8 +8460,7 @@ function openExam(exam){
   const list = document.createElement("div");
   content.appendChild(list);
 
-  document.getElementById("goProblemsBtn").style.display = "none";
-  document.getElementById("understoodBtn").style.display = "none";
+  setLessonOnlyActionsVisible(false);
 
   const hoursSel = document.getElementById("examHours");
   const startBtn = document.getElementById("startExam");
