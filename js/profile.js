@@ -1,7 +1,7 @@
 import { supabase } from "./supabase-client.js";
 
 globalThis.supabase = supabase;
-console.log("PROFILE.JS LOADED v4");
+console.log("PROFILE.JS LOADED v5");
 
 const $ = (id) => document.getElementById(id);
 
@@ -556,7 +556,7 @@ function applyProfileStaticTexts() {
   const logoSlogan = document.querySelector(".logo-slogan");
   if (logoSlogan) logoSlogan.textContent = t("logo_slogan");
 
-  const backHomeBtn = document.querySelector('.header-actions a[href="/index.html"]');
+  const backHomeBtn = $("backHomeBtn");
   if (backHomeBtn) backHomeBtn.textContent = t("back_home");
 
   const kicker = document.querySelector(".profile-kicker");
