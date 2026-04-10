@@ -6902,10 +6902,23 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
     const quizBtn = document.getElementById("quizBtn");
     const goBtn = document.getElementById("goProblemsBtn");
     const undBtn = document.getElementById("understoodBtn");
+    const timerBox = document.getElementById("lessonTimerBox");
+    const timerText = document.getElementById("lessonTimer");
 
     if (quizBtn) quizBtn.style.display = show ? "inline-flex" : "none";
     if (goBtn) goBtn.style.display = show ? "inline-flex" : "none";
-    if (undBtn) undBtn.style.display = show ? "inline-flex" : "none";
+
+    if (undBtn) {
+      undBtn.style.display = show ? "inline-flex" : "none";
+      undBtn.disabled = true;
+      undBtn.textContent = LANG === "ro"
+        ? "👍 Ai înțeles?"
+        : "👍 Understood?";
+      undBtn.onclick = null;
+    }
+
+    if (timerBox) timerBox.style.display = "none";
+    if (timerText) timerText.textContent = "01:00";
   }
 
   function openViewer(item){
@@ -6939,6 +6952,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
     stopLessonTimer();
 
     if(isProblem){
+      setLessonOnlyActionsVisible(false);
       renderProblem(item, content);
     } else {
       const html=buildLessonHTML(item);
