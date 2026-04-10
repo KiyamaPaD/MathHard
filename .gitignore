@@ -1,0 +1,7 @@
+# VS
+.vs/
+
+# fișiere private
+includes/env.php
+legacy.php/admin_login.php
+legacy.php/get_problems.php

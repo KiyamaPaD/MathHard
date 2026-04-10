@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title id="profilePageTitle" data-i18n="profile_page_title">MathHard — Profilul tău</title>
+
+  <meta
+    id="profileMetaDescription"
+    name="description"
+    content="Profilul tău MathHard — progres, XP, lecții, probleme și examene."
+    data-i18n-content="profile_meta_description"
+  />
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/profile.css" />
+</head>
+<body class="mh-app">
+  <header>
+    <div class="bar">
+      <div class="header-left">
+        <a href="/index.html" class="logo" style="text-decoration:none;color:inherit;">
+          <img
+            src="/img/mathhard-logo.png"
+            alt="MathHard logo"
+            class="logo-img"
+            data-i18n-alt="logo_alt"
+          />
+          <div class="logo-text-block">
+            <span class="logo-title">MathHard</span>
+            <span class="logo-slogan" data-i18n="profile_logo_slogan">Profilul tău</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="header-right">
+        <div class="header-actions">
+          <a href="/index.html" class="btn small" data-i18n="profile_back_home">⬅️ Înapoi acasă</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="profile-page">
+    <section class="profile-hero">
+      <div class="profile-hero-left">
+        <div class="profile-avatar" id="profileAvatar">M</div>
+
+        <div>
+          <div class="profile-kicker" data-i18n="profile_kicker">MathHard Account</div>
+          <h1 class="profile-name" id="profileName">Vizitator</h1>
+          <p class="profile-email" id="profileEmail">Nu ești logat încă.</p>
+
+          <div class="profile-badges">
+            <span class="profile-badge" data-i18n="profile_badge_lessons">📘 Lecții</span>
+            <span class="profile-badge" data-i18n="profile_badge_problems">🧩 Probleme</span>
+            <span class="profile-badge" data-i18n="profile_badge_xp">⚡ XP</span>
+            <span class="profile-badge" data-i18n="profile_badge_exams">🏆 Examene</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-hero-right">
+        <div class="profile-auth-box">
+          <div class="profile-auth-title" data-i18n="profile_auth_title">Contul tău</div>
+          <p class="profile-auth-text" id="authText">
+            Creează-ți cont sau intră în contul tău ca să-ți păstrezi progresul.
+          </p>
+
+          <div class="profile-auth-form" id="authForm">
+            <label class="profile-field">
+              <span data-i18n="profile_field_email">Email</span>
+              <input
+                type="email"
+                id="authEmail"
+                placeholder="email@example.com"
+                data-i18n-placeholder="profile_field_email_placeholder"
+              />
+            </label>
+
+            <label class="profile-field">
+              <span data-i18n="profile_field_password">Parolă</span>
+              <input
+                type="password"
+                id="authPassword"
+                placeholder="Parola ta"
+                data-i18n-placeholder="profile_field_password_placeholder"
+              />
+            </label>
+
+            <label class="profile-field">
+              <span data-i18n="profile_field_display_name_signup">Nume afișat (doar pentru signup)</span>
+              <input
+                type="text"
+                id="authDisplayName"
+                placeholder="ex: Cristi"
+                data-i18n-placeholder="profile_field_display_name_signup_placeholder"
+              />
+            </label>
+
+            <div class="profile-auth-actions">
+              <button class="btn" id="loginBtn" type="button" data-i18n="profile_login_btn">🔑 Login</button>
+              <button class="btn" id="signupBtn" type="button" data-i18n="profile_signup_btn">✨ Sign up</button>
+            </div>
+          </div>
+
+          <div class="profile-user-box" id="profileUserBox" style="display:none;">
+            <div class="profile-user-row">
+              <span class="profile-user-label" data-i18n="profile_user_status_label">Status:</span>
+              <span id="profileUserStatus">Logat</span>
+            </div>
+
+            <div class="profile-auth-actions" style="margin-top:10px;">
+              <button class="btn" id="logoutBtn" type="button" data-i18n="profile_logout_btn">🚪 Logout</button>
+            </div>
+          </div>
+
+          <p class="profile-auth-status" id="authStatus"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-stats-grid">
+      <article class="profile-stat-card">
+        <div class="profile-stat-label" data-i18n="profile_stat_solved">✅ Probleme rezolvate</div>
+        <div class="profile-stat-value" id="profileSolved">0</div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-label" data-i18n="profile_stat_learned">📘 Lecții învățate</div>
+        <div class="profile-stat-value" id="profileLearned">0</div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-label" data-i18n="profile_stat_passed">🏆 Examene promovate</div>
+        <div class="profile-stat-value" id="profilePassed">0</div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-label" data-i18n="profile_stat_xp">⚡ XP total</div>
+        <div class="profile-stat-value" id="profileXP">0</div>
+      </article>
+    </section>
+
+    <section class="profile-panels">
+      <article class="profile-panel">
+        <h2 data-i18n="profile_account_data_title">👤 Date cont</h2>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_info_display_name">Nume afișat</span>
+            <strong id="profileInfoName">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_info_email">Email</span>
+            <strong id="profileInfoEmail">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_info_confirmed">Email confirmat</span>
+            <strong id="profileInfoConfirmed">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_info_provider">Provider</span>
+            <strong id="profileInfoProvider">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_info_user_id">User ID</span>
+            <strong id="profileInfoId">—</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-panel">
+        <h2 data-i18n="profile_progress_summary_title">📈 Rezumat progres</h2>
+
+        <div class="profile-progress-block">
+          <div class="profile-progress-head">
+            <span data-i18n="profile_progress_lessons">Lecții învățate</span>
+            <strong id="profileLessonsProgressText">0 / 0</strong>
+          </div>
+          <div class="profile-progress-bar">
+            <div class="profile-progress-fill" id="profileLessonsProgressBar"></div>
+          </div>
+        </div>
+
+        <div class="profile-progress-block">
+          <div class="profile-progress-head">
+            <span data-i18n="profile_progress_problems">Probleme rezolvate</span>
+            <strong id="profileProblemsProgressText">0 / 0</strong>
+          </div>
+          <div class="profile-progress-bar">
+            <div class="profile-progress-fill" id="profileProblemsProgressBar"></div>
+          </div>
+        </div>
+
+        <div class="profile-progress-block">
+          <div class="profile-progress-head">
+            <span data-i18n="profile_progress_exams">Examene promovate</span>
+            <strong id="profileExamsProgressText">0 / 0</strong>
+          </div>
+          <div class="profile-progress-bar">
+            <div class="profile-progress-fill" id="profileExamsProgressBar"></div>
+          </div>
+        </div>
+
+        <div class="profile-info-row" style="margin-top:14px;">
+          <span class="profile-info-label" data-i18n="profile_avg_xp">XP mediu / problemă rezolvată</span>
+          <strong id="profileAvgXpText">0</strong>
+        </div>
+      </article>
+
+      <article class="profile-panel">
+        <h2 data-i18n="profile_detailed_stats_title">📊 Statistici detaliate</h2>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_solved">Probleme rezolvate</span>
+            <strong id="detailProblemsSolved">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_wrong">Probleme greșite</span>
+            <strong id="detailProblemsWrong">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_unseen">Probleme nerezolvate</span>
+            <strong id="detailProblemsUnseen">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_lessons_learned">Lecții învățate</span>
+            <strong id="detailLessonsLearned">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_lessons_unlearned">Lecții neînvățate</span>
+            <strong id="detailLessonsUnlearned">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_exams_passed">Examene promovate</span>
+            <strong id="detailExamsPassed">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_exams_unpassed">Examene încercate, dar nepromovate</span>
+            <strong id="detailExamsUnpassed">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_detail_exams_unattempted">Examene neîncercate</span>
+            <strong id="detailExamsUnattempted">0</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-panel">
+        <h2 data-i18n="profile_next_title">🧭 Ce urmează</h2>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_next_lesson">Următoarea lecție</span>
+            <strong id="nextLessonText">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_next_chapter">Următorul capitol</span>
+            <strong id="nextChapterText">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_next_exam">Următorul examen recomandat</span>
+            <strong id="nextExamText">—</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-panel">
+        <h2 data-i18n="profile_recent_activity_title">🕘 Activitate recentă</h2>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_recent_lesson">Ultima lecție</span>
+            <strong id="profileRecentLesson">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_recent_problem">Ultima problemă rezolvată</span>
+            <strong id="profileRecentProblem">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_recent_exam">Ultimul examen</span>
+            <strong id="profileRecentExam">—</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-panel">
+        <h2 data-i18n="profile_extra_exam_stats_title">🧪 Extra stats examene</h2>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_best_exam">Cel mai bun examen</span>
+            <strong id="profileBestExam">—</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_exam_attempts">Încercări totale la examene</span>
+            <strong id="profileExamAttempts">0</strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span class="profile-info-label" data-i18n="profile_last_exam_score">Ultimul scor de examen</span>
+            <strong id="profileExamLastScore">—</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-panel profile-panel-full">
+        <h2 data-i18n="profile_settings_title">🛠 Cont & setări profil</h2>
+        <p class="profile-muted" data-i18n="profile_settings_text">
+          Aici îți poți modifica numele afișat, poza de profil și parola contului tău.
+        </p>
+
+        <div class="profile-edit-form">
+          <label class="profile-field">
+            <span data-i18n="profile_edit_display_name">Nume afișat</span>
+            <input
+              type="text"
+              id="editDisplayName"
+              placeholder="ex: Cristi"
+              data-i18n-placeholder="profile_edit_display_name_placeholder"
+            />
+          </label>
+
+          <label class="profile-field">
+            <span data-i18n="profile_edit_avatar_url">Avatar URL (opțional)</span>
+            <input
+              type="text"
+              id="editAvatarUrl"
+              placeholder="https://..."
+              data-i18n-placeholder="profile_edit_avatar_url_placeholder"
+            />
+          </label>
+
+          <label class="profile-field">
+            <span data-i18n="profile_edit_new_password">Parolă nouă</span>
+            <input
+              type="password"
+              id="newPassword"
+              placeholder="Noua parolă"
+              data-i18n-placeholder="profile_edit_new_password_placeholder"
+            />
+          </label>
+
+          <div class="profile-auth-actions">
+            <button class="btn" id="saveProfileBtn" type="button" data-i18n="profile_save_btn">
+              💾 Salvează profilul
+            </button>
+
+            <button class="btn" id="resetProfileBtn" type="button" data-i18n="profile_reset_btn">
+              ♻️ Reset profil
+            </button>
+
+            <button class="btn" id="changePasswordBtn" type="button" data-i18n="profile_change_password_btn">
+              🔒 Schimbă parola
+            </button>
+          </div>
+
+          <div class="profile-auth-actions">
+            <button class="btn danger" id="deleteAccountBtn" type="button" data-i18n="profile_delete_account_btn">
+              🗑 Șterge contul complet
+            </button>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script defer src="/js/data.js"></script>
+  <script type="module" src="/js/profile.js"></script>
+</body>
+</html>

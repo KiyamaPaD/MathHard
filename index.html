@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title id="pageTitle" data-i18n="page_title">MathHard — lecții & probleme</title>
+
+  <!-- SEO / Social -->
+  <meta
+    id="metaDescription"
+    name="description"
+    content="MathHard: lecții și probleme de matematică — exersează, învață și promovează (EN/BAC/Olimpiadă)."
+    data-i18n-content="meta_description"
+  />
+  <meta
+    id="ogTitle"
+    property="og:title"
+    content="MathHard — lecții & probleme"
+    data-i18n-content="og_title"
+  />
+  <meta
+    id="ogDescription"
+    property="og:description"
+    content="Lecții și probleme de matematică — EN/BAC/Olimpiadă."
+    data-i18n-content="og_description"
+  />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/img/preview.png" />
+  <meta name="theme-color" content="#0b1020" />
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+  <script defer src="js/katex-init.js"></script>
+</head>
+<body>
+  <!-- LOADING SCREEN MATHHARD -->
+  <div id="math-loader">
+    <div class="loader-content">
+      <div class="loader-logo">MathHard</div>
+      <div class="loader-subtitle" data-i18n="loader_subtitle">
+        Exersezi matematică, strângi XP și urci de la lecții de bază până la olimpiadă și BAC.
+      </div>
+      <div class="loader-equations">
+        <span>\(\lim_{x\to 0}\frac{\sin x}{x}=1\)</span>
+        <span>\(a^2+b^2=c^2\)</span>
+        <span>\(\sum_{k=1}^n k = \frac{n(n+1)}{2}\)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR PE LECȚIE / FOCUS -->
+  <div class="lesson-progress-bar" id="lessonProgressBar" style="display:none">
+    <div id="lesson-progress"></div>
+  </div>
+
+  <header>
+    <div class="bar">
+      <!-- STÂNGA: logo + slogan + search -->
+      <div class="header-left">
+        <div class="logo">
+          <img
+            src="/img/mathhard-logo.png"
+            alt="MathHard logo"
+            class="logo-img"
+            data-i18n-alt="logo_alt"
+          />
+          <div class="logo-text-block">
+            <span class="logo-title">MathHard</span>
+            <span class="logo-slogan" data-i18n="logo_slogan">Învață. Exersează. Reușește.</span>
+          </div>
+        </div>
+
+        <div class="search">
+          🔎
+          <input
+            id="q"
+            placeholder="Caută… / Search…"
+            data-i18n-placeholder="search_placeholder"
+          />
+        </div>
+      </div>
+
+      <!-- DREAPTA: contoare + butoane -->
+      <div class="header-right">
+        <div class="header-stats">
+          <div
+            class="counter"
+            title="Probleme rezolvate / Problems solved"
+            data-i18n-title="counter_solved_title"
+          >
+            ✅ <span id="solvedCount">0</span>
+          </div>
+          <div
+            class="counter"
+            title="Lecții învățate / Lessons learned"
+            data-i18n-title="counter_learned_title"
+          >
+            📘 <span id="learnedCount">0</span>
+          </div>
+          <div
+            class="counter"
+            title="Examene promovate / Exams passed"
+            data-i18n-title="counter_exams_title"
+          >
+            🏆 <span id="examsCount">0</span>
+          </div>
+          <div
+            class="counter"
+            title="XP total (doar probleme normale)"
+            data-i18n-title="counter_xp_title"
+          >
+            ⚡ <span id="xpTotalHeader">0</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn small" id="infoBtn" data-i18n="btn_info">ℹ️ Dificultăți &amp; Contoare</button>
+          <button class="btn small" id="aboutBtn" data-i18n="btn_about">👤 About me</button>
+          <button class="btn small" id="langBtn">🌐 RO/EN</button>
+          <button class="btn small" id="focusBtn" data-i18n="btn_focus">🎯 Focus Mode</button>
+          <button class="btn small" id="themeBtn" data-i18n="btn_theme">🌙 Dark</button>
+          <a class="btn small" id="profileBtn" href="/profile.html" data-i18n="btn_profile">📊 Profilul tău</a>
+          <button class="btn small" id="adminBtn" data-i18n="btn_admin">🛠 Admin</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip" id="tipText" data-i18n-html="tip_text">
+      💡 Pentru a bifa o lecție: derulează până jos <b>și</b> așteaptă să se termine timerul de 1 minut.
+    </div>
+  </header>
+
+  <!-- HERO / SLOGAN INTERACTIV -->
+  <section class="hero" id="hero">
+    <div class="hero-text">
+      <div class="hero-mini-label" id="heroMiniLabel" data-i18n="hero_mini_label">
+        MathHard • antrenament serios, ton prietenos
+      </div>
+
+      <h1 id="heroTitle">
+        <span data-i18n="hero_title_before">Construiește-ți</span>
+        <span
+          class="mh-tip"
+          id="heroXpTip"
+          data-tip="XP = experiență, nu note 😊"
+          data-i18n-title="hero_xp_tip"
+        >XP-ul</span>
+        <span data-i18n="hero_title_after">de matematică, lecție cu lecție.</span>
+      </h1>
+
+      <p id="heroParagraph" data-i18n-html="hero_paragraph">
+        De la clasele mici până la olimpiadă, examene și cercetare: un singur loc în care
+        <b>înveți teoria</b>, <b>rezolvi probleme</b> și <b>vezi matematica „în viață”</b>.
+      </p>
+
+      <div class="hero-highlight">
+        <span id="heroHighlightLabel" data-i18n="hero_highlight_label">🎯 Azi exersezi:</span>
+        <span class="hero-dynamic" id="heroDynamic" data-i18n="hero_dynamic_default">
+          lecții clare, cu exemple
+        </span>
+      </div>
+
+      <div class="hero-tag-row">
+        <span class="hero-tag" id="heroTag1" data-i18n="hero_tag_1">📘 Lecții structurate</span>
+        <span class="hero-tag" id="heroTag2" data-i18n="hero_tag_2">🧩 Probleme de școală & olimpiadă</span>
+        <span class="hero-tag" id="heroTag3" data-i18n="hero_tag_3">🔬 Cercetare explicată simplu</span>
+        <span class="hero-tag" id="heroTag4" data-i18n="hero_tag_4">🕰 Povești din istoria matematicii</span>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-visual-blur"></div>
+      <div class="sphere">
+        <div class="sphere-glow"></div>
+        <div class="hero-orbit-dots"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MH MISSION HUB -->
+  <section class="mh-hub" id="mhHub">
+    <div class="mh-hub-inner">
+      <div class="mh-hub-left">
+        <div class="mh-hub-label" id="hubLabel" data-i18n="hub_label">
+          🔥 Antrenamentul de azi
+        </div>
+        <h2 class="mh-hub-title" id="hubTitle" data-i18n="hub_title">
+          15–20 de minute în care chiar simți progres.
+        </h2>
+        <p class="mh-hub-text" id="hubText" data-i18n="hub_text">
+          Alege cum vrei să începi: continuă lecția începută, rezolvă un set mic de
+          probleme sau intră direct într-un mini-examen.
+        </p>
+
+        <div class="mh-hub-mini">
+          <span id="hubMiniStatLessons" data-i18n="hub_mini_lessons">📘 0 lecții bifate (total)</span>
+          <span>•</span>
+          <span id="hubMiniStatProblems" data-i18n="hub_mini_problems">🧩 0 probleme rezolvate (total)</span>
+        </div>
+      </div>
+
+      <div class="mh-hub-right">
+        <button class="hub-cta" id="hubLessonBtn">
+          <span class="hub-cta-title" id="hubLessonTitle" data-i18n="hub_lesson_title">▶️ Continuă lecțiile</span>
+          <span class="hub-cta-sub" id="hubLessonSub" data-i18n="hub_lesson_sub">te duce la tab-ul de lecții</span>
+        </button>
+
+        <button class="hub-cta" id="hubDrillBtn">
+          <span class="hub-cta-title" id="hubDrillTitle" data-i18n="hub_drill_title">⚡ 5 probleme rapide</span>
+          <span class="hub-cta-sub" id="hubDrillSub" data-i18n="hub_drill_sub">antrenament direct pe probleme</span>
+        </button>
+
+        <button class="hub-cta" id="hubExamBtn">
+          <span class="hub-cta-title" id="hubExamTitle" data-i18n="hub_exam_title">🏆 Mini-examen</span>
+          <span class="hub-cta-sub" id="hubExamSub" data-i18n="hub_exam_sub">intră în seturile de examene</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mh-hub-progress">
+      <div class="mh-hub-progress-label" id="hubProgressLabel" data-i18n="hub_progress_label">
+        🎯 Ținta de acum: 1 lecție + 5 probleme (poți să-ți schimbi ținta tu)
+      </div>
+      <div class="mh-hub-progress-bar">
+        <i id="hubProgressInner"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- MH ROADMAP -->
+  <section class="mh-section mh-roadmap" id="mhRoadmap">
+    <div class="mh-section-head">
+      <div>
+        <h2 data-i18n="roadmap_title">🗺️ Parcursul tău la matematică</h2>
+        <p data-i18n="roadmap_subtitle">Alegi etapa care te interesează și îți filtrez automat conținutul.</p>
+      </div>
+      <button class="btn small mh-roadmap-reset" type="button" data-i18n="roadmap_reset">
+        ♻️ Reset filtre
+      </button>
+    </div>
+
+    <div class="mh-roadmap-grid">
+      <article class="mh-roadmap-card" data-mh-tag="V" data-mh-tab="lessons">
+        <div class="mh-roadmap-pill" data-i18n="roadmap_card_1_pill">Fundamente</div>
+        <h3 data-i18n="roadmap_card_1_title">Clasele V–VIII</h3>
+        <p data-i18n="roadmap_card_1_text">Bază solidă: numere, fracții, ecuații simple, geometrie de bază.</p>
+        <span class="mh-roadmap-cta" data-i18n="roadmap_card_1_cta">📘 Vezi lecții de gimnaziu</span>
+      </article>
+
+      <article class="mh-roadmap-card" data-mh-tag="EN" data-mh-tab="exams">
+        <div class="mh-roadmap-pill" data-i18n="roadmap_card_2_pill">Examene</div>
+        <h3 data-i18n="roadmap_card_2_title">Evaluare Națională</h3>
+        <p data-i18n="roadmap_card_2_text">Seturi EN organizate, bune de simulare rapidă.</p>
+        <span class="mh-roadmap-cta" data-i18n="roadmap_card_2_cta">📑 Intră pe EN</span>
+      </article>
+
+      <article class="mh-roadmap-card" data-mh-tag="BAC" data-mh-tab="exams">
+        <div class="mh-roadmap-pill" data-i18n="roadmap_card_3_pill">Examene</div>
+        <h3 data-i18n="roadmap_card_3_title">Bacalaureat</h3>
+        <p data-i18n="roadmap_card_3_text">Recapitulare pentru BAC: algebră, analiză, probleme tipice.</p>
+        <span class="mh-roadmap-cta" data-i18n="roadmap_card_3_cta">🏆 Intră pe BAC</span>
+      </article>
+
+      <article class="mh-roadmap-card" data-mh-chip="olymp" data-mh-tab="problems">
+        <div class="mh-roadmap-pill" data-i18n="roadmap_card_4_pill">Olimpiadă</div>
+        <h3 data-i18n="roadmap_card_4_title">Probleme de concurs</h3>
+        <p data-i18n="roadmap_card_4_text">Combinatorică, numere, geometrie mai „hard”.</p>
+        <span class="mh-roadmap-cta" data-i18n="roadmap_card_4_cta">🏅 Probleme de olimpiadă</span>
+      </article>
+
+      <article class="mh-roadmap-card" data-mh-chip="research" data-mh-tab="research">
+        <div class="mh-roadmap-pill" data-i18n="roadmap_card_5_pill">Level secret</div>
+        <h3 data-i18n="roadmap_card_5_title">Cercetare & facultate</h3>
+        <p data-i18n="roadmap_card_5_text">Collatz, serii de puteri, topologie, analiză funcțională.</p>
+        <span class="mh-roadmap-cta" data-i18n="roadmap_card_5_cta">🔬 Lecții de research</span>
+      </article>
+    </div>
+  </section>
+
+  <!-- MH DAILY BOSS FIGHT -->
+  <section class="mh-section mh-boss" id="mhBoss">
+    <div class="mh-boss-main">
+      <div class="mh-boss-text">
+        <h2 data-i18n="boss_title">🧠 Daily Boss Fight</h2>
+        <p data-i18n="boss_text">
+          Un mini-antrenament cu probleme mixte. Bun de făcut când nu știi de unde să începi.
+        </p>
+        <div class="mh-boss-meta">
+          <span data-i18n="boss_meta_1">⏱ ~10–15 minute</span>
+          <span data-i18n="boss_meta_2">⚡ XP bonus moral (nu se calculează încă, doar te motivează 🙂)</span>
+        </div>
+        <div class="mh-boss-actions">
+          <button class="btn" type="button" id="mhBossProblemsBtn" data-i18n="boss_btn_problems">
+            🎯 Începe cu probleme mixte
+          </button>
+          <button class="btn small ghost" type="button" id="mhBossExamsBtn" data-i18n="boss_btn_exams">
+            📑 Deschide seturile de examene
+          </button>
+        </div>
+      </div>
+
+      <div class="mh-boss-side">
+        <div>
+          <div class="mh-boss-chip-row">
+            <span class="mh-boss-chip" data-i18n="boss_chip_1">Algebră</span>
+            <span class="mh-boss-chip" data-i18n="boss_chip_2">Geometrie</span>
+            <span class="mh-boss-chip" data-i18n="boss_chip_3">Fracții</span>
+            <span class="mh-boss-chip" data-i18n="boss_chip_4">Divizibilitate</span>
+          </div>
+        </div>
+        <div class="mh-boss-streak">
+          🔥 <span data-i18n="boss_streak_label">Streak-ul tău:</span>
+          <span id="mhBossStreak" data-i18n="boss_streak_value">0 zile la rând (deocamdată static)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MH RADAR -->
+  <section class="mh-section mh-radar" id="mhRadar">
+    <div class="mh-section-head">
+      <div>
+        <h2 data-i18n="radar_title">📊 „Radarul” tău de matematică</h2>
+        <p data-i18n="radar_subtitle">Vezi rapid în ce zone ai chef să mai lucrezi azi.</p>
+      </div>
+    </div>
+
+    <div class="mh-radar-grid">
+      <button class="mh-radar-item" type="button" data-mh-tag="algebra" data-mh-tab="problems">
+        <div class="mh-radar-top">
+          <span class="mh-radar-label" data-i18n="radar_card_1_label">Aritmetică & algebră</span>
+          <span class="mh-radar-value" id="mhRadarAlg" data-i18n="radar_card_1_value">focus recomandat</span>
+        </div>
+        <div class="mh-radar-bar"><i style="width:35%"></i></div>
+        <p data-i18n="radar_card_1_text">Ecuații, fracții, divizibilitate, sume tip Gauss.</p>
+      </button>
+
+      <button class="mh-radar-item" type="button" data-mh-tag="geometrie" data-mh-tab="problems">
+        <div class="mh-radar-top">
+          <span class="mh-radar-label" data-i18n="radar_card_2_label">Geometrie</span>
+          <span class="mh-radar-value" id="mhRadarGeo" data-i18n="radar_card_2_value">focus recomandat</span>
+        </div>
+        <div class="mh-radar-bar"><i style="width:25%"></i></div>
+        <p data-i18n="radar_card_2_text">Triunghiuri, unghiuri, perimetre, arii, diagrame.</p>
+      </button>
+
+      <button class="mh-radar-item" type="button" data-mh-tag="olymp" data-mh-tab="problems">
+        <div class="mh-radar-top">
+          <span class="mh-radar-label" data-i18n="radar_card_3_label">Olimpiadă</span>
+          <span class="mh-radar-value" id="mhRadarOlymp" data-i18n="radar_card_3_value">când vrei ceva greu</span>
+        </div>
+        <div class="mh-radar-bar"><i style="width:15%"></i></div>
+        <p data-i18n="radar_card_3_text">Probleme mai creative, de antrenament serios.</p>
+      </button>
+
+      <button class="mh-radar-item" type="button" data-mh-tag="research" data-mh-tab="research">
+        <div class="mh-radar-top">
+          <span class="mh-radar-label" data-i18n="radar_card_4_label">Cercetare / facultate</span>
+          <span class="mh-radar-value" id="mhRadarRes" data-i18n="radar_card_4_value">„just for fun”</span>
+        </div>
+        <div class="mh-radar-bar"><i style="width:10%"></i></div>
+        <p data-i18n="radar_card_4_text">Teorie a numerelor, seriile, topologie, analiză funcțională.</p>
+      </button>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <aside id="siteAside">
+      <div class="mobile-aside-head">
+        <strong data-i18n="mobile_aside_title">📚 Filtre & capitole</strong>
+        <button class="btn small" id="mobileAsideClose" type="button" data-i18n="mobile_aside_close">✖️</button>
+      </div>
+
+      <div class="section-title" data-i18n="section_advanced_filters">🏷️ Filtre avansate</div>
+      <div class="tree" id="treeNested"></div>
+
+      <details open>
+        <summary data-i18n-html="aside_other_summary">⚙️ <b>Altele</b></summary>
+        <div class="branch">
+          <div class="range-row">
+            <span class="legend" data-i18n="difficulty_range_label">Dificultate probleme (0–5)</span>
+            <input type="number" id="minDiff" min="0" max="5" value="0" />
+            <input type="number" id="maxDiff" min="0" max="5" value="5" />
+          </div>
+        </div>
+      </details>
+
+      <div id="tagPanel"></div>
+
+      <details>
+        <summary data-i18n-html="aside_special_summary">⭐ <b>Categorii speciale</b></summary>
+        <div class="branch">
+          <a class="leaf" data-chip="olympL" data-i18n="special_olymp_lessons">🏅 Lecții de Olimpiadă</a>
+          <a class="leaf" data-chip="olymp" data-i18n="special_olymp_problems">🏅 Probleme de Olimpiadă</a>
+          <a class="leaf" data-chip="exams" data-i18n="special_exam_problems">📚 Probleme la examene</a>
+          <a class="leaf" data-chip="examsets" data-i18n="special_exam_sets">📑 Seturi de examene</a>
+          <a class="leaf" data-chip="faculty" data-i18n="special_faculty">🏛 Facultate (cursuri)</a>
+          <a class="leaf" data-chip="admit" data-i18n="special_admission">🎓 Admitere (RO)</a>
+          <a class="leaf" data-chip="research" data-i18n="special_research">🔬 CERCETARE</a>
+          <a class="leaf" data-chip="history" data-i18n="special_history">🕰 Istoria matematicii</a>
+        </div>
+      </details>
+    </aside>
+
+    <main>
+      <div class="toolbar">
+        <div class="tabs" id="tabs">
+          <button class="btn small mobile-filter-btn" id="mobileFiltersBtn" type="button" data-i18n="mobile_filters_btn">
+            ☰ Filtre
+          </button>
+
+          <div class="tab active" data-tab="lessons" data-i18n="tab_lessons">📘 Lecții</div>
+          <div class="tab" data-tab="problems" data-i18n="tab_problems">🧩 Probleme</div>
+          <div class="tab" data-tab="xp" data-i18n="tab_xp">⚡ XP Total</div>
+          <div class="tab" data-tab="exams" data-i18n="tab_exams">📑 Examene</div>
+          <div class="tab" data-tab="research" data-i18n="tab_research">🔬 CERCETARE</div>
+          <div class="tab" data-tab="history" data-i18n="tab_history">🕰 Istoria</div>
+        </div>
+
+        <!-- Sortare + filtre olimpiadă -->
+        <div id="problemSortBox" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="legend" data-i18n="sort_label">Sortare:</span>
+          <select id="problemSort" class="select">
+            <option value="easy-asc" data-i18n="sort_easy_asc">⭐ Ușor → Greu (implicit)</option>
+            <option value="easy-desc" data-i18n="sort_easy_desc">⭐ Greu → Ușor</option>
+            <option value="newest" data-i18n="sort_newest">🆕 Cele mai noi</option>
+          </select>
+
+          <button
+            class="btn small"
+            id="olympOnlyBtn"
+            title="Afișează doar probleme de olimpiadă"
+            data-i18n-title="olymp_only_title"
+          >
+            <span data-i18n="olymp_only_label">🏅 Doar olimpiadă:</span> <b id="olympOnlyState">OFF</b>
+          </button>
+
+          <span class="legend" data-i18n="olymp_level_label">Nivel olimpiadă:</span>
+          <select id="olympLevel" class="select" title="Filtrează nivelul olimpiadei" data-i18n-title="olymp_level_title">
+            <option value="" data-i18n="olymp_level_all">Toate</option>
+            <option value="locala" data-i18n="olymp_level_local">Locală</option>
+            <option value="judeteana" data-i18n="olymp_level_county">Județeană</option>
+            <option value="regionala" data-i18n="olymp_level_regional">Interjud./Regională</option>
+            <option value="nationala" data-i18n="olymp_level_national">Națională</option>
+            <option value="balcaniada" data-i18n="olymp_level_balkan">Balcaniadă</option>
+            <option value="internationala" data-i18n="olymp_level_international">Internațională</option>
+            <option value="mondiala" data-i18n="olymp_level_world">Mondială</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filterbar" id="filterBar" style="display:none"></div>
+
+      <div class="grid" id="progressRow">
+        <div class="card" id="openSolved">
+          <div class="title" data-i18n="progress_solved_title">✅ Probleme rezolvate</div>
+          <div class="legend" data-i18n="progress_click_for_list">Apasă pentru listă</div>
+        </div>
+        <div class="card" id="openLearned">
+          <div class="title" data-i18n="progress_learned_title">📘 Lecții învățate</div>
+          <div class="legend" data-i18n="progress_click_for_list">Apasă pentru listă</div>
+        </div>
+        <div class="card" id="openPassed">
+          <div class="title" data-i18n="progress_passed_title">🏆 Examene promovate</div>
+          <div class="legend" data-i18n="progress_click_for_list">Apasă pentru listă</div>
+        </div>
+      </div>
+
+      <div id="cards" class="grid"></div>
+      <div class="paginate">
+        <button class="btn" id="loadMore" data-i18n="load_more">Load more</button>
+      </div>
+    </main>
+
+    <div class="mobile-aside-backdrop" id="mobileAsideBackdrop"></div>
+  </div>
+
+  <!-- Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="panel">
+      <header class="bar" style="justify-content:space-between">
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn" id="closeDrawer" data-i18n="close_drawer">✖️ Închide</button>
+          <div id="viewTitle" class="logo" style="font-weight:800"></div>
+        </div>
+        <div class="counter">📎 <span id="viewMeta"></span></div>
+      </header>
+
+      <div class="content viewer" id="viewContent"></div>
+
+      <div class="content">
+        <div class="lesson-actions">
+          <div class="timer" id="lessonTimerBox" style="display:none">
+            ⏳ <span id="lessonTimer">01:00</span>
+          </div>
+
+          <button
+            class="btn"
+            id="quizBtn"
+            title="Testează-te rapid pe lecție"
+            style="display:none"
+            data-i18n="lesson_quiz_btn"
+            data-i18n-title="lesson_quiz_title"
+          >
+            🧪 Verificare lecție
+          </button>
+
+          <button class="go-problems" id="goProblemsBtn" data-i18n="go_problems_btn">📄 Vezi probleme propuse</button>
+          <button class="understood" id="understoodBtn" data-i18n="understood_btn">🔒 Derulează până jos…</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Drawer -->
+  <div class="drawer" id="adminDrawer">
+    <div class="panel">
+      <header class="bar" style="justify-content:space-between">
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn" id="closeAdmin" data-i18n="admin_close">✖️ Închide</button>
+          <div class="logo" style="font-weight:800" data-i18n="admin_title">🛠 Admin MathHard</div>
+        </div>
+        <div class="counter">💾 <span id="adminStatus">PHP</span></div>
+      </header>
+
+      <div class="content viewer" style="gap:12px;display:flex;flex-direction:column">
+        <p class="legend" style="margin-bottom:0" data-i18n-html="admin_intro_text">
+          Aici trimiți direct la PHP (<code>create_content.php</code>), fără să mai bagi în <code>localStorage</code>.
+        </p>
+
+        <!-- FORMULAR PUBLICARE PE SERVER -->
+        <section id="server-publish" style="width:100%;margin:0;padding:0;">
+          <form id="mhPublish" method="post" style="display:flex;flex-direction:column;gap:10px;">
+            <label style="display:block;">
+              <span data-i18n="admin_secret_label">Cheie securitate (o pui tu manual):</span>
+              <input
+                name="secret"
+                id="mh_secret"
+                type="password"
+                placeholder="ex: MATHHARD_SUPER_SECRET"
+                data-i18n-placeholder="admin_secret_placeholder"
+                style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+              />
+            </label>
+
+            <label style="display:block;">
+              <span data-i18n="admin_type_label">Tip conținut:</span>
+              <select name="type" id="mh_type" class="select" style="width:100%;max-width:280px;">
+                <option value="lesson" data-i18n="admin_type_lesson">📘 Lecție</option>
+                <option value="problem" data-i18n="admin_type_problem">🧩 Problemă / Olimpiadă</option>
+                <option value="exam" data-i18n="admin_type_exam">📑 Examen / set</option>
+                <option value="research" data-i18n="admin_type_research">🔬 Cercetare</option>
+                <option value="history" data-i18n="admin_type_history">🕰 Istoria matematicii</option>
+              </select>
+            </label>
+
+            <!-- bloc comun -->
+            <div id="block-common" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit, minmax(240px,1fr));">
+              <label>
+                <span data-i18n="admin_id_label">ID / slug (unic):</span>
+                <input
+                  name="id"
+                  id="mh_id"
+                  placeholder="ex: v-numere-nat"
+                  data-i18n-placeholder="admin_id_placeholder"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+              <label>
+                <span data-i18n="admin_grade_label">Nivel / Clasă (V, VI, BAC, FAC, RES...):</span>
+                <input
+                  name="grade"
+                  id="mh_grade"
+                  value="V"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+              <label>
+                <span data-i18n="admin_chapter_label">Capitol / Grupare:</span>
+                <input
+                  name="chapter"
+                  id="mh_chapter"
+                  value="Numere Naturale"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+              <label>
+                <span data-i18n="admin_tags_label">Tag-uri (virgulă):</span>
+                <input
+                  name="tags"
+                  id="mh_tags"
+                  placeholder="V, numere, olimpiadă"
+                  data-i18n-placeholder="admin_tags_placeholder"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+            </div>
+
+            <!-- bloc LECȚIE / CERCETARE / ISTORIE -->
+            <div id="block-lesson" style="display:block;">
+              <label style="display:block;">
+                <span data-i18n="admin_title_ro_label">Titlu RO:</span>
+                <input
+                  name="title_ro"
+                  id="mh_title_ro"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+              <label style="display:block;">
+                <span data-i18n="admin_title_en_label">Titlu EN:</span>
+                <input
+                  name="title_en"
+                  id="mh_title_en"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+              <label style="display:block;">
+                <span data-i18n="admin_learn_ro_label">Ce înveți (RO):</span>
+                <textarea
+                  name="learn_ro"
+                  id="mh_learn_ro"
+                  rows="2"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+              <label style="display:block;">
+                <span data-i18n="admin_why_ro_label">De ce e util (RO):</span>
+                <textarea
+                  name="why_ro"
+                  id="mh_why_ro"
+                  rows="2"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+              <label style="display:block;">
+                <span data-i18n="admin_body_ro_label">Conținut RO (poți folosi KaTeX):</span>
+                <textarea
+                  name="body_ro"
+                  id="mh_body_ro"
+                  rows="6"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+              <label style="display:block;">
+                <span data-i18n="admin_body_en_label">Conținut EN (opțional):</span>
+                <textarea
+                  name="body_en"
+                  id="mh_body_en"
+                  rows="3"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+            </div>
+
+            <!-- bloc PROBLEMĂ -->
+            <div id="block-problem" style="display:none;">
+              <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit, minmax(220px,1fr));">
+                <label>
+                  <span data-i18n="admin_problem_lesson_label">Lecția (lessonId) la care se leagă:</span>
+                  <input
+                    name="lesson_id"
+                    id="mh_lesson_id"
+                    placeholder="ex: v-citirea-nr-nat"
+                    data-i18n-placeholder="admin_problem_lesson_placeholder"
+                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                  />
+                </label>
+                <label>
+                  <span data-i18n="admin_problem_difficulty_label">Dificultate (0–5):</span>
+                  <input
+                    name="difficulty"
+                    id="mh_difficulty"
+                    type="number"
+                    min="0"
+                    max="5"
+                    value="1"
+                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                  />
+                </label>
+                <label>
+                  <span data-i18n="admin_problem_olymp_level_label">Nivel olimpiadă (opțional):</span>
+                  <select name="olymp_level" id="mh_olymp_level" class="select" style="width:100%;">
+                    <option value="" data-i18n="admin_none">—</option>
+                    <option value="locala" data-i18n="olymp_level_local">locală</option>
+                    <option value="judeteana" data-i18n="olymp_level_county">județeană</option>
+                    <option value="regionala" data-i18n="olymp_level_regional_short">regională</option>
+                    <option value="nationala" data-i18n="olymp_level_national">națională</option>
+                    <option value="balcaniada" data-i18n="olymp_level_balkan">balcaniadă</option>
+                    <option value="internationala" data-i18n="olymp_level_international">internațională</option>
+                    <option value="mondiala" data-i18n="olymp_level_world">mondială</option>
+                  </select>
+                </label>
+              </div>
+
+              <label style="display:block;">
+                <span data-i18n="admin_problem_statement_ro">Enunț RO:</span>
+                <textarea
+                  name="statement_ro"
+                  id="mh_statement_ro"
+                  rows="4"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+
+              <label style="display:block;">
+                <span data-i18n="admin_problem_statement_en">Enunț EN:</span>
+                <textarea
+                  name="statement_en"
+                  id="mh_statement_en"
+                  rows="3"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+
+              <label style="display:block;">
+                <span data-i18n="admin_problem_answer">Răspuns (exact, ca în verificator):</span>
+                <input
+                  name="answer"
+                  id="mh_answer"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+
+              <label style="display:block;">
+                <span data-i18n="admin_problem_hint1">Hint 1 (RO):</span>
+                <input
+                  name="hint1_ro"
+                  id="mh_hint1_ro"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+
+              <label style="display:block;">
+                <span data-i18n="admin_problem_hint2">Hint 2 (RO):</span>
+                <input
+                  name="hint2_ro"
+                  id="mh_hint2_ro"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+            </div>
+
+            <!-- bloc EXAMEN -->
+            <div id="block-exam" style="display:none;">
+              <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit, minmax(220px,1fr));">
+                <label>
+                  <span data-i18n="admin_exam_type_label">Tip examen (EN / BAC / ADM / ALT):</span>
+                  <input
+                    name="exam_type"
+                    id="mh_exam_type"
+                    value="EN"
+                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                  />
+                </label>
+                <label>
+                  <span data-i18n="admin_exam_year_label">An:</span>
+                  <input
+                    name="exam_year"
+                    id="mh_exam_year"
+                    type="number"
+                    value="2025"
+                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                  />
+                </label>
+                <label>
+                  <span data-i18n="admin_exam_hours_label">Timp implicit (ore):</span>
+                  <input
+                    name="exam_hours"
+                    id="mh_exam_hours"
+                    type="number"
+                    value="2"
+                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                  />
+                </label>
+              </div>
+
+              <label style="display:block;">
+                <span data-i18n="admin_exam_title_ro_label">Titlu examen RO:</span>
+                <input
+                  name="exam_title_ro"
+                  id="mh_exam_title_ro"
+                  value="Examen nou"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+
+              <label style="display:block;">
+                <span data-i18n="admin_exam_title_en_label">Titlu examen EN:</span>
+                <input
+                  name="exam_title_en"
+                  id="mh_exam_title_en"
+                  value="New exam"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+
+              <label style="display:block;">
+                <span data-i18n="admin_exam_problem_ids">ID-urile problemelor (virgulă):</span>
+                <textarea
+                  name="exam_problems"
+                  id="mh_exam_problems"
+                  rows="3"
+                  placeholder="ex: v-cit-00,v-cit-01,bac25-1"
+                  data-i18n-placeholder="admin_exam_problem_ids_placeholder"
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                ></textarea>
+              </label>
+
+              <div id="mh_exam_items_editor" style="margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <h4 style="margin:0;" data-i18n="admin_exam_items_title">🧩 Itemi examen (open + grile)</h4>
+
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <label style="display:flex;flex-direction:column;gap:4px;">
+                      <span data-i18n="admin_exam_scoring_profile">Scoring profile</span>
+                      <select id="mh_exam_scoring_profile" class="select">
+                        <option value="default_exact_v1">default_exact_v1</option>
+                        <option value="utcn_single_v1">utcn_single_v1</option>
+                        <option value="ubb_multi_v1">ubb_multi_v1</option>
+                      </select>
+                    </label>
+
+                    <button class="btn small" type="button" id="mhAddOpenItemBtn" data-i18n="admin_add_open_item">➕ Item open</button>
+                    <button class="btn small" type="button" id="mhAddMcqItemBtn" data-i18n="admin_add_mcq_item">➕ Item grilă</button>
+                  </div>
+                </div>
+
+                <p class="legend" style="margin:10px 0 0;" data-i18n="admin_exam_items_text">
+                  Aici vei putea construi examene moderne: itemi open, grile A-D / A-E / custom, multiple corecte sau niciuna.
+                </p>
+
+                <div id="mhExamItemsList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;"></div>
+              </div>
+
+              <label style="display:block;">
+                <span data-i18n="admin_exam_credit_label">Credit / sursă (HTML):</span>
+                <input
+                  name="exam_credit"
+                  id="mh_exam_credit"
+                  value=""
+                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
+                />
+              </label>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+              <button class="btn" type="submit" id="mhSubmitBtn" data-i18n="admin_save_supabase">💾 Salvează în Supabase</button>
+              <span id="mhPublishStatus" class="legend" style="margin-left:4px;"></span>
+            </div>
+          </form>
+
+          <div id="mhAdminModeBadge" class="legend" style="margin-top:10px;" data-i18n="admin_mode_create">
+            Mod curent: creare
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <button class="btn small" type="button" id="mhResetForm" data-i18n="admin_reset_form">♻️ Reset form</button>
+            <button class="btn small" type="button" id="mhRefreshList" data-i18n="admin_refresh_list">🔄 Refresh listă</button>
+            <button class="btn small" type="button" id="mhLogoutBtn" data-i18n="admin_logout">🚪 Logout</button>
+          </div>
+
+          <hr style="border-color:var(--border);opacity:.35;margin:14px 0;" />
+
+          <section id="mhAdminListWrap">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <h3 style="margin:0;" data-i18n="admin_supabase_content_title">📚 Conținut din Supabase</h3>
+              <div id="mhAdminListInfo" class="legend" data-i18n="admin_list_count_default">0 iteme</div>
+            </div>
+
+            <div id="mhAdminList" class="grid" style="margin-top:10px;"></div>
+          </section>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="box" id="modalBox">
+      <h3 id="modalTitle">ℹ️ Dificultăți & Contoare</h3>
+      <div id="modalBody"></div>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn" id="closeModal" data-i18n="close_modal">Închide</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT ME MODAL -->
+  <div class="modal" id="aboutModal">
+    <div class="box about-box">
+      <div class="about-header">
+        <div>
+          <div class="about-title" data-i18n="about_title">
+            👋 Despre MathHard & autor
+          </div>
+
+          <div class="about-subtitle" data-i18n-html="about_subtitle">
+            Gândește-te la MathHard ca la un mic joc video de matematică: ai
+            <b>lecții</b>, <b>probleme</b>, <b>XP</b> și <b>„boss fight-uri”</b> la examene.
+          </div>
+
+          <div class="about-pill-row">
+            <span class="about-pill" data-i18n="about_pill_1">📘 Lecții de la clasa a V-a până la facultate</span>
+            <span class="about-pill" data-i18n="about_pill_2">🧩 Probleme cu verificare instant</span>
+            <span class="about-pill" data-i18n="about_pill_3">⚡ XP — puncte de experiență, nu note</span>
+            <span class="about-pill" data-i18n="about_pill_4">📑 EN / BAC / Admitere</span>
+            <span class="about-pill" data-i18n="about_pill_5">🏅 Olimpiadă & 🔬 Cercetare</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-body">
+        <div class="mh-story-layout about-story">
+          <!-- Timeline în stânga -->
+          <div class="story-timeline">
+            <div class="story-bullet active" data-target="#about-what" data-i18n="about_timeline_1">
+              Ce este MathHard?
+            </div>
+            <div class="story-bullet" data-target="#about-how" data-i18n="about_timeline_2">
+              Cum folosești site-ul
+            </div>
+            <div class="story-bullet" data-target="#about-tabs" data-i18n="about_timeline_3">
+              Ce înseamnă tab-urile de sus
+            </div>
+            <div class="story-bullet" data-target="#about-who" data-i18n="about_timeline_4">
+              Pentru cine e făcut
+            </div>
+            <div class="story-bullet" data-target="#about-me" data-i18n="about_timeline_5">
+              Cine a făcut MathHard?
+            </div>
+          </div>
+
+          <!-- Conținut în dreapta -->
+          <div class="story-content">
+            <section class="lesson-section" id="about-what">
+              <h3 data-i18n="about_what_title">1. Ce este MathHard?</h3>
+              <p data-i18n-html="about_what_p1">
+                MathHard este un loc unde înveți matematică
+                <b>pas cu pas</b>. Nu trebuie să fii „geniu”. Ideea este:
+              </p>
+              <ul>
+                <li data-i18n-html="about_what_li_1">📘 mai întâi citești o <b>lecție scurtă și clară</b>,</li>
+                <li data-i18n-html="about_what_li_2">🧩 apoi rezolvi câteva <b>probleme</b>,</li>
+                <li data-i18n-html="about_what_li_3">⚡ primești <b>XP</b> (puncte de experiență),</li>
+                <li data-i18n="about_what_li_4">🔁 și tot așa, până ajungi la examene, olimpiadă sau chiar cercetare.</li>
+              </ul>
+              <p data-i18n-html="about_what_p2">
+                Gândește-te la fiecare lecție ca la un <b>nivel de joc</b>, iar la
+                probleme ca la <b>mini-misiuni</b> care îți dau XP.
+              </p>
+            </section>
+
+            <section class="lesson-section" id="about-how">
+              <h3 data-i18n="about_how_title">2. Cum folosești site-ul (versiune pentru „copilași” 🙂)</h3>
+              <ol>
+                <li data-i18n-html="about_how_li_1">🔎 <b>Cauți</b> sus ce te interesează (clasă, „fracții”, „ecuații”…).</li>
+                <li data-i18n-html="about_how_li_2">📘 Apeși pe o <b>lecție</b> din stânga (meniul cu capitole).</li>
+                <li data-i18n="about_how_li_3">📜 Se deschide o pagină în dreapta. Citești până jos de tot.</li>
+                <li data-i18n-html="about_how_li_4">⏳ Aștepți <b>1 minut</b> (timerul), ca să nu „sarci” lecția.</li>
+                <li data-i18n="about_how_li_5">✅ Butonul „Am înțeles” se deblochează și lecția se bifează.</li>
+                <li data-i18n-html="about_how_li_6">🧩 Apoi mergi la tab-ul „Probleme” și rezolvi ce e legat de lecția aia.</li>
+              </ol>
+              <p data-i18n-html="about_how_p">
+                Sus, în header, vezi mereu câte <b>probleme</b>, <b>lecții</b> și
+                <b>examene</b> ai făcut, plus <b>XP total</b>.
+              </p>
+            </section>
+
+            <section class="lesson-section" id="about-tabs">
+              <h3 data-i18n="about_tabs_title">3. Ce înseamnă tab-urile de sus?</h3>
+              <ul>
+                <li data-i18n-html="about_tabs_li_1">
+                  📘 <b>Lecții</b> — toată teoria, de la clasele mici până la facultate și cercetare.
+                </li>
+                <li data-i18n-html="about_tabs_li_2">
+                  🧩 <b>Probleme</b> — exerciții, probleme de școală, olimpiadă, antrenament.
+                </li>
+                <li data-i18n-html="about_tabs_li_3">
+                  ⚡ <b>XP Total</b> — vezi ce XP ai strâns din probleme și cum ai evoluat.
+                </li>
+                <li data-i18n-html="about_tabs_li_4">
+                  📑 <b>Examene</b> — colecții de probleme de la EN, BAC și admitere, puse ca „mini-examene”.
+                </li>
+                <li data-i18n-html="about_tabs_li_5">
+                  🔬 <b>CERCETARE</b> — lecții unde apar idei de cercetare (ex: Conjectura lui Collatz),
+                  explicate cât se poate de simplu.
+                </li>
+                <li data-i18n-html="about_tabs_li_6">
+                  🕰 <b>Istoria</b> — povești scurte despre oameni și idei faine din matematică.
+                </li>
+              </ul>
+              <p data-i18n-html="about_tabs_p">
+                Pe scurt: tab-urile sunt ca niște <b>rafturi de bibliotecă</b>.
+                Alegi raftul, apoi cartea (lecția / setul de probleme).
+              </p>
+            </section>
+
+            <section class="lesson-section" id="about-who">
+              <h3 data-i18n="about_who_title">4. Pentru cine este MathHard?</h3>
+              <ul>
+                <li data-i18n="about_who_li_1">🎒 elevi de gimnaziu care vor explicații liniștite, nu „panică de test”.</li>
+                <li data-i18n-html="about_who_li_2">🎓 liceeni care se pregătesc de <b>EN</b> sau <b>BAC</b>.</li>
+                <li data-i18n-html="about_who_li_3">🏅 copii și adolescenți pasionați de <b>olimpiadă</b>.</li>
+                <li data-i18n-html="about_who_li_4">🏛 studenți la început de drum, care vor un mic <b>„hub de recapitulare”</b>.</li>
+                <li data-i18n="about_who_li_5">👨‍🏫 profesori / părinți care caută idei de explicat mai simplu.</li>
+              </ul>
+              <p data-i18n-html="about_who_p">
+                Dacă îți place să <b>înțelegi cu adevărat</b>, nu doar să memorezi,
+                atunci ești exact unde trebuie.
+              </p>
+            </section>
+
+            <section class="lesson-section" id="about-me">
+              <h3 data-i18n="about_me_title">5. Cine a făcut MathHard?</h3>
+              <p data-i18n-html="about_me_p1">
+                Mă cheamă <b>Gabor Cristian-Daniel</b>, am <b>17 ani</b> și sunt licean la
+                <b>Colegiul Tehnic INFOEL din Bistrița</b>. Sunt genul de elev care se entuziasmează
+                când dă peste o problemă „tare” de matematică.
+              </p>
+              <p data-i18n-html="about_me_p2">
+                Nu am vrut să-mi notez fiecare lecție mai puțin cunoscută – de la <b>olimpiade</b>,
+                <b>cercetare</b> sau chestii de <b>facultate</b> – prin caiete sau foi care se pierd.
+                Mi s-a părut mult mai tare să le strâng pe toate într-un singur loc și, în același timp,
+                să arăt lumii cât de faină e matematica.
+              </p>
+              <ul>
+                <li data-i18n="about_me_li_1">lecții scurte, clare și ușor de recitit când ai nevoie,</li>
+                <li data-i18n="about_me_li_2">probleme alese, nu doar din „clasicul” de manual,</li>
+                <li data-i18n="about_me_li_3">idei care duc un pic mai departe decât ce se face la clasă.</li>
+              </ul>
+              <p style="margin-top:6px;" data-i18n="about_me_p3">
+                MathHard e locul unde îmi organizez tot ce descopăr și împart mai departe
+                ce mi se pare interesant, ca să vezi și tu că matematica poate fi chiar cool.
+              </p>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-footer">
+        <button class="btn small" id="aboutCloseBtn" data-i18n="about_close">Închide</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="/js/data.js"></script>
+  <script defer src="/js/animation-numberline.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+{
+    "settings": {
+        "math": {
+            "engine": "katex",
+            "delimiters": [
+                {
+                    "left": "\\(",
+                    "right": "\\)",
+                    "display": false
+                },
+                {
+                    "left": "\\[",
+                    "right": "\\]",
+                    "display": true
+                },
+                {
+                    "left": "$$",
+                    "right": "$$",
+                    "display": true
+                },
+                {
+                    "left": "$",
+                    "right": "$",
+                    "display": false
+                }
+            ],
+            "throwOnError": false,
+            "macros": {
+                "\\N": "\\mathbb{N}",
+                "\\Z": "\\mathbb{Z}",
+                "\\Q": "\\mathbb{Q}",
+                "\\R": "\\mathbb{R}"
+            }
+        }
+    },
+    "lessons": [
+        {
+            "id": "v-adunarea-nr-nat",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "adunare"
+            ],
+            "title_ro": "Adunarea Numerelor Naturale",
+            "title_en": "Addition of Natural Numbers",
+            "learn_ro": "Vei aduna corect și rapid numere, folosind reguli ușoare (comutativă, asociativă, elementul 0).",
+            "learn_en": "You will add numbers correctly and quickly using simple rules such as commutativity, associativity, and zero as the neutral element.",
+            "why_ro": "Adunarea te ajută să calculezi totaluri: bani, puncte, distanțe, timp.",
+            "why_en": "Addition helps you compute totals: money, points, distances, and time.",
+            "body_ro": "<p><b>Ce este adunarea?<\/b> Adunarea înseamnă <i>„punem împreună”<\/i>. Simbolul este <b>+<\/b> și rezultatul se numește <b>sumă<\/b>.<\/p><p><b>Vocabular:<\/b> <i>termen<\/i> + <i>termen<\/i> = <i>sumă<\/i>. De ex.: \\(7+3=10\\).<\/p><p><b>Pe linia numerelor:<\/b> pornești de la 7 și sari 3 pași la dreapta → ajungi la 10.<\/p><p><b>Reguli care te ajută:<\/b><\/p><ul><li><b>Comutativă:<\/b> \\(3+5=5+3\\) (ordinea termenilor nu schimbă suma).<\/li><li><b>Asociativă:<\/b> \\((2+4)+6=2+(4+6)\\) (poți grupa cum îți e mai ușor).<\/li><li><b>0 este neutru:<\/b> \\(a+0=a\\).<\/li><\/ul><p><b>Trucuri rapide:<\/b> \\(47+35=(40+30)+(7+5)=82\\).<\/p><p><b>Exemple:<\/b> \\(4+5=9\\); \\(20+300=320\\); \\(125+3000=3125\\).<\/p>",
+            "body_en": "<p><b>What is addition?<\/b> Addition means <i>putting together<\/i>. The symbol is <b>+<\/b> and the result is the <b>sum<\/b>.<\/p><p><b>Words:<\/b> \\(\\text{addend}+\\text{addend}=\\text{sum}\\). Example: \\(7+3=10\\).<\/p><p><b>Number line:<\/b> start at 7, jump 3 steps to the right → \\(10\\).<\/p><p><b>Helpful rules:<\/b> <b>Commutative<\/b> \\(3+5=5+3\\), <b>Associative<\/b> \\((2+4)+6=2+(4+6)\\), and <b>Zero<\/b> is neutral \\(a+0=a\\).<\/p><p><b>Tip:<\/b> \\(47+35=(40+30)+(7+5)=82\\).<\/p>"
+        },
+        {
+            "id": "v-scaderea-nr-nat",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "scădere"
+            ],
+            "title_ro": "Scăderea Numerelor Naturale",
+            "title_en": "Subtraction of Natural Numbers",
+            "learn_ro": "Vei ști să afli cât rămâne sau cât lipsește, să verifici rezultatul cu adunarea.",
+            "learn_en": "You will learn how to find what remains or what is missing, and how to check subtraction using addition.",
+            "why_ro": "Scăderea ne ajută la diferențe: restul de bani, distanța rămasă, scorul rămas.",
+            "why_en": "Subtraction helps with differences: remaining money, remaining distance, and score left.",
+            "body_ro": "<p><b>Ce este scăderea?<\/b> Scăderea înseamnă <i>„luăm din”<\/i>. Simbolul este <b>−<\/b> și rezultatul se numește <b>diferență<\/b>.<\/p><p><b>Vocabular:<\/b> <i>descăzut<\/i> − <i>scăzător<\/i> = <i>diferență<\/i>. De ex.: \\(10-3=7\\).<\/p><p><b>Pe linia numerelor:<\/b> pornești de la \\(10\\) și mergi 3 pași la stânga → \\(7\\).<\/p><p><b>Reguli utile:<\/b><\/p><ul><li><b>Nu este comutativă:<\/b> \\(8-5\\ne 5-8\\).<\/li><li><b>Cu 0:<\/b> \\(a-0=a\\); nu scădem numere mai mari ca să rămânem în numere naturale (nu folosim rezultate negative aici).<\/li><li><b>Verificare:<\/b> dacă \\(10-3=7\\), atunci \\(7+3=10\\).<\/li><\/ul><p><b>Împrumutul (pe coloane):<\/b> când nu ajung unitățile, „împrumuți” o zecime. Ex.: \\(402-178\\) → transformi 2 în 12 (unități) și scazi pe rând unități, zeci, sute.<\/p><p><b>Exemple:<\/b> \\(12-5=7\\); \\(90-30=60\\); \\(1000-125=875\\).<\/p>",
+            "body_en": "<p><b>What is subtraction?<\/b> It means <i>taking away<\/i>. Symbol: <b>−<\/b>. The result is the <b>difference<\/b>.<\/p><p><b>Words:<\/b> \\(\\text{minuend}-\\text{subtrahend}=\\text{difference}\\). Example: \\(10-3=7\\).<\/p><p><b>Not commutative:<\/b> \\(8-5\\ne 5-8\\). <b>Check:<\/b> \\(7+3=10\\).<\/p>"
+        },
+        {
+            "id": "v-inmultirea-nr-nat",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "înmulțire"
+            ],
+            "title_ro": "Înmulțirea Numerelor Naturale",
+            "title_en": "Multiplication of Natural Numbers",
+            "learn_ro": "Vei transforma adunări repetate în calcule scurte și vei folosi tabla înmulțirii.",
+            "learn_en": "You will turn repeated addition into short calculations and use multiplication facts correctly.",
+            "why_ro": "Înmulțirea e pentru grupe egale: cutii, rânduri, puncte, arii simple.",
+            "why_en": "Multiplication is useful for equal groups: boxes, rows, points, and simple areas.",
+            "body_ro": "<p><b>Ce este înmulțirea?<\/b> Înmulțirea este <i>adunare repetată<\/i>. \\(3\\times 4\\) înseamnă \\(3+3+3+3\\).<\/p><p><b>Vocabular:<\/b> \\(\\text{factor}\\times \\text{factor}=\\text{produs}\\).<\/p><p><b>Proprietăți:<\/b><\/p><ul><li><b>Comutativă:<\/b> \\(3\\times 4=4\\times 3\\).<\/li><li><b>Asociativă:<\/b> \\((2\\times 3)\\times 5=2\\times(3\\times 5)\\).<\/li><li><b>Distributivă peste adunare:<\/b> \\(6\\times(10+2)=6\\cdot 10+6\\cdot 2\\).<\/li><li><b>1 și 0:<\/b> \\(a\\times 1=a\\); \\(a\\times 0=0\\).<\/li><\/ul><p><b>Model cu aranjamente (array):<\/b> 3 rânduri × 4 coloane = 12 puncte.<\/p><p><b>Exemple:<\/b> \\(5\\times 7=35\\); \\(20\\times 3=60\\); \\(12\\times 15=(12\\times 10)+(12\\times 5)=120+60=180\\).<\/p>",
+            "body_en": "<p><b>Multiplication<\/b> is <i>repeated addition<\/i>. Example: \\(3\\times 4=3+3+3+3\\). <b>Words:<\/b> \\(\\text{factor}\\times\\text{factor}=\\text{product}\\).<\/p><p><b>Rules:<\/b> commutative, associative, distributive; \\(a\\times 1=a\\); \\(a\\times 0=0\\).<\/p><p><b>Array model:<\/b> \\(3\\) rows × \\(4\\) columns = \\(12\\).<\/p>"
+        },
+        {
+            "id": "v-impartirea-nr-nat",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "împărțire"
+            ],
+            "title_ro": "Împărțirea Numerelor Naturale",
+            "title_en": "Division of Natural Numbers",
+            "learn_ro": "Vei ști să împarți în părți egale și să verifici rezultatul cu înmulțirea.",
+            "learn_en": "You will divide into equal parts and check the result using multiplication.",
+            "why_ro": "Împărțirea e pentru a împărți corect: porții egale, echipe, grupuri.",
+            "why_en": "Division is useful for fair sharing: equal portions, teams, and groups.",
+            "body_ro": "<p><b>Ce este împărțirea?<\/b> Împărțirea înseamnă <i>„împărțim în mod egal”<\/i>. \\(12:3=4\\) (12 împărțit la 3 face 4).<\/p><p><b>Vocabular:<\/b> \\(\\text{deîmpărțit}:\\text{împărțitor}=\\text{cât}\\). Verificare: \\(\\text{cât}\\cdot\\text{împărțitor}=\\text{deîmpărțit}\\).<\/p><p><b>Reguli:<\/b> \\(a:1=a\\); \\(0:a=0\\) (pentru \\(a\\ne 0\\)); <b>nu<\/b> împărțim la \\(0\\).<\/p><p><b>Exemple:<\/b> \\(15:3=5\\); \\(100:10=10\\); \\(28:7=4\\).<\/p>",
+            "body_en": "<p><b>Division<\/b> means sharing equally. \\(\\text{Dividend}\\div\\text{divisor}=\\text{quotient}\\). Check by multiplication: \\(\\text{quotient}\\cdot\\text{divisor}=\\text{dividend}\\).<\/p><p>Rules: \\(a\\div 1=a\\); \\(0\\div a=0\\) (\\(a\\ne 0\\)); division by \\(0\\) is not allowed.<\/p>"
+        },
+        {
+            "id": "v-ordinea-efect-op",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "operații"
+            ],
+            "title_ro": "Ordinea Efectuării Operațiilor. Utilizarea Parantezelor",
+            "title_en": "Order of Operations",
+            "learn_ro": "Vei rezolva expresii fără puteri, respectând ordinea corectă.",
+            "learn_en": "You will solve expressions without powers using the correct order of operations.",
+            "why_ro": "Evităm greșeli când sunt mai multe semne într-un calcul.",
+            "why_en": "This helps avoid mistakes when several operations appear in the same calculation.",
+            "body_ro": "<p><b>De ce există o ordine?<\/b> Ca toți să obținem același rezultat.<\/p><p><b>Ordinea:<\/b><\/p><ol><li>Mai întâi <b>parantezele<\/b> (din interior spre exterior).<\/li><li>Apoi <b>înmulțirea<\/b> și <b>împărțirea<\/b> (de la stânga la dreapta).<\/li><li>La final <b>adunarea<\/b> și <b>scăderea<\/b> (de la stânga la dreapta).<\/li><\/ol><p><b>Exemplu:<\/b> \\(6+2\\times 3=6+(2\\times 3)=12\\). <br> \\((20-4):2=16:2=8\\).<\/p><p><b>Greșeală frecventă:<\/b> să aduni înainte să înmulțești. \\(4+5\\times 2\\ne (4+5)\\times 2\\); corect: \\(4+(5\\times 2)=14\\).<\/p>",
+            "body_en": "<p><b>Order (no powers):<\/b> 1) Parentheses, 2) Multiplication\/Division (left to right), 3) Addition\/Subtraction (left to right). Example: \\(6+2\\times 3=12\\).<\/p>"
+        },
+        {
+            "id": "v-suma-gauss",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "title_ro": "Suma lui Gauss",
+            "title_en": "Gauss’s Sum",
+            "tags": [
+                "V",
+                "sume",
+                "progresie aritmetică",
+                "gauss"
+            ],
+            "learn_ro": "Vei putea calcula sume foarte mari",
+            "learn_en": "You will be able to calculate very large sums",
+            "why_ro": "Număr de locuri, rânduri, perechi, totaluri succesive etc.",
+            "why_en": "Counting rows, pairs, seats, consecutive totals.",
+            "body_ro": "<p><b>Povestea<\/b>: Gauss (în clasa I) a calculat \\(1+2+\\cdots+100\\) în câteva secunde, „împerechind” capetele.<\/p>\n        <p><b>Trucul perechilor<\/b>:\n        \\[\n        S=1+2+\\cdots+n\\\\\n        S=n+(n-1)+\\cdots+1\\\\\n        \\text{Se adună termen cu termen}\\\\\n        2S=(n+1)+(n+1)+\\cdots+(n+1)=n\\,(n+1)\\\\\n        \\Rightarrow \\boxed{\\,S=\\dfrac{n(n+1)}{2}\\,}.\n        \\]<\/p>\n        <p>După cum ați văzut în lecția ,,Citirea Numerelor Naturale\", numărul de termeni dintr-un șir de numere este egal cu: \\(term=b-a+1\\).<\/p>\n        <p>Totuși, există și o formulă MAI utilă și MAI generală față de aceasta: \\(term=\\frac{\\text{ultimul - primul}}{\\text{din cât în cât merge șirul}}+1\\).<\/p>\n        <p><b>OBSERVAȚIE: <\/b>Există și sume care încep cu alte numere diferite de 1. De exemplu: \\(8+9+10+...+n\\). Aceste sume se pot calcula în felul acesta:<\/p>\n        <p>-> scrii toată suma aceea, dar de la 1 până la ultimul termen de-al tău. De exemplu: \\(1+2+3+...+n\\)<\/p>\n        <p>-> scazi din suma totală (ceea care e chiar suma lui Gauss, dar până la ultimul tău termen), suma care NU aparține în suma ta inițială (în cazul meu este \\(1+2+3...+7\\)<\/p>\n        <p>-> o să ajungi într-un final la: \\((1+2+3+...+n)\\) \\(-\\) \\((1+2+3+...+7)\\) \\(=\\) \\((8+9+10+..+n)\\) --> și după le calculezi folosind formula Sumei lui Gauss.<\/p>\n        <p><b>OBSERVAȚIE: <\/b>Există și sume care au o regulă specifică între termeni care se tot repetă în continuu. De exemplu: \\(3+6+9+...+3n\\) SAU \\(9+18+27+36+...+9n\\). Aceste sume se pot calcula în felul acesta:<\/p>\n        <p>-> împarți toată suma la regula care se repetă în continuu. De exemplu: \\(\\frac{3+6+9+\\cdots+3n}{3}\\) și \\(\\frac{9+18+27+36+\\cdots+9n}{9}\\)<\/p>\n        <p>-> apoi calculezi suma folosind formula de la Suma lui Gauss (întotdeauna va da 1+2+3+...+n, deci aplici formula de la început cu Suma lui Gauss)<\/p>\n        <p>-> la final, înmulțești rezultatul tău cu regula care se repetă în continuu între termenii din suma inițială (adică: \\(\\cdot3 \\text{    sau} \\cdot9)\\)<\/p>\n        <p><b>OBSERVAȚIE:<\/b> La aceste tipuri de sume, vom folosi o metodă, cu numele de ,,factor comun\". Vom aprofunda această lecție fix în următoarea lecție și vom folosi același exemplu ca aici, dar într-o altă metodă mult mai ușoară ca aceasta.<\/p>\n        <p><b>Alte sume celebre de tip Gauss și rezultatul lor (bine de memorat)<\/b>: <\/p>\n        <p>\\(1+3+\\cdots+(2n-1)=n\\cdot{n}\\text{ (Suma numerelor impare până la n)}\\)<\/p>\n        <p>\\(2+4+\\cdots+2n=n(n+1)\\text{ (Suma numerelor pare până la n)}\\).<\/p>",
+            "body_en": "<p>Pairing trick: \\(S=1+\\cdots+n=\\frac{n(n+1)}{2}\\). For \\(a..b\\): \\(S=(b-a+1)\\cdot\\frac{a+b}{2}\\). Arithmetic progression: \\(S_n=\\frac{n}{2}\\bigl(2a_1+(n-1)d\\bigr)\\).<\/p>",
+            "examples_ro": "<ol><li>\\(1+\\cdots+100=\\dfrac{100\\cdot 101}{2}=5050\\).<\/li><li>\\(20+\\cdots+80=61\\cdot 50=3050\\).<\/li><li>Primele 50 numere pare: \\(50\\cdot 51=2550\\).<\/li><\/ol>",
+            "examples_en": "<ol><li>Classic Gauss sums and AP totals.<\/li><\/ol>",
+            "sources": [
+                "manual V",
+                "anecdotă Gauss"
+            ]
+        },
+        {
+            "id": "v-factor-comun",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "sume",
+                "șiruri"
+            ],
+            "title_ro": "Factorul Comun",
+            "title_en": "The Common Factor Method",
+            "learn_ro": "Vei recunoaște termenii asemănători și îi vei grupa scoțând factorul comun.",
+            "why_ro": "Simplifică sume\/produs și pregătește pentru algebră.",
+            "body_ro": "<p><b>Ce este factorul comun?<\/b> Uneori avem o sumă cu mai multe numere care se aseamănă. De exemplu: \\(3+6+9+\\ldots\\). Toate aceste numere au ceva la fel: sunt făcute din \\(3\\).<\/p><p>\\(3=3\\cdot 1\\), \\(6=3\\cdot 2\\), \\(9=3\\cdot 3\\). Deci peste tot apare <b>3<\/b>. Acel 3 se numește <b>FACTOR COMUN<\/b>.<\/p><p><b>Pasul 1.<\/b> Uită-te la toate numerele și vezi dacă au același „prieten” în ele. Aici prietenul este \\(3\\).<\/p><p><b>Pasul 2.<\/b> Scoatem prietenul (factorul comun) <b>în față<\/b> și punem o paranteză: \\(3(\\dots)\\).<\/p><p><b>Pasul 3.<\/b> În paranteză scriem ce a mai rămas din fiecare număr: \\(3\\to 1\\), \\(6\\to 2\\), \\(9\\to 3\\). Deci: \\(3(1+2+3)\\).<\/p><p><b>De ce e util?<\/b> Ca să calculăm mai ușor sau să folosim formule (ex.: Suma lui Gauss în paranteză).<\/p>",
+            "body_en": "<p><b>Common factor<\/b> means the same number appears in all terms. Example: \\(3,6,9\\) all share \\(3\\). We take \\(3\\) in front: \\(3(1+2+3)\\). It makes calculations easier.<\/p>"
+        },
+        {
+            "id": "v-impartirea-nr-nat-rest0",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "împărțire",
+                "rest"
+            ],
+            "title_ro": "Împărțirea Cu Rest Zero A Numerelor Naturale",
+            "title_en": "Division with Zero Remainder",
+            "learn_ro": "Vei recunoaște când împărțirea e exactă (fără rest) și o vei verifica repede.",
+            "why_ro": "Împărțirea exactă apare când obiectele se împart perfect în grupe egale.",
+            "body_ro": "<p><b>Definiție:<\/b> Împărțire <i>fără rest<\/i> înseamnă că deîmpărțitul se împarte perfect la împărțitor. \\(24:6=4\\) (exact).<\/p><p><b>Verificare:<\/b> \\(4\\times 6=24\\).<\/p><p><b>Exemple:<\/b> \\(18:3=6\\); \\(35:5=7\\); \\(100:25=4\\).<\/p><p><b>Observații:<\/b> \\(0:a=0\\) (\\(a\\ne 0\\)); nu împărțim la \\(0\\).<\/p>",
+            "body_en": "<p><b>Exact division<\/b> means no remainder: \\(24\\div 6=4\\). <b>Check:<\/b> \\(4\\cdot 6=24\\). Examples: \\(18\\div 3=6\\); \\(100\\div 25=4\\).<\/p>"
+        },
+        {
+            "id": "v-impartirea-nr-nat-rest",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "împărțire",
+                "rest"
+            ],
+            "title_ro": "Împărțirea Cu Rest A Numerelor Naturale",
+            "title_en": "Division with Remainder",
+            "learn_ro": "Vei scrie corect împărțirea cu rest și vei ști regula restului.",
+            "why_ro": "Când nu se poate împărți perfect, aflăm câtul și cât rămâne.",
+            "body_ro": "<p><b>Definiție:<\/b> Dacă nu se împarte exact, scriem: \\(a=b\\cdot q+r\\), unde \\(0\\le r<b\\). Se citește: deîmpărțitul = împărțitor × cât + rest.<\/p><p><b>Exemplu:<\/b> \\(29:5=5\\) rest \\(4\\), fiindcă \\(29=5\\cdot 5+4\\) și \\(0\\le 4<5\\).<\/p><p><b>Verificare:<\/b> \\(\\text{cât}\\cdot\\text{împărțitor}+\\text{rest}=\\text{deîmpărțit}\\).<\/p><p><b>Observație:<\/b> Restul este <b>mai mic<\/b> decât împărțitorul.<\/p>",
+            "body_en": "<p><b>Form:<\/b> \\(a=b\\cdot q+r\\), with \\(0\\le r<b\\). Example: \\(29\\div 5=5\\) R \\(4\\) (since \\(5\\cdot 5+4=29\\)). The remainder is always smaller than the divisor.<\/p>"
+        },
+        {
+            "id": "v-putere",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "putere"
+            ],
+            "title_ro": "Puterea Cu Exponent Natural A Unui Număr Natural",
+            "title_en": "Powers with Natural Exponents",
+            "learn_ro": "Vei înțelege ce înseamnă a^n: înmulțire repetată.",
+            "why_ro": "Puterile scurtează calculele (arii\/cuburi, multipli de 10).",
+            "body_ro": "<p><b>Ce înseamnă \\(a^n\\)?<\/b> Înmulțim de \\(n\\) ori pe \\(a\\) cu el însuși. Ex.: \\(2^4=2\\times 2\\times 2\\times 2=16\\).<\/p><p><b>Citire:<\/b> \\(a^2\\) „a la pătrat”, \\(a^3\\) „a la cub”, \\(a^n\\) „a la puterea \\(n\\)”.<\/p><p><b>Cazuri speciale:<\/b> \\(a^1=a\\); \\(1^n=1\\); \\(0^n=0\\) pentru \\(n>0\\). (Nu folosim \\(0^0\\) aici.)<\/p><p><b>Puterile lui 10:<\/b> \\(10^2=100\\), număr cu 2 zerouri; \\(10^3=1000\\), etc.<\/p>",
+            "body_en": "<p><b>Meaning:<\/b> \\(a^n\\) is repeated multiplication: \\(a\\times a\\times\\cdots\\times a\\) (\\(n\\) times). Read as “\\(a\\) to the power \\(n\\)”. Special: \\(a^1=a\\); \\(1^n=1\\); \\(0^n=0\\) (\\(n>0\\)).<\/p>"
+        },
+        {
+            "id": "v-putere-calcul",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "putere",
+                "calcul"
+            ],
+            "title_ro": "Reguli De Calcul Cu Puteri",
+            "title_en": "Rules for Powers",
+            "learn_ro": "Vei folosi reguli simple ca să calculezi rapid cu puteri.",
+            "why_ro": "Regulile scurtează expresiile și te ajută la comparări.",
+            "body_ro": "<p><b>Aceeași bază:<\/b> \\(a^m\\cdot a^n=a^{m+n}\\); \\(\\dfrac{a^m}{a^n}=a^{m-n}\\) (pentru \\(m\\ge n\\), \\(a\\ne 0\\)).<\/p><p><b>Putere la putere:<\/b> \\((a^m)^n=a^{m\\cdot n}\\).<\/p><p><b>Produs la putere:<\/b> \\((ab)^n=a^n\\cdot b^n\\).<\/p><p><b>Exemplu:<\/b> \\(2^3\\cdot 2^4=2^7=128\\); \\(9^3:9^2=9^{1}=9\\); \\((3^2)^3=3^6=729\\).<\/p>",
+            "body_en": "<p><b>Same base:<\/b> \\(a^m\\cdot a^n=a^{m+n}\\); \\(\\dfrac{a^m}{a^n}=a^{m-n}\\) (for \\(m\\ge n\\), \\(a\\ne 0\\)). <b>Power of a power:<\/b> \\((a^m)^n=a^{mn}\\). <b>Product:<\/b> \\((ab)^n=a^n\\cdot b^n\\).<\/p>"
+        },
+        {
+            "id": "v-putere-comparare",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "putere",
+                "comparare"
+            ],
+            "title_ro": "Compararea Puterilor Numerelor Naturale",
+            "title_en": "Comparing Powers",
+            "learn_ro": "Vei ști să compari rapid folosind baza și exponentul.",
+            "why_ro": "Alegi mai mare\/mai mic fără a calcula mereu valorile exacte.",
+            "body_ro": "<p><b>Aceeași bază:<\/b> dacă \\(a>1\\), atunci \\(a^m<a^n\\) când \\(m<n\\). Ex.: \\(3^4<3^5\\).<\/p><p><b>Același exponent:<\/b> dacă \\(m>0\\), atunci \\(a^m<b^m\\) când \\(a<b\\). Ex.: \\(2^5<3^5\\).<\/p><p><b>Trucuri:<\/b> scrie ca puteri ale lui 10, 2 sau 3 când se poate (ex.: \\(100=10^2\\), \\(8=2^3\\)).<\/p>",
+            "body_en": "<p><b>Same base:<\/b> for \\(a>1\\), bigger exponent → bigger value (if \\(m<n\\), then \\(a^m<a^n\\)). <b>Same exponent:<\/b> for \\(m>0\\), if \\(a<b\\) then \\(a^m<b^m\\). Tips: use powers of 10\/2\/3 (e.g., \\(100=10^2\\), \\(8=2^3\\)).<\/p>"
+        },
+        {
+            "id": "v-pp",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "puteri",
+                "pătrate perfect"
+            ],
+            "title_ro": "Pătrate Perfecte",
+            "title_en": "Perfect Squares",
+            "learn_ro": "Vei recunoaște și calcula pătratele perfecte (n^2).",
+            "why_ro": "Apar la arii de pătrate și la distanțe (teorema lui Pitagora mai târziu).",
+            "body_ro": "<p><b>Definiție:<\/b> Un <b>pătrat perfect<\/b> este un număr de forma \\(n^2\\). Ex.: \\(1,4,9,16,25,36,49,64,81,100,121,144\\)...<\/p><p><b>Legătură cu geometria:<\/b> Dacă o latură are \\(n\\) unități, aria pătratului este \\(n^2\\).<\/p><p><b>Observații:<\/b> Ultima cifră a unui pătrat perfect poate fi doar 0,1,4,5,6 sau 9. De exemplu, un număr care se termină în 2 nu este pătrat perfect.<\/p><p><b>Exemple:<\/b> \\(7^2=49\\), \\(12^2=144\\). Simbolul rădăcinii: \\(\\sqrt{49}=7\\).<\/p>",
+            "body_en": "<p><b>Definition:<\/b> A <b>perfect square<\/b> has the form \\(n^2\\): \\(1,4,9,16,25,36,49,64,81,100\\ldots\\)<\/p><p><b>Geometry link:<\/b> square of side \\(n\\) has area \\(n^2\\).<\/p><p><b>Tip:<\/b> last digit can be 0,1,4,5,6,9.<\/p>"
+        },
+        {
+            "id": "v-cp",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "putere",
+                "cuburi perfecte"
+            ],
+            "title_ro": "Cuburi Perfecte",
+            "title_en": "Perfect Cubes",
+            "learn_ro": "Vei recunoaște și calcula cuburile perfecte (n^3).",
+            "why_ro": "Apar la volume (cuburi, paralelipipede) și la probleme cu grupe 3D.",
+            "body_ro": "<p><b>Definiție:<\/b> Un <b>cub perfect<\/b> este un număr de forma \\(n^3\\). Primele: \\(1,8,27,64,125,216,343,512,729,1000\\).<\/p><p><b>Legătură cu geometria:<\/b> Un cub cu latura \\(n\\) are volumul \\(n^3\\).<\/p><p><b>Exemple:<\/b> \\(2^3=8\\), \\(5^3=125\\), \\(10^3=1000\\).<\/p>",
+            "body_en": "<p><b>Definition:<\/b> A <b>perfect cube<\/b> has the form \\(n^3\\): \\(1,8,27,64,125,\\ldots\\) <b>Volume:<\/b> cube of side \\(n\\) has volume \\(n^3\\).<\/p>"
+        },
+        {
+            "id": "V-baza10",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "poziție"
+            ],
+            "title_ro": "Scrierea În Baza 10",
+            "title_en": "Base-10 (Decimal) Notation",
+            "learn_ro": "Vei citi, scrie și descompune numere în unități, zeci, sute, mii...",
+            "why_ro": "În viața de zi cu zi folosim sistemul zecimal (bani, măsuri, numere mari).",
+            "body_ro": "<p><b>Valoare de poziție:<\/b> Fiecare cifră arată câte <i>unități<\/i>, <i>zeci<\/i>, <i>sute<\/i>, <i>mii<\/i> avem.<\/p><p><b>Exemplu:<\/b> 4&nbsp;507 = 4 mii + 5 sute + 0 zeci + 7 unități.<\/p><p><b>Formă extinsă:<\/b> \\(4\\,507=4\\cdot 1000+5\\cdot 100+0\\cdot 10+7\\).<\/p><p><b>Citire corectă:<\/b> „patru mii cinci sute șapte”.<\/p>",
+            "body_en": "<p><b>Place value:<\/b> ones, tens, hundreds, thousands. Example: \\(4,507=4\\cdot 1000+5\\cdot 100+0\\cdot 10+7\\).<\/p>"
+        },
+        {
+            "id": "v-baza2",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "poziție"
+            ],
+            "title_ro": "Scrierea În Baza 2",
+            "title_en": "Binary (Base-2) Notation",
+            "learn_ro": "Vei transforma numere mici din baza 10 în baza 2 și invers.",
+            "why_ro": "Calculatoarele folosesc 0 și 1 (baza 2).",
+            "body_ro": "<p><b>Cifrele în baza 2:<\/b> doar 0 și 1. Valorile pozițiilor: \\(1,2,4,8,16,\\ldots\\) (puteri ale lui 2).<\/p><p><b>Exemple:<\/b> \\(5_{(10)}=101_{(2)}\\) (\\(4+0+1\\)); \\(13_{(10)}=1101_{(2)}\\) (\\(8+4+0+1\\)).<\/p><p><b>Metodă rapidă (împărțiri la 2):<\/b> împarți la 2 și notezi resturile; citești resturile <b>de la final la început<\/b>.<\/p>",
+            "body_en": "<p><b>Binary digits:<\/b> only 0 and 1. Place values are powers of 2: \\(1,2,4,8,\\ldots\\) Examples: \\(5_{10}=101_{2}\\); \\(13_{10}=1101_{2}\\).<\/p>"
+        },
+        {
+            "id": "v-ordinea-efect-op-2",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "operații"
+            ],
+            "title_ro": "Ordinea Efectuării Operațiilor (Cu Puteri). Utilizarea Parantezelor",
+            "title_en": "Order of Operations (with Powers) & Parentheses",
+            "learn_ro": "Vei rezolva expresii cu puteri respectând prioritatea corectă.",
+            "why_ro": "Expresiile lungi devin clare și corecte.",
+            "body_ro": "<p><b>Ordinea completă:<\/b><\/p><ol><li><b>Paranteze<\/b> (din interior spre exterior).<\/li><li><b>Puterile<\/b>.<\/li><li><b>Înmulțire<\/b> și <b>împărțire<\/b> (stânga→dreapta).<\/li><li><b>Adunare<\/b> și <b>scădere<\/b> (stânga→dreapta).<\/li><\/ol><p><b>Exemplu:<\/b> \\(2+3\\times 2^3=2+3\\times 8=2+24=26\\). <br> \\(((5+1)^2):2=36:2=18\\).<\/p><p><b>Sfat:<\/b> Folosește paranteze când vrei să „schimbi” ordinea.<\/p>",
+            "body_en": "<p><b>Full order:<\/b> Parentheses → Powers → Multiply\/Divide → Add\/Subtract. Example: \\(2+3\\times 2^3=26\\).<\/p>"
+        },
+        {
+            "id": "res-ipoteza-riemann",
+            "grade": "RES",
+            "chapter": "CERCETARE",
+            "tags": [
+                "Cercetare",
+                "ipoteză",
+                "riemann",
+                "numere prime",
+                "zeta",
+                "plan complex",
+                "Millennium Prize",
+                "istorie"
+            ],
+            "title_ro": "Ipoteza lui Riemann",
+            "title_en": "Riemann Hypothesis",
+            "learn_ro": "La final vei putea:\n• Explica pe scurt cum sunt distribuite numerele prime și de ce IR contează.\n• Folosi noțiunile de plan complex și fâșie critică (0 < Re(s) < 1).\n• Recunoaște formulele-cheie pentru ζ(s): seria Dirichlet, produsul lui Euler, ecuația funcțională.\n• Enunța exact Ipoteza lui Riemann și stadiul actual (12 noiembrie 2025: încă deschisă; premiu Clay 1.000.000 USD).\n• Povesti pe scurt istoria ideii lui Riemann și ce au completat alții după el.",
+            "why_ro": "IR e puntea dintre analiza complexă și teoria numerelor. O confirmare ar rafina spectaculos eroarea în Teorema numerelor prime și ar cimenta legături deja puternice cu fizica și teoriile matricilor aleatoare. În plus, e unul dintre cele 7 «Millennium Problems», premiat cu 1.000.000 USD la o soluție corectă.",
+            "body_ro": "<article class='lesson'><style>.lesson-header{position:static !important;top:auto !important;}.lesson-header *{position:static !important;}.lesson-riemann-figure{max-width:560px;margin:20px auto;text-align:center;}.lesson-riemann-figure img{width:100%;height:auto;display:block;border-radius:16px;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.18);}.lesson-riemann-figure figcaption{margin-top:10px;opacity:.82;font-size:.95em;line-height:1.45;}<\/style><div class='lesson-header'><h1><strong>Ipoteza lui Riemann<\/strong> — ghid complet, cu istorie<\/h1><p><em>Stadiu: nerezolvată (12 noiembrie 2025). Premiu Clay: 1.000.000 USD. Nu există Premiu Nobel pentru matematică.<\/em><\/p><\/div><section><h2>1) Primele: „atomii” numerelor<\/h2><p>Orice număr natural \\(>1\\) se descompune unic în produs de numere prime. Problema centrală: <strong>câte prime apar până la \\(x\\)<\/strong>? Funcția de numărare este \\(\\pi(x)\\). Teorema numerelor prime spune că \\(\\pi(x)\\sim\\mathrm{li}(x)\\) (sau aproximativ \\(x\/\\ln x\\)), dar vrem <strong>control pe eroare<\/strong> — aici apare Ipoteza lui Riemann.<\/p><\/section><section><h2>2) Planul complex, pe scurt<\/h2><p>Un număr complex este \\(s=\\sigma+it\\), cu \\(\\sigma=\\Re(s)\\) pe orizontală și \\(t=\\Im(s)\\) pe verticală. <strong>Fâșia critică<\/strong> este <code>0 &lt; Re(s) &lt; 1<\/code>, iar <strong>linia critică<\/strong> este <code>Re(s)=1\/2<\/code>.<\/p><\/section><section><h2>3) Funcția zeta a lui Riemann, \\(\\zeta(s)\\)<\/h2><p>Definiția (pentru \\(\\Re(s)>1\\)):<\/p><p class='formula'>\\[ \\zeta(s)=\\sum_{n=1}^{\\infty}\\frac{1}{n^s}. \\]<\/p><p><strong>Produsul lui Euler<\/strong> (leagă direct \\(\\zeta\\) de prime):<\/p><p class='formula'>\\[ \\zeta(s)=\\prod_{\\text{p prim}}\\frac{1}{1-p^{-s}}. \\]<\/p><p>Cu funcția simetrică<\/p><p class='formula'>\\[ \\xi(s)=\\tfrac{1}{2}s(s-1)\\,\\pi^{-s\/2}\\,\\Gamma\\!\\left(\\tfrac{s}{2}\\right)\\zeta(s), \\]<\/p><p>avem <strong>ecuația funcțională<\/strong> \\(\\xi(s)=\\xi(1-s)\\). Riemann a continuat analitic \\(\\zeta\\) în tot planul, cu un <em>pol simplu<\/em> la \\(s=1\\).<\/p><\/section><section><h2>4) Zerouri: triviale vs. netriviale<\/h2><ul><li><strong>Triviale:<\/strong> \\(s=-2,-4,-6,\\ldots\\)<\/li><li><strong>Netriviale:<\/strong> toate sunt în fâșia critică \\(0&lt;\\Re(s)&lt;1\\).<\/li><\/ul><p><strong>Ipoteza lui Riemann (IR):<\/strong> <em>toate<\/em> zerourile netriviale satisfac \\(\\Re(s)=\\tfrac{1}{2}\\).<\/p><\/section><section><h2>5) De ce contează IR?<\/h2><p>IR ar da <strong>limite aproape optime<\/strong> pentru eroarea din Teorema numerelor prime, deci o descriere mult mai fină a <strong>distribuției primelor<\/strong>. În plus, legături profunde cu <strong>matrici aleatoare<\/strong> și <strong>fizică<\/strong> (spectre cuantice, haos cuantic).<\/p><\/section><section><h2>6) Schemă vizuală (conceptual)<\/h2><figure class='lesson-riemann-figure'><img src='\/img\/riemann_critical_strip.png' alt='Fâșia critică 0 &lt; Re(s) &lt; 1 și zerouri pe Re(s)=1\/2 (conceptual)'\/><figcaption>Fâșia critică și linia \\(\\Re(s)=1\/2\\). X-urile marchează conceptual zerouri pe linia critică.<\/figcaption><\/figure><\/section><section><h2>7) Istorie: cum a apărut ideea<\/h2><h3>Formarea<\/h3><p>Riemann (1826–1866) a studiat la <strong>Göttingen<\/strong> și <strong>Berlin<\/strong>. <strong>Gauss<\/strong> i-a fost conducător la doctorat (1851, funcții complexe), iar <strong>Dirichlet<\/strong> i-a orientat interesul către analiza în teoria numerelor. Era familiar cu ideile lui <strong>Jacobi<\/strong> (funcția theta) și cu tehnici integrale profunde.<\/p><h3>Momentul 1859<\/h3><p>În <strong>noiembrie 1859<\/strong>, Riemann prezintă la <em>Academia din Berlin<\/em> nota <em>Über die Anzahl der Primzahlen unter einer gegebenen Größe<\/em>. În câteva pagini, el introduce perspectiva complex-analitică, dă ecuația funcțională, leagă \\(\\pi(x)\\) de zerouri printr-o <strong>formulă explicită<\/strong> și spune că e „<em>foarte probabil<\/em>” ca toate rădăcinile relevante să fie pe linia critică (fără o demonstrație completă în acea notă).<\/p><h3>Ce au completat alții<\/h3><ul><li><strong>Riemann–von Mangoldt<\/strong> (1905): numărul de zerouri până la \\(T\\) are forma <span class='formula'>\\( N(T)=\\dfrac{T}{2\\pi}\\log\\dfrac{T}{2\\pi}-\\dfrac{T}{2\\pi}+O(\\log T) \\)<\/span> — schițată de Riemann, demonstrată riguros de <strong>von Mangoldt<\/strong>.<\/li><li><strong>Riemann–Siegel<\/strong> (1932, <em>Siegel<\/em>): formulă asimptotică din <em>Nachlass<\/em>, crucială pentru calcul pe linia critică.<\/li><li><strong>Hardy (1914)<\/strong>: infinit de multe zerouri pe linia critică; <strong>Levinson (1974)<\/strong>: cel puțin \\(1\/3\\) pe linie; <strong>Conrey (1989)<\/strong>: \\(>2\/5\\); rezultate moderne \\(>5\/12\\).<\/li><\/ul><\/section><section><h2>8) Formula explicită & legătura cu \\(\\pi(x)\\)<\/h2><p>În esență, abaterile lui \\(\\pi(x)\\) de la \\(\\mathrm{li}(x)\\) se exprimă ca o sumă peste zerourile lui \\(\\zeta\\). Dacă <strong>toate<\/strong> zerourile netriviale sunt pe \\(\\Re(s)=1\/2\\), eroarea devine mult mai mică decât fără IR.<\/p><\/section><section><h2>9) Stadiul actual & premii<\/h2><ul><li><strong>Nerezolvată<\/strong> (12 noiembrie 2025). Computațional s-au verificat enorm de multe zerouri pe linia critică, fără contraexemple.<\/li><li><strong>Fără Nobel<\/strong> la matematică, dar <strong>Clay Mathematics Institute<\/strong> oferă <strong>1.000.000 USD<\/strong> pentru o soluție validă.<\/li><\/ul><\/section><section><h2>10) Rezumat ultra-scurt<\/h2><p>\\(\\zeta(s)\\) codifică primele (produsul lui Euler). <strong>Zerourile netriviale<\/strong> controlează finețea distribuției primelor. IR afirmă că <em>toate<\/em> aceste zerouri au \\(\\Re(s)=1\/2\\).<\/p><\/section><\/article>",
+            "body_en": "<article class='lesson'><style>.lesson-header{position:static !important;top:auto !important;}.lesson-header *{position:static !important;}.lesson-riemann-figure{max-width:560px;margin:20px auto;text-align:center;}.lesson-riemann-figure img{width:100%;height:auto;display:block;border-radius:16px;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.18);}.lesson-riemann-figure figcaption{margin-top:10px;opacity:.82;font-size:.95em;line-height:1.45;}<\/style><div class='lesson-header'><h1><strong>Riemann Hypothesis<\/strong> — structured summary<\/h1><p><em>Status: open (Nov 12, 2025). Clay Prize: $1,000,000. No Nobel Prize in mathematics.<\/em><\/p><\/div><section><h2>1) Prime numbers: the “atoms” of arithmetic<\/h2><p>Every natural number greater than 1 can be written uniquely as a product of prime numbers. The central problem is: <strong>how many primes are there up to \\(x\\)<\/strong>? The counting function is \\(\\pi(x)\\). The prime number theorem says that \\(\\pi(x)\\sim\\mathrm{li}(x)\\) (or roughly \\(x\/\\ln x\\)), but we want <strong>control over the error term<\/strong> — and this is where the Riemann Hypothesis enters.<\/p><\/section><section><h2>2) The complex plane, briefly<\/h2><p>A complex number is \\(s=\\sigma+it\\), where \\(\\sigma=\\Re(s)\\) is the horizontal coordinate and \\(t=\\Im(s)\\) is the vertical one. The <strong>critical strip<\/strong> is <code>0 &lt; Re(s) &lt; 1<\/code>, and the <strong>critical line<\/strong> is <code>Re(s)=1\/2<\/code>.<\/p><\/section><section><h2>3) The Riemann zeta function, \\(\\zeta(s)\\)<\/h2><p>Definition (for \\(\\Re(s)>1\\)):<\/p><p class='formula'>\\[ \\zeta(s)=\\sum_{n=1}^{\\infty}\\frac{1}{n^s}. \\]<\/p><p><strong>Euler’s product<\/strong> (which links \\(\\zeta\\) directly to the primes):<\/p><p class='formula'>\\[ \\zeta(s)=\\prod_{\\text{p prime}}\\frac{1}{1-p^{-s}}. \\]<\/p><p>With the symmetric function<\/p><p class='formula'>\\[ \\xi(s)=\\tfrac{1}{2}s(s-1)\\,\\pi^{-s\/2}\\,\\Gamma\\!\\left(\\tfrac{s}{2}\\right)\\zeta(s), \\]<\/p><p>we have the <strong>functional equation<\/strong> \\(\\xi(s)=\\xi(1-s)\\). Riemann analytically continued \\(\\zeta\\) to the whole complex plane, with a <em>simple pole<\/em> at \\(s=1\\).<\/p><\/section><section><h2>4) Zeros: trivial vs. nontrivial<\/h2><ul><li><strong>Trivial zeros:<\/strong> \\(s=-2,-4,-6,\\ldots\\)<\/li><li><strong>Nontrivial zeros:<\/strong> all lie in the critical strip \\(0&lt;\\Re(s)&lt;1\\).<\/li><\/ul><p><strong>The Riemann Hypothesis (RH):<\/strong> <em>all<\/em> nontrivial zeros satisfy \\(\\Re(s)=\\tfrac{1}{2}\\).<\/p><\/section><section><h2>5) Why does RH matter?<\/h2><p>RH would give <strong>nearly optimal bounds<\/strong> for the error term in the prime number theorem, which means a much finer description of the <strong>distribution of prime numbers<\/strong>. It also has deep connections with <strong>random matrix theory<\/strong> and <strong>physics<\/strong> (quantum spectra and quantum chaos).<\/p><\/section><section><h2>6) Visual sketch (conceptual)<\/h2><figure class='lesson-riemann-figure'><img src='\/img\/riemann_critical_strip.png' alt='Critical strip 0 &lt; Re(s) &lt; 1 and zeros on Re(s)=1\/2 (conceptual)'\/><figcaption>The critical strip and the line \\(\\Re(s)=1\/2\\). The X-marks represent zeros on the critical line conceptually.<\/figcaption><\/figure><\/section><section><h2>7) History: how the idea appeared<\/h2><h3>Background<\/h3><p>Riemann (1826–1866) studied in <strong>Göttingen<\/strong> and <strong>Berlin<\/strong>. <strong>Gauss<\/strong> supervised his doctorate (1851, on complex functions), while <strong>Dirichlet<\/strong> helped direct his attention toward analysis in number theory. He was also familiar with the ideas of <strong>Jacobi<\/strong> (the theta function) and deep integral methods.<\/p><h3>The 1859 moment<\/h3><p>In <strong>November 1859<\/strong>, Riemann presented to the <em>Berlin Academy<\/em> his famous note <em>Über die Anzahl der Primzahlen unter einer gegebenen Größe<\/em>. In just a few pages, he introduced the complex-analytic viewpoint, gave the functional equation, connected \\(\\pi(x)\\) to the zeros through an <strong>explicit formula<\/strong>, and stated that it was “<em>very likely<\/em>” that all relevant zeros lie on the critical line (without a complete proof in that note).<\/p><h3>What others later completed<\/h3><ul><li><strong>Riemann–von Mangoldt<\/strong> (1905): the number of zeros up to height \\(T\\) has the form <span class='formula'>\\( N(T)=\\dfrac{T}{2\\pi}\\log\\dfrac{T}{2\\pi}-\\dfrac{T}{2\\pi}+O(\\log T) \\)<\/span> — sketched by Riemann and proved rigorously by <strong>von Mangoldt<\/strong>.<\/li><li><strong>Riemann–Siegel<\/strong> (1932, by <em>Siegel<\/em>): an asymptotic formula extracted from Riemann’s <em>Nachlass<\/em>, crucial for computations on the critical line.<\/li><li><strong>Hardy (1914)<\/strong>: infinitely many zeros on the critical line; <strong>Levinson (1974)<\/strong>: at least \\(1\/3\\) on the line; <strong>Conrey (1989)<\/strong>: more than \\(2\/5\\); modern results exceed \\(5\/12\\).<\/li><\/ul><\/section><section><h2>8) The explicit formula & the link with \\(\\pi(x)\\)<\/h2><p>In essence, the deviation of \\(\\pi(x)\\) from \\(\\mathrm{li}(x)\\) can be expressed as a sum over the zeros of \\(\\zeta\\). If <strong>all<\/strong> nontrivial zeros lie on \\(\\Re(s)=1\/2\\), then the error term becomes much smaller than what is known without RH.<\/p><\/section><section><h2>9) Current status & prize<\/h2><ul><li><strong>Still unsolved<\/strong> (Nov 12, 2025). Computationally, enormous numbers of zeros have been checked on the critical line, with no counterexample found.<\/li><li><strong>No Nobel Prize<\/strong> exists in mathematics, but the <strong>Clay Mathematics Institute<\/strong> offers <strong>$1,000,000<\/strong> for a valid proof.<\/li><\/ul><\/section><section><h2>10) Ultra-short summary<\/h2><p>\\(\\zeta(s)\\) encodes the primes through Euler’s product. The <strong>nontrivial zeros<\/strong> control the fine distribution of prime numbers. RH says that <em>all<\/em> of them satisfy \\(\\Re(s)=1\/2\\).<\/p><\/section><\/article>"  
+        },
+        {
+            "id": "v-mulțimi-de-nr",
+            "grade": "VI",
+            "chapter": "Mulțimi",
+            "tags": [
+                "VI",
+                "mulțimi",
+                "numere",
+                "apartenență",
+                "submulțime"
+            ],
+            "title_ro": "Mulțimi. Mulțimea Numerelor Naturale",
+            "title_en": "Sets. The Set of Natural Numbers",
+            "learn_ro": "Vei învăța ce este o mulțime, cum se notează elementele ei, ce înseamnă apartenența și neapartenența, ce este o submulțime și cum lucrăm cu mulțimea numerelor naturale.",
+            "learn_en": "You will learn what a set is, how its elements are written, what membership and non-membership mean, what a subset is, and how we work with the set of natural numbers.",
+            "why_ro": "Mulțimile apar peste tot în matematică: la numere, ecuații, funcții, geometrie și probabilități. Dacă înțelegi bine mulțimile, restul matematicii devine mult mai clar.",
+            "why_en": "Sets appear everywhere in mathematics: in numbers, equations, functions, geometry, and probability. If you understand sets well, the rest of mathematics becomes much clearer.",
+            "body_ro": "<p><b>Ce este o mulțime?</b> O mulțime este o colecție de obiecte bine definite. Aceste obiecte se numesc <i>elemente</i> ale mulțimii.</p><p><b>Exemple:</b> mulțimea zilelor săptămânii, mulțimea literelor din cuvântul „matematica”, mulțimea numerelor pare mai mici decât 10.</p><p><b>Notare:</b> Mulțimile se notează de obicei cu litere mari: \\(A, B, M, N\\). Elementele se scriu între acolade.</p><p>Exemplu: \\(A=\\{1,2,3,4\\}\\).</p><p><b>Apartenență:</b> Dacă un element se află într-o mulțime, scriem \\(\\in\\). Dacă nu se află, scriem \\(\\notin\\).</p><p>Exemple: \\(2\\in A\\), dar \\(7\\notin A\\).</p><p><b>Mulțimea numerelor naturale</b> se notează cu \\(\\mathbb{N}\\). În această lecție, ea conține numerele \\(0,1,2,3,4,\\ldots\\).</p><p>Deci: \\(\\mathbb{N}=\\{0,1,2,3,4,5,\\ldots\\}\\).</p><p><b>Mulțime finită și mulțime infinită:</b> O mulțime este finită dacă are un număr limitat de elemente. O mulțime este infinită dacă nu se termină niciodată.</p><p>Exemplu de mulțime finită: \\(\\{2,4,6,8\\}\\). Exemplu de mulțime infinită: \\(\\mathbb{N}\\).</p><p><b>Submulțime:</b> Dacă toate elementele unei mulțimi \\(A\\) se află și în mulțimea \\(B\\), atunci spunem că \\(A\\) este submulțime a lui \\(B\\) și scriem \\(A\\subseteq B\\).</p><p>Exemplu: \\(\\{2,4\\}\\subseteq\\{1,2,3,4,5\\}\\).</p><p><b>Mulțimea vidă:</b> Mulțimea care nu are niciun element se numește mulțime vidă și se notează \\(\\varnothing\\).</p><p><b>Important:</b> Într-o mulțime, ordinea elementelor nu contează, iar același element nu se scrie de două ori.</p><p>De exemplu, \\(\\{1,2,3\\}=\\{3,2,1\\}\\), iar \\(\\{1,1,2,2,3\\}=\\{1,2,3\\}\\).</p>",
+            "body_en": "<p><b>What is a set?</b> A set is a well-defined collection of objects. These objects are called the <i>elements</i> of the set.</p><p><b>Examples:</b> the set of days of the week, the set of letters in a word, the set of even numbers smaller than 10.</p><p><b>Notation:</b> Sets are usually written with capital letters such as \\(A, B, M, N\\). Their elements are placed inside braces.</p><p>Example: \\(A=\\{1,2,3,4\\}\\).</p><p><b>Membership:</b> If an element belongs to a set, we write \\(\\in\\). If it does not belong, we write \\(\\notin\\).</p><p>Examples: \\(2\\in A\\), but \\(7\\notin A\\).</p><p><b>The set of natural numbers</b> is written as \\(\\mathbb{N}\\). In this lesson, it contains \\(0,1,2,3,4,\\ldots\\).</p><p>So: \\(\\mathbb{N}=\\{0,1,2,3,4,5,\\ldots\\}\\).</p><p><b>Finite and infinite sets:</b> A set is finite if it has a limited number of elements. A set is infinite if it goes on forever.</p><p><b>Subset:</b> If every element of a set \\(A\\) also belongs to a set \\(B\\), then \\(A\\) is a subset of \\(B\\), written \\(A\\subseteq B\\).</p><p>Example: \\(\\{2,4\\}\\subseteq\\{1,2,3,4,5\\}\\).</p><p><b>Empty set:</b> The set with no elements is called the empty set and is written \\(\\varnothing\\).</p><p><b>Important fact:</b> In a set, the order of the elements does not matter, and repeated elements are written only once.</p><p>For example, \\(\\{1,2,3\\}=\\{3,2,1\\}\\), and \\(\\{1,1,2,2,3\\}=\\{1,2,3\\}\\).</p>"
+        },
+        {
+            "id": "v-descop-nr-nat-in-prime",
+            "grade": "VI",
+            "chapter": "Divizibilitatea Numerelor Naturale",
+            "tags": [
+                "VI",
+                "numere",
+                "prime",
+                "divizibilitate",
+                "factori primi"
+            ],
+            "title_ro": "Descompunerea Numerelor Naturale În Produs De Factori Primi",
+            "title_en": "Prime Factorization of Natural Numbers",
+            "learn_ro": "Vei învăța ce sunt numerele prime și compuse, cum descompui un număr natural în factori primi și de ce această descompunere este foarte importantă în calcule.",
+            "learn_en": "You will learn what prime and composite numbers are, how to factor a natural number into prime factors, and why this factorization is very important in calculations.",
+            "why_ro": "Descompunerea în factori primi te ajută la CMMDC, CMMMC, simplificarea fracțiilor, reguli de divizibilitate și multe probleme de olimpiadă.",
+            "why_en": "Prime factorization helps with GCD, LCM, simplifying fractions, divisibility rules, and many olympiad-style problems.",
+            "body_ro": "<p><b>Număr prim:</b> Un număr natural mai mare decât 1 se numește <i>prim</i> dacă are exact doi divizori: pe 1 și pe el însuși.</p><p>Exemple: \\(2,3,5,7,11,13\\).</p><p><b>Număr compus:</b> Un număr natural mai mare decât 1 se numește <i>compus</i> dacă are mai mult de doi divizori.</p><p>Exemple: \\(4,6,8,9,10,12\\).</p><p><b>Observație:</b> Numărul \\(1\\) nu este nici prim, nici compus.</p><p><b>Ce înseamnă descompunerea în factori primi?</b> Înseamnă să scriem un număr ca produs de numere prime.</p><p>Exemplu: \\(12=2\\cdot 2\\cdot 3=2^2\\cdot 3\\).</p><p><b>Metoda practică:</b> Împarți numărul pe rând la cel mai mic număr prim posibil: 2, apoi 3, apoi 5, apoi 7 etc., până când ajungi la 1.</p><p><b>Exemplu detaliat:</b> Pentru \\(60\\): \\(60:2=30\\), \\(30:2=15\\), \\(15:3=5\\), \\(5:5=1\\). Deci \\(60=2^2\\cdot 3\\cdot 5\\).</p><p><b>De ce e util?</b></p><ul><li>Găsești mai ușor divizorii unui număr.</li><li>Calculezi CMMDC și CMMMC.</li><li>Simplifici fracții.</li><li>Înțelegi mai bine structura numerelor naturale.</li></ul><p><b>Important:</b> Descompunerea în factori primi este unică, în afară de ordinea factorilor.</p><p>De exemplu, \\(36=2^2\\cdot 3^2\\), iar dacă scrii \\(3^2\\cdot 2^2\\), este același lucru.</p>",
+            "body_en": "<p><b>Prime number:</b> A natural number greater than 1 is called <i>prime</i> if it has exactly two divisors: 1 and itself.</p><p>Examples: \\(2,3,5,7,11,13\\).</p><p><b>Composite number:</b> A natural number greater than 1 is called <i>composite</i> if it has more than two divisors.</p><p>Examples: \\(4,6,8,9,10,12\\).</p><p><b>Important note:</b> The number \\(1\\) is neither prime nor composite.</p><p><b>What is prime factorization?</b> It means writing a number as a product of prime numbers.</p><p>Example: \\(12=2\\cdot 2\\cdot 3=2^2\\cdot 3\\).</p><p><b>Practical method:</b> Divide the number step by step by the smallest prime possible: 2, then 3, then 5, then 7, and so on, until you reach 1.</p><p><b>Detailed example:</b> For \\(60\\): \\(60:2=30\\), \\(30:2=15\\), \\(15:3=5\\), \\(5:5=1\\). Therefore \\(60=2^2\\cdot 3\\cdot 5\\).</p><p><b>Why is it useful?</b></p><ul><li>It helps you find divisors more easily.</li><li>It helps you compute GCD and LCM.</li><li>It helps you simplify fractions.</li><li>It shows the internal structure of natural numbers.</li></ul><p><b>Important fact:</b> Prime factorization is unique, except for the order of the factors.</p>"
+        },
+        {
+            "id": "vi-rapoarte",
+            "grade": "VI",
+            "chapter": "Rapoarte Și Proporții",
+            "tags": [
+                "VI",
+                "numere",
+                "rapoarte",
+                "proporții",
+                "împărțire"
+            ],
+            "title_ro": "Rapoarte",
+            "title_en": "Ratios",
+            "learn_ro": "Vei învăța ce este un raport, cum se scrie și se simplifică, cum comparăm două mărimi prin raport și cum interpretăm rapoartele în probleme practice.",
+            "learn_en": "You will learn what a ratio is, how to write and simplify it, how to compare two quantities using a ratio, and how to interpret ratios in practical problems.",
+            "why_ro": "Rapoartele apar în rețete, hărți, viteză, preț pe kilogram, concentrații, procente și multe alte situații reale.",
+            "why_en": "Ratios appear in recipes, maps, speed, price per kilogram, concentrations, percentages, and many other real-life situations.",
+            "body_ro": "<p><b>Ce este un raport?</b> Raportul a două numere \\(a\\) și \\(b\\), cu \\(b\\neq 0\\), este câtul împărțirii \\(a:b\\) sau fracția \\(\\dfrac{a}{b}\\).</p><p><b>Exemplu:</b> Dacă într-o clasă sunt 12 fete și 18 băieți, raportul fetelor la băieți este \\(12:18\\).</p><p><b>Simplificarea raportului:</b> La fel ca la fracții, împărțim ambii termeni prin același număr nenul.</p><p>Exemplu: \\(12:18=2:3\\), deoarece împărțim prin 6.</p><p><b>Interpretare:</b> Raportul \\(2:3\\) înseamnă că la 2 părți din prima mărime corespund 3 părți din a doua.</p><p><b>Rapoarte egale:</b> Două rapoarte sunt egale dacă reprezintă aceeași valoare numerică.</p><p>Exemplu: \\(2:3=4:6=6:9\\).</p><p><b>Important:</b> Ordinea contează. \\(2:3\\) nu este același lucru cu \\(3:2\\).</p><p><b>Unde apar rapoartele?</b></p><ul><li>La rețete: 2 pahare de apă la 1 pahar de sirop.</li><li>La hărți: scara 1:100000.</li><li>La viteză: distanță raportată la timp.</li><li>La prețuri: lei pe kilogram.</li></ul><p><b>Observație:</b> Un raport este o comparație prin împărțire, nu prin scădere.</p>",
+            "body_en": "<p><b>What is a ratio?</b> The ratio of two numbers \\(a\\) and \\(b\\), with \\(b\\neq 0\\), is the quotient \\(a:b\\) or the fraction \\(\\dfrac{a}{b}\\).</p><p><b>Example:</b> If a class has 12 girls and 18 boys, the ratio of girls to boys is \\(12:18\\).</p><p><b>Simplifying a ratio:</b> Just like fractions, we divide both terms by the same nonzero number.</p><p>Example: \\(12:18=2:3\\), because we divide by 6.</p><p><b>Meaning:</b> The ratio \\(2:3\\) means that for every 2 parts of the first quantity, there are 3 parts of the second quantity.</p><p><b>Equal ratios:</b> Two ratios are equal if they represent the same numerical value.</p><p>Example: \\(2:3=4:6=6:9\\).</p><p><b>Important:</b> Order matters. \\(2:3\\) is not the same as \\(3:2\\).</p><p><b>Where do ratios appear?</b></p><ul><li>Recipes: 2 cups of water for 1 cup of syrup.</li><li>Maps: scale 1:100000.</li><li>Speed: distance compared to time.</li><li>Prices: money per kilogram.</li></ul><p><b>Key idea:</b> A ratio compares by division, not by subtraction.</p>"
+        }
+    ],
+    "problems": [
+        {
+            "id": "v-suma-gauss-1",
+            "grade": "V",
+            "chapter": "Numere Naturale",
+            "tags": [
+                "V",
+                "numere",
+                "sume",
+                "șiruri"
+            ],
+            "title_ro": "1+2+3+...+50",
+            "title_en": "1+2+3+...+50",
+            "lesson_id": "v-suma-gauss",
+            "difficulty": 0,
+            "olymp_level": "",
+            "statement_ro": "Calculează suma: \\(1+2+3+\\cdots+50\\)",
+            "statement_en": "Calculate the sum: \\(1+2+3+\\cdots+50\\)",
+            "answer": "1275",
+            "source": "Set creat",
+            "hint1_ro": "Folosește formula Sumei lui Gauss.",
+            "hint2_ro": "Formula este: \\(1+2+3+\\cdots+n=\\dfrac{n(n+1)}{2}\\)."
+        }
+    ],
+    "exams": []
+}
