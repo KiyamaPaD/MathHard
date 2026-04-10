@@ -14,7 +14,7 @@ const PROFILE_TEXT = {
     page_title: "MathHard — Profilul tău",
 
     logo_slogan: "Profilul tău",
-    profile_back_home: "⬅️ Înapoi acasă",
+    back_home: "⬅️ Înapoi acasă",
 
     account_kicker: "MathHard Account",
     visitor: "Vizitator",
@@ -161,7 +161,7 @@ const PROFILE_TEXT = {
     page_title: "MathHard — Your profile",
 
     logo_slogan: "Your profile",
-    profile_back_home: "⬅️ Back home",
+    back_home: "⬅️ Back home",
 
     account_kicker: "MathHard Account",
     visitor: "Visitor",
@@ -557,7 +557,7 @@ function applyProfileStaticTexts() {
   if (logoSlogan) logoSlogan.textContent = t("logo_slogan");
 
   const backHomeBtn = document.querySelector('.header-actions a[href="/index.html"]');
-  if (backHomeBtn) backHomeBtn.textContent = t("profile_back_home");
+  if (backHomeBtn) backHomeBtn.textContent = t("back_home");
 
   const kicker = document.querySelector(".profile-kicker");
   if (kicker) kicker.textContent = t("account_kicker");
