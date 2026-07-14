@@ -1,4 +1,5 @@
 import { supabase } from "./supabase-client.js";
+import { loadRemoteContentCatalog, mergeById } from "./content-repository.js";
 
 console.log("APP.JS LOADED");
 
@@ -428,7 +429,7 @@ function normalizeLesson(L){
       year: Number(E.year ?? E.exam_year ?? 0),
       title_ro: E.title_ro ?? E.exam_title_ro ?? "",
       title_en: E.title_en ?? E.exam_title_en ?? "",
-      defaultHours: Number(E.defaultHours ?? E.exam_hours ?? 2),
+      defaultHours: Number(E.defaultHours ?? E.default_hours ?? E.exam_hours ?? 2),
       problems: problemsArray,
       items: itemsArray,
       scoring_profile: E.scoring_profile || "default_exact_v1",
@@ -2387,95 +2388,25 @@ function normalizeLesson(L){
     ]
   };
 
-  function upsertById(target, incoming, normalizer){
-    (incoming || []).forEach(item => {
-      const normalized = normalizer(item);
-      const idx = target.findIndex(x => x.id === normalized.id);
+  function replaceCatalogTarget(target, items, normalizer) {
+    target.length = 0;
+    target.push(...(items || []).map(normalizer));
+  }
 
-      if (idx === -1) {
-        target.push(normalized);
-      } else {
-        target[idx] = { ...target[idx], ...normalized };
-      }
+  async function reloadAllContentFromSupabase(forceRefresh = false) {
+    const remoteCatalog = await loadRemoteContentCatalog({
+      supabase,
+      forceRefresh
     });
-  }
 
-  async function loadJsonData() {
-    try {
-      const resp = await fetch("/data/problems.json", {
-        headers: { Accept: "application/json" },
-        cache: "no-store"
-      });
+    // At runtime the application now consumes one merged catalog. The bundled
+    // DATA object remains the offline/base layer, while JSON and Supabase are
+    // combined once by content-repository.js.
+    const mergedCatalog = mergeById(BASE_DATA, remoteCatalog);
 
-      if (!resp.ok) throw new Error("problems.json not ok");
-
-      const json = await resp.json();
-
-      return {
-        lessons: Array.isArray(json.lessons) ? json.lessons : [],
-        problems: Array.isArray(json.problems) ? json.problems : [],
-        exams: Array.isArray(json.exams) ? json.exams : []
-      };
-    } catch (e) {
-      console.warn("Nu am putut încărca /data/problems.json:", e);
-
-      return window.SERVER_DATA || {
-        lessons: [],
-        problems: [],
-        exams: []
-      };
-    }
-  }
-
-  async function loadSupabaseData() {
-    try {
-      const [
-        { data: lessons, error: lessonsError },
-        { data: problems, error: problemsError },
-        { data: exams, error: examsError }
-      ] = await Promise.all([
-        supabase.from("mh_lessons").select("*"),
-        supabase.from("mh_problems").select("*"),
-        supabase.from("mh_exams").select("*")
-      ]);
-
-      if (lessonsError) throw lessonsError;
-      if (problemsError) throw problemsError;
-      if (examsError) throw examsError;
-
-      return {
-        lessons: lessons || [],
-        problems: problems || [],
-        exams: exams || []
-      };
-    } catch (err) {
-      console.error("Eroare la încărcarea din Supabase:", err);
-      return { lessons: [], problems: [], exams: [] };
-    }
-  }
-
-  async function reloadAllContentFromSupabase() {
-    const jsonData = await loadJsonData();
-    const supabaseData = await loadSupabaseData();
-
-    DATA.lessons.length = 0;
-    DATA.problems.length = 0;
-    DATA.exams.length = 0;
-
-    // 1) baza hardcodată din data.js
-    upsertById(DATA.lessons, BASE_DATA.lessons, normalizeLesson);
-    upsertById(DATA.problems, BASE_DATA.problems, normalizeProblem);
-    upsertById(DATA.exams, BASE_DATA.exams, normalizeExam);
-
-    // 2) problems.json / SERVER_DATA
-    upsertById(DATA.lessons, jsonData.lessons, normalizeLesson);
-    upsertById(DATA.problems, jsonData.problems, normalizeProblem);
-    upsertById(DATA.exams, jsonData.exams, normalizeExam);
-
-    // 3) Supabase peste toate
-    upsertById(DATA.lessons, supabaseData.lessons, normalizeLesson);
-    upsertById(DATA.problems, supabaseData.problems, normalizeProblem);
-    upsertById(DATA.exams, supabaseData.exams, normalizeExam);
+    replaceCatalogTarget(DATA.lessons, mergedCatalog.lessons, normalizeLesson);
+    replaceCatalogTarget(DATA.problems, mergedCatalog.problems, normalizeProblem);
+    replaceCatalogTarget(DATA.exams, mergedCatalog.exams, normalizeExam);
 
     buildNestedTree();
     buildTagPanel();
@@ -2490,15 +2421,16 @@ function normalizeLesson(L){
     }
   }
 
-  // Îmbinăm în DATA
+  // Load custom content without blocking the first render. If profile.html has
+  // already loaded the catalog, the shared session cache makes this immediate.
   (async function mergeCustom() {
-  try {
-    await reloadAllContentFromSupabase();
-    resumeLockedExamIfAny();
-  } catch (err) {
-    console.error("Eroare la încărcarea din Supabase:", err);
-  }
-})();
+    try {
+      await reloadAllContentFromSupabase();
+      resumeLockedExamIfAny();
+    } catch (err) {
+      console.error("Eroare la încărcarea catalogului:", err);
+    }
+  })();
 
   /* ===== ADMIN PANEL ===== */
   const adminBtn = document.getElementById("adminBtn");
@@ -3310,7 +3242,7 @@ function normalizeLesson(L){
           const { error } = await query;
           if (error) throw error;
 
-          await reloadAllContentFromSupabase();
+          await reloadAllContentFromSupabase(true);
           mhRenderAdminList();
 
           const status = document.getElementById("mhPublishStatus");
@@ -3581,7 +3513,7 @@ function mhValidateExamPayload(payload) {
       const { error } = await query;
       if (error) throw error;
 
-      await reloadAllContentFromSupabase();
+      await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
       mhClearAdminForm();
 
@@ -3600,7 +3532,7 @@ function mhValidateExamPayload(payload) {
   });
 
   document.getElementById("mhRefreshList")?.addEventListener("click", async () => {
-    await reloadAllContentFromSupabase();
+    await reloadAllContentFromSupabase(true);
     mhRenderAdminList();
   });
 

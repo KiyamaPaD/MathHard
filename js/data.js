@@ -1,11 +1,5 @@
 const WIDGET_ID = "axa-naturale-1";
 
-window.SERVER_DATA = {
-    lessons: [],
-    problems: [],
-    exams: []
-};
-
 const DATA = {
     grades:["V","VI","VII","VIII","IX","X","XI","XII",
             "OL-V","OL-VI","OL-VII","OL-VIII","OL-IX","OL-X","OL-XI","OL-XII",

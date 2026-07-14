@@ -29,6 +29,10 @@
   <meta property="og:image" content="/img/preview.png" />
   <meta name="theme-color" content="#0b1020" />
 
+  <!-- Warm up the two origins used during module/auth startup. -->
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preconnect" href="https://wvbwbmnibibkzctiymmj.supabase.co" crossorigin />
+
   <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
