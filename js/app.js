@@ -3613,6 +3613,8 @@ function mhValidateExamPayload(payload) {
   mhSetAdminModeCreate();
   mhRenderAdminList();
 
+  let adminVisibilityEpoch = 0;
+
   function setAdminButtonVisibility(isVisible) {
     if (!adminBtn) return;
 
@@ -3674,23 +3676,35 @@ function mhValidateExamPayload(payload) {
   async function refreshAdminButtonVisibility() {
     if (!adminBtn) return false;
 
+    // Each refresh owns an epoch. Any newer auth/navigation event invalidates
+    // this result, preventing a slow stale admin check from re-showing the
+    // button after logout.
+    const requestEpoch = ++adminVisibilityEpoch;
+
     // Hide first and reveal only after both auth and role checks succeed.
     setAdminButtonVisibility(false);
 
     const activeUser = await getVerifiedActiveUser();
+    if (requestEpoch !== adminVisibilityEpoch) return false;
     if (!activeUser?.id) return false;
 
     const isAdmin = await isCurrentUserAdmin(activeUser);
+    if (requestEpoch !== adminVisibilityEpoch) return false;
+
     setAdminButtonVisibility(isAdmin);
     return isAdmin;
   }
 
   async function openAdminFlow() {
+    const requestEpoch = ++adminVisibilityEpoch;
+
     try {
       // Re-check auth and role on every click. Button visibility alone is never
       // treated as authorization.
       setAdminButtonVisibility(false);
       const activeUser = await getVerifiedActiveUser();
+
+      if (requestEpoch !== adminVisibilityEpoch) return;
 
       if (!activeUser) {
         alert(
@@ -3703,6 +3717,8 @@ function mhValidateExamPayload(payload) {
       }
 
       const isAdmin = await isCurrentUserAdmin(activeUser);
+      if (requestEpoch !== adminVisibilityEpoch) return;
+
       if (!isAdmin) {
         alert(
           LANG === "ro"
@@ -3726,13 +3742,16 @@ function mhValidateExamPayload(payload) {
   }
 
   async function logoutAdmin() {
-    // Update the UI before waiting for the network/auth operation.
+    // Invalidate every in-flight role check before waiting for sign-out.
+    ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
 
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Logout error:", error);
       alert("Logout failed: " + error.message);
+      // The session may still be valid when sign-out fails.
+      refreshAdminButtonVisibility();
       return;
     }
 
@@ -3741,6 +3760,7 @@ function mhValidateExamPayload(payload) {
   }
 
   if (adminBtn) {
+    ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
 
     adminBtn.addEventListener("click", async () => {
@@ -9093,16 +9113,40 @@ function openExam(exam){
   window.addEventListener("load", initMathCube);
   })();
 
-  supabase.auth.onAuthStateChange(() => {
-    // Hide synchronously so a SIGNED_OUT event cannot leave stale admin UI.
+  supabase.auth.onAuthStateChange((event, session) => {
+    // Invalidate all older async checks and hide synchronously. Without this,
+    // a role query started before logout can finish later and re-show Admin.
+    const eventEpoch = ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
 
     // Supabase recommends deferring additional client calls made from this
-    // callback. The visibility refresh independently verifies the active user.
+    // callback. A signed-out event must stay fail-closed and must not launch
+    // another role lookup.
     setTimeout(() => {
+      if (eventEpoch !== adminVisibilityEpoch) return;
+
       loadAppProgressFromDb();
+
+      if (event === "SIGNED_OUT" || !session?.user) return;
       refreshAdminButtonVisibility();
     }, 0);
+  });
+
+  // A page restored from the browser back/forward cache can retain the old DOM
+  // (including a previously visible Admin button). Hide and re-verify on every
+  // pageshow, not only on the first page load.
+  window.addEventListener("pageshow", () => {
+    ++adminVisibilityEpoch;
+    setAdminButtonVisibility(false);
+    refreshAdminButtonVisibility();
+  });
+
+  // Also re-check when returning to this tab after signing out elsewhere.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    ++adminVisibilityEpoch;
+    setAdminButtonVisibility(false);
+    refreshAdminButtonVisibility();
   });
 
   // Do not rely only on the auth event firing during startup.
