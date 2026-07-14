@@ -7,7 +7,8 @@ const root = resolve(import.meta.dirname, "..");
 const moduleJsFiles = [
   "js/app.js",
   "js/profile.js",
-  "js/supabase-client.js"
+  "js/supabase-client.js",
+  "js/content-repository.js"
 ];
 
 const classicJsFiles = [
@@ -41,7 +42,8 @@ const productionTextFiles = [
   "README.md",
   "js/app.js",
   "js/profile.js",
-  "js/supabase-client.js"
+  "js/supabase-client.js",
+  "js/content-repository.js"
 ];
 
 let failed = false;
@@ -109,6 +111,32 @@ for (const relativePath of productionTextFiles) {
       console.error(`Forbidden legacy/secret pattern ${pattern} in ${relativePath}`);
       failed = true;
     }
+  }
+}
+
+const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
+const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
+
+for (const [relativePath, source] of [
+  ["js/app.js", appSource],
+  ["js/profile.js", profileSource]
+]) {
+  if (!source.includes('from "./content-repository.js"')) {
+    console.error(`${relativePath} must use the shared content repository.`);
+    failed = true;
+  }
+}
+
+for (const legacyLoader of [
+  "loadJsonDataForTotals",
+  "loadContentTotals",
+  "async function loadJsonData()",
+  "async function loadSupabaseData()",
+  "SERVER_DATA"
+]) {
+  if (appSource.includes(legacyLoader) || profileSource.includes(legacyLoader)) {
+    console.error(`Legacy duplicate catalog loader still present: ${legacyLoader}`);
+    failed = true;
   }
 }
 

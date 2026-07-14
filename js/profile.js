@@ -1,4 +1,5 @@
 import { supabase } from "./supabase-client.js";
+import { catalogTotals, loadRemoteContentCatalog, mergeById } from "./content-repository.js";
 
 globalThis.supabase = supabase;
 console.log("PROFILE.JS LOADED v5");
@@ -396,6 +397,8 @@ const nextExamText = $("nextExamText");
 
 let CURRENT_USER = null;
 let CURRENT_PROFILE_ROW = null;
+let CURRENT_USER_LOAD_PROMISE = null;
+let LAST_LOADED_USER_ID = null;
 
 /* ========= HELPERS ========= */
 function safeText(el, value) {
@@ -686,6 +689,7 @@ function applyProfileStaticTexts() {
 function renderGuest() {
   CURRENT_USER = null;
   CURRENT_PROFILE_ROW = null;
+  LAST_LOADED_USER_ID = null;
 
   applyProfileStaticTexts();
 
@@ -766,6 +770,11 @@ async function loadProfileRow(userId) {
 async function ensureProfileRow(user) {
   if (!user) return null;
 
+  // The auth trigger normally creates this row. Read first so a normal page
+  // load never overwrites a display name previously chosen by the user.
+  const existing = await loadProfileRow(user.id);
+  if (existing) return existing;
+
   const payload = {
     id: user.id,
     display_name:
@@ -774,16 +783,24 @@ async function ensureProfileRow(user) {
       "User"
   };
 
-  const { error: upsertError } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
-    .upsert(payload, { onConflict: "id" });
+    .insert(payload)
+    .select("id, display_name, avatar_url")
+    .single();
 
-  if (upsertError) {
-    console.error("ensureProfileRow upsert error:", upsertError);
-    throw upsertError;
+  // A concurrent trigger/request may have inserted the row after our initial
+  // read. In that case, simply read the existing row instead of failing login.
+  if (error?.code === "23505") {
+    return loadProfileRow(user.id);
   }
 
-  return loadProfileRow(user.id);
+  if (error) {
+    console.error("ensureProfileRow insert error:", error);
+    throw error;
+  }
+
+  return data || null;
 }
 
 /* ========= PROFILE ACTIONS ========= */
@@ -964,115 +981,15 @@ async function handleDeleteAccount() {
   }
 }
 
-/* ========= CATALOG TOTALS ========= */
-async function loadJsonDataForTotals() {
-  try {
-    const resp = await fetch("/data/problems.json", {
-      headers: { Accept: "application/json" },
-      cache: "no-store"
-    });
-
-    if (!resp.ok) {
-      return { lessons: [], problems: [], exams: [] };
-    }
-
-    const json = await resp.json();
-
-    return {
-      lessons: Array.isArray(json.lessons) ? json.lessons : [],
-      problems: Array.isArray(json.problems) ? json.problems : [],
-      exams: Array.isArray(json.exams) ? json.exams : []
-    };
-  } catch (err) {
-    console.warn("Nu am putut încărca problems.json pentru totaluri:", err);
-    return { lessons: [], problems: [], exams: [] };
-  }
-}
-
-function uniqueIdCount(items) {
-  return new Set(
-    (items || [])
-      .map((item) => item?.id)
-      .filter(Boolean)
-  ).size;
-}
-
+/* ========= CONTENT CATALOG ========= */
 function getBaseCatalogData() {
-  const source =
-    (typeof DATA !== "undefined" && DATA) ||
-    globalThis.DATA ||
-    window.DATA ||
-    {};
+  const source = globalThis.DATA || {};
 
   return {
     lessons: Array.isArray(source.lessons) ? source.lessons : [],
     problems: Array.isArray(source.problems) ? source.problems : [],
     exams: Array.isArray(source.exams) ? source.exams : []
   };
-}
-
-async function loadContentTotals() {
-  try {
-    const {
-      lessons: baseLessons,
-      problems: baseProblems,
-      exams: baseExams
-    } = getBaseCatalogData();
-
-    const jsonData = await loadJsonDataForTotals();
-
-    const [
-      { data: supaLessons, error: lessonsError },
-      { data: supaProblems, error: problemsError },
-      { data: supaExams, error: examsError }
-    ] = await Promise.all([
-      supabase.from("mh_lessons").select("id"),
-      supabase.from("mh_problems").select("id"),
-      supabase.from("mh_exams").select("id")
-    ]);
-
-    if (lessonsError) throw lessonsError;
-    if (problemsError) throw problemsError;
-    if (examsError) throw examsError;
-
-    return {
-      lessonsTotal: uniqueIdCount([
-        ...baseLessons,
-        ...jsonData.lessons,
-        ...(supaLessons || [])
-      ]),
-      problemsTotal: uniqueIdCount([
-        ...baseProblems,
-        ...jsonData.problems,
-        ...(supaProblems || [])
-      ]),
-      examsTotal: uniqueIdCount([
-        ...baseExams,
-        ...jsonData.exams,
-        ...(supaExams || [])
-      ])
-    };
-  } catch (err) {
-    console.warn("Nu am putut încărca totalurile de conținut:", err);
-    return {
-      lessonsTotal: 0,
-      problemsTotal: 0,
-      examsTotal: 0
-    };
-  }
-}
-
-function mergeUniqueById(...groups) {
-  const map = new Map();
-
-  for (const group of groups) {
-    for (const item of group || []) {
-      if (!item?.id) continue;
-      map.set(item.id, { ...(map.get(item.id) || {}), ...item });
-    }
-  }
-
-  return [...map.values()];
 }
 
 const PROFILE_GRADE_ORDER = [
@@ -1137,59 +1054,17 @@ function formatExamLabel(exam) {
 }
 
 async function loadMergedCatalog() {
-  const {
-    lessons: baseLessons,
-    problems: baseProblems,
-    exams: baseExams
-  } = getBaseCatalogData();
-
-  const jsonData = await loadJsonDataForTotals();
-
-  const [
-    { data: supaLessons, error: lessonsError },
-    { data: supaProblems, error: problemsError },
-    { data: supaExams, error: examsError }
-  ] = await Promise.all([
-    supabase
-      .from("mh_lessons")
-      .select("id, grade, chapter, title_ro, title_en"),
-    supabase
-      .from("mh_problems")
-      .select("id, lesson_id, title_ro, title_en"),
-    supabase
-      .from("mh_exams")
-      .select("id, type, year, title_ro, title_en"),
-  ]);
-
-  if (lessonsError) throw lessonsError;
-  if (problemsError) throw problemsError;
-  if (examsError) throw examsError;
-
-  const lessons = mergeUniqueById(
-    baseLessons,
-    jsonData.lessons,
-    supaLessons || []
-  );
-
-  const problems = mergeUniqueById(
-    baseProblems,
-    jsonData.problems,
-    (supaProblems || []).map((p) => ({
-      ...p,
-      lessonId: p.lesson_id || ""
-    }))
-  );
-
-  const exams = mergeUniqueById(
-    baseExams,
-    jsonData.exams,
-    supaExams || []
-  );
+  const baseCatalog = getBaseCatalogData();
+  const remoteCatalog = await loadRemoteContentCatalog({ supabase });
+  const merged = mergeById(baseCatalog, remoteCatalog);
 
   return {
-    lessons: sortLessonsForProfile(lessons),
-    problems,
-    exams: sortExamsForProfile(exams)
+    lessons: sortLessonsForProfile(merged.lessons),
+    problems: merged.problems.map((problem) => ({
+      ...problem,
+      lessonId: problem.lessonId || problem.lesson_id || ""
+    })),
+    exams: sortExamsForProfile(merged.exams)
   };
 }
 
@@ -1200,8 +1075,7 @@ async function loadProfileStatsFromDb(userId) {
       { data: lessonRows, error: lessonError },
       { data: problemRows, error: problemError },
       { data: examRows, error: examError },
-      catalog,
-      totals
+      catalog
     ] = await Promise.all([
       supabase
         .from("user_lesson_progress")
@@ -1218,13 +1092,14 @@ async function loadProfileStatsFromDb(userId) {
         .select("exam_id, passed, best_score, last_score, attempts_count, passed_at, started_at, updated_at")
         .eq("user_id", userId),
 
-      loadMergedCatalog(),
-      loadContentTotals()
+      loadMergedCatalog()
     ]);
 
     if (lessonError) throw lessonError;
     if (problemError) throw problemError;
     if (examError) throw examError;
+
+    const totals = catalogTotals(catalog);
 
     const learnedRows = (lessonRows || []).filter((row) => row.learned);
     const solvedRows = (problemRows || []).filter((row) => row.solved);
@@ -1429,7 +1304,7 @@ async function loadProfileStatsFromDb(userId) {
 }
 
 /* ========= CURRENT USER LOADER ========= */
-async function loadCurrentUser() {
+async function performCurrentUserLoad({ force = false } = {}) {
   const { data, error } = await supabase.auth.getUser();
 
   console.log("GET USER RESULT:", {
@@ -1441,6 +1316,10 @@ async function loadCurrentUser() {
   if (error || !data?.user) {
     renderGuest();
     return null;
+  }
+
+  if (!force && LAST_LOADED_USER_ID === data.user.id && CURRENT_USER?.id === data.user.id) {
+    return CURRENT_USER;
   }
 
   let profileRow = null;
@@ -1463,7 +1342,21 @@ async function loadCurrentUser() {
     );
   }
 
+  LAST_LOADED_USER_ID = data.user.id;
   return data.user;
+}
+
+function loadCurrentUser(options = {}) {
+  // signInWithPassword triggers onAuthStateChange while the login handler also
+  // continues. Reuse the same load so profile/stat queries are not executed
+  // twice in parallel. The same guard handles INITIAL_SESSION during boot.
+  if (CURRENT_USER_LOAD_PROMISE) return CURRENT_USER_LOAD_PROMISE;
+
+  CURRENT_USER_LOAD_PROMISE = performCurrentUserLoad(options).finally(() => {
+    CURRENT_USER_LOAD_PROMISE = null;
+  });
+
+  return CURRENT_USER_LOAD_PROMISE;
 }
 
 /* ========= AUTH ACTIONS ========= */
@@ -1542,7 +1435,7 @@ async function handleLogin() {
     const currentUser = await getActiveUser();
 
     if (currentUser?.email?.toLowerCase() === email) {
-      await loadCurrentUser();
+      await loadCurrentUser({ force: true });
       setStatus(t("already_logged_this_account"));
       return;
     }
