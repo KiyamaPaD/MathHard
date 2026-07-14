@@ -173,3 +173,14 @@ Current focus areas include:
 Student builder, math enthusiast, and creator of MathHard.
 
 MathHard reflects both technical ambition and a genuine interest in making mathematics more engaging, structured, and meaningful for students.
+
+---
+
+## Security architecture
+
+- Authentication is handled by Supabase Auth.
+- Admin access is derived exclusively from `public.user_roles`; there is no email whitelist or separate PHP password.
+- Content writes are protected by Supabase Row Level Security policies.
+- The browser uses only the Supabase publishable key. Never place a `service_role` or secret key in frontend files.
+- Legacy PHP authentication and JSON-serving endpoints were removed in the security-foundation phase.
+- User progress is still scheduled for a later server-authoritative RPC migration before public competitive rankings are enabled.
