@@ -4904,23 +4904,35 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
   }
 }
 
-  async function loadAppProgressFromDb(){
-    try {
-      MH_PROGRESS_USER = await getProgressUser();
+  let appProgressLoadEpoch = 0;
 
-     
+  async function loadAppProgressFromDb(userOverride = undefined){
+    const loadEpoch = ++appProgressLoadEpoch;
+
+    try {
+      // When booting or returning from profile.html, use the session already
+      // restored by Supabase instead of performing a second getUser() request.
+      // `undefined` means "resolve it here"; `null` explicitly means guest.
+      const progressUser = userOverride === undefined
+        ? await getProgressUser()
+        : userOverride;
+
+      if (loadEpoch !== appProgressLoadEpoch) return;
+
+      MH_PROGRESS_USER = progressUser;
       solvedSet = new Set();
       learnedSet = new Set();
       examsPassedSet = new Set();
       XP_TOTAL = 0;
       XP_DETAILS = {};
 
-   
-      if (!MH_PROGRESS_USER){
+      if (!progressUser){
         MH_PROGRESS_READY = true;
         refreshProgressUIFromDb();
         return;
       }
+
+      const userId = progressUser.id;
 
       const [
         { data: lessonRows, error: lessonError },
@@ -4930,18 +4942,22 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         supabase
           .from("user_lesson_progress")
           .select("lesson_id, learned")
-          .eq("user_id", MH_PROGRESS_USER.id),
+          .eq("user_id", userId),
 
         supabase
           .from("user_problem_progress")
           .select("problem_id, solved, wrong_attempts, hints_used, used_hint1, used_hint2, xp_earned")
-          .eq("user_id", MH_PROGRESS_USER.id),
+          .eq("user_id", userId),
 
         supabase
           .from("user_exam_progress")
           .select("exam_id, passed")
-          .eq("user_id", MH_PROGRESS_USER.id)
+          .eq("user_id", userId)
       ]);
+
+      // A logout or account switch may have started while these requests were
+      // running. Never let an older response overwrite the newer auth state.
+      if (loadEpoch !== appProgressLoadEpoch) return;
 
       if (lessonError) throw lessonError;
       if (problemError) throw problemError;
@@ -4969,11 +4985,15 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
       (examRows || []).forEach(row => {
         if (row.passed) examsPassedSet.add(row.exam_id);
       });
+
       MH_PROGRESS_READY = true;
       refreshProgressUIFromDb();
     } catch (err) {
+      if (loadEpoch !== appProgressLoadEpoch) return;
+
       console.error("Eroare la load progress din DB:", err);
 
+      MH_PROGRESS_USER = null;
       solvedSet = new Set();
       learnedSet = new Set();
       examsPassedSet = new Set();
@@ -9045,44 +9065,88 @@ function openExam(exam){
   window.addEventListener("load", initMathCube);
   })();
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    // Invalidate all older async checks and hide synchronously. Without this,
-    // a role query started before logout can finish later and re-show Admin.
-    const eventEpoch = ++adminVisibilityEpoch;
-    setAdminButtonVisibility(false);
+  let authUiSyncEpoch = 0;
+  let authUiSyncTimer = null;
+  let pendingAuthSessionOverride = undefined;
 
-    // Supabase recommends deferring additional client calls made from this
-    // callback. A signed-out event must stay fail-closed and must not launch
-    // another role lookup.
-    setTimeout(() => {
-      if (eventEpoch !== adminVisibilityEpoch) return;
+  async function syncAuthDependentUi(sessionOverride = undefined) {
+    const syncEpoch = ++authUiSyncEpoch;
 
-      loadAppProgressFromDb();
-
-      if (event === "SIGNED_OUT" || !session?.user) return;
-      refreshAdminButtonVisibility();
-    }, 0);
-  });
-
-  // A page restored from the browser back/forward cache can retain the old DOM
-  // (including a previously visible Admin button). Hide and re-verify on every
-  // pageshow, not only on the first page load.
-  window.addEventListener("pageshow", () => {
+    // Auth-dependent controls always start closed. The verified admin check may
+    // reveal the button later, but a stale page can never keep it visible.
     ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
-    refreshAdminButtonVisibility();
+
+    let session = sessionOverride;
+
+    if (session === undefined) {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.warn("Could not restore auth session:", error);
+        session = null;
+      } else {
+        session = data?.session || null;
+      }
+    }
+
+    if (syncEpoch !== authUiSyncEpoch) return;
+
+    // Progress only needs the authenticated user id; RLS remains the actual
+    // authorization boundary. Passing the restored user avoids the slower
+    // getUser() round-trip that previously made index.html look logged out
+    // until the tab received a visibilitychange event.
+    await loadAppProgressFromDb(session?.user || null);
+
+    if (syncEpoch !== authUiSyncEpoch) return;
+    if (!session?.user) return;
+
+    await refreshAdminButtonVisibility();
+  }
+
+  function scheduleAuthDependentUiSync(sessionOverride = undefined) {
+    // Collapse INITIAL_SESSION, pageshow and explicit boot into one operation.
+    // An explicit session (including null after logout) always wins over a
+    // generic "read it from storage" request.
+    if (sessionOverride !== undefined) {
+      pendingAuthSessionOverride = sessionOverride;
+    }
+
+    if (authUiSyncTimer) {
+      clearTimeout(authUiSyncTimer);
+    }
+
+    authUiSyncTimer = setTimeout(() => {
+      authUiSyncTimer = null;
+
+      const sessionForRun = pendingAuthSessionOverride;
+      pendingAuthSessionOverride = undefined;
+
+      syncAuthDependentUi(sessionForRun).catch((err) => {
+        console.error("Auth UI synchronization failed:", err);
+      });
+    }, 0);
+  }
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    // Supabase recommends deferring further client calls from this callback.
+    scheduleAuthDependentUiSync(session || null);
   });
 
-  // Also re-check when returning to this tab after signing out elsewhere.
+  // A page restored from back/forward cache may contain stale counters and
+  // controls. Restore the local Supabase session and rebuild all auth UI.
+  window.addEventListener("pageshow", () => {
+    scheduleAuthDependentUiSync();
+  });
+
+  // Also synchronize when returning after login/logout in another page or tab.
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
-    ++adminVisibilityEpoch;
-    setAdminButtonVisibility(false);
-    refreshAdminButtonVisibility();
+    scheduleAuthDependentUiSync();
   });
 
-  // Do not rely only on the auth event firing during startup.
-  refreshAdminButtonVisibility();
+  // Do not rely only on INITIAL_SESSION timing during module startup.
+  scheduleAuthDependentUiSync();
   
   /* ===== BOOT SITE IMPORTANT ===== */
   mhUpdateSidebarStaticTexts();
