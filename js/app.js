@@ -3613,6 +3613,42 @@ function mhValidateExamPayload(payload) {
   mhSetAdminModeCreate();
   mhRenderAdminList();
 
+  function setAdminButtonVisibility(isVisible) {
+    if (!adminBtn) return;
+
+    const visible = Boolean(isVisible);
+    adminBtn.hidden = !visible;
+    adminBtn.setAttribute("aria-hidden", visible ? "false" : "true");
+    adminBtn.style.display = visible ? "inline-flex" : "none";
+    adminBtn.disabled = !visible;
+
+    // Fail closed: if access disappears, the admin drawer closes immediately.
+    if (!visible) {
+      adminDrawer?.classList.remove("open");
+    }
+  }
+
+  async function getVerifiedActiveUser() {
+    try {
+      // getUser() validates the current access token instead of trusting only
+      // the locally cached session returned by getSession().
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error) {
+        const isMissingSession = error.name === "AuthSessionMissingError";
+        if (!isMissingSession) {
+          console.warn("Could not verify active user:", error);
+        }
+        return null;
+      }
+
+      return data?.user || null;
+    } catch (err) {
+      console.warn("getVerifiedActiveUser crashed:", err);
+      return null;
+    }
+  }
+
   async function isCurrentUserAdmin(user) {
     try {
       if (!user?.id) return false;
@@ -3635,28 +3671,28 @@ function mhValidateExamPayload(payload) {
     }
   }
 
-  async function refreshAdminButtonVisibility(user = null) {
+  async function refreshAdminButtonVisibility() {
     if (!adminBtn) return false;
 
-    if (!user?.id) {
-      adminBtn.style.display = "none";
-      adminBtn.disabled = false;
-      return false;
-    }
+    // Hide first and reveal only after both auth and role checks succeed.
+    setAdminButtonVisibility(false);
 
-    const isAdmin = await isCurrentUserAdmin(user);
-    adminBtn.style.display = isAdmin ? "inline-flex" : "none";
-    adminBtn.disabled = false;
+    const activeUser = await getVerifiedActiveUser();
+    if (!activeUser?.id) return false;
+
+    const isAdmin = await isCurrentUserAdmin(activeUser);
+    setAdminButtonVisibility(isAdmin);
     return isAdmin;
   }
 
   async function openAdminFlow() {
     try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
+      // Re-check auth and role on every click. Button visibility alone is never
+      // treated as authorization.
+      setAdminButtonVisibility(false);
+      const activeUser = await getVerifiedActiveUser();
 
-      const session = data?.session || null;
-      if (!session?.user) {
+      if (!activeUser) {
         alert(
           LANG === "ro"
             ? "Trebuie să fii autentificat pentru a accesa panoul admin. Intră mai întâi în pagina de profil."
@@ -3666,20 +3702,21 @@ function mhValidateExamPayload(payload) {
         return;
       }
 
-      const isAdmin = await isCurrentUserAdmin(session.user);
+      const isAdmin = await isCurrentUserAdmin(activeUser);
       if (!isAdmin) {
         alert(
           LANG === "ro"
             ? "Contul autentificat nu are rolul admin."
             : "The signed-in account does not have the admin role."
         );
-        await refreshAdminButtonVisibility(session.user);
         return;
       }
 
+      setAdminButtonVisibility(true);
       adminDrawer?.classList.add("open");
       if (mhPublishStatus) mhPublishStatus.textContent = "";
     } catch (err) {
+      setAdminButtonVisibility(false);
       console.error("openAdminFlow crashed:", err);
       alert(
         (LANG === "ro" ? "Eroare la deschiderea panoului admin: " : "Could not open the admin panel: ") +
@@ -3689,6 +3726,9 @@ function mhValidateExamPayload(payload) {
   }
 
   async function logoutAdmin() {
+    // Update the UI before waiting for the network/auth operation.
+    setAdminButtonVisibility(false);
+
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Logout error:", error);
@@ -3701,8 +3741,7 @@ function mhValidateExamPayload(payload) {
   }
 
   if (adminBtn) {
-    adminBtn.style.display = "none";
-    adminBtn.disabled = true;
+    setAdminButtonVisibility(false);
 
     adminBtn.addEventListener("click", async () => {
       await openAdminFlow();
@@ -9054,12 +9093,20 @@ function openExam(exam){
   window.addEventListener("load", initMathCube);
   })();
 
-  supabase.auth.onAuthStateChange((_event, session) => {
+  supabase.auth.onAuthStateChange(() => {
+    // Hide synchronously so a SIGNED_OUT event cannot leave stale admin UI.
+    setAdminButtonVisibility(false);
+
+    // Supabase recommends deferring additional client calls made from this
+    // callback. The visibility refresh independently verifies the active user.
     setTimeout(() => {
       loadAppProgressFromDb();
-      refreshAdminButtonVisibility(session?.user || null);
+      refreshAdminButtonVisibility();
     }, 0);
   });
+
+  // Do not rely only on the auth event firing during startup.
+  refreshAdminButtonVisibility();
   
   /* ===== BOOT SITE IMPORTANT ===== */
   mhUpdateSidebarStaticTexts();
