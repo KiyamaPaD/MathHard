@@ -1,7 +1,19 @@
-# VS
+# IDE / local workspace
 .vs/
+.vscode/
 
-# fișiere private
-includes/env.php
-legacy.php/admin_login.php
-legacy.php/get_problems.php
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+includes/
+legacy.php/
+
+# Dependencies / tooling
+node_modules/
+supabase/.temp/
+
+# OS / generated archives
+.DS_Store
+Thumbs.db
+*.zip

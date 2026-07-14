@@ -124,7 +124,7 @@
           <button class="btn small" id="focusBtn" data-i18n="btn_focus">🎯 Focus Mode</button>
           <button class="btn small" id="themeBtn" data-i18n="btn_theme">🌙 Dark</button>
           <a class="btn small" id="profileBtn" href="/profile.html" data-i18n="btn_profile">📊 Profilul tău</a>
-          <button class="btn small" id="adminBtn" data-i18n="btn_admin">🛠 Admin</button>
+          <button class="btn small" id="adminBtn" data-i18n="btn_admin" style="display:none">🛠 Admin</button>
         </div>
       </div>
     </div>
@@ -524,28 +524,17 @@
           <button class="btn" id="closeAdmin" data-i18n="admin_close">✖️ Închide</button>
           <div class="logo" style="font-weight:800" data-i18n="admin_title">🛠 Admin MathHard</div>
         </div>
-        <div class="counter">💾 <span id="adminStatus">PHP</span></div>
+        <div class="counter">🔐 <span id="adminStatus">Supabase</span></div>
       </header>
 
       <div class="content viewer" style="gap:12px;display:flex;flex-direction:column">
         <p class="legend" style="margin-bottom:0" data-i18n-html="admin_intro_text">
-          Aici trimiți direct la PHP (<code>create_content.php</code>), fără să mai bagi în <code>localStorage</code>.
+          Conținutul este salvat direct în Supabase. Accesul este permis numai utilizatorilor autentificați care au rolul <code>admin</code> în <code>public.user_roles</code>.
         </p>
 
-        <!-- FORMULAR PUBLICARE PE SERVER -->
+        <!-- FORMULAR PUBLICARE ÎN SUPABASE -->
         <section id="server-publish" style="width:100%;margin:0;padding:0;">
-          <form id="mhPublish" method="post" style="display:flex;flex-direction:column;gap:10px;">
-            <label style="display:block;">
-              <span data-i18n="admin_secret_label">Cheie securitate (o pui tu manual):</span>
-              <input
-                name="secret"
-                id="mh_secret"
-                type="password"
-                placeholder="ex: MATHHARD_SUPER_SECRET"
-                data-i18n-placeholder="admin_secret_placeholder"
-                style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-              />
-            </label>
+          <form id="mhPublish" style="display:flex;flex-direction:column;gap:10px;">
 
             <label style="display:block;">
               <span data-i18n="admin_type_label">Tip conținut:</span>

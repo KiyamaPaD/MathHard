@@ -109,6 +109,7 @@ const PROFILE_TEXT = {
     processing: "Se procesează...",
     must_login: "Trebuie să fii logat.",
     display_name_empty: "Numele afișat nu poate fi gol.",
+    avatar_url_invalid: "URL-ul avatarului trebuie să înceapă cu http:// sau https://.",
     saving_profile: "Se salvează profilul...",
     profile_updated: "Profil actualizat.",
     save_profile_error: "Nu am putut salva profilul: {error}",
@@ -256,6 +257,7 @@ const PROFILE_TEXT = {
     processing: "Processing...",
     must_login: "You must be logged in.",
     display_name_empty: "Display name cannot be empty.",
+    avatar_url_invalid: "The avatar URL must start with http:// or https://.",
     saving_profile: "Saving profile...",
     profile_updated: "Profile updated.",
     save_profile_error: "Could not save profile: {error}",
@@ -411,17 +413,42 @@ function getInitialLetter(text) {
   return (text || "M").trim().charAt(0).toUpperCase() || "M";
 }
 
+function normalizeAvatarUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    const parsed = new URL(raw);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return "";
+    return parsed.href;
+  } catch (_) {
+    return "";
+  }
+}
+
 function renderAvatar(displayName, avatarUrl = "") {
   if (!profileAvatar) return;
 
-  const url = String(avatarUrl || "").trim();
+  const fallback = () => {
+    profileAvatar.replaceChildren();
+    profileAvatar.textContent = getInitialLetter(displayName);
+  };
 
-  if (url) {
-    profileAvatar.innerHTML = `<img src="${url}" alt="Avatar" class="profile-avatar-img">`;
+  const url = normalizeAvatarUrl(avatarUrl);
+  if (!url) {
+    fallback();
     return;
   }
 
-  profileAvatar.textContent = getInitialLetter(displayName);
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = "Avatar";
+  img.className = "profile-avatar-img";
+  img.loading = "lazy";
+  img.referrerPolicy = "no-referrer";
+  img.addEventListener("error", fallback, { once: true });
+
+  profileAvatar.replaceChildren(img);
 }
 
 function setAuthLoading(isLoading, message = "") {
@@ -769,10 +796,16 @@ async function handleSaveProfile() {
     }
 
     const displayName = editDisplayName?.value.trim() || "";
-    const avatarUrl = editAvatarUrl?.value.trim() || null;
+    const avatarInput = editAvatarUrl?.value.trim() || "";
+    const avatarUrl = normalizeAvatarUrl(avatarInput) || null;
 
     if (!displayName) {
       setStatus(t("display_name_empty"), true);
+      return;
+    }
+
+    if (avatarInput && !avatarUrl) {
+      setStatus(t("avatar_url_invalid"), true);
       return;
     }
 

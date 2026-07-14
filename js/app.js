@@ -3613,36 +3613,9 @@ function mhValidateExamPayload(payload) {
   mhSetAdminModeCreate();
   mhRenderAdminList();
 
-  const ADMIN_EMAILS = [
-    "suiramgabor@gmail.com"
-  ].map(x => x.trim().toLowerCase());
-
-  async function getCurrentUser() {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) {
-      console.error("getUser error:", error);
-      return null;
-    }
-    return data?.user ?? null;
-  }
-
-  function isEmailAdmin(email) {
-    return ADMIN_EMAILS.includes(String(email || "").trim().toLowerCase());
-  }
-
-  async function isCurrentUserAdmin() {
+  async function isCurrentUserAdmin(user) {
     try {
-      const user = await getCurrentUser();
-      console.log("current user =", user);
-
-      if (!user) return false;
-
-      const email = (user.email || "").trim().toLowerCase();
-
-      if (ADMIN_EMAILS.includes(email)) {
-        console.log("admin by email whitelist");
-        return true;
-      }
+      if (!user?.id) return false;
 
       const { data, error } = await supabase
         .from("user_roles")
@@ -3650,9 +3623,11 @@ function mhValidateExamPayload(payload) {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      console.log("user_roles data =", data, "error =", error);
+      if (error) {
+        console.error("Could not read admin role:", error);
+        return false;
+      }
 
-      if (error) return false;
       return data?.role === "admin";
     } catch (err) {
       console.error("isCurrentUserAdmin crashed:", err);
@@ -3660,54 +3635,45 @@ function mhValidateExamPayload(payload) {
     }
   }
 
-  async function openAdminFlow() {
-    console.log("OPEN ADMIN FLOW START");
-    if (!MH_AUTH_READY) {
-      console.log("Auth not initialized yet");
+  async function refreshAdminButtonVisibility(user = null) {
+    if (!adminBtn) return false;
+
+    if (!user?.id) {
+      adminBtn.style.display = "none";
+      adminBtn.disabled = false;
+      return false;
     }
 
+    const isAdmin = await isCurrentUserAdmin(user);
+    adminBtn.style.display = isAdmin ? "inline-flex" : "none";
+    adminBtn.disabled = false;
+    return isAdmin;
+  }
+
+  async function openAdminFlow() {
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log("existing session =", sessionData, "sessionError =", sessionError);
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
 
-      if (sessionData?.session) {
-        const ok = await isCurrentUserAdmin();
-        console.log("already admin from existing session =", ok);
-
-        if (ok) {
-          adminDrawer?.classList.add("open");
-          if (mhPublishStatus) mhPublishStatus.textContent = "";
-          return;
-        }
-      }
-
-      const email = prompt("Email admin:");
-      console.log("email =", email);
-      if (!email) return;
-
-      const password = prompt("Parola admin:");
-      console.log("password filled =", !!password);
-      if (!password) return;
-
-      console.log("before signInWithPassword");
-
-      const result = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      console.log("after signInWithPassword", result);
-
-      if (result.error) {
-        alert("Login eșuat: " + result.error.message);
+      const session = data?.session || null;
+      if (!session?.user) {
+        alert(
+          LANG === "ro"
+            ? "Trebuie să fii autentificat pentru a accesa panoul admin. Intră mai întâi în pagina de profil."
+            : "You must be signed in to access the admin panel. Sign in from the profile page first."
+        );
+        window.location.href = "/profile.html";
         return;
       }
 
-      const ok = await isCurrentUserAdmin();
-      console.log("is admin after login =", ok);
-
-      if (!ok) {
-        alert("Te-ai logat, dar contul nu are rol admin.");
+      const isAdmin = await isCurrentUserAdmin(session.user);
+      if (!isAdmin) {
+        alert(
+          LANG === "ro"
+            ? "Contul autentificat nu are rolul admin."
+            : "The signed-in account does not have the admin role."
+        );
+        await refreshAdminButtonVisibility(session.user);
         return;
       }
 
@@ -3715,7 +3681,10 @@ function mhValidateExamPayload(payload) {
       if (mhPublishStatus) mhPublishStatus.textContent = "";
     } catch (err) {
       console.error("openAdminFlow crashed:", err);
-      alert("Admin flow crashed: " + (err.message || err));
+      alert(
+        (LANG === "ro" ? "Eroare la deschiderea panoului admin: " : "Could not open the admin panel: ") +
+        (err.message || err)
+      );
     }
   }
 
@@ -3731,19 +3700,13 @@ function mhValidateExamPayload(payload) {
     alert("Te-ai delogat.");
   }
 
-  console.log("adminBtn element =", adminBtn);
-
   if (adminBtn) {
-    adminBtn.style.display = "inline-flex";
+    adminBtn.style.display = "none";
+    adminBtn.disabled = true;
 
     adminBtn.addEventListener("click", async () => {
-      console.log("ADMIN BUTTON CLICKED");
       await openAdminFlow();
     });
-
-    console.log("ADMIN HANDLER WIRED");
-  } else {
-    console.error("adminBtn NOT FOUND");
   }
 
   if (closeAdmin && adminDrawer) {
@@ -9091,17 +9054,10 @@ function openExam(exam){
   window.addEventListener("load", initMathCube);
   })();
 
-  let MH_AUTH_READY = false;
-
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log("AUTH EVENT =", event, session);
-
-    if (event === "INITIAL_SESSION") {
-      MH_AUTH_READY = true;
-    }
-
+  supabase.auth.onAuthStateChange((_event, session) => {
     setTimeout(() => {
       loadAppProgressFromDb();
+      refreshAdminButtonVisibility(session?.user || null);
     }, 0);
   });
   
