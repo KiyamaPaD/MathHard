@@ -1,5 +1,11 @@
 import { supabase } from "./supabase-client.js";
 import { loadRemoteContentCatalog, mergeById } from "./content-repository.js";
+import {
+  finishExamAttempt,
+  markLessonLearned,
+  recordProblemEvent,
+  startExamAttempt
+} from "./progress-repository.js";
 
 console.log("APP.JS LOADED");
 
@@ -4606,10 +4612,6 @@ function mhValidateExamPayload(payload) {
     return XP_DETAILS[problemId];
   }
 
-  function saveXP(){
-    queueProgressSync();
-  }
-
   function updateXPHeader(){
     const el = document.getElementById("xpTotalHeader");
     if (el) el.textContent = XP_TOTAL;
@@ -4653,7 +4655,6 @@ function mhValidateExamPayload(payload) {
     rec.solved = true;
     rec.xp = xpEarned;
 
-    saveXP();
     recomputeXPTotal();
   }
 
@@ -4662,10 +4663,6 @@ function mhValidateExamPayload(payload) {
   function saveAttempts()
   { 
     localStorage.setItem("mh_attempts", JSON.stringify(attempts)); 
-  }
-
-  function saveSets(){
-    queueProgressSync();
   }
 
   function updateCounters(){
@@ -4691,217 +4688,122 @@ function mhValidateExamPayload(payload) {
     return data.user ?? null;
   }
 
-  let progressSyncTimer = null;
-let progressSyncQueued = false;
-let progressSyncRunning = false;
+  const progressMutationQueues = new Map();
 
-function queueProgressSync() {
-  progressSyncQueued = true;
+function enqueueProgressMutation(key, task) {
+  const previous = progressMutationQueues.get(key) || Promise.resolve();
+  const queued = previous.catch(() => undefined).then(task);
 
-  if (progressSyncTimer) {
-    clearTimeout(progressSyncTimer);
-  }
-
-  progressSyncTimer = setTimeout(() => {
-    flushProgressSync().catch(err => {
-      console.error("flushProgressSync error:", err);
-    });
-  }, 250);
-}
-
-async function flushProgressSync() {
-  if (progressSyncRunning) return;
-
-  progressSyncRunning = true;
-
-  try {
-    while (progressSyncQueued) {
-      progressSyncQueued = false;
-
-      const user = await getProgressUser();
-      if (!user) return;
-
-      await syncLessonsProgressToDb(user.id);
-      await syncProblemsProgressToDb(user.id);
-      await syncExamsProgressToDb(user.id);
+  progressMutationQueues.set(key, queued);
+  void queued.then(
+    () => {
+      if (progressMutationQueues.get(key) === queued) {
+        progressMutationQueues.delete(key);
+      }
+    },
+    () => {
+      if (progressMutationQueues.get(key) === queued) {
+        progressMutationQueues.delete(key);
+      }
     }
-  } finally {
-    progressSyncRunning = false;
-  }
-}
-
-async function syncLessonsProgressToDb(userId) {
-  const lessonIds = [...learnedSet];
-  if (!lessonIds.length) return;
-
-  const now = new Date().toISOString();
-
-  const rows = lessonIds.map(lessonId => ({
-    user_id: userId,
-    lesson_id: lessonId,
-    learned: true,
-    learned_at: now,
-    updated_at: now
-  }));
-
-  const { error } = await supabase
-    .from("user_lesson_progress")
-    .upsert(rows, { onConflict: "user_id,lesson_id" });
-
-  if (error) throw error;
-}
-
-async function syncProblemsProgressToDb(userId) {
-  const ids = new Set([
-    ...Object.keys(XP_DETAILS || {}),
-    ...Array.from(solvedSet || [])
-  ]);
-
-  if (!ids.size) return;
-
-  const now = new Date().toISOString();
-
-  const rows = [...ids].map(problemId => {
-    const rec = XP_DETAILS[problemId] || {};
-    const solved = !!(rec.solved || solvedSet.has(problemId));
-
-    return {
-      user_id: userId,
-      problem_id: problemId,
-      solved,
-      wrong_attempts: Number(rec.wrong || 0),
-      hints_used: Number(rec.hints || 0),
-      used_hint1: !!rec.usedHint1,
-      used_hint2: !!rec.usedHint2,
-      revealed_answer: !!attempts?.[problemId]?.revealed,
-      xp_earned: Number(rec.xp || 0),
-      solved_at: solved ? now : null,
-      updated_at: now
-    };
-  });
-
-  const { error } = await supabase
-    .from("user_problem_progress")
-    .upsert(rows, { onConflict: "user_id,problem_id" });
-
-  if (error) throw error;
-}
-
-async function syncExamsProgressToDb(userId) {
-  const examIds = [...examsPassedSet];
-  if (!examIds.length) return;
-
-  const { data: existingRows, error: existingError } = await supabase
-    .from("user_exam_progress")
-    .select("exam_id, best_score")
-    .eq("user_id", userId)
-    .in("exam_id", examIds);
-
-  if (existingError) throw existingError;
-
-  const existingMap = new Map(
-    (existingRows || []).map(row => [row.exam_id, Number(row.best_score || 0)])
   );
 
-  const now = new Date().toISOString();
+  return queued;
+}
 
-  const rows = examIds.map(examId => {
-    const exam = EXAMS.find(x => x.id === examId);
-    const currentScore = exam ? computeExamScore(exam) : 0;
-    const oldBest = existingMap.get(examId) || 0;
+function applyCanonicalProblemProgress(problemId, row, eventName) {
+  if (!row) return;
 
-    return {
-      user_id: userId,
-      exam_id: examId,
-      passed: true,
-      best_score: Math.max(currentScore, oldBest),
-      passed_at: now,
-      updated_at: now
-    };
+  const current = XP_DETAILS[problemId] || {};
+  const terminalEvent = eventName === "solved" || eventName === "solved_no_xp";
+  const preserveOptimisticSolve = !!current.solved && !row.solved && !terminalEvent;
+
+  XP_DETAILS[problemId] = {
+    xp: preserveOptimisticSolve
+      ? Number(current.xp || 0)
+      : Number(row.xp_earned || 0),
+    wrong: Number(row.wrong_attempts || 0),
+    hints: Number(row.hints_used || 0),
+    solved: preserveOptimisticSolve ? true : !!row.solved,
+    usedHint1: !!row.used_hint1,
+    usedHint2: !!row.used_hint2
+  };
+
+  if (row.solved || preserveOptimisticSolve) solvedSet.add(problemId);
+  else if (terminalEvent) solvedSet.delete(problemId);
+
+  recomputeXPTotal();
+  updateCounters();
+}
+
+function reconcileProgressAfterMutationError(label, error) {
+  console.error(`${label} error:`, error);
+
+  if (MH_PROGRESS_USER) {
+    void loadAppProgressFromDb(MH_PROGRESS_USER);
+  }
+}
+
+async function markLessonLearnedSafe(lessonId) {
+  if (!MH_PROGRESS_USER) return null;
+
+  return enqueueProgressMutation(`lesson:${lessonId}`, async () => {
+    try {
+      return await markLessonLearned(lessonId);
+    } catch (error) {
+      reconcileProgressAfterMutationError("markLessonLearned", error);
+      return null;
+    }
   });
+}
 
-  const { error } = await supabase
-    .from("user_exam_progress")
-    .upsert(rows, { onConflict: "user_id,exam_id" });
+async function recordProblemEventSafe(problemId, eventName) {
+  if (!MH_PROGRESS_USER) return null;
 
-  if (error) throw error;
+  return enqueueProgressMutation(`problem:${problemId}`, async () => {
+    try {
+      const row = await recordProblemEvent(problemId, eventName);
+      applyCanonicalProblemProgress(problemId, row, eventName);
+      return row;
+    } catch (error) {
+      reconcileProgressAfterMutationError("recordProblemEvent", error);
+      return null;
+    }
+  });
 }
 
 async function recordExamAttemptStart(examId) {
-  const user = await getProgressUser();
-  if (!user) return;
+  if (!MH_PROGRESS_USER) return null;
 
-  const now = new Date().toISOString();
-
-  const { data: existing, error: fetchError } = await supabase
-    .from("user_exam_progress")
-    .select("attempts_count, best_score, last_score, passed")
-    .eq("user_id", user.id)
-    .eq("exam_id", examId)
-    .maybeSingle();
-
-  if (fetchError) throw fetchError;
-
-  const payload = {
-    user_id: user.id,
-    exam_id: examId,
-    attempts_count: Number(existing?.attempts_count || 0) + 1,
-    best_score: Number(existing?.best_score || 0),
-    last_score: Number(existing?.last_score || 0),
-    passed: !!existing?.passed,
-    started_at: now,
-    updated_at: now
-  };
-
-  const { error } = await supabase
-    .from("user_exam_progress")
-    .upsert(payload, { onConflict: "user_id,exam_id" });
-
-  if (error) throw error;
+  return enqueueProgressMutation(`exam:${examId}`, async () => {
+    try {
+      return await startExamAttempt(examId);
+    } catch (error) {
+      reconcileProgressAfterMutationError("startExamAttempt", error);
+      return null;
+    }
+  });
 }
 
 async function updateExamAttemptScore(examId, score, passedNow = false) {
-  const user = await getProgressUser();
-  if (!user) return;
+  if (!MH_PROGRESS_USER) return null;
 
-  const now = new Date().toISOString();
+  return enqueueProgressMutation(`exam:${examId}`, async () => {
+    try {
+      const row = await finishExamAttempt(examId, score, passedNow);
 
-  const { data: existing, error: fetchError } = await supabase
-    .from("user_exam_progress")
-    .select("attempts_count, best_score, passed")
-    .eq("user_id", user.id)
-    .eq("exam_id", examId)
-    .maybeSingle();
-
-  if (fetchError) throw fetchError;
-
-  const alreadyPassed = !!existing?.passed;
-  const finalPassed = alreadyPassed || !!passedNow;
-
-  const payload = {
-    user_id: user.id,
-    exam_id: examId,
-    attempts_count: Number(existing?.attempts_count || 0),
-    best_score: Math.max(Number(existing?.best_score || 0), Number(score || 0)),
-    last_score: Number(score || 0),
-    passed: finalPassed,
-    passed_at: finalPassed ? now : null,
-    updated_at: now
-  };
-
-  const { error } = await supabase
-    .from("user_exam_progress")
-    .upsert(payload, { onConflict: "user_id,exam_id" });
-
-  if (error) throw error;
+      if (row?.passed) examsPassedSet.add(examId);
+      updateCounters();
+      return row;
+    } catch (error) {
+      reconcileProgressAfterMutationError("finishExamAttempt", error);
+      return null;
+    }
+  });
 }
 
 async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
-  try {
-    await updateExamAttemptScore(examId, score, passedNow);
-  } catch (err) {
-    console.error("saveExamAttemptResultSafe error:", err);
-  }
+  return updateExamAttemptScore(examId, score, passedNow);
 }
 
   let appProgressLoadEpoch = 0;
@@ -7104,7 +7006,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         if(!learnedSet.has(item.id)){
           learnedSet.add(item.id);
           mhIncrementTodayProgress("lesson");
-          saveSets();
+          void markLessonLearnedSafe(item.id);
           updateCounters();
           document.getElementById("viewTitle").textContent="✅ "+title;
           renderCards(); buildNestedTree(); buildTagPanel();
@@ -7411,7 +7313,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         : `❌ Not correct yet. Try again.${result.message ? ' <span class="legend">' + esc(result.message) + '</span>' : ''}`;
       if (!isExam && !rec.solved){
         rec.wrong = (rec.wrong || 0) + 1;
-        saveXP();
+        void recordProblemEventSafe(problem.id, "wrong");
         refreshHints();
         refreshXPInline();
       }
@@ -7430,12 +7332,18 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         mhIncrementTodayProgress("problem");
       }
 
-      saveSets();
       updateCounters();
 
       if (!isExam && !wasAlreadySolved){
         awardXPForProblem(problem);
         refreshXPInline();
+      }
+
+      if (!wasAlreadySolved) {
+        void recordProblemEventSafe(
+          problem.id,
+          isExam ? "solved_no_xp" : "solved"
+        );
       }
     }
   }
@@ -7466,7 +7374,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
       if (hintDetails1.open && !isExam && !rec.solved && !rec.usedHint1){
         rec.usedHint1 = true;
         rec.hints = (rec.hints || 0) + 1;
-        saveXP();
+        void recordProblemEventSafe(problem.id, "hint1");
         refreshXPInline();
       }
     });
@@ -7477,7 +7385,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
       if (hintDetails2.open && !isExam && !rec.solved && !rec.usedHint2){
         rec.usedHint2 = true;
         rec.hints = (rec.hints || 0) + 1;
-        saveXP();
+        void recordProblemEventSafe(problem.id, "hint2");
         refreshXPInline();
       }
     });
@@ -7490,6 +7398,10 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
     revealBtn.addEventListener("click", () => {
       const show = (revealText.style.display === "none" || !revealText.style.display);
       revealText.style.display = show ? "inline" : "none";
+
+      if (show && !isExam) {
+        void recordProblemEventSafe(problem.id, "reveal");
+      }
     });
   }
   }
@@ -8193,7 +8105,11 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         const msg = (typeof LANG!=="undefined" && LANG==='ro') ? '🎉 Corect!' : '🎉 Correct!';
         const note = result.message ? ` <span class="legend">(${result.message})</span>` : '';
         resEl.innerHTML = `<span class="ok">${msg}${note}</span>`;
-        if(typeof solvedSet!=="undefined" && !solvedSet.has(P.id)){ solvedSet.add(P.id); if(typeof saveSets==="function") saveSets(); if(typeof updateCounters==="function") updateCounters(); }
+        if(typeof solvedSet!=="undefined" && !solvedSet.has(P.id)){
+          solvedSet.add(P.id);
+          void recordProblemEventSafe(P.id, "solved_no_xp");
+          if(typeof updateCounters==="function") updateCounters();
+        }
         if(typeof renderCards==="function") renderCards();
       } else {
         const bad = (typeof LANG!=="undefined" && LANG==='ro') ? '❌ Mai încearcă.' : '❌ Try again.';
@@ -8309,7 +8225,12 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         }else{
           btn.disabled = left>0;
           btn.textContent = left>0 ? `🔓 ${(LANG==='ro'?'Arată răspunsul':'Show answer')} (${left}s)` : `🔓 ${(LANG==='ro'?'Arată răspunsul':'Show answer')}`;
-          btn.onclick=()=>{ state.revealed=true; saveAttempts(); paintReveal(); };
+          btn.onclick=()=>{
+            state.revealed=true;
+            saveAttempts();
+            void recordProblemEventSafe(P.id, "reveal");
+            paintReveal();
+          };
           stopRevealTimer();
           revealTimer=setInterval(()=>{
             left--; if(left<0) left=0;
@@ -8522,7 +8443,6 @@ function openExam(exam){
 
     if (passedNow && !examsPassedSet.has(exam.id)) {
       examsPassedSet.add(exam.id);
-      saveSets();
       updateCounters();
     }
 

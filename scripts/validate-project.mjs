@@ -8,7 +8,8 @@ const moduleJsFiles = [
   "js/app.js",
   "js/profile.js",
   "js/supabase-client.js",
-  "js/content-repository.js"
+  "js/content-repository.js",
+  "js/progress-repository.js"
 ];
 
 const classicJsFiles = [
@@ -43,7 +44,8 @@ const productionTextFiles = [
   "js/app.js",
   "js/profile.js",
   "js/supabase-client.js",
-  "js/content-repository.js"
+  "js/content-repository.js",
+  "js/progress-repository.js"
 ];
 
 let failed = false;
@@ -123,6 +125,40 @@ for (const [relativePath, source] of [
 ]) {
   if (!source.includes('from "./content-repository.js"')) {
     console.error(`${relativePath} must use the shared content repository.`);
+    failed = true;
+  }
+}
+
+if (!appSource.includes('from "./progress-repository.js"')) {
+  console.error("js/app.js must use the secure progress repository.");
+  failed = true;
+}
+
+for (const table of [
+  "user_lesson_progress",
+  "user_problem_progress",
+  "user_exam_progress"
+]) {
+  const directWritePattern = new RegExp(
+    `\\.from\\([\"']${table}[\"']\\)\\s*\\.(?:insert|upsert|update|delete)\\(`,
+    "s"
+  );
+
+  if (directWritePattern.test(appSource)) {
+    console.error(`Direct browser write to ${table} is forbidden; use RPC progress events.`);
+    failed = true;
+  }
+}
+
+for (const rpcName of [
+  "mh_mark_lesson_learned",
+  "mh_record_problem_event",
+  "mh_start_exam_attempt",
+  "mh_finish_exam_attempt"
+]) {
+  const repositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
+  if (!repositorySource.includes(rpcName)) {
+    console.error(`Missing secure progress RPC binding: ${rpcName}`);
     failed = true;
   }
 }
