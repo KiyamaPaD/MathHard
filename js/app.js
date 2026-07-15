@@ -3039,7 +3039,7 @@ function normalizeLesson(L){
 
     setVal("mh_exam_type", item.exam_type ?? item.type);
     setVal("mh_exam_year", item.exam_year ?? item.year);
-    setVal("mh_exam_hours", item.exam_hours ?? item.defaultHours ?? 2);
+    setVal("mh_exam_hours", item.default_hours ?? item.defaultHours ?? item.exam_hours ?? 2);
     setVal("mh_exam_title_ro", item.exam_title_ro ?? item.title_ro);
     setVal("mh_exam_title_en", item.exam_title_en ?? item.title_en);
     setVal(
@@ -3325,9 +3325,7 @@ function normalizeLesson(L){
       hint1_ro: document.getElementById("mh_hint1_ro").value.trim(),
       hint2_ro: document.getElementById("mh_hint2_ro").value.trim(),
 
-      source: "",
-      added_at: new Date().toISOString()
-
+      source: ""
     };
   }
 
@@ -3338,17 +3336,18 @@ function normalizeLesson(L){
 
     return {
       id: document.getElementById("mh_id").value.trim(),
-      exam_type: document.getElementById("mh_exam_type").value.trim(),
-      exam_year: Number(document.getElementById("mh_exam_year").value || 0),
-      exam_title_ro: document.getElementById("mh_exam_title_ro").value.trim(),
-      exam_title_en: document.getElementById("mh_exam_title_en").value.trim(),
-      exam_hours: Number(document.getElementById("mh_exam_hours").value || 2),
-      exam_problems: mhProblemsArrayFromInput(
+      type: document.getElementById("mh_exam_type").value.trim(),
+      year: Number(document.getElementById("mh_exam_year").value || 0),
+      title_ro: document.getElementById("mh_exam_title_ro").value.trim(),
+      title_en: document.getElementById("mh_exam_title_en").value.trim(),
+      default_hours: Number(document.getElementById("mh_exam_hours").value || 2),
+      problems: mhProblemsArrayFromInput(
         document.getElementById("mh_exam_problems").value
       ),
       items: normalizedItems,
       scoring_profile: mhExamScoringProfile?.value || "default_exact_v1",
-      exam_credit: document.getElementById("mh_exam_credit").value.trim()
+      scoring_config: null,
+      credit_html: document.getElementById("mh_exam_credit").value.trim()
     };
   }
 
@@ -3492,7 +3491,6 @@ function mhValidateExamPayload(payload) {
         if (!payload.answer) throw new Error("Lipsește answer.");
 
         if (MH_ADMIN_STATE.mode === "edit") {
-          delete payload.added_at;
           query = supabase.from("mh_problems").update(payload).eq("id", MH_ADMIN_STATE.editId);
         } else {
           query = supabase.from("mh_problems").insert(payload);
@@ -4749,7 +4747,7 @@ async function markLessonLearnedSafe(lessonId) {
 
   return enqueueProgressMutation(`lesson:${lessonId}`, async () => {
     try {
-      return await markLessonLearned(lessonId);
+      return await markLessonLearned(supabase, lessonId);
     } catch (error) {
       reconcileProgressAfterMutationError("markLessonLearned", error);
       return null;
@@ -4762,7 +4760,7 @@ async function recordProblemEventSafe(problemId, eventName) {
 
   return enqueueProgressMutation(`problem:${problemId}`, async () => {
     try {
-      const row = await recordProblemEvent(problemId, eventName);
+      const row = await recordProblemEvent(supabase, problemId, eventName);
       applyCanonicalProblemProgress(problemId, row, eventName);
       return row;
     } catch (error) {
@@ -4777,7 +4775,7 @@ async function recordExamAttemptStart(examId) {
 
   return enqueueProgressMutation(`exam:${examId}`, async () => {
     try {
-      return await startExamAttempt(examId);
+      return await startExamAttempt(supabase, examId);
     } catch (error) {
       reconcileProgressAfterMutationError("startExamAttempt", error);
       return null;
@@ -4790,7 +4788,7 @@ async function updateExamAttemptScore(examId, score, passedNow = false) {
 
   return enqueueProgressMutation(`exam:${examId}`, async () => {
     try {
-      const row = await finishExamAttempt(examId, score, passedNow);
+      const row = await finishExamAttempt(supabase, examId, score);
 
       if (row?.passed) examsPassedSet.add(examId);
       updateCounters();

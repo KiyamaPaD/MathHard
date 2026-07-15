@@ -1592,3 +1592,7 @@ const DATA = {
     }
 };
 
+
+// Explicit bridge for ES modules such as profile.js. A top-level `const DATA`
+// is a global lexical binding, not a property on `window`/`globalThis`.
+globalThis.MH_DATA = DATA;

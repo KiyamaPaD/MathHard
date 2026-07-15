@@ -183,4 +183,6 @@ MathHard reflects both technical ambition and a genuine interest in making mathe
 - Content writes are protected by Supabase Row Level Security policies.
 - The browser uses only the Supabase publishable key. Never place a `service_role` or secret key in frontend files.
 - Legacy PHP authentication and JSON-serving endpoints were removed in the security-foundation phase.
-- User progress is still scheduled for a later server-authoritative RPC migration before public competitive rankings are enabled.
+- Lesson, problem, XP, and exam progress writes are routed through authenticated Supabase RPC functions.
+- Runtime content loading is centralized and cached through `js/content-repository.js`; Supabase overrides bundled content with the same ID.
+- Competitive anti-cheat is not complete yet because answer validation still runs in the browser; public rankings must wait for server-side answer verification.

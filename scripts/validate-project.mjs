@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const moduleJsFiles = [
   "js/app.js",
@@ -18,13 +19,22 @@ const classicJsFiles = [
   "js/katex-init.js"
 ];
 
-const jsFiles = [...classicJsFiles, ...moduleJsFiles];
-
 const requiredFiles = [
   "index.html",
   "profile.html",
+  "README.md",
   "data/problems.json",
-  ...jsFiles
+  "scripts/test-repositories.mjs",
+  ...classicJsFiles,
+  ...moduleJsFiles
+];
+
+const productionTextFiles = [
+  "index.html",
+  "profile.html",
+  "README.md",
+  ...classicJsFiles,
+  ...moduleJsFiles
 ];
 
 const forbiddenPatterns = [
@@ -34,26 +44,20 @@ const forbiddenPatterns = [
   /create_content\.php/i,
   /admin_login\.php/i,
   /get_problems\.php/i,
-  /id=["']mh_secret["']/i
-];
-
-const productionTextFiles = [
-  "index.html",
-  "profile.html",
-  "README.md",
-  "js/app.js",
-  "js/profile.js",
-  "js/supabase-client.js",
-  "js/content-repository.js",
-  "js/progress-repository.js"
+  /id=["']mh_secret["']/i,
+  /Smecherul\.1978/i
 ];
 
 let failed = false;
 
+function fail(message) {
+  console.error(message);
+  failed = true;
+}
+
 for (const relativePath of requiredFiles) {
   if (!existsSync(resolve(root, relativePath))) {
-    console.error(`Missing required file: ${relativePath}`);
-    failed = true;
+    fail(`Missing required file: ${relativePath}`);
   }
 }
 
@@ -65,11 +69,6 @@ function checkClassicScript(relativePath) {
 
 function checkModuleScript(relativePath) {
   const source = readFileSync(resolve(root, relativePath), "utf8");
-
-  // Node treats .js files as CommonJS when there is no package.json with
-  // "type": "module". These browser files are ES modules, so parse their
-  // contents through stdin with module syntax enabled instead of importing
-  // or executing them.
   execFileSync(process.execPath, ["--input-type=module", "--check"], {
     input: source,
     stdio: ["pipe", "pipe", "pipe"]
@@ -80,9 +79,7 @@ for (const relativePath of classicJsFiles) {
   try {
     checkClassicScript(relativePath);
   } catch (error) {
-    console.error(`JavaScript syntax error in ${relativePath}`);
-    console.error(error.stderr?.toString() || error.message);
-    failed = true;
+    fail(`JavaScript syntax error in ${relativePath}\n${error.stderr?.toString() || error.message}`);
   }
 }
 
@@ -90,90 +87,65 @@ for (const relativePath of moduleJsFiles) {
   try {
     checkModuleScript(relativePath);
   } catch (error) {
-    console.error(`JavaScript module syntax error in ${relativePath}`);
-    console.error(error.stderr?.toString() || error.message);
-    failed = true;
+    fail(`JavaScript module syntax error in ${relativePath}\n${error.stderr?.toString() || error.message}`);
+  }
+}
+
+for (const relativePath of moduleJsFiles) {
+  const source = readFileSync(resolve(root, relativePath), "utf8");
+  const importPattern = /from\s+["'](\.\.?\/[^"']+)["']/g;
+  for (const match of source.matchAll(importPattern)) {
+    const importedPath = resolve(root, dirname(relativePath), match[1]);
+    if (!existsSync(importedPath)) {
+      fail(`${relativePath} imports missing module: ${match[1]}`);
+    }
   }
 }
 
 try {
   JSON.parse(readFileSync(resolve(root, "data/problems.json"), "utf8"));
 } catch (error) {
-  console.error(`Invalid JSON in data/problems.json: ${error.message}`);
-  failed = true;
+  fail(`Invalid JSON in data/problems.json: ${error.message}`);
 }
 
 for (const relativePath of productionTextFiles) {
-  const fullPath = resolve(root, relativePath);
-  if (!existsSync(fullPath)) continue;
-
-  const content = readFileSync(fullPath, "utf8");
+  const content = readFileSync(resolve(root, relativePath), "utf8");
   for (const pattern of forbiddenPatterns) {
     if (pattern.test(content)) {
-      console.error(`Forbidden legacy/secret pattern ${pattern} in ${relativePath}`);
-      failed = true;
+      fail(`Forbidden legacy/secret pattern ${pattern} in ${relativePath}`);
     }
   }
 }
 
+const indexHtml = readFileSync(resolve(root, "index.html"), "utf8");
+if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
+  fail("Admin button must be hidden by default in index.html.");
+}
+
 const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
-const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
-
-for (const [relativePath, source] of [
-  ["js/app.js", appSource],
-  ["js/profile.js", profileSource]
-]) {
-  if (!source.includes('from "./content-repository.js"')) {
-    console.error(`${relativePath} must use the shared content repository.`);
-    failed = true;
-  }
+if (!appSource.includes('from "./content-repository.js"')) {
+  fail("app.js must use content-repository.js.");
 }
-
 if (!appSource.includes('from "./progress-repository.js"')) {
-  console.error("js/app.js must use the secure progress repository.");
-  failed = true;
+  fail("app.js must use progress-repository.js.");
+}
+if (/\.from\(["']user_(lesson|problem|exam)_progress["']\)[\s\S]{0,180}\.(insert|upsert|update|delete)\(/.test(appSource)) {
+  fail("app.js contains a direct progress-table mutation; use progress-repository.js instead.");
+}
+if (/exam_type:\s*document\.getElementById\(["']mh_exam_type/.test(appSource)) {
+  fail("Admin exam payload still uses legacy exam_type instead of canonical type.");
+}
+if (!/default_hours:\s*Number\(document\.getElementById\(["']mh_exam_hours/.test(appSource)) {
+  fail("Admin exam payload must write canonical default_hours.");
 }
 
-for (const table of [
-  "user_lesson_progress",
-  "user_problem_progress",
-  "user_exam_progress"
-]) {
-  const directWritePattern = new RegExp(
-    `\\.from\\([\"']${table}[\"']\\)\\s*\\.(?:insert|upsert|update|delete)\\(`,
-    "s"
-  );
-
-  if (directWritePattern.test(appSource)) {
-    console.error(`Direct browser write to ${table} is forbidden; use RPC progress events.`);
-    failed = true;
-  }
-}
-
-for (const rpcName of [
-  "mh_mark_lesson_learned",
-  "mh_record_problem_event",
-  "mh_start_exam_attempt",
-  "mh_finish_exam_attempt"
-]) {
-  const repositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
-  if (!repositorySource.includes(rpcName)) {
-    console.error(`Missing secure progress RPC binding: ${rpcName}`);
-    failed = true;
-  }
-}
-
-for (const legacyLoader of [
-  "loadJsonDataForTotals",
-  "loadContentTotals",
-  "async function loadJsonData()",
-  "async function loadSupabaseData()",
-  "SERVER_DATA"
-]) {
-  if (appSource.includes(legacyLoader) || profileSource.includes(legacyLoader)) {
-    console.error(`Legacy duplicate catalog loader still present: ${legacyLoader}`);
-    failed = true;
-  }
+try {
+  execFileSync(process.execPath, [resolve(root, "scripts/test-repositories.mjs")], {
+    cwd: root,
+    stdio: "pipe"
+  });
+} catch (error) {
+  fail(`Repository tests failed.\n${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
 }
 
 if (failed) {

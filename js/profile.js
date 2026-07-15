@@ -983,7 +983,10 @@ async function handleDeleteAccount() {
 
 /* ========= CONTENT CATALOG ========= */
 function getBaseCatalogData() {
-  const source = globalThis.DATA || {};
+  const source =
+    globalThis.MH_DATA ||
+    (typeof DATA !== "undefined" ? DATA : null) ||
+    {};
 
   return {
     lessons: Array.isArray(source.lessons) ? source.lessons : [],
