@@ -133,6 +133,9 @@ if (!appSource.includes('from "./progress-repository.js"')) {
 if (!appSource.includes("let MH_AUTH_USER = null")) {
   fail("app.js must keep auth state separate from progress-query state.");
 }
+if (!/function isGuestContentLocked\(\)\s*\{[\s\S]{0,400}return false;/.test(appSource)) {
+  fail("Public learning content must not be blocked by progress/auth loading.");
+}
 if (!appSource.includes('.from("user_problem_progress")\n          .select("*")')) {
   fail("app.js must load progress with schema-compatible select(*).");
 }

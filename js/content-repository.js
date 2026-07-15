@@ -1,4 +1,4 @@
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 const CACHE_KEY = `mh_content_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -136,26 +136,33 @@ async function fetchJsonCatalog() {
 async function fetchSupabaseCatalog(supabase) {
   if (!supabase) return emptyCatalog();
 
-  try {
-    const [lessonsResult, problemsResult, examsResult] = await Promise.all([
-      supabase.from("mh_lessons").select("*"),
-      supabase.from("mh_problems").select("*"),
-      supabase.from("mh_exams").select("*")
-    ]);
+  const [lessonsResult, problemsResult, examsResult] = await Promise.all([
+    supabase.from("mh_lessons").select("*"),
+    supabase.from("mh_problems").select("*"),
+    supabase.from("mh_exams").select("*")
+  ]);
 
-    if (lessonsResult.error) throw lessonsResult.error;
-    if (problemsResult.error) throw problemsResult.error;
-    if (examsResult.error) throw examsResult.error;
+  const result = emptyCatalog();
 
-    return {
-      lessons: asArray(lessonsResult.data),
-      problems: asArray(problemsResult.data),
-      exams: asArray(examsResult.data)
-    };
-  } catch (error) {
-    console.error("Supabase catalog could not be loaded:", error);
-    return emptyCatalog();
+  if (lessonsResult.error) {
+    console.warn("Supabase lessons could not be loaded; bundled lessons remain available:", lessonsResult.error);
+  } else {
+    result.lessons = asArray(lessonsResult.data);
   }
+
+  if (problemsResult.error) {
+    console.warn("Supabase problems could not be loaded; bundled problems remain available:", problemsResult.error);
+  } else {
+    result.problems = asArray(problemsResult.data);
+  }
+
+  if (examsResult.error) {
+    console.warn("Supabase exams could not be loaded; bundled exams remain available:", examsResult.error);
+  } else {
+    result.exams = asArray(examsResult.data);
+  }
+
+  return result;
 }
 
 export function invalidateContentCatalogCache() {

@@ -4455,10 +4455,11 @@ function mhValidateExamPayload(payload) {
   let MH_PROGRESS_USER = null;
 
   function isGuestContentLocked() {
-    // Content access follows the restored Supabase session, not whether every
-    // progress query happened to succeed. A schema/cache error must never turn
-    // an authenticated user back into a guest.
-    return !MH_AUTH_USER;
+    // Lessons, problems, exams, research and history are public content.
+    // Authentication is required only for persistent progress, XP and profile
+    // synchronization. This keeps the learning catalog usable even when an
+    // auth/progress request is slow or temporarily fails.
+    return false;
   }
 
   function getGuestLockTitle() {
