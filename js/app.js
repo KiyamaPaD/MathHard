@@ -4451,10 +4451,14 @@ function mhValidateExamPayload(payload) {
   let solvedSet = new Set();
   let learnedSet = new Set();
   let examsPassedSet = new Set();
+  let MH_AUTH_USER = null;
   let MH_PROGRESS_USER = null;
 
   function isGuestContentLocked() {
-    return !MH_PROGRESS_USER;
+    // Content access follows the restored Supabase session, not whether every
+    // progress query happened to succeed. A schema/cache error must never turn
+    // an authenticated user back into a guest.
+    return !MH_AUTH_USER;
   }
 
   function getGuestLockTitle() {
@@ -4808,23 +4812,25 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
 
   async function loadAppProgressFromDb(userOverride = undefined){
     const loadEpoch = ++appProgressLoadEpoch;
+    let progressUser = null;
 
     try {
-      // When booting or returning from profile.html, use the session already
-      // restored by Supabase instead of performing a second getUser() request.
-      // `undefined` means "resolve it here"; `null` explicitly means guest.
-      const progressUser = userOverride === undefined
+      // `undefined` resolves the current session here; `null` explicitly means
+      // guest. A supplied user avoids an unnecessary network round-trip.
+      progressUser = userOverride === undefined
         ? await getProgressUser()
         : userOverride;
 
       if (loadEpoch !== appProgressLoadEpoch) return;
 
+      MH_AUTH_USER = progressUser;
       MH_PROGRESS_USER = progressUser;
       solvedSet = new Set();
       learnedSet = new Set();
       examsPassedSet = new Set();
       XP_TOTAL = 0;
       XP_DETAILS = {};
+      MH_PROGRESS_READY = false;
 
       if (!progressUser){
         MH_PROGRESS_READY = true;
@@ -4832,49 +4838,60 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
         return;
       }
 
-      const userId = progressUser.id;
+      // Unlock authenticated content immediately. Progress counters may fill
+      // in a moment later, but the catalog must not remain blocked by DB reads.
+      refreshProgressUIFromDb();
 
-      const [
-        { data: lessonRows, error: lessonError },
-        { data: problemRows, error: problemError },
-        { data: examRows, error: examError }
-      ] = await Promise.all([
+      const userId = progressUser.id;
+      const [lessonResult, problemResult, examResult] = await Promise.all([
         supabase
           .from("user_lesson_progress")
-          .select("lesson_id, learned")
+          .select("*")
           .eq("user_id", userId),
 
         supabase
           .from("user_problem_progress")
-          .select("problem_id, solved, wrong_attempts, hints_used, used_hint1, used_hint2, xp_earned")
+          .select("*")
           .eq("user_id", userId),
 
         supabase
           .from("user_exam_progress")
-          .select("exam_id, passed")
+          .select("*")
           .eq("user_id", userId)
       ]);
 
-      // A logout or account switch may have started while these requests were
-      // running. Never let an older response overwrite the newer auth state.
+      // A logout/account switch may have happened while the requests ran.
       if (loadEpoch !== appProgressLoadEpoch) return;
 
-      if (lessonError) throw lessonError;
-      if (problemError) throw problemError;
-      if (examError) throw examError;
+      const progressErrors = [
+        ["lessons", lessonResult.error],
+        ["problems", problemResult.error],
+        ["exams", examResult.error]
+      ].filter(([, error]) => !!error);
 
-      (lessonRows || []).forEach(row => {
+      for (const [section, error] of progressErrors) {
+        console.warn(`Could not load ${section} progress; continuing with empty data:`, error);
+      }
+
+      const lessonRows = lessonResult.error ? [] : (lessonResult.data || []);
+      const problemRows = problemResult.error ? [] : (problemResult.data || []);
+      const examRows = examResult.error ? [] : (examResult.data || []);
+
+      lessonRows.forEach(row => {
         if (row.learned) learnedSet.add(row.lesson_id);
       });
 
-      (problemRows || []).forEach(row => {
+      problemRows.forEach(row => {
+        const hintsUsed = Number(row.hints_used ?? row.hints ?? 0);
+        const wrongAttempts = Number(row.wrong_attempts ?? row.attempts ?? 0);
+
         XP_DETAILS[row.problem_id] = {
           xp: Number(row.xp_earned || 0),
-          wrong: Number(row.wrong_attempts || 0),
-          hints: Number(row.hints_used || 0),
+          wrong: wrongAttempts,
+          hints: hintsUsed,
           solved: !!row.solved,
-          usedHint1: !!row.used_hint1,
-          usedHint2: !!row.used_hint2
+          usedHint1: !!(row.used_hint1 ?? (hintsUsed >= 1)),
+          usedHint2: !!(row.used_hint2 ?? (hintsUsed >= 2))
         };
 
         if (row.solved) solvedSet.add(row.problem_id);
@@ -4882,7 +4899,7 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
 
       recomputeXPTotal();
 
-      (examRows || []).forEach(row => {
+      examRows.forEach(row => {
         if (row.passed) examsPassedSet.add(row.exam_id);
       });
 
@@ -4891,9 +4908,12 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
     } catch (err) {
       if (loadEpoch !== appProgressLoadEpoch) return;
 
-      console.error("Eroare la load progress din DB:", err);
+      console.error("Eroare la load progress din DB; catalogul rămâne disponibil:", err);
 
-      MH_PROGRESS_USER = null;
+      // Preserve the authenticated session. Progress failure degrades only the
+      // counters, never access to lessons/problems/exams.
+      MH_AUTH_USER = progressUser || null;
+      MH_PROGRESS_USER = progressUser || null;
       solvedSet = new Set();
       learnedSet = new Set();
       examsPassedSet = new Set();

@@ -123,11 +123,21 @@ if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
 }
 
 const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
+const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
 if (!appSource.includes('from "./content-repository.js"')) {
   fail("app.js must use content-repository.js.");
 }
 if (!appSource.includes('from "./progress-repository.js"')) {
   fail("app.js must use progress-repository.js.");
+}
+if (!appSource.includes("let MH_AUTH_USER = null")) {
+  fail("app.js must keep auth state separate from progress-query state.");
+}
+if (!appSource.includes('.from("user_problem_progress")\n          .select("*")')) {
+  fail("app.js must load progress with schema-compatible select(*).");
+}
+if (/const safe(?:Lesson|Problem|Exam)Rows\s*=\s*[^;]*\bsafe(?:Lesson|Problem|Exam)Rows\b/.test(profileSource)) {
+  fail("profile.js contains a self-referencing safe progress variable.");
 }
 if (/\.from\(["']user_(lesson|problem|exam)_progress["']\)[\s\S]{0,180}\.(insert|upsert|update|delete)\(/.test(appSource)) {
   fail("app.js contains a direct progress-table mutation; use progress-repository.js instead.");

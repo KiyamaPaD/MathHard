@@ -1082,35 +1082,38 @@ async function loadProfileStatsFromDb(userId) {
     ] = await Promise.all([
       supabase
         .from("user_lesson_progress")
-        .select("lesson_id, learned, learned_at, updated_at")
+        .select("*")
         .eq("user_id", userId),
 
       supabase
         .from("user_problem_progress")
-        .select("problem_id, solved, wrong_attempts, xp_earned, solved_at, updated_at")
+        .select("*")
         .eq("user_id", userId),
 
       supabase
         .from("user_exam_progress")
-        .select("exam_id, passed, best_score, last_score, attempts_count, passed_at, started_at, updated_at")
+        .select("*")
         .eq("user_id", userId),
 
       loadMergedCatalog()
     ]);
 
-    if (lessonError) throw lessonError;
-    if (problemError) throw problemError;
-    if (examError) throw examError;
+    if (lessonError) console.warn("Could not load lesson progress for profile:", lessonError);
+    if (problemError) console.warn("Could not load problem progress for profile:", problemError);
+    if (examError) console.warn("Could not load exam progress for profile:", examError);
 
+    const safeLessonRows = lessonError ? [] : (lessonRows || []);
+    const safeProblemRows = problemError ? [] : (problemRows || []);
+    const safeExamRows = examError ? [] : (examRows || []);
     const totals = catalogTotals(catalog);
 
-    const learnedRows = (lessonRows || []).filter((row) => row.learned);
-    const solvedRows = (problemRows || []).filter((row) => row.solved);
-    const wrongRows = (problemRows || []).filter(
-      (row) => !row.solved && Number(row.wrong_attempts || 0) > 0
+    const learnedRows = safeLessonRows.filter((row) => row.learned);
+    const solvedRows = safeProblemRows.filter((row) => row.solved);
+    const wrongRows = safeProblemRows.filter(
+      (row) => !row.solved && Number(row.wrong_attempts ?? row.attempts ?? 0) > 0
     );
-    const passedRows = (examRows || []).filter((row) => row.passed);
-    const failedRows = (examRows || []).filter(
+    const passedRows = safeExamRows.filter((row) => row.passed);
+    const failedRows = safeExamRows.filter(
       (row) => !row.passed
     );
 
@@ -1179,7 +1182,7 @@ async function loadProfileStatsFromDb(userId) {
     );
 
     const attemptedExamIds = new Set(
-      (examRows || [])
+      safeExamRows
         .map(row => row.exam_id)
         .filter(Boolean)
     );
@@ -1220,7 +1223,7 @@ async function loadProfileStatsFromDb(userId) {
       return new Date(b.solved_at || b.updated_at || 0) - new Date(a.solved_at || a.updated_at || 0);
     });
 
-    const sortedExamRows = [...(examRows || [])].sort((a, b) => {
+    const sortedExamRows = [...safeExamRows].sort((a, b) => {
       const ta = new Date(a.passed_at || a.updated_at || a.started_at || 0).getTime();
       const tb = new Date(b.passed_at || b.updated_at || b.started_at || 0).getTime();
       return tb - ta;
@@ -1262,11 +1265,11 @@ async function loadProfileStatsFromDb(userId) {
     );
 
     /* ===== EXAM EXTRA STATS ===== */
-    const bestExamRow = [...(examRows || [])].sort(
+    const bestExamRow = [...safeExamRows].sort(
       (a, b) => Number(b.best_score || 0) - Number(a.best_score || 0)
     )[0] || null;
 
-    const totalExamAttempts = (examRows || []).reduce(
+    const totalExamAttempts = safeExamRows.reduce(
       (sum, row) => sum + Number(row.attempts_count || 0),
       0
     );

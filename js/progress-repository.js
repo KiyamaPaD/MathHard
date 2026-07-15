@@ -39,10 +39,21 @@ async function getAuthenticatedUser(supabase) {
   return data.user;
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function callRpcOrFallback(supabase, name, args, fallback) {
-  const { data, error } = await supabase.rpc(name, args);
-  if (!error) return firstRow(data);
-  if (!isMissingRpcError(error)) throw error;
+  let result = await supabase.rpc(name, args);
+  if (!result.error) return firstRow(result.data);
+  if (!isMissingRpcError(result.error)) throw result.error;
+
+  // PostgREST can briefly keep an older schema cache immediately after SQL
+  // migrations. Retry once before using the legacy compatibility path.
+  await wait(700);
+  result = await supabase.rpc(name, args);
+  if (!result.error) return firstRow(result.data);
+  if (!isMissingRpcError(result.error)) throw result.error;
 
   warnLegacyFallback();
   return fallback();
@@ -87,7 +98,7 @@ async function legacyRecordProblemEvent(supabase, problemId, eventName) {
   const user = await getAuthenticatedUser(supabase);
   const { data: existing, error: readError } = await supabase
     .from("user_problem_progress")
-    .select("problem_id, solved, wrong_attempts, hints_used, used_hint1, used_hint2, revealed_answer, xp_earned, solved_at")
+    .select("*")
     .eq("user_id", user.id)
     .eq("problem_id", problemId)
     .maybeSingle();
@@ -127,7 +138,7 @@ async function legacyRecordProblemEvent(supabase, problemId, eventName) {
   const { data, error } = await supabase
     .from("user_problem_progress")
     .upsert(payload, { onConflict: "user_id,problem_id" })
-    .select("problem_id, solved, wrong_attempts, hints_used, used_hint1, used_hint2, revealed_answer, xp_earned, solved_at")
+    .select("*")
     .single();
 
   if (error) throw error;
@@ -138,7 +149,7 @@ async function legacyStartExamAttempt(supabase, examId) {
   const user = await getAuthenticatedUser(supabase);
   const { data: existing, error: readError } = await supabase
     .from("user_exam_progress")
-    .select("attempts_count, best_score, last_score, passed, passed_at")
+    .select("*")
     .eq("user_id", user.id)
     .eq("exam_id", examId)
     .maybeSingle();
@@ -173,7 +184,7 @@ async function legacyFinishExamAttempt(supabase, examId, score) {
   const safeScore = Math.max(0, Math.min(100000, Number(score) || 0));
   const { data: existing, error: readError } = await supabase
     .from("user_exam_progress")
-    .select("attempts_count, best_score, last_score, passed, started_at, passed_at")
+    .select("*")
     .eq("user_id", user.id)
     .eq("exam_id", examId)
     .maybeSingle();
@@ -242,7 +253,16 @@ export async function finishExamAttempt(supabase, examId, score) {
   const id = cleanId(examId, "exam id");
   const safeScore = Number.isFinite(Number(score)) ? Number(score) : 0;
 
-  const canonical = await supabase.rpc("mh_finish_exam_attempt", {
+  let canonical = await supabase.rpc("mh_finish_exam_attempt", {
+    p_exam_id: id,
+    p_score: safeScore
+  });
+
+  if (!canonical.error) return firstRow(canonical.data);
+  if (!isMissingRpcError(canonical.error)) throw canonical.error;
+
+  await wait(700);
+  canonical = await supabase.rpc("mh_finish_exam_attempt", {
     p_exam_id: id,
     p_score: safeScore
   });
