@@ -1,5 +1,5 @@
 import { supabase } from "./supabase-client.js";
-import { catalogTotals, loadRemoteContentCatalog, mergeById } from "./content-repository.js";
+import { catalogTotals, loadContentCatalog } from "./content-repository.js";
 
 globalThis.supabase = supabase;
 console.log("PROFILE.JS LOADED v5");
@@ -1058,8 +1058,10 @@ function formatExamLabel(exam) {
 
 async function loadMergedCatalog() {
   const baseCatalog = getBaseCatalogData();
-  const remoteCatalog = await loadRemoteContentCatalog({ supabase });
-  const merged = mergeById(baseCatalog, remoteCatalog);
+  const merged = await loadContentCatalog({
+    supabase,
+    bundledCatalog: baseCatalog
+  });
 
   return {
     lessons: sortLessonsForProfile(merged.lessons),

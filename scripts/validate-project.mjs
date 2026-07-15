@@ -25,6 +25,9 @@ const requiredFiles = [
   "README.md",
   "data/problems.json",
   "scripts/test-repositories.mjs",
+  "scripts/content-tools-lib.mjs",
+  "scripts/audit-content.mjs",
+  "scripts/export-content-sql.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
@@ -127,6 +130,12 @@ const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
 if (!appSource.includes('from "./content-repository.js"')) {
   fail("app.js must use content-repository.js.");
 }
+if (!appSource.includes("loadContentCatalog")) {
+  fail("app.js must load the unified catalog through loadContentCatalog().");
+}
+if (!appSource.includes("getContentItemSources")) {
+  fail("Admin must display content provenance.");
+}
 if (!appSource.includes('from "./progress-repository.js"')) {
   fail("app.js must use progress-repository.js.");
 }
@@ -157,6 +166,22 @@ if (/function reconcileProgressAfterMutationError[\s\S]{0,500}loadAppProgressFro
 }
 if (!appSource.includes("if (terminalEvent) {\n    renderCards();")) {
   fail("Solved problem mutations must refresh problem cards immediately.");
+}
+
+if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
+  fail("Editing a bundled lesson must create/update a Supabase override via upsert.");
+}
+if (!appSource.includes("Șterge override")) {
+  fail("Admin must distinguish deleting a Supabase override from deleting bundled content.");
+}
+
+try {
+  execFileSync(process.execPath, [resolve(root, "scripts/audit-content.mjs")], {
+    cwd: root,
+    stdio: "pipe"
+  });
+} catch (error) {
+  fail(`Content audit failed.\n${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
 }
 
 try {

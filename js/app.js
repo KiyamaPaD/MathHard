@@ -1,5 +1,9 @@
 import { supabase } from "./supabase-client.js";
-import { loadRemoteContentCatalog, mergeById } from "./content-repository.js";
+import {
+  getContentCatalogDiagnostics,
+  getContentItemSources,
+  loadContentCatalog
+} from "./content-repository.js";
 import {
   finishExamAttempt,
   markLessonLearned,
@@ -2400,16 +2404,15 @@ function normalizeLesson(L){
   }
 
   async function reloadAllContentFromSupabase(forceRefresh = false) {
-    const remoteCatalog = await loadRemoteContentCatalog({
+    const mergedCatalog = await loadContentCatalog({
       supabase,
+      bundledCatalog: BASE_DATA,
       forceRefresh
     });
 
-    // At runtime the application now consumes one merged catalog. The bundled
-    // DATA object remains the offline/base layer, while JSON and Supabase are
-    // combined once by content-repository.js.
-    const mergedCatalog = mergeById(BASE_DATA, remoteCatalog);
-
+    // content-repository.js is the only runtime merge point. It combines the
+    // bundled DATA catalog, problems.json and Supabase while preserving source
+    // provenance for the Admin panel.
     replaceCatalogTarget(DATA.lessons, mergedCatalog.lessons, normalizeLesson);
     replaceCatalogTarget(DATA.problems, mergedCatalog.problems, normalizeProblem);
     replaceCatalogTarget(DATA.exams, mergedCatalog.exams, normalizeExam);
@@ -3053,7 +3056,14 @@ function normalizeLesson(L){
     setVal("mh_exam_credit", item.exam_credit ?? item.credit_html);
 
     const status = document.getElementById("mhPublishStatus");
-    if (status) status.textContent = `Editezi: ${item.id}`;
+    if (status) {
+      const sources = Array.isArray(item.__sources) ? item.__sources : [];
+      const sourceText = sources.length ? sources.map(mhSourceLabel).join(" + ") : "necunoscut";
+      const createsOverride = !sources.includes("supabase");
+      status.textContent = createsOverride
+        ? `Editezi: ${item.id} (${sourceText}) — salvarea va crea un override în Supabase.`
+        : `Editezi: ${item.id} (${sourceText}).`;
+    }
 
     if (type === "exam") {
       MH_EXAM_ITEMS_DRAFT = Array.isArray(item.items)
@@ -3151,26 +3161,30 @@ function normalizeLesson(L){
 
   }
 
+  function mhCatalogKindForType(contentType) {
+    if (contentType === "problem") return "problems";
+    if (contentType === "exam") return "exams";
+    return "lessons";
+  }
+
   function mhGetAdminItems() {
-    const lessons = DATA.lessons.map(item => ({
+    const withSources = (item, contentType) => ({
       ...item,
-      content_type:
-        item.chapter === "CERCETARE"
-          ? "research"
-          : item.chapter === "Istoria matematicii"
-            ? "history"
-            : "lesson"
-    }));
+      content_type: contentType,
+      __sources: getContentItemSources(mhCatalogKindForType(contentType), item.id)
+    });
 
-    const problems = DATA.problems.map(item => ({
-      ...item,
-      content_type: "problem"
-    }));
+    const lessons = DATA.lessons.map(item => withSources(
+      item,
+      item.chapter === "CERCETARE"
+        ? "research"
+        : item.chapter === "Istoria matematicii"
+          ? "history"
+          : "lesson"
+    ));
 
-    const exams = DATA.exams.map(item => ({
-      ...item,
-      content_type: "exam"
-    }));
+    const problems = DATA.problems.map(item => withSources(item, "problem"));
+    const exams = DATA.exams.map(item => withSources(item, "exam"));
 
     return [...lessons, ...problems, ...exams].sort((a, b) => {
       const ta = (a.title_ro || a.title_en || a.id || "").toLowerCase();
@@ -3179,20 +3193,45 @@ function normalizeLesson(L){
     });
   }
 
+  function mhSourceLabel(source) {
+    if (source === "bundle") return "data.js";
+    if (source === "json") return "problems.json";
+    if (source === "supabase") return "Supabase";
+    return source;
+  }
+
   function mhRenderAdminList() {
     const host = document.getElementById("mhAdminList");
     const info = document.getElementById("mhAdminListInfo");
     if (!host) return;
 
     const items = mhGetAdminItems();
+    const diagnostics = getContentCatalogDiagnostics();
+    const sourcePresence = {
+      bundle: items.filter((item) => item.__sources.includes("bundle")).length,
+      json: items.filter((item) => item.__sources.includes("json")).length,
+      supabase: items.filter((item) => item.__sources.includes("supabase")).length
+    };
+
     host.innerHTML = "";
-    if (info) info.textContent = `${items.length} iteme`;
+    if (info) {
+      info.textContent =
+        `${items.length} iteme • data.js: ${sourcePresence.bundle}` +
+        ` • JSON: ${sourcePresence.json} • Supabase: ${sourcePresence.supabase}` +
+        ` • conflicte de câmp: ${diagnostics.conflicts.length}`;
+    }
 
     items.forEach((item) => {
       const card = document.createElement("div");
       card.className = "card";
 
       const title = item.title_ro || item.title_en || item.id || "(fără titlu)";
+      const sources = Array.isArray(item.__sources) ? item.__sources : [];
+      const hasSupabase = sources.includes("supabase");
+      const hasBundledFallback = sources.some((source) => source === "bundle" || source === "json");
+      const sourceText = sources.length
+        ? sources.map(mhSourceLabel).join(" + ")
+        : "necunoscut";
       const metaBits = [
         `Tip: ${item.content_type}`,
         item.grade ? `Clasă: ${item.grade}` : null,
@@ -3201,13 +3240,25 @@ function normalizeLesson(L){
         item.year ? `An: ${item.year}` : null
       ].filter(Boolean);
 
+      const deleteText = !hasSupabase
+        ? "🔒 Local"
+        : hasBundledFallback
+          ? "🗑 Șterge override"
+          : "🗑 Delete";
+      const deleteTitle = !hasSupabase
+        ? "Acest item există doar în fișierele locale și nu poate fi șters din Supabase."
+        : hasBundledFallback
+          ? "Șterge doar versiunea Supabase; versiunea locală va reapărea."
+          : "Șterge itemul din Supabase.";
+
       card.innerHTML = `
-        <div class="title">${title}</div>
-        <div class="legend" style="margin-top:6px;">ID: ${item.id}</div>
-        <div class="legend" style="margin-top:6px;">${metaBits.join(" • ")}</div>
+        <div class="title">${esc(title)}</div>
+        <div class="legend" style="margin-top:6px;">ID: ${esc(item.id)}</div>
+        <div class="legend" style="margin-top:6px;">${esc(metaBits.join(" • "))}</div>
+        <div class="legend" style="margin-top:6px;">Sursă: ${esc(sourceText)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button class="btn small" type="button" data-edit-id="${item.id}">✏️ Edit</button>
-          <button class="btn small" type="button" data-delete-id="${item.id}" data-delete-type="${item.content_type}">🗑 Delete</button>
+          <button class="btn small" type="button" data-edit-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}">✏️ Edit</button>
+          <button class="btn small" type="button" data-delete-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}" title="${esc(deleteTitle)}" ${hasSupabase ? "" : "disabled"}>${deleteText}</button>
         </div>
       `;
 
@@ -3216,7 +3267,9 @@ function normalizeLesson(L){
 
     host.querySelectorAll("[data-edit-id]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const item = mhGetAdminItems().find(x => x.id === btn.dataset.editId);
+        const item = mhGetAdminItems().find(
+          (candidate) => candidate.id === btn.dataset.editId && candidate.content_type === btn.dataset.contentType
+        );
         if (!item) return;
 
         mhFillAdminFormFromItem(item);
@@ -3227,10 +3280,23 @@ function normalizeLesson(L){
     host.querySelectorAll("[data-delete-id]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.deleteId;
-        const type = btn.dataset.deleteType;
+        const type = btn.dataset.contentType;
+        const item = mhGetAdminItems().find(
+          (candidate) => candidate.id === id && candidate.content_type === type
+        );
+        if (!item) return;
 
-        const ok = confirm(`Sigur vrei să ștergi ${type}: ${id} ?`);
-        if (!ok) return;
+        const sources = Array.isArray(item.__sources) ? item.__sources : [];
+        if (!sources.includes("supabase")) {
+          alert("Acest item este inclus în data.js sau problems.json. Nu există un rând Supabase de șters.");
+          return;
+        }
+
+        const hasBundledFallback = sources.some((source) => source === "bundle" || source === "json");
+        const confirmText = hasBundledFallback
+          ? `Ștergi doar override-ul Supabase pentru ${type}: ${id}. Versiunea locală va reapărea. Continui?`
+          : `Sigur vrei să ștergi ${type}: ${id}?`;
+        if (!confirm(confirmText)) return;
 
         try {
           let query;
@@ -3252,7 +3318,11 @@ function normalizeLesson(L){
           mhRenderAdminList();
 
           const status = document.getElementById("mhPublishStatus");
-          if (status) status.textContent = `Șters: ${id}`;
+          if (status) {
+            status.textContent = hasBundledFallback
+              ? `Override Supabase șters pentru ${id}; versiunea locală este din nou activă.`
+              : `Șters: ${id}`;
+          }
 
           if (MH_ADMIN_STATE.editId === id) {
             mhClearAdminForm();
@@ -3477,7 +3547,7 @@ function mhValidateExamPayload(payload) {
         if (!payload.title_ro && !payload.title_en) throw new Error("Lipsește titlul.");
 
         if (MH_ADMIN_STATE.mode === "edit") {
-          query = supabase.from("mh_lessons").update(payload).eq("id", MH_ADMIN_STATE.editId);
+          query = supabase.from("mh_lessons").upsert(payload, { onConflict: "id" });
         } else {
           query = supabase.from("mh_lessons").insert(payload);
         }
@@ -3491,7 +3561,7 @@ function mhValidateExamPayload(payload) {
         if (!payload.answer) throw new Error("Lipsește answer.");
 
         if (MH_ADMIN_STATE.mode === "edit") {
-          query = supabase.from("mh_problems").update(payload).eq("id", MH_ADMIN_STATE.editId);
+          query = supabase.from("mh_problems").upsert(payload, { onConflict: "id" });
         } else {
           query = supabase.from("mh_problems").insert(payload);
         }
@@ -3506,7 +3576,7 @@ function mhValidateExamPayload(payload) {
         }
 
         if (MH_ADMIN_STATE.mode === "edit") {
-          query = supabase.from("mh_exams").update(payload).eq("id", MH_ADMIN_STATE.editId);
+          query = supabase.from("mh_exams").upsert(payload, { onConflict: "id" });
         } else {
           query = supabase.from("mh_exams").insert(payload);
         }

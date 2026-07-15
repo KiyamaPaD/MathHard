@@ -22,9 +22,11 @@ async function importBrowserModule(relativePath) {
   return import(`data:text/javascript;base64,${encoded}`);
 }
 
-const { catalogTotals, mergeById } = await importBrowserModule(
-  "js/content-repository.js"
-);
+const {
+  catalogTotals,
+  mergeById,
+  mergeCatalogSources
+} = await importBrowserModule("js/content-repository.js");
 const {
   finishExamAttempt,
   markLessonLearned,
@@ -57,6 +59,42 @@ assert.deepEqual(catalogTotals(merged), {
   problemsTotal: 1,
   examsTotal: 1
 });
+
+const sourced = mergeCatalogSources([
+  {
+    source: "bundle",
+    catalog: {
+      lessons: [{ id: "l1", title_ro: "Bundled title", body_ro: "Bundled body" }],
+      problems: [],
+      exams: []
+    }
+  },
+  {
+    source: "json",
+    catalog: {
+      lessons: [{ id: "l1", title_en: "JSON title", body_ro: "" }],
+      problems: [],
+      exams: []
+    }
+  },
+  {
+    source: "supabase",
+    catalog: {
+      lessons: [{ id: "l1", title_ro: "Supabase title" }],
+      problems: [],
+      exams: []
+    }
+  }
+]);
+
+assert.deepEqual(sourced.catalog.lessons[0], {
+  id: "l1",
+  title_ro: "Supabase title",
+  body_ro: "Bundled body",
+  title_en: "JSON title"
+});
+assert.deepEqual(sourced.provenance.lessons.l1, ["bundle", "json", "supabase"]);
+assert.equal(sourced.conflicts.some((conflict) => conflict.id === "l1" && conflict.field === "title_ro"), true);
 
 const calls = [];
 const supabase = {

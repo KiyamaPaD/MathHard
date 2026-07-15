@@ -1,6 +1,10 @@
-const CACHE_VERSION = 4;
+const CACHE_VERSION = 5;
 const CACHE_KEY = `mh_content_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
+
+const SOURCE_ORDER = ["bundle", "json", "supabase"];
+const CATALOG_KEYS = ["lessons", "problems", "exams"];
+const MAX_RECORDED_CONFLICTS = 500;
 
 let memoryCache = null;
 let inFlightLoad = null;
@@ -10,6 +14,14 @@ function emptyCatalog() {
     lessons: [],
     problems: [],
     exams: []
+  };
+}
+
+function emptyProvenance() {
+  return {
+    lessons: {},
+    problems: {},
+    exams: {}
   };
 }
 
@@ -23,6 +35,50 @@ function sanitizeCatalog(value) {
     problems: asArray(value?.problems),
     exams: asArray(value?.exams)
   };
+}
+
+function sanitizeProvenance(value) {
+  const result = emptyProvenance();
+
+  for (const key of CATALOG_KEYS) {
+    const group = value?.[key];
+    if (!group || typeof group !== "object") continue;
+
+    for (const [id, sources] of Object.entries(group)) {
+      result[key][id] = asArray(sources).filter((source) => SOURCE_ORDER.includes(source));
+    }
+  }
+
+  return result;
+}
+
+function isMeaningfulValue(value) {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+}
+
+function valuesDiffer(a, b) {
+  return JSON.stringify(a) !== JSON.stringify(b);
+}
+
+function mergeItemPreservingFallback(current, incoming) {
+  const merged = { ...(current || {}) };
+
+  for (const [key, value] of Object.entries(incoming || {})) {
+    if (key === "id") continue;
+
+    const previous = merged[key];
+    if (!isMeaningfulValue(value) && isMeaningfulValue(previous)) {
+      continue;
+    }
+
+    merged[key] = value;
+  }
+
+  return merged;
 }
 
 export function mergeById(...catalogs) {
@@ -49,6 +105,72 @@ export function mergeById(...catalogs) {
     lessons: mergeGroup("lessons"),
     problems: mergeGroup("problems"),
     exams: mergeGroup("exams")
+  };
+}
+
+export function mergeCatalogSources(sourceCatalogs = []) {
+  const catalog = emptyCatalog();
+  const provenance = emptyProvenance();
+  const conflicts = [];
+  const sourceCounts = Object.fromEntries(
+    SOURCE_ORDER.map((source) => [source, { lessons: 0, problems: 0, exams: 0 }])
+  );
+
+  for (const key of CATALOG_KEYS) {
+    const byId = new Map();
+    const valuesByField = new Map();
+
+    for (const source of SOURCE_ORDER) {
+      const sourceCatalog = sourceCatalogs.find((entry) => entry?.source === source)?.catalog;
+      const items = asArray(sourceCatalog?.[key]);
+      sourceCounts[source][key] = new Set(items.map((item) => String(item?.id || "").trim()).filter(Boolean)).size;
+
+      for (const item of items) {
+        const id = String(item?.id || "").trim();
+        if (!id) continue;
+
+        const current = byId.get(id) || { id };
+        byId.set(id, {
+          ...mergeItemPreservingFallback(current, item),
+          id
+        });
+
+        const existingSources = provenance[key][id] || [];
+        if (!existingSources.includes(source)) {
+          provenance[key][id] = [...existingSources, source];
+        }
+
+        for (const [field, value] of Object.entries(item)) {
+          if (field === "id" || !isMeaningfulValue(value)) continue;
+
+          const fieldKey = `${id}\u0000${field}`;
+          const previous = valuesByField.get(fieldKey);
+
+          if (previous && previous.source !== source && valuesDiffer(previous.value, value)) {
+            if (conflicts.length < MAX_RECORDED_CONFLICTS) {
+              conflicts.push({
+                kind: key,
+                id,
+                field,
+                lowerPrioritySource: previous.source,
+                higherPrioritySource: source
+              });
+            }
+          }
+
+          valuesByField.set(fieldKey, { source, value });
+        }
+      }
+    }
+
+    catalog[key] = [...byId.values()];
+  }
+
+  return {
+    catalog,
+    provenance,
+    conflicts,
+    sourceCounts
   };
 }
 
@@ -88,7 +210,10 @@ function readStoredCache() {
 
     return {
       createdAt,
-      catalog: sanitizeCatalog(parsed.catalog)
+      catalog: sanitizeCatalog(parsed.catalog),
+      provenance: sanitizeProvenance(parsed.provenance),
+      conflicts: asArray(parsed.conflicts),
+      sourceCounts: parsed?.sourceCounts || {}
     };
   } catch (error) {
     console.warn("Content cache could not be read:", error);
@@ -96,7 +221,7 @@ function readStoredCache() {
   }
 }
 
-function writeStoredCache(catalog) {
+function writeStoredCache(snapshot) {
   const storage = getStorage();
   if (!storage) return;
 
@@ -105,12 +230,13 @@ function writeStoredCache(catalog) {
       CACHE_KEY,
       JSON.stringify({
         createdAt: Date.now(),
-        catalog: sanitizeCatalog(catalog)
+        catalog: sanitizeCatalog(snapshot.catalog),
+        provenance: sanitizeProvenance(snapshot.provenance),
+        conflicts: asArray(snapshot.conflicts),
+        sourceCounts: snapshot.sourceCounts || {}
       })
     );
   } catch (error) {
-    // The application must continue even if the browser blocks storage or the
-    // storage quota is full.
     console.warn("Content cache could not be written:", error);
   }
 }
@@ -179,8 +305,26 @@ export function invalidateContentCatalogCache() {
   }
 }
 
-export async function loadRemoteContentCatalog({
+export function getContentItemSources(kind, id) {
+  const safeKind = CATALOG_KEYS.includes(kind) ? kind : "";
+  const safeId = String(id || "").trim();
+  if (!safeKind || !safeId) return [];
+
+  return [...asArray(memoryCache?.provenance?.[safeKind]?.[safeId])];
+}
+
+export function getContentCatalogDiagnostics() {
+  return {
+    totals: catalogTotals(memoryCache?.catalog || emptyCatalog()),
+    sourceCounts: memoryCache?.sourceCounts || {},
+    conflicts: [...asArray(memoryCache?.conflicts)],
+    createdAt: Number(memoryCache?.createdAt || 0)
+  };
+}
+
+export async function loadContentCatalog({
   supabase,
+  bundledCatalog = emptyCatalog(),
   forceRefresh = false
 } = {}) {
   if (forceRefresh) {
@@ -207,20 +351,28 @@ export async function loadRemoteContentCatalog({
       fetchSupabaseCatalog(supabase)
     ]);
 
-    // Supabase has precedence over the bundled JSON whenever an ID exists in
-    // both places. This matches the previous runtime behavior.
-    const catalog = mergeById(jsonCatalog, supabaseCatalog);
+    const merged = mergeCatalogSources([
+      { source: "bundle", catalog: sanitizeCatalog(bundledCatalog) },
+      { source: "json", catalog: jsonCatalog },
+      { source: "supabase", catalog: supabaseCatalog }
+    ]);
 
     memoryCache = {
       createdAt: Date.now(),
-      catalog
+      ...merged
     };
 
-    writeStoredCache(catalog);
-    return catalog;
+    writeStoredCache(memoryCache);
+    return memoryCache.catalog;
   })().finally(() => {
     inFlightLoad = null;
   });
 
   return inFlightLoad;
+}
+
+// Temporary compatibility alias for older code paths. New code should call
+// loadContentCatalog and pass the bundled DATA catalog explicitly.
+export async function loadRemoteContentCatalog(options = {}) {
+  return loadContentCatalog(options);
 }
