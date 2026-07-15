@@ -4737,14 +4737,21 @@ function applyCanonicalProblemProgress(problemId, row, eventName) {
 
   recomputeXPTotal();
   updateCounters();
+
+  if (terminalEvent) {
+    renderCards();
+    buildNestedTree();
+    buildTagPanel();
+    drawFilterBar();
+  }
 }
 
 function reconcileProgressAfterMutationError(label, error) {
+  // Never erase optimistic UI immediately after a write error. The previous
+  // reload reset solved/learned counters to zero and made successful local
+  // actions appear to "undo themselves". Keep the current state visible and
+  // surface the backend error for diagnosis.
   console.error(`${label} error:`, error);
-
-  if (MH_PROGRESS_USER) {
-    void loadAppProgressFromDb(MH_PROGRESS_USER);
-  }
 }
 
 async function markLessonLearnedSafe(lessonId) {
@@ -4752,7 +4759,15 @@ async function markLessonLearnedSafe(lessonId) {
 
   return enqueueProgressMutation(`lesson:${lessonId}`, async () => {
     try {
-      return await markLessonLearned(supabase, lessonId);
+      const row = await markLessonLearned(supabase, lessonId);
+      if (row?.learned) {
+        learnedSet.add(lessonId);
+        updateCounters();
+        renderCards();
+        buildNestedTree();
+        buildTagPanel();
+      }
+      return row;
     } catch (error) {
       reconcileProgressAfterMutationError("markLessonLearned", error);
       return null;
@@ -7352,6 +7367,9 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
       }
 
       updateCounters();
+      renderCards();
+      buildNestedTree();
+      buildTagPanel();
 
       if (!isExam && !wasAlreadySolved){
         awardXPForProblem(problem);

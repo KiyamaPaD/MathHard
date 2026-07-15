@@ -152,6 +152,13 @@ if (!/default_hours:\s*Number\(document\.getElementById\(["']mh_exam_hours/.test
   fail("Admin exam payload must write canonical default_hours.");
 }
 
+if (/function reconcileProgressAfterMutationError[\s\S]{0,500}loadAppProgressFromDb/.test(appSource)) {
+  fail("Progress mutation errors must not immediately reload and erase optimistic UI state.");
+}
+if (!appSource.includes("if (terminalEvent) {\n    renderCards();")) {
+  fail("Solved problem mutations must refresh problem cards immediately.");
+}
+
 try {
   execFileSync(process.execPath, [resolve(root, "scripts/test-repositories.mjs")], {
     cwd: root,

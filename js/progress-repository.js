@@ -46,17 +46,29 @@ function wait(ms) {
 async function callRpcOrFallback(supabase, name, args, fallback) {
   let result = await supabase.rpc(name, args);
   if (!result.error) return firstRow(result.data);
-  if (!isMissingRpcError(result.error)) throw result.error;
+
+  const firstError = result.error;
 
   // PostgREST can briefly keep an older schema cache immediately after SQL
-  // migrations. Retry once before using the legacy compatibility path.
-  await wait(700);
-  result = await supabase.rpc(name, args);
-  if (!result.error) return firstRow(result.data);
-  if (!isMissingRpcError(result.error)) throw result.error;
+  // migrations. Retry missing-function errors once before falling back.
+  if (isMissingRpcError(firstError)) {
+    await wait(500);
+    result = await supabase.rpc(name, args);
+    if (!result.error) return firstRow(result.data);
+  }
 
+  // Recovery rule: any RPC failure falls back to owner-scoped table writes.
+  // RLS still enforces auth.uid() = user_id, so this is functional without
+  // trusting an arbitrary user id from the browser.
   warnLegacyFallback();
-  return fallback();
+
+  try {
+    return await fallback();
+  } catch (fallbackError) {
+    console.error(`Progress RPC ${name} failed:`, firstError);
+    console.error(`Progress fallback for ${name} failed:`, fallbackError);
+    throw fallbackError;
+  }
 }
 
 async function legacyMarkLessonLearned(supabase, lessonId) {
@@ -253,34 +265,31 @@ export async function finishExamAttempt(supabase, examId, score) {
   const id = cleanId(examId, "exam id");
   const safeScore = Number.isFinite(Number(score)) ? Number(score) : 0;
 
-  let canonical = await supabase.rpc("mh_finish_exam_attempt", {
+  const canonical = await supabase.rpc("mh_finish_exam_attempt", {
     p_exam_id: id,
     p_score: safeScore
   });
 
   if (!canonical.error) return firstRow(canonical.data);
-  if (!isMissingRpcError(canonical.error)) throw canonical.error;
 
-  await wait(700);
-  canonical = await supabase.rpc("mh_finish_exam_attempt", {
-    p_exam_id: id,
-    p_score: safeScore
-  });
+  // Compatibility with the first Phase 03 signature.
+  if (isMissingRpcError(canonical.error)) {
+    const legacyRpc = await supabase.rpc("mh_finish_exam_attempt", {
+      p_exam_id: id,
+      p_score: safeScore,
+      p_passed: safeScore >= 60
+    });
 
-  if (!canonical.error) return firstRow(canonical.data);
-  if (!isMissingRpcError(canonical.error)) throw canonical.error;
-
-  // Compatibility with the first Phase 03 draft, which used a third boolean
-  // parameter. The consolidated SQL replaces it with the canonical signature.
-  const legacyRpc = await supabase.rpc("mh_finish_exam_attempt", {
-    p_exam_id: id,
-    p_score: safeScore,
-    p_passed: safeScore >= 60
-  });
-
-  if (!legacyRpc.error) return firstRow(legacyRpc.data);
-  if (!isMissingRpcError(legacyRpc.error)) throw legacyRpc.error;
+    if (!legacyRpc.error) return firstRow(legacyRpc.data);
+  }
 
   warnLegacyFallback();
-  return legacyFinishExamAttempt(supabase, id, safeScore);
+  try {
+    return await legacyFinishExamAttempt(supabase, id, safeScore);
+  } catch (fallbackError) {
+    console.error("finishExamAttempt RPC failed:", canonical.error);
+    console.error("finishExamAttempt fallback failed:", fallbackError);
+    throw fallbackError;
+  }
 }
+
