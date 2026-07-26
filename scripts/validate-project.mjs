@@ -688,6 +688,16 @@ if (quickNavSource.includes('{ key: "boss"')) {
   fail("Phase 14A.2 quick navigation must not expose the removed quick-training block.");
 }
 
+if (!learningWorkspaceControllerSource.includes('is-problem-workspace') ||
+    !learningWorkspaceControllerSource.includes('is-lesson-workspace')) {
+  fail("Phase 14A.3 must expose explicit lesson/problem workspace classes.");
+}
+if (!problemWorkspaceCss.includes('.drawer.is-problem-workspace .panel .content.viewer') ||
+    !problemWorkspaceCss.includes('@media (max-width: 1120px)') ||
+    !problemWorkspaceCss.includes('grid-template-columns: minmax(0, 1fr) minmax(270px, 320px)')) {
+  fail("Phase 14A.3 problem workspace responsive isolation is incomplete.");
+}
+
 if (failed) {
   process.exitCode = 1;
 } else {

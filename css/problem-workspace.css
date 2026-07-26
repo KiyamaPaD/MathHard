@@ -1,34 +1,70 @@
-/* MathHard Phase 13B — problem workspace v2 */
+/* MathHard Phase 14A.3 — clean, non-overlapping problem workspace */
+.drawer.is-problem-workspace .panel .content.viewer {
+  width: min(1320px, 100%);
+  margin-inline: auto;
+  padding: 24px clamp(16px, 2.6vw, 36px) 56px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.mh-problem-workspace,
+.mh-problem-workspace * {
+  box-sizing: border-box;
+}
+
 .mh-problem-workspace {
+  width: 100%;
+  max-width: 1240px;
+  min-width: 0;
+  margin: 0 auto;
   display: grid;
-  gap: 18px;
+  gap: 20px;
   background: transparent;
   border: 0;
   padding: 0;
 }
 
 .mh-problem-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 18px;
-  flex-wrap: wrap;
-  padding: 20px;
+  padding: 22px;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 22px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--bg)), var(--bg));
+  overflow: hidden;
+}
+
+.mh-problem-hero > div,
+.mh-problem-hero-actions {
+  min-width: 0;
 }
 
 .mh-problem-hero h2 {
+  max-width: 100%;
   margin: 5px 0 7px;
   font-size: clamp(1.45rem, 2.5vw, 2.15rem);
+  overflow-wrap: anywhere;
+}
+
+.mh-problem-hero .legend {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .mh-problem-hero-actions {
   display: flex;
   align-items: flex-start;
+  justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.mh-problem-hero-actions > * {
+  max-width: 100%;
 }
 
 .mh-bookmark-btn[aria-pressed="true"] {
@@ -37,34 +73,91 @@
 }
 
 .mh-problem-layout {
+  min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 310px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 320px);
+  gap: 20px;
   align-items: start;
 }
 
 .mh-problem-main,
 .mh-problem-side {
+  min-width: 0;
+  max-width: 100%;
   display: grid;
-  gap: 14px;
+  gap: 16px;
+}
+
+.mh-problem-main > *,
+.mh-problem-side > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .mh-problem-side {
   position: sticky;
-  top: 12px;
+  top: 16px;
+  align-self: start;
 }
 
 .mh-problem-card {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 17px;
+  padding: 18px;
   background: color-mix(in srgb, var(--bg) 95%, white 5%);
   box-shadow: 0 14px 34px -30px rgba(0, 0, 0, .7);
 }
 
 .mh-problem-card h3 {
+  max-width: 100%;
   margin: 0 0 11px;
   font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.mh-problem-card p,
+.mh-problem-card li,
+.mh-problem-card span,
+.mh-problem-card label,
+.mh-problem-card summary,
+.problem-statement,
+.mh-solution-content {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.problem-statement,
+.mh-solution-content,
+.mh-live-preview-box,
+.mh-math-input-host,
+.mh-math-toolbar-groups,
+.mh-problem-card pre,
+.mh-problem-card table,
+.mh-problem-card .katex-display {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.problem-statement,
+.mh-solution-content {
+  line-height: 1.68;
+}
+
+.mh-problem-card pre,
+.mh-problem-card table,
+.mh-problem-card .katex-display,
+.mh-live-preview-box,
+.mh-math-toolbar-row {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+}
+
+.mh-problem-card table {
+  display: block;
+  border-collapse: collapse;
 }
 
 .mh-secure-caption {
@@ -72,14 +165,22 @@
 }
 
 .mh-answer-card .checkrow {
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
+  align-items: center;
+}
+
+.mh-answer-card .checkrow > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .mh-answer-card #answerInput,
 .mh-note-card textarea {
   width: 100%;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 13px;
   background: var(--bg);
@@ -90,6 +191,7 @@
 .mh-note-card textarea {
   resize: vertical;
   min-height: 180px;
+  max-height: min(52dvh, 520px);
   line-height: 1.5;
 }
 
@@ -97,6 +199,20 @@
   min-height: 1.35em;
   margin-top: 8px;
   font-weight: 800;
+}
+
+.mh-answer-card .check-confirm {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.mh-answer-card .check-confirm > span {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.mh-answer-card .check-confirm-buttons {
+  flex: 0 0 auto;
 }
 
 .mh-feedback-card {
@@ -109,6 +225,7 @@
 }
 
 .mh-server-attempts {
+  min-width: 0;
   display: grid;
   gap: 7px;
   padding-left: 0;
@@ -116,13 +233,19 @@
 }
 
 .mh-server-attempts li {
-  display: flex;
-  justify-content: space-between;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 12px;
   padding: 9px 10px;
   border-radius: 11px;
   background: color-mix(in srgb, var(--bg) 88%, var(--accent) 12%);
-  word-break: break-word;
+}
+
+.mh-server-attempts li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .mh-server-attempts li small {
@@ -130,7 +253,21 @@
   white-space: nowrap;
 }
 
+.mh-problem-workspace .hints {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.mh-problem-workspace .hint,
+.mh-problem-workspace .hint details,
+.mh-problem-workspace .hint p {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .mh-solution-heading {
+  min-width: 0;
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -139,6 +276,7 @@
 }
 
 .mh-explanation-modes {
+  min-width: 0;
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
@@ -162,19 +300,21 @@
 
 .mh-solution-content {
   margin-top: 12px;
-  line-height: 1.65;
   padding: 14px;
   border-radius: 14px;
   background: color-mix(in srgb, var(--bg) 82%, var(--accent) 18%);
 }
 
 .mh-problem-recommendations {
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 9px;
 }
 
 .mh-recommendation-card {
+  min-width: 0;
+  max-width: 100%;
   display: grid;
   gap: 5px;
   text-align: left;
@@ -184,6 +324,7 @@
   color: var(--text);
   padding: 12px;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .mh-recommendation-card:hover {
@@ -196,28 +337,89 @@
   font-size: .78rem;
 }
 
-@media (max-width: 920px) {
+@media (max-width: 1120px) {
+  .drawer.is-problem-workspace .panel .content.viewer {
+    width: 100%;
+  }
+
   .mh-problem-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mh-problem-side {
     position: static;
   }
+
+  .mh-note-card textarea {
+    min-height: 140px;
+    max-height: 360px;
+  }
 }
 
-@media (max-width: 600px) {
-  .mh-problem-hero,
+@media (max-width: 760px) {
+  .drawer.is-problem-workspace .panel .content.viewer {
+    padding: 16px 12px 34px;
+  }
+
+  .mh-problem-workspace {
+    gap: 14px;
+  }
+
+  .mh-problem-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+    border-radius: 17px;
+  }
+
+  .mh-problem-hero-actions {
+    justify-content: flex-start;
+  }
+
+  .mh-problem-hero-actions .problem-xp-box {
+    width: 100%;
+  }
+
   .mh-problem-card {
-    padding: 13px;
+    padding: 15px;
     border-radius: 15px;
   }
 
+  .mh-solution-heading {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
   .mh-answer-card .checkrow {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mh-answer-card .checkrow .btn,
+  .mh-answer-card .check-confirm-buttons,
+  .mh-answer-card .check-confirm-buttons .btn,
+  .mh-bookmark-btn {
+    width: 100%;
+  }
+
+  .mh-answer-card .check-confirm-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-left: 0;
   }
 
   .mh-server-attempts li {
-    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mh-server-attempts li small {
+    white-space: normal;
+  }
+
+  .mh-explanation-modes {
+    width: 100%;
+  }
+
+  .mh-explanation-modes button {
+    flex: 1 1 90px;
   }
 }

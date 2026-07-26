@@ -74,7 +74,8 @@ export function createLearningWorkspaceController({
   function render() {
     if (!active) {
       toolbar.hidden = true;
-      drawer.classList.remove("is-learning-workspace");
+      drawer.classList.remove("is-learning-workspace", "is-lesson-workspace", "is-problem-workspace");
+      delete drawer.dataset.workspaceType;
       return;
     }
 
@@ -86,6 +87,9 @@ export function createLearningWorkspaceController({
 
     toolbar.hidden = false;
     drawer.classList.add("is-learning-workspace");
+    drawer.classList.toggle("is-lesson-workspace", type === "lesson");
+    drawer.classList.toggle("is-problem-workspace", type === "problem");
+    drawer.dataset.workspaceType = type;
 
     const typeLabel = type === "lesson"
       ? (lang === "ro" ? "Lecție" : "Lesson")
