@@ -982,19 +982,6 @@ async function handleDeleteAccount() {
 }
 
 /* ========= CONTENT CATALOG ========= */
-function getBaseCatalogData() {
-  const source =
-    globalThis.MH_DATA ||
-    (typeof DATA !== "undefined" ? DATA : null) ||
-    {};
-
-  return {
-    lessons: Array.isArray(source.lessons) ? source.lessons : [],
-    problems: Array.isArray(source.problems) ? source.problems : [],
-    exams: Array.isArray(source.exams) ? source.exams : []
-  };
-}
-
 const PROFILE_GRADE_ORDER = [
   "V", "VI", "VII", "VIII",
   "IX", "X", "XI", "XII",
@@ -1057,11 +1044,7 @@ function formatExamLabel(exam) {
 }
 
 async function loadMergedCatalog() {
-  const baseCatalog = getBaseCatalogData();
-  const merged = await loadContentCatalog({
-    supabase,
-    bundledCatalog: baseCatalog
-  });
+  const merged = await loadContentCatalog({ supabase });
 
   return {
     lessons: sortLessonsForProfile(merged.lessons),

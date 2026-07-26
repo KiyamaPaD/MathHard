@@ -10,6 +10,7 @@ import {
   recordProblemEvent,
   startExamAttempt
 } from "./progress-repository.js";
+import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
 
 console.log("APP.JS LOADED");
 
@@ -448,11 +449,18 @@ function normalizeLesson(L){
     };
   }
 
-  const BASE_DATA = {
-    lessons: (DATA.lessons || []).map(normalizeLesson),
-    problems: (DATA.problems || []).map(normalizeProblem),
-    exams: (DATA.exams || []).map(normalizeExam)
-  };
+  const DATA = createRuntimeData();
+  let CONTENT_BOOT_ERROR = null;
+
+  try {
+    const initialCatalog = await loadContentCatalog({ supabase });
+    DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
+    DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
+    DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
+  } catch (error) {
+    CONTENT_BOOT_ERROR = error;
+    console.error("Catalogul MathHard nu a putut fi încărcat:", error);
+  }
 
   /* ===== Utils ===== */
   const esc = s => String(s)
@@ -2404,18 +2412,16 @@ function normalizeLesson(L){
   }
 
   async function reloadAllContentFromSupabase(forceRefresh = false) {
-    const mergedCatalog = await loadContentCatalog({
+    const catalog = await loadContentCatalog({
       supabase,
-      bundledCatalog: BASE_DATA,
       forceRefresh
     });
 
-    // content-repository.js is the only runtime merge point. It combines the
-    // bundled DATA catalog, problems.json and Supabase while preserving source
-    // provenance for the Admin panel.
-    replaceCatalogTarget(DATA.lessons, mergedCatalog.lessons, normalizeLesson);
-    replaceCatalogTarget(DATA.problems, mergedCatalog.problems, normalizeProblem);
-    replaceCatalogTarget(DATA.exams, mergedCatalog.exams, normalizeExam);
+    replaceCatalogTarget(DATA.lessons, catalog.lessons, normalizeLesson);
+    replaceCatalogTarget(DATA.problems, catalog.problems, normalizeProblem);
+    replaceCatalogTarget(DATA.exams, catalog.exams, normalizeExam);
+    CONTENT_BOOT_ERROR = null;
+    mhRemoveContentStatusBanner();
 
     buildNestedTree();
     buildTagPanel();
@@ -2428,18 +2434,74 @@ function normalizeLesson(L){
     if (typeof mhRenderAdminList === "function") {
       mhRenderAdminList();
     }
+
+    mhRenderContentStatusFromDiagnostics();
+    return catalog;
   }
 
-  // Load custom content without blocking the first render. If profile.html has
-  // already loaded the catalog, the shared session cache makes this immediate.
-  (async function mergeCustom() {
-    try {
-      await reloadAllContentFromSupabase();
-      resumeLockedExamIfAny();
-    } catch (err) {
-      console.error("Eroare la încărcarea catalogului:", err);
+  function mhRemoveContentStatusBanner() {
+    document.getElementById("mhContentStatusBanner")?.remove();
+  }
+
+  function mhShowContentStatusBanner({ message, isError = false, retry = false } = {}) {
+    mhRemoveContentStatusBanner();
+
+    const banner = document.createElement("div");
+    banner.id = "mhContentStatusBanner";
+    banner.setAttribute("role", isError ? "alert" : "status");
+    banner.style.cssText = [
+      "position:sticky",
+      "top:0",
+      "z-index:9999",
+      "padding:10px 16px",
+      "text-align:center",
+      "font-weight:700",
+      "border-bottom:1px solid var(--border)",
+      isError ? "background:rgba(239,68,68,.16)" : "background:rgba(245,158,11,.16)"
+    ].join(";");
+
+    const text = document.createElement("span");
+    text.textContent = message || "Catalogul MathHard nu este disponibil momentan.";
+    banner.appendChild(text);
+
+    if (retry) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small";
+      button.style.marginLeft = "12px";
+      button.textContent = LANG === "ro" ? "Reîncearcă" : "Retry";
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          await reloadAllContentFromSupabase(true);
+        } catch (error) {
+          console.error("Catalog retry failed:", error);
+          mhShowContentStatusBanner({
+            message: LANG === "ro"
+              ? "Catalogul Supabase nu a putut fi încărcat. Verifică conexiunea și încearcă din nou."
+              : "The Supabase catalog could not be loaded. Check your connection and retry.",
+            isError: true,
+            retry: true
+          });
+        }
+      });
+      banner.appendChild(button);
     }
-  })();
+
+    document.body.prepend(banner);
+  }
+
+  function mhRenderContentStatusFromDiagnostics() {
+    const diagnostics = getContentCatalogDiagnostics();
+    if (diagnostics.status !== "degraded") return;
+
+    mhShowContentStatusBanner({
+      message: LANG === "ro"
+        ? `Supabase răspunde parțial. Folosesc ultimul cache pentru: ${diagnostics.staleGroups.join(", ")}.`
+        : `Supabase is partially unavailable. Using the latest cache for: ${diagnostics.staleGroups.join(", ")}.`,
+      retry: true
+    });
+  }
 
   /* ===== ADMIN PANEL ===== */
   const adminBtn = document.getElementById("adminBtn");
@@ -3058,11 +3120,8 @@ function normalizeLesson(L){
     const status = document.getElementById("mhPublishStatus");
     if (status) {
       const sources = Array.isArray(item.__sources) ? item.__sources : [];
-      const sourceText = sources.length ? sources.map(mhSourceLabel).join(" + ") : "necunoscut";
-      const createsOverride = !sources.includes("supabase");
-      status.textContent = createsOverride
-        ? `Editezi: ${item.id} (${sourceText}) — salvarea va crea un override în Supabase.`
-        : `Editezi: ${item.id} (${sourceText}).`;
+      const sourceText = sources.length ? sources.map(mhSourceLabel).join(" + ") : "Supabase";
+      status.textContent = `Editezi: ${item.id} (${sourceText}).`;
     }
 
     if (type === "exam") {
@@ -3194,10 +3253,8 @@ function normalizeLesson(L){
   }
 
   function mhSourceLabel(source) {
-    if (source === "bundle") return "data.js";
-    if (source === "json") return "problems.json";
     if (source === "supabase") return "Supabase";
-    return source;
+    return source || "Supabase";
   }
 
   function mhRenderAdminList() {
@@ -3207,18 +3264,16 @@ function normalizeLesson(L){
 
     const items = mhGetAdminItems();
     const diagnostics = getContentCatalogDiagnostics();
-    const sourcePresence = {
-      bundle: items.filter((item) => item.__sources.includes("bundle")).length,
-      json: items.filter((item) => item.__sources.includes("json")).length,
-      supabase: items.filter((item) => item.__sources.includes("supabase")).length
-    };
+    const supabaseItems = items.filter((item) => item.__sources.includes("supabase")).length;
 
     host.innerHTML = "";
     if (info) {
+      const staleText = diagnostics.staleGroups?.length
+        ? ` • cache folosit: ${diagnostics.staleGroups.join(", ")}`
+        : "";
       info.textContent =
-        `${items.length} iteme • data.js: ${sourcePresence.bundle}` +
-        ` • JSON: ${sourcePresence.json} • Supabase: ${sourcePresence.supabase}` +
-        ` • conflicte de câmp: ${diagnostics.conflicts.length}`;
+        `${items.length} iteme • Supabase: ${supabaseItems}` +
+        ` • stare catalog: ${diagnostics.status || "supabase"}${staleText}`;
     }
 
     items.forEach((item) => {
@@ -3228,10 +3283,9 @@ function normalizeLesson(L){
       const title = item.title_ro || item.title_en || item.id || "(fără titlu)";
       const sources = Array.isArray(item.__sources) ? item.__sources : [];
       const hasSupabase = sources.includes("supabase");
-      const hasBundledFallback = sources.some((source) => source === "bundle" || source === "json");
       const sourceText = sources.length
         ? sources.map(mhSourceLabel).join(" + ")
-        : "necunoscut";
+        : "Supabase";
       const metaBits = [
         `Tip: ${item.content_type}`,
         item.grade ? `Clasă: ${item.grade}` : null,
@@ -3240,16 +3294,8 @@ function normalizeLesson(L){
         item.year ? `An: ${item.year}` : null
       ].filter(Boolean);
 
-      const deleteText = !hasSupabase
-        ? "🔒 Local"
-        : hasBundledFallback
-          ? "🗑 Șterge override"
-          : "🗑 Delete";
-      const deleteTitle = !hasSupabase
-        ? "Acest item există doar în fișierele locale și nu poate fi șters din Supabase."
-        : hasBundledFallback
-          ? "Șterge doar versiunea Supabase; versiunea locală va reapărea."
-          : "Șterge itemul din Supabase.";
+      const deleteText = "🗑 Delete";
+      const deleteTitle = "Șterge definitiv itemul din Supabase.";
 
       card.innerHTML = `
         <div class="title">${esc(title)}</div>
@@ -3288,15 +3334,11 @@ function normalizeLesson(L){
 
         const sources = Array.isArray(item.__sources) ? item.__sources : [];
         if (!sources.includes("supabase")) {
-          alert("Acest item este inclus în data.js sau problems.json. Nu există un rând Supabase de șters.");
+          alert("Itemul nu este disponibil în snapshotul Supabase curent.");
           return;
         }
 
-        const hasBundledFallback = sources.some((source) => source === "bundle" || source === "json");
-        const confirmText = hasBundledFallback
-          ? `Ștergi doar override-ul Supabase pentru ${type}: ${id}. Versiunea locală va reapărea. Continui?`
-          : `Sigur vrei să ștergi ${type}: ${id}?`;
-        if (!confirm(confirmText)) return;
+        if (!confirm(`Sigur vrei să ștergi definitiv ${type}: ${id} din Supabase?`)) return;
 
         try {
           let query;
@@ -3319,9 +3361,7 @@ function normalizeLesson(L){
 
           const status = document.getElementById("mhPublishStatus");
           if (status) {
-            status.textContent = hasBundledFallback
-              ? `Override Supabase șters pentru ${id}; versiunea locală este din nou activă.`
-              : `Șters: ${id}`;
+            status.textContent = `Șters definitiv din Supabase: ${id}`;
           }
 
           if (MH_ADMIN_STATE.editId === id) {
@@ -6181,6 +6221,31 @@ async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
 
     const effectivePageSize = filter.limitOverride || pageSize;
     const total = list.length;
+
+    if (total === 0) {
+      const diagnostics = getContentCatalogDiagnostics();
+      const catalogEmpty =
+        diagnostics.totals.lessonsTotal === 0 &&
+        diagnostics.totals.problemsTotal === 0 &&
+        diagnostics.totals.examsTotal === 0;
+      box.innerHTML = `
+        <div class="card" style="grid-column:1/-1;text-align:center;">
+          <div class="title">${catalogEmpty ? "⚠️" : "🔎"} ${LANG === "ro"
+            ? (catalogEmpty ? "Catalog indisponibil" : "Niciun rezultat")
+            : (catalogEmpty ? "Catalog unavailable" : "No results")}</div>
+          <div class="legend" style="margin-top:8px;">${LANG === "ro"
+            ? (catalogEmpty
+              ? "Conținutul se încarcă exclusiv din Supabase. Reîncearcă după ce verifici conexiunea."
+              : "Schimbă filtrele sau termenul de căutare.")
+            : (catalogEmpty
+              ? "Content is loaded exclusively from Supabase. Retry after checking the connection."
+              : "Change the filters or search term.")}</div>
+        </div>`;
+      document.getElementById("loadMore").style.visibility = "hidden";
+      MH_render(box);
+      return;
+    }
+
     const slice = list.slice(0, page * effectivePageSize);
     slice.forEach(item => {
     const div = document.createElement("div");
@@ -9193,6 +9258,19 @@ function openExam(exam){
   wireOlympControls();
   wireGlobalExamClickGuards();
   refreshExamLockUi();
+
+  if (CONTENT_BOOT_ERROR) {
+    mhShowContentStatusBanner({
+      message: LANG === "ro"
+        ? "Catalogul Supabase nu a putut fi încărcat. Lecțiile, problemele și examenele sunt temporar indisponibile."
+        : "The Supabase catalog could not be loaded. Lessons, problems and exams are temporarily unavailable.",
+      isError: true,
+      retry: true
+    });
+  } else {
+    mhRenderContentStatusFromDiagnostics();
+    setTimeout(() => resumeLockedExamIfAny(), 0);
+  }
 
   (function setupAboutModalAndBullets(){
     const aboutBtn    = document.getElementById("aboutBtn");

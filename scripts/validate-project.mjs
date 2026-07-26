@@ -10,7 +10,8 @@ const moduleJsFiles = [
   "js/profile.js",
   "js/supabase-client.js",
   "js/content-repository.js",
-  "js/progress-repository.js"
+  "js/progress-repository.js",
+  "js/runtime-config.js"
 ];
 
 const classicJsFiles = [
@@ -134,7 +135,7 @@ if (!appSource.includes("loadContentCatalog")) {
   fail("app.js must load the unified catalog through loadContentCatalog().");
 }
 if (!appSource.includes("getContentItemSources")) {
-  fail("Admin must display content provenance.");
+  fail("Admin must display Supabase content provenance.");
 }
 if (!appSource.includes('from "./progress-repository.js"')) {
   fail("app.js must use progress-repository.js.");
@@ -169,10 +170,21 @@ if (!appSource.includes("if (terminalEvent) {\n    renderCards();")) {
 }
 
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
-  fail("Editing a bundled lesson must create/update a Supabase override via upsert.");
+  fail("Editing a lesson must update the Supabase source of truth via upsert.");
 }
-if (!appSource.includes("Șterge override")) {
-  fail("Admin must distinguish deleting a Supabase override from deleting bundled content.");
+if (appSource.includes("Șterge override") || appSource.includes("bundledCatalog: BASE_DATA")) {
+  fail("Phase 05 must not keep local-content override semantics at runtime.");
+}
+
+const profileHtml = readFileSync(resolve(root, "profile.html"), "utf8");
+if (/src=["']\/js\/data\.js["']/i.test(indexHtml) || /src=["']\/js\/data\.js["']/i.test(profileHtml)) {
+  fail("data.js must remain a backup/seed file and must not be loaded by production pages.");
+}
+if (/fetch\(["']\/data\/problems\.json["']/.test(readFileSync(resolve(root, "js/content-repository.js"), "utf8"))) {
+  fail("problems.json must not be fetched by the runtime content repository.");
+}
+if (!appSource.includes('from "./runtime-config.js"')) {
+  fail("app.js must load non-content runtime configuration from runtime-config.js.");
 }
 
 try {

@@ -8,24 +8,41 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 async function importBrowserModule(relativePath) {
   const absolutePath = resolve(root, relativePath);
   const source = await readFile(absolutePath, "utf8");
-
-  // The application intentionally uses browser ES modules with a .js
-  // extension and has no package.json. Node would otherwise classify those
-  // files as CommonJS. Loading the exact source through a data URL lets this
-  // test execute it as ESM without changing the browser runtime or adding
-  // project-wide Node configuration.
   const encoded = Buffer.from(
     `${source}\n//# sourceURL=${pathToFileURL(absolutePath).href}`,
     "utf8"
   ).toString("base64");
-
   return import(`data:text/javascript;base64,${encoded}`);
 }
 
+class SessionStorageMock {
+  #values = new Map();
+
+  getItem(key) {
+    return this.#values.has(key) ? this.#values.get(key) : null;
+  }
+
+  setItem(key, value) {
+    this.#values.set(key, String(value));
+  }
+
+  removeItem(key) {
+    this.#values.delete(key);
+  }
+
+  clear() {
+    this.#values.clear();
+  }
+}
+
+globalThis.sessionStorage = new SessionStorageMock();
+
 const {
   catalogTotals,
-  mergeById,
-  mergeCatalogSources
+  getContentCatalogDiagnostics,
+  getContentItemSources,
+  invalidateContentCatalogCache,
+  loadContentCatalog
 } = await importBrowserModule("js/content-repository.js");
 const {
   finishExamAttempt,
@@ -34,80 +51,70 @@ const {
   startExamAttempt
 } = await importBrowserModule("js/progress-repository.js");
 
-const merged = mergeById(
-  {
-    lessons: [{ id: "l1", title_ro: "Local" }],
-    problems: [{ id: "p1", answer: "1" }],
-    exams: []
-  },
-  {
-    lessons: [{ id: "l1", title_en: "Remote" }, { id: "l2" }],
-    problems: [{ id: "p1", answer: "2" }],
-    exams: [{ id: "e1" }]
-  }
-);
+function makeContentClient({ failures = {} } = {}) {
+  const rows = {
+    mh_lessons: [{ id: "lesson-1", title_ro: "Lecție Supabase" }],
+    mh_problems: [{ id: "problem-1", lesson_id: "lesson-1", answer: "2" }],
+    mh_exams: [{ id: "exam-1", problems: ["problem-1"] }]
+  };
 
-assert.equal(merged.lessons.length, 2);
-assert.deepEqual(merged.lessons.find((x) => x.id === "l1"), {
-  id: "l1",
-  title_ro: "Local",
-  title_en: "Remote"
-});
-assert.equal(merged.problems[0].answer, "2");
-assert.deepEqual(catalogTotals(merged), {
-  lessonsTotal: 2,
+  return {
+    from(table) {
+      return {
+        async select() {
+          if (failures[table]) {
+            return { data: null, error: new Error(failures[table]) };
+          }
+          return { data: rows[table] || [], error: null };
+        }
+      };
+    }
+  };
+}
+
+invalidateContentCatalogCache();
+const contentClient = makeContentClient();
+const catalog = await loadContentCatalog({ supabase: contentClient });
+
+assert.deepEqual(catalogTotals(catalog), {
+  lessonsTotal: 1,
   problemsTotal: 1,
   examsTotal: 1
 });
+assert.deepEqual(getContentItemSources("lessons", "lesson-1"), ["supabase"]);
+assert.equal(getContentCatalogDiagnostics().status, "supabase");
+assert.equal(getContentCatalogDiagnostics().conflicts.length, 0);
 
-const sourced = mergeCatalogSources([
-  {
-    source: "bundle",
-    catalog: {
-      lessons: [{ id: "l1", title_ro: "Bundled title", body_ro: "Bundled body" }],
-      problems: [],
-      exams: []
-    }
-  },
-  {
-    source: "json",
-    catalog: {
-      lessons: [{ id: "l1", title_en: "JSON title", body_ro: "" }],
-      problems: [],
-      exams: []
-    }
-  },
-  {
-    source: "supabase",
-    catalog: {
-      lessons: [{ id: "l1", title_ro: "Supabase title" }],
-      problems: [],
-      exams: []
-    }
-  }
-]);
-
-assert.deepEqual(sourced.catalog.lessons[0], {
-  id: "l1",
-  title_ro: "Supabase title",
-  body_ro: "Bundled body",
-  title_en: "JSON title"
+const degradedCatalog = await loadContentCatalog({
+  supabase: makeContentClient({ failures: { mh_problems: "temporary failure" } }),
+  forceRefresh: true
 });
-assert.deepEqual(sourced.provenance.lessons.l1, ["bundle", "json", "supabase"]);
-assert.equal(sourced.conflicts.some((conflict) => conflict.id === "l1" && conflict.field === "title_ro"), true);
+
+assert.equal(degradedCatalog.problems.length, 1);
+assert.equal(getContentCatalogDiagnostics().status, "degraded");
+assert.deepEqual(getContentCatalogDiagnostics().staleGroups, ["problems"]);
+
+invalidateContentCatalogCache();
+await assert.rejects(
+  () => loadContentCatalog({
+    supabase: makeContentClient({ failures: { mh_lessons: "offline" } }),
+    forceRefresh: true
+  }),
+  /could not be loaded from Supabase/i
+);
 
 const calls = [];
-const supabase = {
+const progressClient = {
   rpc: async (name, args) => {
     calls.push({ name, args });
     return { data: [{ ok: true, name }], error: null };
   }
 };
 
-await markLessonLearned(supabase, "lesson-1");
-await recordProblemEvent(supabase, "problem-1", "wrong");
-await startExamAttempt(supabase, "exam-1");
-await finishExamAttempt(supabase, "exam-1", 72.5);
+await markLessonLearned(progressClient, "lesson-1");
+await recordProblemEvent(progressClient, "problem-1", "wrong");
+await startExamAttempt(progressClient, "exam-1");
+await finishExamAttempt(progressClient, "exam-1", 72.5);
 
 assert.deepEqual(calls, [
   { name: "mh_mark_lesson_learned", args: { p_lesson_id: "lesson-1" } },
@@ -117,7 +124,7 @@ assert.deepEqual(calls, [
 ]);
 
 await assert.rejects(
-  () => recordProblemEvent(supabase, "problem-1", "invalid"),
+  () => recordProblemEvent(progressClient, "problem-1", "invalid"),
   /Invalid problem event/
 );
 
