@@ -669,6 +669,24 @@ if (!appShellSource.includes("mhAdminFloatingClose") || !appShellSource.includes
 if (!appShellCss.includes(".mh-admin-floating-close") || !appShellCss.includes("border-radius: 18px")) {
   fail("Phase 14A hotfix must include rounded navigation and Admin close styles.");
 }
+if (!appShellSource.includes("button.hidden === false") ||
+    !appShellSource.includes('button.getAttribute("aria-hidden") === "false"') ||
+    !appShellCss.includes(".mh-shell-nav-button[hidden]")) {
+  fail("Phase 14A.2 Admin navigation must remain fail-closed until role verification completes.");
+}
+if (!appShellSource.includes("bindExclusiveFullscreenSurfaces") ||
+    !appShellCss.includes("body.mh-content-workspace-open") ||
+    !appShellCss.includes("#drawer.open") ||
+    !appShellCss.includes("z-index: 260")) {
+  fail("Phase 14A.2 must isolate lesson, problem and exam workspaces above the app shell.");
+}
+if (!appShellCss.includes("body.mh-shell-ready #mhBoss") ||
+    !appShellCss.includes("display: none !important")) {
+  fail("Phase 14A.2 must remove the redundant quick-training block from Home.");
+}
+if (quickNavSource.includes('{ key: "boss"')) {
+  fail("Phase 14A.2 quick navigation must not expose the removed quick-training block.");
+}
 
 if (failed) {
   process.exitCode = 1;

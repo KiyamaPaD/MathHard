@@ -629,3 +629,77 @@ body.mh-admin-drawer-open #adminDrawer .panel > header {
     grid-template-columns: 1fr;
   }
 }
+
+/* Phase 14A.2 — fail-closed Admin entry and clean full-screen surfaces. */
+.mh-shell-nav-button[hidden],
+.mh-admin-floating-close[hidden] {
+  display: none !important;
+}
+
+/* The quick-training block duplicated the progress hub and catalog actions. */
+body.mh-shell-ready #mhBoss {
+  display: none !important;
+}
+
+/* With only Progress + Explore on Home, the secondary column stays clean. */
+body.mh-shell-ready .mh-shell-dashboard-secondary > #mhRadar {
+  width: 100%;
+}
+
+/* Content workspaces must own the viewport instead of sitting below the shell. */
+body.mh-content-workspace-open {
+  overflow: hidden;
+}
+
+body.mh-content-workspace-open > header,
+body.mh-content-workspace-open .mh-shell-sidebar,
+body.mh-content-workspace-open .mh-shell-mobile-toggle,
+body.mh-content-workspace-open .mh-shell-bottom-nav,
+body.mh-content-workspace-open .mh-admin-floating-close {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#drawer.open {
+  z-index: 260;
+  isolation: isolate;
+}
+
+#drawer.open > .panel {
+  z-index: 1;
+  max-width: 100vw;
+  max-height: 100dvh;
+  overscroll-behavior: contain;
+}
+
+#drawer.open .panel > header,
+#drawer.open #mhLearningWorkspaceBar,
+#drawer.open .lesson-actions {
+  flex-shrink: 0;
+}
+
+#drawer.open .panel .content.viewer {
+  overscroll-behavior: contain;
+}
+
+#adminDrawer.open {
+  z-index: 270;
+  isolation: isolate;
+}
+
+@media (max-width: 760px) {
+  #drawer.open > .panel,
+  #adminDrawer.open > .panel {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+/* Keep the emergency Admin close control above the Admin surface itself. */
+.mh-admin-floating-close {
+  z-index: 290;
+}

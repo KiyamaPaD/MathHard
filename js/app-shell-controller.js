@@ -225,8 +225,14 @@ function proxyClick(id) {
 
 function adminVisible() {
   const button = document.getElementById("adminBtn");
-  if (!button || button.hidden || button.getAttribute("aria-hidden") === "true") return false;
-  return getComputedStyle(button).display !== "none";
+  if (!button) return false;
+
+  // The original Admin button is the single source of truth. app.js keeps it
+  // fail-closed until both the session and the admin role are verified.
+  return button.hidden === false
+    && button.disabled === false
+    && button.getAttribute("aria-hidden") === "false"
+    && button.style.display !== "none";
 }
 
 function createAdminNavButton() {
@@ -298,7 +304,14 @@ function moveExistingContent() {
 
   if (hero) dashboardPrimary.append(hero);
   if (hub) dashboardPrimary.append(hub);
-  if (boss) dashboardSecondary.append(boss);
+  if (boss) {
+    // The quick-training card duplicated actions already available in the hub
+    // and catalog. Keep the legacy node mounted for compatibility, but remove
+    // it from the visible dashboard.
+    dashboardSecondary.append(boss);
+    boss.hidden = true;
+    boss.setAttribute("aria-hidden", "true");
+  }
   if (radar) dashboardSecondary.append(radar);
   if (roadmap) roadmapPanel.append(roadmap);
   if (catalog) catalogPanel.append(catalog);
@@ -406,9 +419,15 @@ function bindAdminClose() {
   if (!drawer || !floatingClose) return;
 
   const sync = () => {
-    const open = drawer.classList.contains("open");
+    const authorized = adminVisible();
+    const open = authorized && drawer.classList.contains("open");
     floatingClose.hidden = !open;
     document.body.classList.toggle("mh-admin-drawer-open", open);
+
+    // A stale drawer must never remain open after logout or a failed role check.
+    if (!authorized && drawer.classList.contains("open")) {
+      drawer.classList.remove("open");
+    }
   };
 
   floatingClose.addEventListener("click", () => proxyClick("closeAdmin"));
@@ -426,14 +445,65 @@ function watchAdmin() {
   if (!adminButton || !shellAdmin) return;
 
   const sync = () => {
-    shellAdmin.hidden = !adminVisible();
+    const authorized = adminVisible();
+    shellAdmin.hidden = !authorized;
+    shellAdmin.setAttribute("aria-hidden", authorized ? "false" : "true");
+    shellAdmin.tabIndex = authorized ? 0 : -1;
+
+    if (!authorized) {
+      document.getElementById("adminDrawer")?.classList.remove("open");
+    }
     applyLanguage();
   };
-  sync();
+
+  // Run after the shell class is applied as well, avoiding the pre-auth flash
+  // that could occur during initial DOM setup.
+  shellAdmin.hidden = true;
+  shellAdmin.setAttribute("aria-hidden", "true");
+  shellAdmin.tabIndex = -1;
+  queueMicrotask(sync);
   new MutationObserver(sync).observe(adminButton, {
     attributes: true,
-    attributeFilter: ["hidden", "style", "aria-hidden"],
+    attributeFilter: ["hidden", "style", "aria-hidden", "disabled"],
   });
+}
+
+function bindExclusiveFullscreenSurfaces() {
+  const contentDrawer = document.getElementById("drawer");
+  const adminDrawer = document.getElementById("adminDrawer");
+  if (!contentDrawer) return;
+
+  const sync = () => {
+    const contentOpen = contentDrawer.classList.contains("open");
+    const adminOpen = Boolean(adminDrawer?.classList.contains("open"));
+
+    // Only one full-screen surface may own the viewport at a time.
+    if (contentOpen && adminOpen) {
+      adminDrawer.classList.remove("open");
+    }
+
+    document.body.classList.toggle("mh-content-workspace-open", contentOpen);
+    if (contentOpen) setMobileMenu(false);
+  };
+
+  new MutationObserver(sync).observe(contentDrawer, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+
+  if (adminDrawer) {
+    new MutationObserver(() => {
+      if (adminDrawer.classList.contains("open") && contentDrawer.classList.contains("open")) {
+        contentDrawer.classList.remove("open");
+      }
+      sync();
+    }).observe(adminDrawer, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+
+  sync();
 }
 
 function init() {
@@ -457,6 +527,7 @@ function init() {
   bindContinue();
   watchAdmin();
   bindAdminClose();
+  bindExclusiveFullscreenSurfaces();
 
   const languageObserver = new MutationObserver(applyLanguage);
   languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });

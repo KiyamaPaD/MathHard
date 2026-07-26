@@ -56,7 +56,6 @@ const TEXT = {
 const ITEMS = [
   { key: "hub", icon: "🔥", kind: "anchor", target: "mhHub" },
   { key: "roadmap", icon: "🗺️", kind: "anchor", target: "mhRoadmap" },
-  { key: "boss", icon: "🧠", kind: "anchor", target: "mhBoss" },
   { key: "radar", icon: "📊", kind: "anchor", target: "mhRadar" },
   { key: "lessons", icon: "📘", kind: "tab", target: "lessons" },
   { key: "problems", icon: "🧩", kind: "tab", target: "problems" },
@@ -74,8 +73,11 @@ function getLanguage() {
 
 function isAdminButtonVisible() {
   const button = document.getElementById("adminBtn");
-  if (!button || button.hidden || button.getAttribute("aria-hidden") === "true") return false;
-  return window.getComputedStyle(button).display !== "none";
+  if (!button) return false;
+  return button.hidden === false
+    && button.disabled === false
+    && button.getAttribute("aria-hidden") === "false"
+    && button.style.display !== "none";
 }
 
 function scrollToElement(element) {
@@ -156,6 +158,11 @@ function createQuickNav() {
       <span class="mh-quick-nav-item-icon" aria-hidden="true">${item.icon}</span>
       <span class="mh-quick-nav-item-label"></span>
     `;
+    if (item.kind === "admin") {
+      button.hidden = true;
+      button.setAttribute("aria-hidden", "true");
+      button.tabIndex = -1;
+    }
     grid.append(button);
   }
 
@@ -191,7 +198,11 @@ function createQuickNav() {
 
   const updateAdminItem = () => {
     const adminItem = grid.querySelector('[data-quick-nav-key="admin"]');
-    if (adminItem) adminItem.hidden = !isAdminButtonVisible();
+    if (!adminItem) return;
+    const authorized = isAdminButtonVisible();
+    adminItem.hidden = !authorized;
+    adminItem.setAttribute("aria-hidden", authorized ? "false" : "true");
+    adminItem.tabIndex = authorized ? 0 : -1;
   };
 
   const updateActiveTab = () => {
@@ -325,7 +336,7 @@ function createQuickNav() {
     const adminObserver = new MutationObserver(updateAdminItem);
     adminObserver.observe(adminButton, {
       attributes: true,
-      attributeFilter: ["hidden", "style", "aria-hidden"],
+      attributeFilter: ["hidden", "style", "aria-hidden", "disabled"],
     });
   }
 
