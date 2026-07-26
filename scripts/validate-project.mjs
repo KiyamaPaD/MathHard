@@ -698,6 +698,20 @@ if (!problemWorkspaceCss.includes('.drawer.is-problem-workspace .panel .content.
   fail("Phase 14A.3 problem workspace responsive isolation is incomplete.");
 }
 
+if (!appSource.includes("attachMathToolbar: mhAttachMathToolbar") ||
+    !secureProblemControllerSource.includes('attachMathToolbar?.(input, host.querySelector("#answerMathToolbar"))')) {
+  fail("Phase 14A.4 must restore the interactive math toolbar in the secure problem workspace.");
+}
+if (!appSource.includes('class="mh-math-toolbar-master"') ||
+    !problemWorkspaceCss.includes('.mh-math-toolbar-master')) {
+  fail("Phase 14A.4 math operations keyboard markup or styles are missing.");
+}
+if (!problemWorkspaceCss.includes('.drawer.is-problem-workspace > .panel > header') ||
+    !problemWorkspaceCss.includes('grid-template-rows: auto minmax(0, 1fr)') ||
+    !problemWorkspaceCss.includes('.drawer.is-problem-workspace > .panel > .content:not(.viewer)')) {
+  fail("Phase 14A.4 must replace the overlapping problem header with a dedicated two-row surface.");
+}
+
 if (failed) {
   process.exitCode = 1;
 } else {

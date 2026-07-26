@@ -79,6 +79,7 @@ export function createSecureProblemController({
   saveAttempts,
   renderMath,
   bindMathInputEnhancements,
+  attachMathToolbar,
   escapeHtml
 }) {
   if (!supabase) throw new Error("createSecureProblemController requires Supabase.");
@@ -252,6 +253,7 @@ export function createSecureProblemController({
     const solutionContent = host.querySelector("#solutionContent");
     const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
     bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox"));
+    attachMathToolbar?.(input, host.querySelector("#answerMathToolbar"));
 
     const hintWrap1 = host.querySelector("#hintWrap1");
     const hintWrap2 = host.querySelector("#hintWrap2");

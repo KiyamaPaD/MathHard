@@ -999,25 +999,33 @@ import {
     if (!inputEl || !hostEl) return;
 
     hostEl.innerHTML = `
-      <div class="mh-math-toolbar-groups">
-        ${MH_MATH_INPUT_GROUPS.map(group => `
-          <details class="mh-math-toolbar-group">
-            <summary>${group.title}</summary>
-            <div class="mh-math-toolbar-row">
-              ${group.buttons.map(btn => `
-                <button
-                  type="button"
-                  class="mh-math-toolbtn"
-                  data-insert="${esc(btn.insert)}"
-                  title="${esc(btn.hint || btn.insert)}"
-                >
-                  ${btn.label}
-                </button>
-              `).join("")}
-            </div>
-          </details>
-        `).join("")}
-      </div>
+      <details class="mh-math-toolbar-master" open>
+        <summary>
+          <span>⌨️ ${LANG === "ro" ? "Operații matematice" : "Math operations"}</span>
+          <small>${LANG === "ro" ? "Apasă un simbol pentru a insera sintaxa" : "Choose a symbol to insert its syntax"}</small>
+        </summary>
+        <div class="mh-math-toolbar-groups">
+          ${MH_MATH_INPUT_GROUPS.map((group, index) => `
+            <details class="mh-math-toolbar-group" ${index === 0 ? "open" : ""}>
+              <summary>${group.title}</summary>
+              <div class="mh-math-toolbar-row">
+                ${group.buttons.map(btn => `
+                  <button
+                    type="button"
+                    class="mh-math-toolbtn"
+                    data-insert="${esc(btn.insert)}"
+                    title="${esc(btn.hint || btn.insert)}"
+                    aria-label="${esc(`${btn.label}: ${btn.hint || btn.insert}`)}"
+                  >
+                    <span>${btn.label}</span>
+                    <code>${esc(btn.hint || btn.insert)}</code>
+                  </button>
+                `).join("")}
+              </div>
+            </details>
+          `).join("")}
+        </div>
+      </details>
     `;
 
     hostEl.querySelectorAll(".mh-math-toolbtn").forEach(btn => {
@@ -6308,6 +6316,7 @@ import {
     saveAttempts,
     renderMath: MH_render,
     bindMathInputEnhancements: mhBindMathInputEnhancements,
+    attachMathToolbar: mhAttachMathToolbar,
     escapeHtml: esc
   });
 
