@@ -9,10 +9,11 @@ import {
   cancelExamAttempt,
   finishExamAttempt,
   markLessonLearned,
-  recordProblemEvent,
   startExamAttempt
 } from "./progress-repository.js";
 import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
+import { logLearningEvent } from "./secure-evaluation-repository.js";
+import { createSecureProblemController } from "./secure-problem-controller.js";
 import {
   getChapterLabel,
   getCurrentLangSafe,
@@ -4033,7 +4034,6 @@ console.log("APP.JS LOADED");
   const progressController = createAppProgressController({
     supabase,
     markLessonLearned,
-    recordProblemEvent,
     startExamAttempt,
     finishExamAttempt,
     cancelExamAttempt,
@@ -4057,14 +4057,13 @@ console.log("APP.JS LOADED");
   });
 
   const {
-    awardXPForProblem,
     cancelExamAttemptSafe,
     getXPRecord,
     loadAppProgressFromDb,
     markLessonLearnedSafe,
     recomputeXPTotal,
     recordExamAttemptStart,
-    recordProblemEventSafe,
+    applyProblemProgressResult,
     saveExamAttemptResultSafe,
     updateExamAttemptScore
   } = progressController;
@@ -6016,6 +6015,14 @@ console.log("APP.JS LOADED");
       setLessonOnlyActionsVisible(false);
       renderProblem(item, content);
     } else {
+      void logLearningEvent(
+        supabase,
+        "lesson_opened",
+        "lesson",
+        item.id,
+        { language: LANG }
+      ).catch((error) => console.warn("lesson_opened event failed:", error));
+
       const html=buildLessonHTML(item);
       content.innerHTML=html;
       setTimeout(()=>{ MH_render(content); },0);
@@ -6296,303 +6303,22 @@ console.log("APP.JS LOADED");
   }
   function norm(s){ return (s||"").toString().trim().toLowerCase().replace(/\s+/g,"").replace("√","sqrt"); }
 
-  function renderProblem(problem, host){
-  host = host || document.getElementById("viewContent");
-  if (!host) return;
-
-  const lesson = DATA.lessons.find(x=>x.id===problem.lessonId) || {};
-  const isExam = isExamProblem(problem);
-  const rec = getXPRecord(problem.id);
-
-  const title = LANG==="ro"
-    ? (problem.title_ro || problem.title_en || ("Problema " + problem.id))
-    : (problem.title_en || problem.title_ro || ("Problem " + problem.id));
-
-  const statement = LANG==="ro"
-    ? (problem.statement_ro || problem.statement_en || "")
-    : (problem.statement_en || problem.statement_ro || "");
-
-  const hint1 = LANG==="ro"
-    ? (problem.hint1_ro || problem.hint1_en || "")
-    : (problem.hint1_en || problem.hint1_ro || "");
-
-  const hint2 = LANG==="ro"
-    ? (problem.hint2_ro || problem.hint2_en || "")
-    : (problem.hint2_en || problem.hint2_ro || "");
-
-  const stars = problem.difficulty===0 ? "0★" : "★".repeat(problem.difficulty);
-
-  const existingAttempts = attempts[problem.id] || [];
-
-  host.innerHTML = `
-    <article class="problem">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-        <div>
-          <div class="stars">🧩 ${stars}</div>
-          <h2 style="margin:4px 0 6px;">${esc(title)}</h2>
-          <div class="legend">
-            📘 ${LANG==="ro"
-                  ? (lesson.title_ro || lesson.title_en || lesson.chapter || "")
-                  : (lesson.title_en || lesson.title_ro || lesson.chapter || "")}
-            ${lesson.grade ? " • 🎓 " + esc(lesson.grade) : ""}
-          </div>
-        </div>
-        ${!isExam ? `
-        <div style="text-align:right;" class="problem-xp-box">
-          <div class="legend">${LANG==="ro" ? "⚡ XP pe această problemă" : "⚡ XP on this problem"}</div>
-          <div class="xp-inline-number" id="probXpValue">${rec.xp || 0} / 10</div>
-          <div class="legend" id="probXpStats" style="font-size:11px;">
-            ${LANG==="ro" ? "greșeli" : "mistakes"}: ${rec.wrong || 0} • ${LANG==="ro" ? "hinturi" : "hints"}: ${rec.hints || 0}
-          </div>
-        </div>` : ""}
-      </div>
-
-      <hr style="border-color:var(--border);opacity:.4;margin:8px 0 10px;">
-
-      <div class="legend" style="margin-bottom:6px;">
-        ${LANG==="ro"
-          ? "Scrie răspunsul exact (număr, fracție a/b etc.). XP se calculează ca: 10 − greșeli − hinturi (minim 0)."
-          : "Type the exact answer (number, fraction a/b etc.). XP = 10 − mistakes − hints (min 0)."}
-      </div>
-
-      <div class="problem-statement">
-        ${statement}
-      </div>
-
-      <div class="checkrow">
-        <input id="answerInput" autocomplete="off" placeholder="${LANG==='ro'?'Răspunsul tău…':'Your answer…'}">
-        <button class="btn small" id="checkBtn">${LANG==='ro'?'Verifică':'Check'}</button>
-        <span class="legend" id="statusArea"></span>
-      </div>
-
-      <div class="mh-live-preview-wrap">
-        <div class="legend">Preview live</div>
-        <div class="mh-live-preview-box" id="answerPreviewBox"></div>
-      </div>
-
-      <div class="mh-math-input-host" id="answerMathToolbar"></div>
-
-      <div class="check-confirm" id="checkConfirm">
-        <span>${LANG==='ro'
-          ? 'Ești sigur că vrei să trimiți răspunsul? Încercarea se va înregistra (contor + XP).'
-          : 'Are you sure you want to submit? The attempt will be recorded for counters & XP.'}</span>
-        <div class="check-confirm-buttons">
-          <button class="btn small" id="confirmNo">${LANG==='ro'?'Nu':'No'}</button>
-          <button class="btn small" id="confirmYes">${LANG==='ro'?'Da':'Yes'}</button>
-        </div>
-      </div>
-
-      <details class="collapsible" style="margin-top:10px;">
-        <summary>📜 ${LANG==='ro'?'Istoric răspunsuri':'Answer history'}</summary>
-        <ul class="attempts" id="attemptsList"></ul>
-      </details>
-
-      <div class="hints" id="hintsBox" style="margin-top:10px;">
-        ${hint1 ? `
-        <div class="hint" id="hintWrap1" style="display:none;">
-          <details>
-            <summary>💡 Hint 1 (se deblochează după 2 răspunsuri greșite${!isExam ? ', scade 1 din cei 10 XP' : ''})</summary>
-            <p>${esc(hint1)}</p>
-          </details>
-        </div>` : ""}
-
-        ${hint2 ? `
-        <div class="hint" id="hintWrap2" style="display:none;">
-          <details>
-            <summary>💡 Hint 2 (se deblochează după 4 răspunsuri greșite${!isExam ? ', scade 1 din cei 10 XP' : ''})</summary>
-            <p>${esc(hint2)}</p>
-          </details>
-        </div>` : ""}
-      </div>
-
-      <div class="reveal">
-        <button class="reveal-btn" id="revealBtn">${LANG==='ro'?'Arată răspunsul corect':'Show correct answer'}</button>
-        <span class="legend" id="revealText" style="display:none;margin-left:8px;">
-          ${LANG==='ro'?'Răspuns corect:':'Correct answer:'} <code>${esc(problem.answer)}</code>
-        </span>
-      </div>
-    </article>
-  `;
-
-  MH_render(host);
-
-  const attemptsList = host.querySelector("#attemptsList");
-  existingAttempts.forEach(row => {
-    const li = document.createElement("li");
-    li.textContent = (row.ok ? "✅ " : "❌ ") + row.value;
-    attemptsList.appendChild(li);
+  const { renderProblem } = createSecureProblemController({
+    supabase,
+    getLanguage: () => LANG,
+    getLessons: () => DATA.lessons,
+    isExamProblem,
+    getXPRecord,
+    isProblemSolved: (problemId) => solvedSet.has(problemId),
+    applyProblemProgressResult,
+    incrementTodayProgress: mhIncrementTodayProgress,
+    attempts,
+    saveAttempts,
+    renderMath: MH_render,
+    bindMathInputEnhancements: mhBindMathInputEnhancements,
+    escapeHtml: esc
   });
 
-  const input = host.querySelector("#answerInput");
-  const checkBtn = host.querySelector("#checkBtn");
-  const confirmBox = host.querySelector("#checkConfirm");
-  const yesBtn = host.querySelector("#confirmYes");
-  const noBtn = host.querySelector("#confirmNo");
-  const statusArea = host.querySelector("#statusArea");
-
-  const answerPreviewBox = host.querySelector("#answerPreviewBox");
-  mhBindMathInputEnhancements(input, answerPreviewBox);
-
-  console.log("SMART INPUT FUNCS:", {
-    mhBind: typeof globalThis.mhBindMathInputEnhancements,
-    mhPreview: typeof globalThis.mhRenderMathPreview,
-    mhLatex: typeof globalThis.mhMathPreviewToLatex
-  });
-  
-  const hintWrap1 = host.querySelector("#hintWrap1");
-  const hintWrap2 = host.querySelector("#hintWrap2");
-  const hintDetails1 = hintWrap1 ? hintWrap1.querySelector("details") : null;
-  const hintDetails2 = hintWrap2 ? hintWrap2.querySelector("details") : null;
-
-  function refreshHints(){
-    const r = getXPRecord(problem.id);
-    if (hintWrap1 && r.wrong >= 2) hintWrap1.style.display = "block";
-    if (hintWrap2 && r.wrong >= 4) hintWrap2.style.display = "block";
-  }
-  refreshHints();
-
-  function refreshXPInline(){
-    if (isExam) return;
-    const r = getXPRecord(problem.id);
-    const v = host.querySelector("#probXpValue");
-    const s = host.querySelector("#probXpStats");
-    if (v) v.textContent = `${r.xp || 0} / 10`;
-    if (s) s.textContent =
-      `${LANG==='ro'?'greșeli':'mistakes'}: ${r.wrong || 0} • ${LANG==='ro'?'hinturi':'hints'}: ${r.hints || 0}`;
-  }
-
-  function pushAttempt(val, ok){
-    const arr = attempts[problem.id] || [];
-    arr.push({ value:val, ok:!!ok });
-    attempts[problem.id] = arr;
-    saveAttempts();
-
-    const li = document.createElement("li");
-    li.textContent = (ok ? "✅ " : "❌ ") + val;
-    attemptsList.appendChild(li);
-  }
-
-  function doCheck(){
-    const val = (input.value || "").trim();
-    if (!val){
-      statusArea.textContent = LANG==="ro"
-        ? "Completează mai întâi răspunsul."
-        : "Type an answer first.";
-      return;
-    }
-
-    const result = SmartAnswer.check({
-      user: val,
-      expected: problem.answer,
-      problem
-    });
-    const ok = result.ok;
-
-    pushAttempt(val, ok);
-
-    const rec = getXPRecord(problem.id);
-
-    if (!ok){
-      statusArea.innerHTML = LANG==="ro"
-        ? `❌ Nu e încă bine. Încearcă din nou.${result.message ? ' <span class="legend">' + esc(result.message) + '</span>' : ''}`
-        : `❌ Not correct yet. Try again.${result.message ? ' <span class="legend">' + esc(result.message) + '</span>' : ''}`;
-      if (!isExam && !rec.solved){
-        rec.wrong = (rec.wrong || 0) + 1;
-        void recordProblemEventSafe(problem.id, "wrong");
-        refreshHints();
-        refreshXPInline();
-      }
-    } else {
-      statusArea.innerHTML = LANG==="ro"
-        ? `✅ Corect! Bravo.${result.message ? ' <span class="legend">' + esc(result.message) + '</span>' : ''}`
-        : `✅ Correct, well done.${result.message ? ' <span class="legend">' + esc(result.message) + '</span>' : ''}`;
-      checkBtn.disabled = true;
-      input.disabled = true;
-
-      const wasAlreadySolved = solvedSet.has(problem.id);
-
-      solvedSet.add(problem.id);
-
-      if (!wasAlreadySolved) {
-        mhIncrementTodayProgress("problem");
-      }
-
-      updateCounters();
-      renderCards();
-      buildNestedTree();
-      buildTagPanel();
-
-      if (!isExam && !wasAlreadySolved){
-        awardXPForProblem(problem);
-        refreshXPInline();
-      }
-
-      if (!wasAlreadySolved) {
-        void recordProblemEventSafe(
-          problem.id,
-          isExam ? "solved_no_xp" : "solved"
-        );
-      }
-    }
-  }
-
-  checkBtn.addEventListener("click", () => {
-    if (checkBtn.disabled) return;
-    confirmBox.style.display = "flex";
-  });
-  if (noBtn) noBtn.addEventListener("click", () => {
-    confirmBox.style.display = "none";
-  });
-  if (yesBtn) yesBtn.addEventListener("click", () => {
-    confirmBox.style.display = "none";
-    doCheck();
-  });
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      checkBtn.click();
-    }
-  });
-
-  // hint 1 / hint 2 
-  if (hintDetails1){
-    hintDetails1.addEventListener("toggle", () => {
-      const rec = getXPRecord(problem.id);
-      if (hintDetails1.open && !isExam && !rec.solved && !rec.usedHint1){
-        rec.usedHint1 = true;
-        rec.hints = (rec.hints || 0) + 1;
-        void recordProblemEventSafe(problem.id, "hint1");
-        refreshXPInline();
-      }
-    });
-  }
-  if (hintDetails2){
-    hintDetails2.addEventListener("toggle", () => {
-      const rec = getXPRecord(problem.id);
-      if (hintDetails2.open && !isExam && !rec.solved && !rec.usedHint2){
-        rec.usedHint2 = true;
-        rec.hints = (rec.hints || 0) + 1;
-        void recordProblemEventSafe(problem.id, "hint2");
-        refreshXPInline();
-      }
-    });
-  }
-
-  // buton „Arată răspunsul”
-  const revealBtn = host.querySelector("#revealBtn");
-  const revealText = host.querySelector("#revealText");
-  if (revealBtn && revealText){
-    revealBtn.addEventListener("click", () => {
-      const show = (revealText.style.display === "none" || !revealText.style.display);
-      revealText.style.display = show ? "inline" : "none";
-
-      if (show && !isExam) {
-        void recordProblemEventSafe(problem.id, "reveal");
-      }
-    });
-  }
-  }
 
 
   /* ===== PATCH pentru buildProblemBlock() ===== */
@@ -6610,7 +6336,6 @@ console.log("APP.JS LOADED");
         resEl.innerHTML = `<span class="ok">${msg}${note}</span>`;
         if(typeof solvedSet!=="undefined" && !solvedSet.has(P.id)){
           solvedSet.add(P.id);
-          void recordProblemEventSafe(P.id, "solved_no_xp");
           if(typeof updateCounters==="function") updateCounters();
         }
         if(typeof renderCards==="function") renderCards();
@@ -6731,7 +6456,6 @@ console.log("APP.JS LOADED");
           btn.onclick=()=>{
             state.revealed=true;
             saveAttempts();
-            void recordProblemEventSafe(P.id, "reveal");
             paintReveal();
           };
           stopRevealTimer();
@@ -6820,6 +6544,14 @@ function openExam(exam){
     showGlobalExamLockMessage();
     return;
   }
+
+  void logLearningEvent(
+    supabase,
+    "exam_opened",
+    "exam",
+    exam.id,
+    { language: LANG }
+  ).catch((error) => console.warn("exam_opened event failed:", error));
 
   const title = (LANG === 'ro' ? exam.title_ro : exam.title_en) || exam.title_ro || exam.title_en || exam.id;
   const totalPts = computeExamTotal(exam) || 100;

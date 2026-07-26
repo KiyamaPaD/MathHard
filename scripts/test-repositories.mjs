@@ -59,6 +59,12 @@ const {
   startExamAttempt
 } = await importBrowserModule("js/progress-repository.js");
 const {
+  logLearningEvent,
+  requestProblemHint,
+  revealProblemAnswer,
+  submitProblemAnswer
+} = await importBrowserModule("js/secure-evaluation-repository.js");
+const {
   getChapterLabel,
   getTagLabel,
   normalizeExam,
@@ -87,7 +93,7 @@ const {
 function makeContentClient({ rpcError = null, authenticated = true } = {}) {
   const catalog = {
     lessons: [{ id: "lesson-1", title_ro: "Lecție Supabase" }],
-    problems: [{ id: "problem-1", lesson_id: "lesson-1", answer: "2" }],
+    problems: [{ id: "problem-1", lesson_id: "lesson-1", has_hint1: true, secure_evaluation: true }],
     exams: [{ id: "exam-1", problems: ["problem-1"] }]
   };
 
@@ -169,6 +175,81 @@ assert.deepEqual(calls, [
 await assert.rejects(
   () => recordProblemEvent(progressClient, "problem-1", "invalid"),
   /Invalid problem event/
+);
+
+const evaluationCalls = [];
+const evaluationClient = {
+  async rpc(name, args) {
+    evaluationCalls.push({ name, args });
+    if (name === "mh_submit_problem_answer") {
+      return {
+        data: {
+          ok: true,
+          message_key: "correct",
+          verification_mode: "numeric",
+          progress: {
+            problem_id: args.p_problem_id,
+            solved: true,
+            xp_earned: 9,
+            wrong_attempts: 1,
+            hints_used: 0
+          }
+        },
+        error: null
+      };
+    }
+    if (name === "mh_get_problem_hint") {
+      return { data: { available: true, hint: "Hint securizat" }, error: null };
+    }
+    if (name === "mh_reveal_problem_answer") {
+      return { data: { answer: "1/2" }, error: null };
+    }
+    return { data: { logged: true }, error: null };
+  }
+};
+
+const evaluatedAnswer = await submitProblemAnswer(
+  evaluationClient,
+  "problem-secure",
+  "2/4",
+  "ro"
+);
+assert.equal(evaluatedAnswer.ok, true);
+assert.equal(evaluatedAnswer.progress.xp_earned, 9);
+
+const secureHint = await requestProblemHint(
+  evaluationClient,
+  "problem-secure",
+  1,
+  "ro"
+);
+assert.equal(secureHint.hint, "Hint securizat");
+
+const revealed = await revealProblemAnswer(
+  evaluationClient,
+  "problem-secure",
+  "en"
+);
+assert.equal(revealed.answer, "1/2");
+
+await logLearningEvent(
+  evaluationClient,
+  "problem_opened",
+  "problem",
+  "problem-secure",
+  { language: "ro" }
+);
+
+assert.deepEqual(evaluationCalls.map((call) => call.name), [
+  "mh_submit_problem_answer",
+  "mh_get_problem_hint",
+  "mh_reveal_problem_answer",
+  "mh_log_learning_event"
+]);
+
+await assert.rejects(
+  () => requestProblemHint(evaluationClient, "problem-secure", 3, "ro"),
+  /Invalid hint number/
 );
 
 
@@ -333,13 +414,6 @@ let progressCounterRefreshes = 0;
 const appProgress = appProgressModule.createAppProgressController({
   supabase: appProgressClient,
   markLessonLearned: async (_client, lessonId) => ({ lesson_id: lessonId, learned: true }),
-  recordProblemEvent: async (_client, problemId) => ({
-    problem_id: problemId,
-    solved: true,
-    xp_earned: 8,
-    wrong_attempts: 1,
-    hints_used: 1
-  }),
   startExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 1 }),
   finishExamAttempt: async (_client, examId, score) => ({ exam_id: examId, best_score: score, passed: score >= 60 }),
   cancelExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 0, started_at: null }),
@@ -359,7 +433,13 @@ assert.equal(progressRefreshes, 2);
 
 await appProgress.markLessonLearnedSafe("lesson-new");
 assert.equal(appProgressModule.learnedSet.has("lesson-new"), true);
-await appProgress.recordProblemEventSafe("problem-new", "solved");
+appProgress.applyProblemProgressResult("problem-new", {
+  problem_id: "problem-new",
+  solved: true,
+  xp_earned: 8,
+  wrong_attempts: 1,
+  hints_used: 1
+}, "solved");
 assert.equal(appProgressModule.solvedSet.has("problem-new"), true);
 const cancelledAttempt = await appProgress.cancelExamAttemptSafe("exam-new");
 assert.equal(cancelledAttempt.attempts_count, 0);

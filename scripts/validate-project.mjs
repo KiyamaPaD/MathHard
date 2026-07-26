@@ -21,7 +21,9 @@ const moduleJsFiles = [
   "js/auth-ui-controller.js",
   "js/admin-content-model.js",
   "js/exam-session-state.js",
-  "js/admin-exam-recovery.js"
+  "js/admin-exam-recovery.js",
+  "js/secure-evaluation-repository.js",
+  "js/secure-problem-controller.js"
 ];
 
 const classicJsFiles = [
@@ -171,6 +173,8 @@ const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-mod
 const examSessionStateSource = readFileSync(resolve(root, "js/exam-session-state.js"), "utf8");
 const progressRepositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
 const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recovery.js"), "utf8");
+const secureEvaluationRepositorySource = readFileSync(resolve(root, "js/secure-evaluation-repository.js"), "utf8");
+const secureProblemControllerSource = readFileSync(resolve(root, "js/secure-problem-controller.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -184,6 +188,24 @@ if (!appSource.includes("loadContentCatalog")) {
 if (!appSource.includes('from "./progress-repository.js"')) {
   fail("app.js must use progress-repository.js.");
 }
+if (!appSource.includes('from "./secure-evaluation-repository.js"')) {
+  fail("app.js must use the Phase 11A secure learning-event repository.");
+}
+if (!appSource.includes('from "./secure-problem-controller.js"')) {
+  fail("app.js must use the Phase 11A secure problem controller.");
+}
+if (!secureEvaluationRepositorySource.includes('"mh_submit_problem_answer"')) {
+  fail("secure-evaluation-repository.js must submit answers through mh_submit_problem_answer().");
+}
+if (!secureEvaluationRepositorySource.includes('"mh_get_problem_hint"')) {
+  fail("secure-evaluation-repository.js must request hints through mh_get_problem_hint().");
+}
+if (!secureEvaluationRepositorySource.includes('"mh_reveal_problem_answer"')) {
+  fail("secure-evaluation-repository.js must reveal solutions through mh_reveal_problem_answer().");
+}
+if (!secureProblemControllerSource.includes("export function createSecureProblemController")) {
+  fail("secure-problem-controller.js must own the normal problem evaluation UI.");
+}
 if (!appSource.includes('from "./runtime-config.js"')) {
   fail("app.js must load non-content runtime configuration from runtime-config.js.");
 }
@@ -192,6 +214,18 @@ if (!appSource.includes('from "./content-model.js"')) {
 }
 if (!appSource.includes('from "./answer-engine.js"')) {
   fail("app.js must use the extracted answer-engine.js module.");
+}
+if (!secureProblemControllerSource.includes("submitProblemAnswer(supabase, problem.id")) {
+  fail("Normal problem answers must be checked by the secure Supabase RPC.");
+}
+if (!secureProblemControllerSource.includes("requestProblemHint(supabase, problem.id")) {
+  fail("Normal problem hints must be loaded from the secure Supabase RPC.");
+}
+if (!secureProblemControllerSource.includes("revealProblemAnswer(supabase, problem.id")) {
+  fail("Normal problem reveal must use the secure Supabase RPC.");
+}
+if (/SmartAnswer\.check\(|problem\.answer/.test(secureProblemControllerSource)) {
+  fail("The secure normal-problem controller must not read or compare problem.answer in the browser.");
 }
 if (!appSource.includes('from "./mutation-queue.js"')) {
   fail("app.js must use the extracted mutation-queue.js module.");
@@ -298,6 +332,12 @@ if (!profileTextSource.includes("export const PROFILE_TEXT")) {
 }
 if (!appProgressSource.includes("export function createAppProgressController")) {
   fail("app-progress.js must own app progress hydration and mutations.");
+}
+if (!appProgressSource.includes("applyProblemProgressResult")) {
+  fail("app-progress.js must reconcile canonical progress returned by secure evaluation RPCs.");
+}
+if (appProgressSource.includes("recordProblemEventSafe")) {
+  fail("Phase 11A must not expose the legacy generic problem-event mutation path.");
 }
 if (!authUiControllerSource.includes("export function createAuthUiController")) {
   fail("auth-ui-controller.js must own auth-dependent UI synchronization.");

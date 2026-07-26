@@ -1,4 +1,4 @@
-const CACHE_VERSION = 10;
+const CACHE_VERSION = 11;
 const CACHE_PREFIX = `mh_content_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

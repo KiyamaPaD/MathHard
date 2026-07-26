@@ -15,7 +15,6 @@ function resetProgressState() {
 export function createAppProgressController({
   supabase,
   markLessonLearned,
-  recordProblemEvent,
   startExamAttempt,
   finishExamAttempt,
   cancelExamAttempt,
@@ -122,20 +121,11 @@ export function createAppProgressController({
     });
   }
 
-  async function recordProblemEventSafe(problemId, eventName) {
-    if (!progressUser) return null;
-
-    return enqueueProgressMutation(`problem:${problemId}`, async () => {
-      try {
-        const row = await recordProblemEvent(supabase, problemId, eventName);
-        applyCanonicalProblemProgress(problemId, row, eventName);
-        return row;
-      } catch (error) {
-        reconcileMutationError("recordProblemEvent", error);
-        return null;
-      }
-    });
+  function applyProblemProgressResult(problemId, row, eventName) {
+    applyCanonicalProblemProgress(problemId, row, eventName);
+    return row;
   }
+
 
   async function recordExamAttemptStart(examId) {
     if (!progressUser) return null;
@@ -291,7 +281,7 @@ export function createAppProgressController({
     markLessonLearnedSafe,
     recomputeXPTotal,
     recordExamAttemptStart,
-    recordProblemEventSafe,
+    applyProblemProgressResult,
     saveExamAttemptResultSafe,
     updateExamAttemptScore,
     get authUser() {
