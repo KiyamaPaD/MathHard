@@ -83,6 +83,13 @@ const {
   normalizeRoadmapCatalog
 } = await importBrowserModule("js/roadmap-model.js");
 const {
+  createRoadmapNodeId,
+  filterRoadmapContent,
+  moveOrderedItem,
+  normalizeOrderedPositions,
+  slugifyRoadmapValue
+} = await importBrowserModule("js/roadmap-admin-model.js");
+const {
   createKeyedMutationQueue,
   mergeCanonicalProblemProgress
 } = await importBrowserModule("js/mutation-queue.js");
@@ -578,6 +585,35 @@ const completedRoadmapView = buildRoadmapView({
 
 assert.equal(completedRoadmapView.nodeStates.get("n3").status, "done");
 assert.equal(completedRoadmapView.progress.percent, 100);
+
+
+assert.equal(slugifyRoadmapValue("Funcții și grafice"), "functii-si-grafice");
+assert.equal(
+  createRoadmapNodeId({
+    roadmapId: "ubb",
+    sectionId: "algebra",
+    nodeType: "lesson",
+    contentId: "ecuații",
+    existingIds: ["ubb-algebra-lesson-ecuatii"]
+  }),
+  "ubb-algebra-lesson-ecuatii-2"
+);
+assert.deepEqual(
+  moveOrderedItem([{ id: "a" }, { id: "b" }, { id: "c" }], "b", "up").map((item) => item.id),
+  ["b", "a", "c"]
+);
+assert.deepEqual(
+  normalizeOrderedPositions([{ id: "b" }, { id: "a" }]).map(({ id, position }) => ({ id, position })),
+  [{ id: "b", position: 0 }, { id: "a", position: 10 }]
+);
+assert.deepEqual(
+  filterRoadmapContent({
+    lessons: [{ id: "l1", title_ro: "Ecuații", chapter: "Algebră" }],
+    problems: [{ id: "p1", title_ro: "Fracții" }],
+    exams: []
+  }, { type: "lesson", query: "algebr" }).map((item) => item.contentId),
+  ["l1"]
+);
 
 const normalizedUiPreferences = normalizeUiPreferences({
   compact_home: true,

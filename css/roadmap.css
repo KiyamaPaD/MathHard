@@ -484,3 +484,12 @@
   border-color: rgba(148,163,184,.22);
   background: rgba(148,163,184,.045);
 }
+
+.mh-roadmap-node.is-workspace-highlight {
+  animation: mh-roadmap-highlight 1.8s ease;
+}
+
+@keyframes mh-roadmap-highlight {
+  0%, 100% { box-shadow: none; }
+  25%, 70% { box-shadow: 0 0 0 3px rgba(99,102,241,.32), 0 16px 34px -24px rgba(99,102,241,.9); }
+}

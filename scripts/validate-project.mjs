@@ -29,6 +29,8 @@ const moduleJsFiles = [
   "js/roadmap-repository.js",
   "js/roadmap-controller.js",
   "js/roadmap-admin-controller.js",
+  "js/roadmap-admin-model.js",
+  "js/learning-workspace-controller.js",
   "js/quick-nav-controller.js",
   "js/ui-preferences-repository.js",
   "js/section-layout-controller.js"
@@ -44,6 +46,8 @@ const requiredFiles = [
   "profile.html",
   "README.md",
   "css/roadmap.css",
+  "css/roadmap-studio.css",
+  "css/learning-workspace.css",
   "css/quick-nav.css",
   "css/section-layout.css",
   "scripts/test-repositories.mjs",
@@ -191,7 +195,11 @@ const roadmapModelSource = readFileSync(resolve(root, "js/roadmap-model.js"), "u
 const roadmapRepositorySource = readFileSync(resolve(root, "js/roadmap-repository.js"), "utf8");
 const roadmapControllerSource = readFileSync(resolve(root, "js/roadmap-controller.js"), "utf8");
 const roadmapAdminControllerSource = readFileSync(resolve(root, "js/roadmap-admin-controller.js"), "utf8");
+const roadmapAdminModelSource = readFileSync(resolve(root, "js/roadmap-admin-model.js"), "utf8");
+const learningWorkspaceControllerSource = readFileSync(resolve(root, "js/learning-workspace-controller.js"), "utf8");
 const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
+const roadmapStudioCss = readFileSync(resolve(root, "css/roadmap-studio.css"), "utf8");
+const learningWorkspaceCss = readFileSync(resolve(root, "css/learning-workspace.css"), "utf8");
 
 const quickNavSource = readFileSync(resolve(root, "js/quick-nav-controller.js"), "utf8");
 const quickNavCss = readFileSync(resolve(root, "css/quick-nav.css"), "utf8");
@@ -521,6 +529,35 @@ if (!sectionLayoutCss.includes('.mh-collapsible-section.is-collapsed') ||
 if (!quickNavSource.includes('data-layout-action="expand-all"') ||
     !quickNavSource.includes('data-layout-action="reset"')) {
   fail("Quick navigation must expose show-all, close-all, and reset layout controls.");
+}
+
+
+if (!indexHtml.includes('id="mhLearningWorkspaceBar"')) {
+  fail("Phase 13A learning workspace toolbar is missing from index.html.");
+}
+if (!indexHtml.includes('href="css/learning-workspace.css"') || !indexHtml.includes('href="css/roadmap-studio.css"')) {
+  fail("Phase 13A workspace or Roadmap Studio stylesheet is missing from index.html.");
+}
+if (!appSource.includes('from "./learning-workspace-controller.js"')) {
+  fail("app.js must use the Phase 13A learning workspace controller.");
+}
+if (!appSource.includes("getContentCatalog: () => DATA")) {
+  fail("Roadmap Studio v2 must receive the authenticated content catalog.");
+}
+if (!roadmapAdminControllerSource.includes("data-roadmap-quick-add") || !roadmapAdminControllerSource.includes("data-roadmap-drag-node")) {
+  fail("Roadmap Studio v2 must support quick catalog insertion and visual node movement.");
+}
+if (!roadmapAdminControllerSource.includes("patchRoadmapEntity") || !roadmapAdminControllerSource.includes("saveRoadmapPositions")) {
+  fail("Roadmap Studio v2 must persist inline edits and ordering through roadmap-repository.js.");
+}
+if (!roadmapAdminModelSource.includes("createRoadmapNodeId") || !roadmapAdminModelSource.includes("filterRoadmapContent")) {
+  fail("roadmap-admin-model.js must own ID generation and catalog filtering.");
+}
+if (!learningWorkspaceControllerSource.includes("findNodeByContent") || !learningWorkspaceCss.includes("is-learning-workspace")) {
+  fail("Phase 13A workspace must integrate with the current roadmap and full-screen layout.");
+}
+if (!roadmapStudioCss.includes("mh-roadmap-admin-quick-add")) {
+  fail("Roadmap Studio v2 styling is incomplete.");
 }
 
 if (failed) {

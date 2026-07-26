@@ -39,6 +39,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/roadmap.css" />
+  <link rel="stylesheet" href="css/roadmap-studio.css" />
+  <link rel="stylesheet" href="css/learning-workspace.css" />
   <link rel="stylesheet" href="css/quick-nav.css" />
   <link rel="stylesheet" href="css/section-layout.css" />
   <script defer src="js/katex-init.js"></script>
@@ -465,6 +467,19 @@
         </div>
         <div class="counter">📎 <span id="viewMeta"></span></div>
       </header>
+
+      <nav id="mhLearningWorkspaceBar" hidden aria-label="Navigare în spațiul de învățare">
+        <div class="mh-learning-workspace-context">
+          <div class="mh-learning-workspace-breadcrumb" data-learning-breadcrumb></div>
+          <div class="mh-learning-workspace-position" data-learning-position></div>
+        </div>
+        <div class="mh-learning-workspace-actions">
+          <button class="btn small" type="button" data-learning-prev>← Anterior</button>
+          <button class="btn small" type="button" data-learning-roadmap hidden>🗺️ Vezi în roadmap</button>
+          <button class="btn small" type="button" data-learning-next>Următor →</button>
+          <button class="btn small" type="button" data-learning-close>✖ Închide</button>
+        </div>
+      </nav>
 
       <div class="content viewer" id="viewContent"></div>
 

@@ -328,11 +328,26 @@ export function createRoadmapController({
     render();
   }
 
+  function findNodeByContent(nodeType, contentId) {
+    const type = String(nodeType || "").trim();
+    const id = String(contentId || "").trim();
+    if (!type || !id) return null;
+    const view = currentView();
+    for (const state of view.nodeStates.values()) {
+      if (state?.node?.node_type === type && state?.node?.content_id === id) {
+        return { state, view, roadmap: currentRoadmap() };
+      }
+    }
+    return null;
+  }
+
   return {
     clear,
     load,
     render,
     refreshProgress: render,
+    findNodeByContent,
+    getCurrentView: currentView,
     get selectedRoadmapId() {
       return selectedRoadmapId;
     },

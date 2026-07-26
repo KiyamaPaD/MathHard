@@ -60,6 +60,7 @@ import {
 import { createRoadmapController } from "./roadmap-controller.js";
 import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
 import { invalidateRoadmapCache } from "./roadmap-repository.js";
+import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
 
 console.log("APP.JS LOADED");
 
@@ -69,6 +70,7 @@ console.log("APP.JS LOADED");
   let MH_AUTH_USER = null;
   let roadmapController = null;
   let roadmapAdminController = null;
+  let learningWorkspaceController = null;
 
   try {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
@@ -3949,7 +3951,7 @@ console.log("APP.JS LOADED");
     }
 
     if (type === "exam") openExam(item);
-    else openViewer(item);
+    else openViewer(item, type);
   }
 
   roadmapController = createRoadmapController({
@@ -3965,8 +3967,31 @@ console.log("APP.JS LOADED");
   roadmapAdminController = createRoadmapAdminController({
     root: document.getElementById("mhRoadmapAdminStudio"),
     supabase,
+    getContentCatalog: () => DATA,
     onChanged: async () => {
       await roadmapController?.load(true);
+      learningWorkspaceController?.refresh();
+    }
+  });
+
+  learningWorkspaceController = createLearningWorkspaceController({
+    drawer: document.getElementById("drawer"),
+    toolbar: document.getElementById("mhLearningWorkspaceBar"),
+    getLanguage: () => LANG,
+    getCatalog: () => DATA,
+    getRoadmapController: () => roadmapController,
+    onOpenItem: (item, type) => openViewer(item, type),
+    onClose: () => closeDrawerSafely(),
+    onOpenRoadmap: ({ state } = {}) => {
+      document.getElementById("mhRoadmap")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const nodeId = state?.node?.id;
+      if (!nodeId) return;
+      setTimeout(() => {
+        const node = document.querySelector(`[data-roadmap-node-id="${CSS.escape(nodeId)}"]`);
+        node?.classList.add("is-workspace-highlight");
+        node?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => node?.classList.remove("is-workspace-highlight"), 1800);
+      }, 250);
     }
   });
 
@@ -5872,7 +5897,7 @@ console.log("APP.JS LOADED");
     if (timerText) timerText.textContent = "01:00";
   }
 
-  function openViewer(item){
+  function openViewer(item, forcedType = ""){
 
     if (isGuestContentLocked()) {
       showGuestContentMessage();
@@ -5889,7 +5914,8 @@ console.log("APP.JS LOADED");
 
     // opresc instanța anterioară (dacă există)
     try{ if (window.MH_NumberLinePy) MH_NumberLinePy.unmount(WIDGET_ID); }catch(e){}
-    const isProblem = (TAB==="problems");
+    const isProblem = forcedType ? forcedType === "problem" : (TAB === "problems");
+    learningWorkspaceController?.open(item, isProblem ? "problem" : "lesson");
     const title=(LANG==="ro"? (item.title_ro||item.title_en):(item.title_en||item.title_ro));
     const done = isProblem ? solvedSet.has(item.id) : learnedSet.has(item.id);
 
@@ -6130,6 +6156,7 @@ console.log("APP.JS LOADED");
 
   function openTips(){
 
+    learningWorkspaceController?.clear();
     if (hasActiveExamLock()) {
       showGlobalExamLockMessage();
       return;
@@ -6160,6 +6187,7 @@ console.log("APP.JS LOADED");
     }
 
     stopLessonTimer();
+    learningWorkspaceController?.clear();
     document.getElementById("drawer").classList.remove("open");
   }
 
@@ -6419,6 +6447,7 @@ console.log("APP.JS LOADED");
   let examTimer=null;
 
 function openExam(exam){
+  learningWorkspaceController?.clear();
   if (isGuestContentLocked()) {
     showGuestContentMessage();
     return;

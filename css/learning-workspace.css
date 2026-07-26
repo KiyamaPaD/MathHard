@@ -1,0 +1,120 @@
+/* MathHard Phase 13A — dedicated learning workspace */
+#mhLearningWorkspaceBar[hidden] {
+  display: none !important;
+}
+
+#mhLearningWorkspaceBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, var(--accent) 8%);
+}
+
+.mh-learning-workspace-context {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.mh-learning-workspace-breadcrumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+.mh-learning-workspace-position {
+  color: var(--text);
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.mh-learning-workspace-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.drawer.is-learning-workspace {
+  background: rgba(2, 6, 23, .72);
+  backdrop-filter: blur(8px);
+}
+
+.drawer.is-learning-workspace > .panel {
+  left: 50%;
+  right: auto;
+  width: min(1180px, calc(100% - 32px));
+  height: calc(100% - 24px);
+  top: 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 34px 90px -36px rgba(0, 0, 0, .85);
+}
+
+.drawer.is-learning-workspace .panel > header {
+  position: relative;
+  z-index: 3;
+}
+
+.drawer.is-learning-workspace .panel .content.viewer {
+  width: min(900px, 100%);
+  margin-inline: auto;
+  padding: 26px clamp(18px, 4vw, 54px) 48px;
+  scroll-padding-top: 24px;
+}
+
+.drawer.is-learning-workspace .lesson-actions {
+  width: min(980px, 100%);
+  margin-inline: auto;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 96%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.drawer.is-learning-workspace #viewTitle {
+  max-width: min(62vw, 700px);
+}
+
+@media (max-width: 760px) {
+  .drawer.is-learning-workspace > .panel {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  #mhLearningWorkspaceBar {
+    grid-template-columns: 1fr;
+    padding: 10px 12px;
+  }
+
+  .mh-learning-workspace-actions {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+
+  .mh-learning-workspace-actions .btn {
+    flex: none;
+  }
+
+  .drawer.is-learning-workspace .panel .content.viewer {
+    padding: 18px 14px 36px;
+  }
+
+  .drawer.is-learning-workspace #viewTitle {
+    max-width: 100%;
+  }
+}
