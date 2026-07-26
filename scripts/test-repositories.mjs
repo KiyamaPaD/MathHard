@@ -40,7 +40,6 @@ globalThis.sessionStorage = new SessionStorageMock();
 const {
   catalogTotals,
   getContentCatalogDiagnostics,
-  getContentItemSources,
   invalidateContentCatalogCache,
   loadContentCatalog
 } = await importBrowserModule("js/content-repository.js");
@@ -81,9 +80,7 @@ assert.deepEqual(catalogTotals(catalog), {
   problemsTotal: 1,
   examsTotal: 1
 });
-assert.deepEqual(getContentItemSources("lessons", "lesson-1"), ["supabase"]);
 assert.equal(getContentCatalogDiagnostics().status, "supabase");
-assert.equal(getContentCatalogDiagnostics().conflicts.length, 0);
 
 const degradedCatalog = await loadContentCatalog({
   supabase: makeContentClient({ failures: { mh_problems: "temporary failure" } }),

@@ -1,7 +1,6 @@
 import { supabase } from "./supabase-client.js";
 import {
   getContentCatalogDiagnostics,
-  getContentItemSources,
   loadContentCatalog
 } from "./content-repository.js";
 import {
@@ -3119,9 +3118,7 @@ function normalizeLesson(L){
 
     const status = document.getElementById("mhPublishStatus");
     if (status) {
-      const sources = Array.isArray(item.__sources) ? item.__sources : [];
-      const sourceText = sources.length ? sources.map(mhSourceLabel).join(" + ") : "Supabase";
-      status.textContent = `Editezi: ${item.id} (${sourceText}).`;
+      status.textContent = `Editezi: ${item.id} (Supabase).`;
     }
 
     if (type === "exam") {
@@ -3220,20 +3217,13 @@ function normalizeLesson(L){
 
   }
 
-  function mhCatalogKindForType(contentType) {
-    if (contentType === "problem") return "problems";
-    if (contentType === "exam") return "exams";
-    return "lessons";
-  }
-
   function mhGetAdminItems() {
-    const withSources = (item, contentType) => ({
+    const withType = (item, contentType) => ({
       ...item,
-      content_type: contentType,
-      __sources: getContentItemSources(mhCatalogKindForType(contentType), item.id)
+      content_type: contentType
     });
 
-    const lessons = DATA.lessons.map(item => withSources(
+    const lessons = DATA.lessons.map(item => withType(
       item,
       item.chapter === "CERCETARE"
         ? "research"
@@ -3242,19 +3232,14 @@ function normalizeLesson(L){
           : "lesson"
     ));
 
-    const problems = DATA.problems.map(item => withSources(item, "problem"));
-    const exams = DATA.exams.map(item => withSources(item, "exam"));
+    const problems = DATA.problems.map(item => withType(item, "problem"));
+    const exams = DATA.exams.map(item => withType(item, "exam"));
 
     return [...lessons, ...problems, ...exams].sort((a, b) => {
       const ta = (a.title_ro || a.title_en || a.id || "").toLowerCase();
       const tb = (b.title_ro || b.title_en || b.id || "").toLowerCase();
       return ta.localeCompare(tb, "ro");
     });
-  }
-
-  function mhSourceLabel(source) {
-    if (source === "supabase") return "Supabase";
-    return source || "Supabase";
   }
 
   function mhRenderAdminList() {
@@ -3264,7 +3249,7 @@ function normalizeLesson(L){
 
     const items = mhGetAdminItems();
     const diagnostics = getContentCatalogDiagnostics();
-    const supabaseItems = items.filter((item) => item.__sources.includes("supabase")).length;
+    const supabaseItems = items.length;
 
     host.innerHTML = "";
     if (info) {
@@ -3281,11 +3266,7 @@ function normalizeLesson(L){
       card.className = "card";
 
       const title = item.title_ro || item.title_en || item.id || "(fără titlu)";
-      const sources = Array.isArray(item.__sources) ? item.__sources : [];
-      const hasSupabase = sources.includes("supabase");
-      const sourceText = sources.length
-        ? sources.map(mhSourceLabel).join(" + ")
-        : "Supabase";
+      const sourceText = "Supabase";
       const metaBits = [
         `Tip: ${item.content_type}`,
         item.grade ? `Clasă: ${item.grade}` : null,
@@ -3304,7 +3285,7 @@ function normalizeLesson(L){
         <div class="legend" style="margin-top:6px;">Sursă: ${esc(sourceText)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
           <button class="btn small" type="button" data-edit-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}">✏️ Edit</button>
-          <button class="btn small" type="button" data-delete-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}" title="${esc(deleteTitle)}" ${hasSupabase ? "" : "disabled"}>${deleteText}</button>
+          <button class="btn small" type="button" data-delete-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}" title="${esc(deleteTitle)}">${deleteText}</button>
         </div>
       `;
 
@@ -3331,12 +3312,6 @@ function normalizeLesson(L){
           (candidate) => candidate.id === id && candidate.content_type === type
         );
         if (!item) return;
-
-        const sources = Array.isArray(item.__sources) ? item.__sources : [];
-        if (!sources.includes("supabase")) {
-          alert("Itemul nu este disponibil în snapshotul Supabase curent.");
-          return;
-        }
 
         if (!confirm(`Sigur vrei să ștergi definitiv ${type}: ${id} din Supabase?`)) return;
 

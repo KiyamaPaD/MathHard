@@ -1,4 +1,4 @@
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
 const CACHE_KEY = `mh_content_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -12,11 +12,7 @@ let memorySnapshot = null;
 let inFlightLoad = null;
 
 function emptyCatalog() {
-  return {
-    lessons: [],
-    problems: [],
-    exams: []
-  };
+  return { lessons: [], problems: [], exams: [] };
 }
 
 function asArray(value) {
@@ -32,20 +28,11 @@ function sanitizeCatalog(value) {
 }
 
 function uniqueCount(items) {
-  return new Set(asArray(items).map((item) => String(item?.id || "").trim()).filter(Boolean)).size;
-}
-
-function buildProvenance(catalog) {
-  const result = { lessons: {}, problems: {}, exams: {} };
-
-  for (const { key } of CATALOG_GROUPS) {
-    for (const item of asArray(catalog?.[key])) {
-      const id = String(item?.id || "").trim();
-      if (id) result[key][id] = ["supabase"];
-    }
-  }
-
-  return result;
+  return new Set(
+    asArray(items)
+      .map((item) => String(item?.id || "").trim())
+      .filter(Boolean)
+  ).size;
 }
 
 function getStorage() {
@@ -54,6 +41,21 @@ function getStorage() {
   } catch {
     return null;
   }
+}
+
+function makeSnapshot(catalog, {
+  status = "supabase",
+  staleGroups = [],
+  errors = [],
+  createdAt = Date.now()
+} = {}) {
+  return {
+    createdAt,
+    catalog: sanitizeCatalog(catalog),
+    status,
+    staleGroups: [...staleGroups],
+    errors: [...errors]
+  };
 }
 
 function readStoredSnapshot({ allowStale = false } = {}) {
@@ -74,22 +76,12 @@ function readStoredSnapshot({ allowStale = false } = {}) {
       return null;
     }
 
-    const catalog = sanitizeCatalog(parsed.catalog);
-    return {
+    return makeSnapshot(parsed.catalog, {
       createdAt,
-      catalog,
-      provenance: buildProvenance(catalog),
-      sourceCounts: {
-        supabase: {
-          lessons: uniqueCount(catalog.lessons),
-          problems: uniqueCount(catalog.problems),
-          exams: uniqueCount(catalog.exams)
-        }
-      },
       status: age <= CACHE_TTL_MS ? "cache-fresh" : "cache-stale",
       staleGroups: asArray(parsed.staleGroups),
       errors: asArray(parsed.errors)
-    };
+    });
   } catch (error) {
     console.warn("Content cache could not be read:", error);
     return null;
@@ -105,39 +97,14 @@ function writeStoredSnapshot(snapshot) {
       CACHE_KEY,
       JSON.stringify({
         createdAt: snapshot.createdAt,
-        catalog: sanitizeCatalog(snapshot.catalog),
-        staleGroups: asArray(snapshot.staleGroups),
-        errors: asArray(snapshot.errors)
+        catalog: snapshot.catalog,
+        staleGroups: snapshot.staleGroups,
+        errors: snapshot.errors
       })
     );
   } catch (error) {
     console.warn("Content cache could not be written:", error);
   }
-}
-
-function makeSnapshot(catalog, {
-  status = "supabase",
-  staleGroups = [],
-  errors = [],
-  createdAt = Date.now()
-} = {}) {
-  const safeCatalog = sanitizeCatalog(catalog);
-
-  return {
-    createdAt,
-    catalog: safeCatalog,
-    provenance: buildProvenance(safeCatalog),
-    sourceCounts: {
-      supabase: {
-        lessons: uniqueCount(safeCatalog.lessons),
-        problems: uniqueCount(safeCatalog.problems),
-        exams: uniqueCount(safeCatalog.exams)
-      }
-    },
-    status,
-    staleGroups: [...staleGroups],
-    errors: [...errors]
-  };
 }
 
 async function fetchSupabaseGroup(supabase, table) {
@@ -223,19 +190,10 @@ export function invalidateContentCatalogCache() {
   }
 }
 
-export function getContentItemSources(kind, id) {
-  const safeKind = CATALOG_GROUPS.some((entry) => entry.key === kind) ? kind : "";
-  const safeId = String(id || "").trim();
-  if (!safeKind || !safeId) return [];
-  return [...asArray(memorySnapshot?.provenance?.[safeKind]?.[safeId])];
-}
-
 export function getContentCatalogDiagnostics() {
   const snapshot = memorySnapshot || makeSnapshot(emptyCatalog(), { status: "empty" });
   return {
     totals: catalogTotals(snapshot.catalog),
-    sourceCounts: snapshot.sourceCounts,
-    conflicts: [],
     createdAt: Number(snapshot.createdAt || 0),
     status: snapshot.status,
     staleGroups: [...asArray(snapshot.staleGroups)],
@@ -248,8 +206,7 @@ export async function loadContentCatalog({
   forceRefresh = false
 } = {}) {
   if (forceRefresh) {
-    // Bypass the current in-memory snapshot, but keep the last stored snapshot
-    // available as a safety net if one Supabase table fails during refresh.
+    // Keep stored cache available as a safety net, but bypass memory.
     memorySnapshot = null;
     inFlightLoad = null;
   }
@@ -278,8 +235,8 @@ export async function loadContentCatalog({
       return snapshot.catalog;
     } catch (error) {
       if (staleStored) {
-        memorySnapshot = {
-          ...staleStored,
+        memorySnapshot = makeSnapshot(staleStored.catalog, {
+          createdAt: staleStored.createdAt,
           status: "degraded",
           staleGroups: CATALOG_GROUPS.map(({ key }) => key),
           errors: [{
@@ -287,7 +244,7 @@ export async function loadContentCatalog({
             table: "Supabase",
             message: error?.message || String(error)
           }]
-        };
+        });
         return memorySnapshot.catalog;
       }
 
@@ -298,9 +255,4 @@ export async function loadContentCatalog({
   });
 
   return inFlightLoad;
-}
-
-// Compatibility alias retained for older call sites outside the main bundle.
-export async function loadRemoteContentCatalog(options = {}) {
-  return loadContentCatalog(options);
 }

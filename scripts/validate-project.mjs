@@ -16,7 +16,6 @@ const moduleJsFiles = [
 
 const classicJsFiles = [
   "js/animation-numberline.js",
-  "js/data.js",
   "js/katex-init.js"
 ];
 
@@ -24,21 +23,29 @@ const requiredFiles = [
   "index.html",
   "profile.html",
   "README.md",
-  "data/problems.json",
   "scripts/test-repositories.mjs",
+  ...classicJsFiles,
+  ...moduleJsFiles
+];
+
+const removedLegacyFiles = [
+  "js/data.js",
+  "data/problems.json",
   "scripts/content-tools-lib.mjs",
   "scripts/audit-content.mjs",
-  "scripts/export-content-sql.mjs",
+  "scripts/export-content-sql.mjs"
+];
+
+const runtimeTextFiles = [
+  "index.html",
+  "profile.html",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
 
 const productionTextFiles = [
-  "index.html",
-  "profile.html",
   "README.md",
-  ...classicJsFiles,
-  ...moduleJsFiles
+  ...runtimeTextFiles
 ];
 
 const forbiddenPatterns = [
@@ -52,6 +59,14 @@ const forbiddenPatterns = [
   /Smecherul\.1978/i
 ];
 
+const forbiddenRuntimeReferences = [
+  /(?:^|[\/"'])js\/data\.js(?:$|[?"'])/i,
+  /(?:^|[\/"'])data\/problems\.json(?:$|[?"'])/i,
+  /loadRemoteContentCatalog/,
+  /bundledCatalog\s*:/,
+  /Șterge override/i
+];
+
 let failed = false;
 
 function fail(message) {
@@ -62,6 +77,12 @@ function fail(message) {
 for (const relativePath of requiredFiles) {
   if (!existsSync(resolve(root, relativePath))) {
     fail(`Missing required file: ${relativePath}`);
+  }
+}
+
+for (const relativePath of removedLegacyFiles) {
+  if (existsSync(resolve(root, relativePath))) {
+    fail(`Legacy content file must be removed after Phase 06: ${relativePath}`);
   }
 }
 
@@ -106,12 +127,6 @@ for (const relativePath of moduleJsFiles) {
   }
 }
 
-try {
-  JSON.parse(readFileSync(resolve(root, "data/problems.json"), "utf8"));
-} catch (error) {
-  fail(`Invalid JSON in data/problems.json: ${error.message}`);
-}
-
 for (const relativePath of productionTextFiles) {
   const content = readFileSync(resolve(root, relativePath), "utf8");
   for (const pattern of forbiddenPatterns) {
@@ -121,24 +136,41 @@ for (const relativePath of productionTextFiles) {
   }
 }
 
+for (const relativePath of runtimeTextFiles) {
+  const content = readFileSync(resolve(root, relativePath), "utf8");
+  for (const pattern of forbiddenRuntimeReferences) {
+    if (pattern.test(content)) {
+      fail(`Forbidden legacy runtime reference ${pattern} in ${relativePath}`);
+    }
+  }
+}
+
 const indexHtml = readFileSync(resolve(root, "index.html"), "utf8");
+const profileHtml = readFileSync(resolve(root, "profile.html"), "utf8");
+const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
+const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
+const contentRepositorySource = readFileSync(resolve(root, "js/content-repository.js"), "utf8");
+
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
 }
-
-const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
-const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
 if (!appSource.includes('from "./content-repository.js"')) {
   fail("app.js must use content-repository.js.");
 }
 if (!appSource.includes("loadContentCatalog")) {
-  fail("app.js must load the unified catalog through loadContentCatalog().");
-}
-if (!appSource.includes("getContentItemSources")) {
-  fail("Admin must display Supabase content provenance.");
+  fail("app.js must load the Supabase catalog through loadContentCatalog().");
 }
 if (!appSource.includes('from "./progress-repository.js"')) {
   fail("app.js must use progress-repository.js.");
+}
+if (!appSource.includes('from "./runtime-config.js"')) {
+  fail("app.js must load non-content runtime configuration from runtime-config.js.");
+}
+if (!contentRepositorySource.includes('supabase.from(table).select("*")')) {
+  fail("content-repository.js must read catalog tables from Supabase.");
+}
+if (contentRepositorySource.includes("provenance") || contentRepositorySource.includes("sourceCounts")) {
+  fail("Supabase-only content repository must not keep legacy merge provenance state.");
 }
 if (!appSource.includes("let MH_AUTH_USER = null")) {
   fail("app.js must keep auth state separate from progress-query state.");
@@ -161,39 +193,20 @@ if (/exam_type:\s*document\.getElementById\(["']mh_exam_type/.test(appSource)) {
 if (!/default_hours:\s*Number\(document\.getElementById\(["']mh_exam_hours/.test(appSource)) {
   fail("Admin exam payload must write canonical default_hours.");
 }
-
 if (/function reconcileProgressAfterMutationError[\s\S]{0,500}loadAppProgressFromDb/.test(appSource)) {
   fail("Progress mutation errors must not immediately reload and erase optimistic UI state.");
 }
 if (!appSource.includes("if (terminalEvent) {\n    renderCards();")) {
   fail("Solved problem mutations must refresh problem cards immediately.");
 }
-
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
   fail("Editing a lesson must update the Supabase source of truth via upsert.");
 }
-if (appSource.includes("Șterge override") || appSource.includes("bundledCatalog: BASE_DATA")) {
-  fail("Phase 05 must not keep local-content override semantics at runtime.");
+if (!appSource.includes('const sourceText = "Supabase";')) {
+  fail("Admin must expose Supabase as the single content source.");
 }
-
-const profileHtml = readFileSync(resolve(root, "profile.html"), "utf8");
-if (/src=["']\/js\/data\.js["']/i.test(indexHtml) || /src=["']\/js\/data\.js["']/i.test(profileHtml)) {
-  fail("data.js must remain a backup/seed file and must not be loaded by production pages.");
-}
-if (/fetch\(["']\/data\/problems\.json["']/.test(readFileSync(resolve(root, "js/content-repository.js"), "utf8"))) {
-  fail("problems.json must not be fetched by the runtime content repository.");
-}
-if (!appSource.includes('from "./runtime-config.js"')) {
-  fail("app.js must load non-content runtime configuration from runtime-config.js.");
-}
-
-try {
-  execFileSync(process.execPath, [resolve(root, "scripts/audit-content.mjs")], {
-    cwd: root,
-    stdio: "pipe"
-  });
-} catch (error) {
-  fail(`Content audit failed.\n${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
+if (/src=["']\/?js\/data\.js["']/i.test(indexHtml) || /src=["']\/?js\/data\.js["']/i.test(profileHtml)) {
+  fail("Production pages must not load the removed data.js asset.");
 }
 
 try {
