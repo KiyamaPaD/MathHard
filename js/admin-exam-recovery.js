@@ -12,7 +12,7 @@ function parseJson(value) {
   }
 }
 
-function asExamId(value) {
+function asId(value) {
   const id = String(value || "").trim();
   return id && id.length <= 200 ? id : "";
 }
@@ -20,6 +20,7 @@ function asExamId(value) {
 function inspectExamStorage(storage = globalThis.localStorage) {
   const keysToRemove = new Set();
   const examIds = new Set();
+  const attemptIds = new Set();
   let hasRecoverableState = false;
 
   for (const lockKey of [ACTIVE_EXAM_LOCK_KEY, LEGACY_ACTIVE_EXAM_LOCK_KEY]) {
@@ -29,7 +30,7 @@ function inspectExamStorage(storage = globalThis.localStorage) {
     keysToRemove.add(lockKey);
     hasRecoverableState = true;
     const parsed = parseJson(raw);
-    const examId = asExamId(parsed?.examId);
+    const examId = asId(parsed?.examId);
     if (examId) examIds.add(examId);
   }
 
@@ -44,11 +45,14 @@ function inspectExamStorage(storage = globalThis.localStorage) {
 
     keysToRemove.add(key);
     hasRecoverableState = true;
-    const examId = asExamId(parsed?.examId) || asExamId(key.slice(EXAM_STATE_PREFIX.length));
+    const examId = asId(parsed?.examId) || asId(key.slice(EXAM_STATE_PREFIX.length));
+    const attemptId = asId(parsed?.attemptId);
     if (examId) examIds.add(examId);
+    if (attemptId) attemptIds.add(attemptId);
   }
 
   return {
+    attemptIds: [...attemptIds],
     examIds: [...examIds],
     hasRecoverableState,
     keysToRemove: [...keysToRemove]
@@ -76,6 +80,7 @@ function clearAllExamStorage(storage = globalThis.localStorage) {
 
 export function createAdminExamRecoveryController({
   cancelAttempt,
+  cancelSecureAttempt,
   getLanguage = () => "ro",
   onRecovered = () => {},
   storage = globalThis.localStorage
@@ -148,13 +153,27 @@ export function createAdminExamRecoveryController({
     refresh();
 
     const backendErrors = [];
+    const cancelledExamIds = new Set();
+
+    for (const attemptId of state.attemptIds) {
+      try {
+        const result = await cancelSecureAttempt?.(attemptId);
+        if (!result) backendErrors.push(`attempt:${attemptId}`);
+        if (result?.exam_id) cancelledExamIds.add(String(result.exam_id));
+      } catch (error) {
+        console.warn(`Could not cancel secure exam attempt ${attemptId}:`, error);
+        backendErrors.push(`attempt:${attemptId}`);
+      }
+    }
+
     for (const examId of state.examIds) {
+      if (cancelledExamIds.has(examId)) continue;
       try {
         const result = await cancelAttempt?.(examId);
-        if (!result) backendErrors.push(examId);
+        if (!result) backendErrors.push(`exam:${examId}`);
       } catch (error) {
         console.warn(`Could not cancel stale exam attempt ${examId}:`, error);
-        backendErrors.push(examId);
+        backendErrors.push(`exam:${examId}`);
       }
     }
 
@@ -162,7 +181,12 @@ export function createAdminExamRecoveryController({
     document.body?.classList.remove("exam-locked", "exam-site-locked", "mh-exam-locked");
 
     try {
-      await onRecovered({ backendErrors, examIds: state.examIds, removed });
+      await onRecovered({
+        attemptIds: state.attemptIds,
+        backendErrors,
+        examIds: state.examIds,
+        removed
+      });
     } finally {
       recoveryRunning = false;
       refresh();

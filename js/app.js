@@ -13,6 +13,13 @@ import {
 } from "./progress-repository.js";
 import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
 import { logLearningEvent } from "./secure-evaluation-repository.js";
+import {
+  cancelSecureExamAttempt,
+  getActiveSecureExamAttempt,
+  saveSecureExamAnswer,
+  startSecureExamAttempt,
+  submitSecureExamAttempt
+} from "./secure-exam-repository.js";
 import { createSecureProblemController } from "./secure-problem-controller.js";
 import {
   getChapterLabel,
@@ -3252,7 +3259,6 @@ console.log("APP.JS LOADED");
 
   // === Aliases pt. compatibilitate===
   const EXAMS = DATA.exams;            
-  const EXAM_POINTS = DATA.exam_points || {};
   const TIPS = DATA.tips || {
     title_ro: "Tips",
     title_en: "Tips",
@@ -3260,111 +3266,10 @@ console.log("APP.JS LOADED");
     body_en: ""
   };
 
-  function examHasStructuredItems(exam){
-    return Array.isArray(exam?.items) && exam.items.length > 0;
-  }
-
   function getExamRenderableItems(exam){
-    if (examHasStructuredItems(exam)) {
-      return exam.items;
-    }
-
-    return (exam.problems || []).map(pid => {
-      const P = DATA.problems.find(pp => pp.id === pid);
-      if (!P) return null;
-
-      return {
-        id: P.id,
-        type: "open",
-        prompt_ro: P.statement_ro || "",
-        prompt_en: P.statement_en || "",
-        answer: P.answer || "",
-        points: EXAM_POINTS[P.id] || 0,
-        source_problem_id: P.id,
-        difficulty: P.difficulty ?? 0
-      };
-    }).filter(Boolean);
-  }
-
-  function getExamScoringProfile(exam){
-    return String(exam?.scoring_profile || "default_exact_v1").trim();
-  }
-
-  function scoreExamMcqItem(item, selectedLabels, exam){
-    const p = Number(item?.points || 0);
-    if (p <= 0) return 0;
-
-    const options = Array.isArray(item?.options) ? item.options : [];
-    const selected = new Set((selectedLabels || []).map(x => String(x)));
-
-    const correctLabels = options
-      .filter(opt => opt.is_correct)
-      .map(opt => String(opt.label));
-
-    const wrongLabels = options
-      .filter(opt => !opt.is_correct)
-      .map(opt => String(opt.label));
-
-    const profile = getExamScoringProfile(exam);
-
-    // UTCN style
-    if (profile === "utcn_single_v1") {
-      if (correctLabels.length !== 1) return 0;
-      if (selected.size !== 1) return 0;
-      return selected.has(correctLabels[0]) ? p : 0;
-    }
-
-    // UBB style
-    if (profile === "ubb_multi_v1") {
-      const t = correctLabels.length;
-      if (t <= 0) return 0;
-
- 
-      if (selected.size === options.length && options.length > 0) {
-        return 0;
-      }
-
-      let score = 0;
-
-      for (const label of correctLabels) {
-        if (selected.has(label)) {
-          score += p / t;
-        }
-      }
-
-      for (const label of wrongLabels) {
-        if (selected.has(label)) {
-          score += (-0.66) * (p / t);
-        }
-      }
-
-      score = Math.max(0, Math.min(p, score));
-      return Number(score.toFixed(4));
-    }
-
-    
-    const correctSet = new Set(correctLabels);
-
-    if (selected.size !== correctSet.size) return 0;
-    for (const label of correctSet) {
-      if (!selected.has(label)) return 0;
-    }
-
-    return p;
-  }
-
-  function scoreStructuredExamItem(item, exam, result){
-    if (!item || !result) return 0;
-
-    if (item.type === "open") {
-      return result.correct ? Number(item.points || 0) : 0;
-    }
-
-    if (item.type === "mcq") {
-      return scoreExamMcqItem(item, result.selected || [], exam);
-    }
-
-    return 0;
+    if (Array.isArray(exam?.runtime_items)) return exam.runtime_items;
+    if (Array.isArray(exam?.items)) return exam.items;
+    return [];
   }
 
   function getExamItemStorageKey(examId){
@@ -3387,6 +3292,26 @@ console.log("APP.JS LOADED");
       updated_at: Date.now()
     };
     localStorage.setItem(getExamItemStorageKey(examId), JSON.stringify(all));
+    return all[itemId];
+  }
+
+  function hydrateExamItemResults(examId, answers){
+    const normalized = {};
+    const rows = Array.isArray(answers)
+      ? answers
+      : Object.entries(answers || {}).map(([item_id, answer]) => ({ item_id, answer }));
+
+    for (const row of rows) {
+      const itemId = String(row?.item_id || row?.itemId || "").trim();
+      if (!itemId) continue;
+      normalized[itemId] = {
+        ...(row?.answer && typeof row.answer === "object" ? row.answer : {}),
+        saved_at: row?.saved_at || row?.updated_at || null
+      };
+    }
+
+    localStorage.setItem(getExamItemStorageKey(examId), JSON.stringify(normalized));
+    return normalized;
   }
 
   function clearExamItemResults(examId){
@@ -3429,348 +3354,221 @@ console.log("APP.JS LOADED");
     `;
   }
 
-  function isExactMcqSelectionCorrect(item, selectedLabels){
-    const selected = new Set((selectedLabels || []).map(String));
-    const correct = new Set(
-      (item.options || [])
-        .filter(opt => opt.is_correct)
-        .map(opt => String(opt.label))
-    );
-
-    if (selected.size !== correct.size) return false;
-
-    for (const label of correct){
-      if (!selected.has(label)) return false;
-    }
-
-    return true;
-  }
-
-  function buildStructuredExamOpenItemBlock(exam, item, index, locked, onChange){
-    const wrap = document.createElement("div");
-    wrap.className = "problem";
-
-    const saved = getExamItemResults(exam.id)[item.id] || {};
-    const title = getExamItemTitle(item, index);
-    const prompt = getExamItemPrompt(item);
-
-    wrap.innerHTML = `
-      <div class="title" style="font-weight:800;margin-bottom:6px">
-        ✍️ ${esc(title)}
-      </div>
-
-      <div class="legend" style="margin-bottom:8px;">
-        ${LANG === "ro" ? "Puncte" : "Points"}: <b>${Number(item.points || 0)}</b>
-      </div>
-
-      ${renderExamItemImage(item)}
-
-      <div style="margin:8px 0">${prompt}</div>
-
-      <div class="checkrow">
-        <input
-          id="exam-open-${exam.id}-${item.id}"
-          autocomplete="off"
-          placeholder="${LANG === 'ro' ? 'Răspuns…' : 'Answer…'}"
-          value="${esc(saved.answer_text || "")}"
-          ${locked ? "disabled" : ""}
-        >
-        <button
-          class="btn"
-          id="exam-open-btn-${exam.id}-${item.id}"
-          ${locked ? "disabled" : ""}
-        >
-          ✅ ${LANG === "ro" ? "Verifică" : "Check"}
-        </button>
-        <div id="exam-open-res-${exam.id}-${item.id}"></div>
-      </div>
-
-      <div class="mh-live-preview-wrap">
-        <div class="legend">${LANG === "ro" ? "Preview live" : "Live preview"}</div>
-        <div class="mh-live-preview-box" id="exam-open-preview-${exam.id}-${item.id}"></div>
-      </div>
-
-      <div class="mh-math-input-host" id="exam-open-tools-${exam.id}-${item.id}"></div>
-
-    `;
-
-    const input = wrap.querySelector(`#exam-open-${exam.id}-${item.id}`);
-    const btn = wrap.querySelector(`#exam-open-btn-${exam.id}-${item.id}`);
-    const res = wrap.querySelector(`#exam-open-res-${exam.id}-${item.id}`);
-
-    const preview = wrap.querySelector(`#exam-open-preview-${exam.id}-${item.id}`);
-    mhBindMathInputEnhancements(input, preview);
-
-    const tools = wrap.querySelector(`#exam-open-tools-${exam.id}-${item.id}`);
-    mhAttachMathToolbar(input, tools);
-
-    if (saved.correct) {
-      if (res) {
-        res.innerHTML = `<span class="ok">✅ ${LANG === "ro" ? "Corect" : "Correct"}</span>`;
-      }
-      if (input) input.disabled = true;
-      if (btn) btn.disabled = true;
-    }
-
-    const doCheck = () => {
-      const raw = (input?.value || "").trim();
-      if (!raw) {
-        if (res) {
-          res.innerHTML = `<span class="bad">${LANG === "ro" ? "Completează răspunsul." : "Type an answer."}</span>`;
-        }
-        return;
-      }
-
-      const result = SmartAnswer.check({
-        user: raw,
-        expected: item.answer,
-        problem: { answer: item.answer, statement_ro: item.prompt_ro, statement_en: item.prompt_en }
-      });
-
-      setExamItemResult(exam.id, item.id, {
-        type: "open",
-        answer_text: raw,
-        correct: !!result.ok
-      });
-
-      if (result.ok) {
-        if (res) {
-          res.innerHTML = `<span class="ok">✅ ${LANG === "ro" ? "Corect" : "Correct"}</span>`;
-        }
-        if (input) input.disabled = true;
-        if (btn) btn.disabled = true;
-      } else {
-        if (res) {
-          res.innerHTML = `<span class="bad">❌ ${result.message || (LANG === "ro" ? "Greșit" : "Wrong")}</span>`;
-        }
-      }
-
-      if (typeof onChange === "function") onChange();
-    };
-
-    btn?.addEventListener("click", doCheck);
-    input?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        doCheck();
-      }
-    });
-
-    return wrap;
-  }
-
   function mhFormatExamScoreValue(value) {
     const n = Number(value || 0);
     if (!Number.isFinite(n)) return "0";
     return Number.isInteger(n) ? String(n) : n.toFixed(2);
   }
 
-  function getExamMcqSelectionHint(item) {
-    const multiText = item.allow_multiple
-      ? (LANG === "ro" ? "poți bifa mai multe variante" : "you may select multiple options")
-      : (LANG === "ro" ? "poți bifa o singură variantă" : "you may select a single option");
-
-    const noneText = item.allow_none
-      ? (LANG === "ro" ? " • este permis și cazul fără nicio variantă bifată" : " • no selection is also allowed")
-      : "";
-
-    return multiText + noneText;
+  function getExamFinalItemResult(exam, itemId) {
+    const rows = exam?.secure_result?.item_results;
+    if (!Array.isArray(rows)) return null;
+    return rows.find((row) => String(row?.item_id || "") === String(itemId || "")) || null;
   }
 
-  function getExamMcqFeedbackHtml(exam, item, selected, score) {
-    const full = Number(item?.points || 0);
-    const exact = isExactMcqSelectionCorrect(item, selected);
-
-    const fmtScore = mhFormatExamScoreValue(score);
-    const fmtFull = mhFormatExamScoreValue(full);
-
-    if (exact && score >= full) {
-      return `
-        <span class="ok">
-          ✅ ${LANG === "ro" ? "Răspuns înregistrat. Punctaj complet" : "Answer locked. Full score"}:
-          ${fmtScore}/${fmtFull}
-        </span>
-      `;
-    }
-
-    if (score > 0) {
-      return `
-        <span class="legend">
-          🟨 ${LANG === "ro" ? "Răspuns înregistrat. Punctaj obținut" : "Answer locked. Score obtained"}:
-          ${fmtScore}/${fmtFull}
-        </span>
-      `;
-    }
-
-    return `
-      <span class="bad">
-        ❌ ${LANG === "ro" ? "Răspuns înregistrat. Punctaj" : "Answer locked. Score"}:
-        0/${fmtFull}
-      </span>
-    `;
+  function renderSecureItemResult(exam, item) {
+    const result = getExamFinalItemResult(exam, item.id);
+    if (!result) return "";
+    const score = mhFormatExamScoreValue(result.score);
+    const max = mhFormatExamScoreValue(result.max_points);
+    const icon = result.correct ? "✅" : (result.answered ? "❌" : "⬜");
+    const label = result.correct
+      ? (LANG === "ro" ? "Corect" : "Correct")
+      : result.answered
+        ? (LANG === "ro" ? "Incorect" : "Incorrect")
+        : (LANG === "ro" ? "Fără răspuns" : "Unanswered");
+    return `<div class="legend" style="margin-top:8px;"><b>${icon} ${label}: ${score}/${max}</b></div>`;
   }
 
-  function buildStructuredExamMcqBlock(exam, item, index, locked, onChange){
+  function buildStructuredExamOpenItemBlock(exam, item, index, locked, onChange, onSave){
     const wrap = document.createElement("div");
     wrap.className = "problem";
 
     const saved = getExamItemResults(exam.id)[item.id] || {};
     const title = getExamItemTitle(item, index);
     const prompt = getExamItemPrompt(item);
+    const submitted = String(saved.answer_text || "");
 
+    wrap.innerHTML = `
+      <div class="title" style="font-weight:800;margin-bottom:6px">✍️ ${esc(title)}</div>
+      <div class="legend" style="margin-bottom:8px;">${LANG === "ro" ? "Puncte" : "Points"}: <b>${Number(item.points || 0)}</b></div>
+      ${renderExamItemImage(item)}
+      <div style="margin:8px 0">${prompt}</div>
+      <div class="checkrow">
+        <input id="exam-open-${exam.id}-${item.id}" autocomplete="off" placeholder="${LANG === "ro" ? "Răspuns…" : "Answer…"}" value="${esc(submitted)}" ${locked ? "disabled" : ""}>
+        <button class="btn" id="exam-open-btn-${exam.id}-${item.id}" ${locked ? "disabled" : ""}>💾 ${LANG === "ro" ? "Salvează" : "Save"}</button>
+        <div id="exam-open-res-${exam.id}-${item.id}"></div>
+      </div>
+      <div class="mh-live-preview-wrap">
+        <div class="legend">${LANG === "ro" ? "Preview live" : "Live preview"}</div>
+        <div class="mh-live-preview-box" id="exam-open-preview-${exam.id}-${item.id}"></div>
+      </div>
+      <div class="mh-math-input-host" id="exam-open-tools-${exam.id}-${item.id}"></div>
+      ${renderSecureItemResult(exam, item)}
+    `;
+
+    const input = wrap.querySelector(`#exam-open-${exam.id}-${item.id}`);
+    const btn = wrap.querySelector(`#exam-open-btn-${exam.id}-${item.id}`);
+    const res = wrap.querySelector(`#exam-open-res-${exam.id}-${item.id}`);
+    const preview = wrap.querySelector(`#exam-open-preview-${exam.id}-${item.id}`);
+    mhBindMathInputEnhancements(input, preview);
+    mhAttachMathToolbar(input, wrap.querySelector(`#exam-open-tools-${exam.id}-${item.id}`));
+
+    if (saved.saved_at && res && !exam?.secure_result) {
+      res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+    }
+
+    let saveTimer = null;
+    let saving = false;
+
+    async function saveNow() {
+      if (locked || saving) return;
+      const raw = String(input?.value || "").trim();
+      setExamItemResult(exam.id, item.id, { type: "open", answer_text: raw });
+      if (typeof onChange === "function") onChange();
+      saving = true;
+      if (btn) btn.disabled = true;
+      if (res) res.innerHTML = `<span class="legend">${LANG === "ro" ? "Se salvează…" : "Saving…"}</span>`;
+      try {
+        const row = await onSave(item.id, { type: "open", answer_text: raw });
+        setExamItemResult(exam.id, item.id, { type: "open", answer_text: raw, saved_at: row?.saved_at || new Date().toISOString() });
+        if (res) res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+      } catch (error) {
+        console.error("Secure exam answer save failed:", error);
+        if (res) res.innerHTML = `<span class="bad">${LANG === "ro" ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Retry."}</span>`;
+      } finally {
+        saving = false;
+        if (btn && !locked) btn.disabled = false;
+      }
+    }
+
+    btn?.addEventListener("click", () => void saveNow());
+    input?.addEventListener("input", () => {
+      setExamItemResult(exam.id, item.id, { type: "open", answer_text: input.value });
+      if (typeof onChange === "function") onChange();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => void saveNow(), 900);
+    });
+    input?.addEventListener("blur", () => {
+      clearTimeout(saveTimer);
+      void saveNow();
+    });
+
+    return wrap;
+  }
+
+  function getExamMcqSelectionHint(item) {
+    const multiText = item.allow_multiple
+      ? (LANG === "ro" ? "poți bifa mai multe variante" : "you may select multiple options")
+      : (LANG === "ro" ? "poți bifa o singură variantă" : "you may select a single option");
+    const noneText = item.allow_none
+      ? (LANG === "ro" ? " • este permis și cazul fără nicio variantă bifată" : " • no selection is also allowed")
+      : "";
+    return multiText + noneText;
+  }
+
+  function buildStructuredExamMcqBlock(exam, item, index, locked, onChange, onSave){
+    const wrap = document.createElement("div");
+    wrap.className = "problem";
+
+    const saved = getExamItemResults(exam.id)[item.id] || {};
+    const title = getExamItemTitle(item, index);
+    const prompt = getExamItemPrompt(item);
     const isMulti = !!item.allow_multiple;
     const inputType = isMulti ? "checkbox" : "radio";
     const inputName = `exam-mcq-${exam.id}-${item.id}`;
 
-    const selectionHint = getExamMcqSelectionHint(item);
-
     wrap.innerHTML = `
-      <div class="title" style="font-weight:800;margin-bottom:6px">
-        📝 ${esc(title)}
-      </div>
-
-      <div class="legend" style="margin-bottom:8px;">
-        ${LANG === "ro" ? "Puncte" : "Points"}: <b>${Number(item.points || 0)}</b>
-        • ${isMulti
-          ? (LANG === "ro" ? "răspuns multiplu" : "multiple answers")
-          : (LANG === "ro" ? "un singur răspuns" : "single answer")}
-      </div>
-
-      <div class="legend" style="margin-bottom:10px;">
-        ${selectionHint}
-      </div>
-
+      <div class="title" style="font-weight:800;margin-bottom:6px">📝 ${esc(title)}</div>
+      <div class="legend" style="margin-bottom:8px;">${LANG === "ro" ? "Puncte" : "Points"}: <b>${Number(item.points || 0)}</b> • ${isMulti ? (LANG === "ro" ? "răspuns multiplu" : "multiple answers") : (LANG === "ro" ? "un singur răspuns" : "single answer")}</div>
+      <div class="legend" style="margin-bottom:10px;">${getExamMcqSelectionHint(item)}</div>
       ${renderExamItemImage(item)}
-
       <div style="margin:8px 0">${prompt}</div>
-
       <div class="qOptions" id="exam-mcq-options-${exam.id}-${item.id}">
         ${(item.options || []).map((opt) => `
           <label class="qOption">
-            <input
-              type="${inputType}"
-              name="${inputName}"
-              value="${esc(opt.label)}"
-              ${locked ? "disabled" : ""}
-            >
-            <span>
-              <b>(${esc(opt.label)})</b>
-              ${esc(LANG === "ro" ? (opt.text_ro || opt.text_en) : (opt.text_en || opt.text_ro))}
-            </span>
+            <input type="${inputType}" name="${inputName}" value="${esc(opt.label)}" ${locked ? "disabled" : ""}>
+            <span><b>(${esc(opt.label)})</b> ${esc(LANG === "ro" ? (opt.text_ro || opt.text_en) : (opt.text_en || opt.text_ro))}</span>
           </label>
         `).join("")}
       </div>
-
       <div class="checkrow" style="margin-top:10px;">
-        <button
-          class="btn"
-          id="exam-mcq-btn-${exam.id}-${item.id}"
-          ${locked ? "disabled" : ""}
-        >
-          ✅ ${LANG === "ro" ? "Trimite răspunsul" : "Submit answer"}
-        </button>
+        <button class="btn" id="exam-mcq-btn-${exam.id}-${item.id}" ${locked ? "disabled" : ""}>💾 ${LANG === "ro" ? "Salvează selecția" : "Save selection"}</button>
         <div id="exam-mcq-res-${exam.id}-${item.id}"></div>
       </div>
+      ${renderSecureItemResult(exam, item)}
     `;
 
     const inputs = [...wrap.querySelectorAll(`input[name="${inputName}"]`)];
     const btn = wrap.querySelector(`#exam-mcq-btn-${exam.id}-${item.id}`);
     const res = wrap.querySelector(`#exam-mcq-res-${exam.id}-${item.id}`);
+    const savedSelected = Array.isArray(saved.selected) ? saved.selected.map(String) : [];
+    inputs.forEach((input) => { input.checked = savedSelected.includes(input.value); });
 
-    if (Array.isArray(saved.selected)) {
-      inputs.forEach(input => {
-        input.checked = saved.selected.includes(input.value);
-      });
+    if (saved.saved_at && res && !exam?.secure_result) {
+      res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
     }
 
-    const wasAlreadyLocked = !!saved.locked || !!saved.correct;
+    let saveTimer = null;
+    let saving = false;
 
-    if (wasAlreadyLocked) {
-      inputs.forEach(input => input.disabled = true);
-      if (btn) btn.disabled = true;
-
-      const restoredSelected = Array.isArray(saved.selected) ? saved.selected : [];
-      const restoredScore = Number(saved.score ?? scoreExamMcqItem(item, restoredSelected, exam) ?? 0);
-
-      if (res) {
-        res.innerHTML = getExamMcqFeedbackHtml(exam, item, restoredSelected, restoredScore);
-      }
+    function selectedValues() {
+      return inputs.filter((input) => input.checked).map((input) => input.value);
     }
 
-    const doCheck = () => {
-      const selected = inputs
-        .filter(input => input.checked)
-        .map(input => input.value);
-
+    async function saveNow() {
+      if (locked || saving) return;
+      const selected = selectedValues();
       if (!selected.length && !item.allow_none) {
-        if (res) {
-          res.innerHTML = `
-            <span class="bad">
-              ${LANG === "ro"
-                ? "Selectează cel puțin o variantă."
-                : "Select at least one option."}
-            </span>
-          `;
-        }
+        if (res) res.innerHTML = `<span class="bad">${LANG === "ro" ? "Selectează cel puțin o variantă." : "Select at least one option."}</span>`;
         return;
       }
-
-      const score = scoreExamMcqItem(item, selected, exam);
-      const exact = isExactMcqSelectionCorrect(item, selected);
-
-      setExamItemResult(exam.id, item.id, {
-        type: "mcq",
-        selected,
-        correct: exact,
-        exact_correct: exact,
-        score,
-        locked: true
-      });
-
-      inputs.forEach(input => input.disabled = true);
-      if (btn) btn.disabled = true;
-
-      if (res) {
-        res.innerHTML = getExamMcqFeedbackHtml(exam, item, selected, score);
-      }
-
+      setExamItemResult(exam.id, item.id, { type: "mcq", selected });
       if (typeof onChange === "function") onChange();
-    };
+      saving = true;
+      if (btn) btn.disabled = true;
+      if (res) res.innerHTML = `<span class="legend">${LANG === "ro" ? "Se salvează…" : "Saving…"}</span>`;
+      try {
+        const row = await onSave(item.id, { type: "mcq", selected });
+        setExamItemResult(exam.id, item.id, { type: "mcq", selected, saved_at: row?.saved_at || new Date().toISOString() });
+        if (res) res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+      } catch (error) {
+        console.error("Secure exam selection save failed:", error);
+        if (res) res.innerHTML = `<span class="bad">${LANG === "ro" ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Retry."}</span>`;
+      } finally {
+        saving = false;
+        if (btn && !locked) btn.disabled = false;
+      }
+    }
 
-    btn?.addEventListener("click", doCheck);
+    btn?.addEventListener("click", () => void saveNow());
+    inputs.forEach((input) => input.addEventListener("change", () => {
+      setExamItemResult(exam.id, item.id, { type: "mcq", selected: selectedValues() });
+      if (typeof onChange === "function") onChange();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => void saveNow(), 450);
+    }));
 
     return wrap;
   }
 
-  function buildStructuredExamItemBlock(exam, item, index, locked, onChange){
+  function buildStructuredExamItemBlock(exam, item, index, locked, onChange, onSave){
     if (item.type === "mcq") {
-      return buildStructuredExamMcqBlock(exam, item, index, locked, onChange);
+      return buildStructuredExamMcqBlock(exam, item, index, locked, onChange, onSave);
     }
-
-    return buildStructuredExamOpenItemBlock(exam, item, index, locked, onChange);
+    return buildStructuredExamOpenItemBlock(exam, item, index, locked, onChange, onSave);
   }
 
-  function computeExamScore(exam){
+  function computeExamAnsweredCount(exam){
     const items = getExamRenderableItems(exam);
-
-    if (examHasStructuredItems(exam)) {
-      const results = getExamItemResults(exam.id);
-
-      return items.reduce((sum, item) => {
-        return sum + scoreStructuredExamItem(item, exam, results[item.id]);
-      }, 0);
-    }
-
-    // fallback legacy: examene vechi bazate pe problems[]
+    const results = getExamItemResults(exam.id);
     return items.reduce((sum, item) => {
-      const pid = item.source_problem_id || item.id;
-      return sum + (Number(item.points || 0) * (solvedSet.has(pid) ? 1 : 0));
+      const row = results[item.id] || {};
+      const answered = item.type === "mcq"
+        ? Array.isArray(row.selected) && (row.selected.length > 0 || item.allow_none)
+        : String(row.answer_text || "").trim().length > 0;
+      return sum + (answered ? 1 : 0);
     }, 0);
-  }
-
-  function computeExamTotal(exam){
-    const items = getExamRenderableItems(exam);
-    return items.reduce((sum, item) => sum + Number(item.points || 0), 0);
   }
 
   /* Persistent exam session state */
@@ -3820,6 +3618,33 @@ console.log("APP.JS LOADED");
 
     EXAM_LOCK_RESUME_DONE = true;
     openExam(exam);
+  }
+
+  async function syncSecureExamLockFromServer() {
+    if (!MH_AUTH_USER?.id) return null;
+
+    try {
+      const payload = await getActiveSecureExamAttempt(supabase, null, LANG);
+      if (!payload?.attempt_id || payload?.status !== "active") return null;
+
+      const endsAt = Date.parse(payload.ends_at || "");
+      if (!Number.isFinite(endsAt) || endsAt <= 0) return payload;
+
+      setExamState(payload.exam_id, {
+        attemptId: payload.attempt_id,
+        endsAt,
+        attemptRecorded: true,
+        startedByAdmin: Boolean(payload.started_by_admin),
+        startedAt: Date.parse(payload.started_at || "") || Date.now()
+      });
+      setActiveExamLock({ examId: payload.exam_id, endsAt });
+      refreshExamLockUi();
+      adminExamRecoveryController?.refresh();
+      return payload;
+    } catch (error) {
+      console.warn("Could not synchronize secure exam lock:", error);
+      return null;
+    }
   }
 
   /* ===== Olimpiadă — detecție & nivel ===== */
@@ -4070,6 +3895,7 @@ console.log("APP.JS LOADED");
 
   adminExamRecoveryController = createAdminExamRecoveryController({
     cancelAttempt: cancelExamAttemptSafe,
+    cancelSecureAttempt: (attemptId) => cancelSecureExamAttempt(supabase, attemptId),
     getLanguage: () => LANG,
     onRecovered: async () => {
       refreshExamLockUi();
@@ -5312,16 +5138,17 @@ console.log("APP.JS LOADED");
       ? (item.title_ro || item.title_en || "Examen")
       : (item.title_en || item.title_ro || "Exam");
 
-    const total = computeExamTotal(item);
-    const got = computeExamScore(item);
-    const passed = got >= PASS_THRESHOLD;
+    const total = Number(item.total_points || 0);
+    const itemCount = Number(item.item_count || 0);
+    const passed = examsPassedSet.has(item.id);
 
     div.innerHTML = `
       <div class="title">📑 ${esc(title)}</div>
       <div class="meta">
         <span class="tag">🗓 ${item.year || ""}</span>
         <span class="tag">🏷 ${item.type || ""}</span>
-        <span class="tag">${LANG==="ro" ? "Punctaj" : "Score"}: ${got}/${total}</span>
+        <span class="tag">🧩 ${itemCount} ${LANG === "ro" ? "itemi" : "items"}</span>
+        ${total > 0 ? `<span class="tag">🏁 ${LANG === "ro" ? "Maxim" : "Maximum"}: ${mhFormatExamScoreValue(total)}</span>` : ""}
         ${passed ? `<span class="tag">🏆 ${LANG==="ro" ? "Promovat" : "Passed"}</span>` : ""}
       </div>
     `;
@@ -6528,13 +6355,6 @@ console.log("APP.JS LOADED");
   let examTimer=null;
 
 function openExam(exam){
-
-  console.log("OPEN EXAM DEBUG", {
-    requestedExamId: exam?.id,
-    activeLock: getActiveExamLock(),
-    isOtherLocked: isOtherExamLocked(exam?.id)
-  });
-
   if (isGuestContentLocked()) {
     showGuestContentMessage();
     return;
@@ -6553,21 +6373,28 @@ function openExam(exam){
     { language: LANG }
   ).catch((error) => console.warn("exam_opened event failed:", error));
 
-  const title = (LANG === 'ro' ? exam.title_ro : exam.title_en) || exam.title_ro || exam.title_en || exam.id;
-  const totalPts = computeExamTotal(exam) || 100;
+  const title = (LANG === "ro" ? exam.title_ro : exam.title_en) || exam.title_ro || exam.title_en || exam.id;
+  let runtimeExam = {
+    ...exam,
+    runtime_items: [],
+    secure_result: null
+  };
+  let activeAttempt = null;
+  let examTimer = null;
+  let examFinished = false;
+  let adminCancelRenderEpoch = 0;
+  let actionRunning = false;
 
   document.getElementById("viewTitle").textContent = title;
-  document.getElementById("viewMeta").textContent = `🗓 ${exam.year} • ${exam.type} • 🏁 ${computeExamScore(exam)}/${totalPts}`;
+  document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""}`;
 
   const content = document.getElementById("viewContent");
   content.innerHTML = "";
 
-  const items = getExamRenderableItems(exam);
-
   const top = document.createElement("div");
   top.className = "examTop";
   top.innerHTML = `
-    <span class="examBadge">⏱ ${LANG === 'ro' ? 'Alege timpul' : 'Choose time'}</span>
+    <span class="examBadge">⏱ ${LANG === "ro" ? "Alege timpul" : "Choose time"}</span>
     <select class="select" id="examHours">
       <option value="1">1h</option>
       <option value="2">2h</option>
@@ -6575,137 +6402,49 @@ function openExam(exam){
       <option value="4">4h</option>
       <option value="5">5h</option>
     </select>
-
-    <button class="btn" id="startExam">🚀 ${LANG === 'ro' ? 'Start' : 'Start'}</button>
+    <button class="btn" id="startExam">🚀 Start</button>
+    <button class="btn" id="submitSecureExam" style="display:none;border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.14)">📨 ${LANG === "ro" ? "Predă examenul" : "Submit exam"}</button>
     <span class="examBadge examTimer" id="examLeft" style="display:none">--:--</span>
-
     <div class="progressRow">
-      <span class="legend">Progres către prag (${PASS_THRESHOLD}p):</span>
+      <span class="legend">${LANG === "ro" ? "Răspunsuri salvate" : "Saved answers"}:</span>
       <div class="progressBar"><i id="examBar"></i></div>
-      <span id="examProg" class="legend">0/${PASS_THRESHOLD}</span>
+      <span id="examProg" class="legend">0/${Number(exam.item_count || 0)}</span>
     </div>
-
-    <div class="legend">
-      ${(LANG === "ro" ? "Itemi examen" : "Exam items")}: <b>${items.length}</b>
+    <div class="legend" id="secureExamMeta">
+      ${LANG === "ro" ? "Itemi examen" : "Exam items"}: <b>${Number(exam.item_count || 0)}</b>
+      ${Number(exam.total_points || 0) > 0 ? `• ${LANG === "ro" ? "Punctaj maxim" : "Maximum score"}: <b>${mhFormatExamScoreValue(exam.total_points)}</b>` : ""}
       ${exam.credit_html ? `• ${exam.credit_html}` : ""}
     </div>
   `;
   content.appendChild(top);
 
+  const statusBox = document.createElement("div");
+  statusBox.className = "legend";
+  statusBox.style.margin = "12px 0";
+  content.appendChild(statusBox);
 
   const list = document.createElement("div");
   content.appendChild(list);
-
   setLessonOnlyActionsVisible(false);
 
-  const hoursSel = document.getElementById("examHours");
-  const startBtn = document.getElementById("startExam");
-  const leftEl = document.getElementById("examLeft");
+  const hoursSel = top.querySelector("#examHours");
+  const startBtn = top.querySelector("#startExam");
+  const submitBtn = top.querySelector("#submitSecureExam");
+  const leftEl = top.querySelector("#examLeft");
+  const prog = top.querySelector("#examProg");
+  const bar = top.querySelector("#examBar");
+  const meta = top.querySelector("#secureExamMeta");
 
-  let examFinished = false;
-  let adminCancelRenderEpoch = 0;
+  hoursSel.value = String(exam.defaultHours || 2);
 
-  async function renderAdminCancelButton(sessionState = getExamState(exam.id)) {
-    const renderEpoch = ++adminCancelRenderEpoch;
-    top.querySelector(".admin-exam-cancel-wrap")?.remove();
-
-    if (!sessionState?.startedByAdmin) return;
-    if (!isSameExamCurrentlyLocked(exam.id)) return;
-
-    const activeUser = await getVerifiedActiveUser();
-    if (renderEpoch !== adminCancelRenderEpoch) return;
-    if (!activeUser?.id) return;
-
-    const isAdmin = await isCurrentUserAdmin(activeUser);
-    if (renderEpoch !== adminCancelRenderEpoch || !isAdmin) return;
-
-    const wrap = document.createElement("div");
-    wrap.className = "admin-exam-cancel-wrap";
-    wrap.style.display = "flex";
-    wrap.style.alignItems = "center";
-    wrap.style.gap = "8px";
-    wrap.style.flexWrap = "wrap";
-
-    const button = document.createElement("button");
-    button.className = "btn small";
-    button.type = "button";
-    button.textContent = LANG === "ro"
-      ? "🛑 Anulează examenul"
-      : "🛑 Cancel exam";
-    button.style.borderColor = "rgba(239,68,68,.55)";
-    button.style.background = "rgba(239,68,68,.14)";
-
-    button.addEventListener("click", async () => {
-      const currentState = getExamState(exam.id);
-      if (!currentState?.startedByAdmin || !isSameExamCurrentlyLocked(exam.id)) {
-        wrap.remove();
-        return;
-      }
-
-      const confirmed = confirm(
-        LANG === "ro"
-          ? "Anulezi examenul de test? Cronometrul se oprește, răspunsurile sesiunii se șterg, iar tentativa nu va fi păstrată."
-          : "Cancel this test exam? The timer will stop, session answers will be cleared, and the attempt will not be kept."
-      );
-      if (!confirmed) return;
-
-      button.disabled = true;
-      button.textContent = LANG === "ro" ? "Se anulează…" : "Cancelling…";
-
-      const previousFinishedState = examFinished;
-      examFinished = true;
-
-      if (currentState.attemptRecorded) {
-        const cancelledRow = await cancelExamAttemptSafe(exam.id);
-        if (!cancelledRow) {
-          examFinished = previousFinishedState;
-          button.disabled = false;
-          button.textContent = LANG === "ro"
-            ? "🛑 Anulează examenul"
-            : "🛑 Cancel exam";
-          alert(
-            LANG === "ro"
-              ? "Tentativa nu a putut fi anulată în Supabase. Examenul a rămas activ ca să nu stricăm statisticile."
-              : "The attempt could not be cancelled in Supabase. The exam remains active to protect your statistics."
-          );
-          return;
-        }
-      }
-
-      if (examTimer) {
-        clearInterval(examTimer);
-        examTimer = null;
-      }
-
-      clearStoredExamSession(exam.id);
-      setLocked(true);
-      if (examHasStructuredItems(exam)) {
-        clearExamItemResults(exam.id);
-      }
-      refreshExamLockUi();
-    adminExamRecoveryController?.refresh();
-
-      if (leftEl) {
-        leftEl.style.display = "inline-block";
-        leftEl.textContent = LANG === "ro"
-          ? "🛑 Examen anulat de admin"
-          : "🛑 Exam cancelled by admin";
-      }
-
-      wrap.remove();
-      renderCards();
-      drawFilterBar();
-      document.getElementById("drawer")?.classList.remove("open");
-      selectTab("exams");
-    });
-
-    wrap.appendChild(button);
-    top.appendChild(wrap);
+  function setStatus(message, kind = "legend") {
+    statusBox.className = kind;
+    statusBox.textContent = message || "";
   }
 
   function setLocked(lock){
-    list.querySelectorAll("input, button, select, textarea").forEach(el => {
-      el.disabled = !!lock;
+    list.querySelectorAll("input, button, select, textarea").forEach((element) => {
+      element.disabled = Boolean(lock);
     });
   }
 
@@ -6715,222 +6454,326 @@ function openExam(exam){
         <div class="title">🔒 ${LANG === "ro" ? "Examen pregătit" : "Exam ready"}</div>
         <div class="legend" style="margin-top:8px;">
           ${LANG === "ro"
-            ? "Itemii examenului sunt ascunși până când apeși Start."
-            : "Exam items remain hidden until you press Start."}
+            ? "Itemii și cheile de corectare nu sunt trimiși în browser înainte de Start."
+            : "Items and grading keys are not sent to the browser before Start."}
         </div>
       </div>
     `;
   }
 
+  async function persistAnswer(itemId, answer) {
+    if (!activeAttempt?.attempt_id) throw new Error("No active secure exam attempt.");
+    return saveSecureExamAnswer(
+      supabase,
+      activeAttempt.attempt_id,
+      itemId,
+      answer
+    );
+  }
+
   function renderExamItems(locked){
     list.innerHTML = "";
+    const items = getExamRenderableItems(runtimeExam);
 
-    if (examHasStructuredItems(exam)) {
-      items.forEach((item, index) => {
-        const block = buildStructuredExamItemBlock(
-          exam,
-          item,
-          index,
-          locked,
-          updateExamProgress
-        );
-        list.appendChild(block);
-      });
-    } else {
-      items.forEach((item) => {
-        const legacyProblem = DATA.problems.find(p => p.id === (item.source_problem_id || item.id));
-        if (!legacyProblem) return;
+    items.forEach((item, index) => {
+      list.appendChild(buildStructuredExamItemBlock(
+        runtimeExam,
+        item,
+        index,
+        locked,
+        updateExamProgress,
+        persistAnswer
+      ));
+    });
 
-        const block = buildProblemBlock(
-          legacyProblem,
-          "ex-" + legacyProblem.id,
-          locked
-        );
-        list.appendChild(block);
-      });
+    if (!items.length) {
+      list.innerHTML = `<div class="problem"><span class="bad">${LANG === "ro" ? "Snapshotul securizat nu conține itemi." : "The secure snapshot contains no items."}</span></div>`;
     }
 
     MH_render(list);
   }
 
-  function updateHeaderMeta(){
-    const scoreNow = computeExamScore(exam);
-    document.getElementById("viewMeta").textContent =
-      `🗓 ${exam.year} • ${exam.type} • 🏁 ${scoreNow}/${totalPts}`;
-  }
-
-  async function finishExamSession(passedNow, messageText){
-    if (examFinished) return;
-    examFinished = true;
-
-    const finalScore = computeExamScore(exam);
-
-    await saveExamAttemptResultSafe(exam.id, finalScore, passedNow);
-
-    if (passedNow && !examsPassedSet.has(exam.id)) {
-      examsPassedSet.add(exam.id);
-      updateCounters();
-    }
-
-    if (examTimer) {
-      clearInterval(examTimer);
-      examTimer = null;
-    }
-
-    clearExamState(exam.id);
-    clearActiveExamLock();
-    refreshExamLockUi();
-    adminExamRecoveryController?.refresh();
-
-    setLocked(true);
-    updateHeaderMeta();
-
-    if (leftEl) {
-      leftEl.style.display = "inline-block";
-      leftEl.textContent = messageText;
-    }
-
-    renderCards();
-  }
-
   function updateExamProgress(){
-    const score = computeExamScore(exam);
-    const bar = document.getElementById("examBar");
-    const prog = document.getElementById("examProg");
+    const totalItems = getExamRenderableItems(runtimeExam).length || Number(exam.item_count || 0);
+    const answered = computeExamAnsweredCount(runtimeExam);
+    if (prog) prog.textContent = `${answered}/${totalItems}`;
+    if (bar) bar.style.width = `${totalItems ? Math.round(100 * answered / totalItems) : 0}%`;
 
-    if (prog) prog.textContent = `${Math.min(score, PASS_THRESHOLD)}/${PASS_THRESHOLD}`;
-    if (bar) {
-      bar.style.width = `${Math.min(100, Math.round(100 * score / PASS_THRESHOLD))}%`;
-    }
-
-    updateHeaderMeta();
-
-    if (score >= PASS_THRESHOLD) {
-      void finishExamSession(
-        true,
-        (LANG === "ro") ? "✅ Ai trecut!" : "✅ Passed!"
-      );
+    if (runtimeExam.secure_result) {
+      const score = mhFormatExamScoreValue(runtimeExam.secure_result.score);
+      const total = mhFormatExamScoreValue(runtimeExam.secure_result.total_points);
+      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • 🏁 ${score}/${total}`;
+    } else {
+      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • ☁️ ${answered}/${totalItems}`;
     }
   }
 
-  const st = getExamState(exam.id);
+  function applySecureAttempt(payload) {
+    if (!payload?.attempt_id || !payload?.exam) return false;
 
-  if (st && st.endsAt && Date.now() >= st.endsAt) {
-    clearExamState(exam.id);
-    clearActiveExamLock();
-    refreshExamLockUi();
-    adminExamRecoveryController?.refresh();
+    activeAttempt = payload;
+    const safeExam = payload.exam || {};
+    runtimeExam = {
+      ...exam,
+      ...safeExam,
+      id: exam.id,
+      runtime_items: Array.isArray(safeExam.items) ? safeExam.items : [],
+      total_points: Number(safeExam.total_points || payload.total_points || exam.total_points || 0),
+      secure_result: payload.result || null
+    };
 
-    void saveExamAttemptResultSafe(exam.id, computeExamScore(exam), false);
+    hydrateExamItemResults(exam.id, payload.answers || []);
+
+    const endsAt = Date.parse(payload.ends_at || "") || Number(payload.ends_at_ms || 0);
+    if (endsAt > 0 && payload.status === "active") {
+      setExamState(exam.id, {
+        attemptId: payload.attempt_id,
+        endsAt,
+        attemptRecorded: true,
+        startedByAdmin: Boolean(payload.started_by_admin),
+        startedAt: Date.parse(payload.started_at || "") || Date.now()
+      });
+      setActiveExamLock({ examId: exam.id, endsAt });
+    }
+
+    const items = getExamRenderableItems(runtimeExam);
+    if (meta) {
+      meta.innerHTML = `${LANG === "ro" ? "Itemi examen" : "Exam items"}: <b>${items.length}</b> • ${LANG === "ro" ? "Punctaj maxim" : "Maximum score"}: <b>${mhFormatExamScoreValue(runtimeExam.total_points)}</b>${exam.credit_html ? ` • ${exam.credit_html}` : ""}`;
+    }
+
+    return true;
   }
 
-  if (st && st.endsAt && Date.now() < st.endsAt) {
-    renderExamItems(false);
-    setLocked(false);
+  async function persistAllLocalAnswers() {
+    if (!activeAttempt?.attempt_id) return;
+    const rows = getExamItemResults(exam.id);
+    for (const item of getExamRenderableItems(runtimeExam)) {
+      const row = rows[item.id] || {};
+      if (item.type === "mcq") {
+        if (Array.isArray(row.selected) && (row.selected.length || item.allow_none)) {
+          await persistAnswer(item.id, { type: "mcq", selected: row.selected });
+        }
+      } else if (String(row.answer_text || "").trim()) {
+        await persistAnswer(item.id, { type: "open", answer_text: String(row.answer_text || "").trim() });
+      }
+    }
+  }
 
-    hoursSel.disabled = true;
+  async function finishSecureExamSession({ timedOut = false } = {}) {
+    if (examFinished || actionRunning || !activeAttempt?.attempt_id) return;
+    actionRunning = true;
+    submitBtn.disabled = true;
     startBtn.disabled = true;
+    setStatus(LANG === "ro" ? "Se salvează ultimele răspunsuri și se corectează pe server…" : "Saving final answers and grading on the server…");
 
-    setActiveExamLock({
-      examId: exam.id,
-      endsAt: st.endsAt
-    });
-    refreshExamLockUi();
-    adminExamRecoveryController?.refresh();
-    void renderAdminCancelButton(st);
+    try {
+      if (!timedOut) await persistAllLocalAnswers();
+      const result = await submitSecureExamAttempt(supabase, activeAttempt.attempt_id);
+      examFinished = true;
+      activeAttempt = { ...activeAttempt, ...result, status: "submitted" };
+      runtimeExam.secure_result = result;
+
+      if (result?.passed) examsPassedSet.add(exam.id);
+
+      if (examTimer) {
+        clearInterval(examTimer);
+        examTimer = null;
+      }
+
+      clearStoredExamSession(exam.id);
+      clearActiveExamLock();
+      refreshExamLockUi();
+      adminExamRecoveryController?.refresh();
+
+      submitBtn.style.display = "none";
+      leftEl.style.display = "inline-block";
+      leftEl.textContent = timedOut
+        ? (LANG === "ro" ? "⛔ Timp expirat — corectat" : "⛔ Time up — graded")
+        : (result?.passed
+          ? (LANG === "ro" ? "✅ Promovat" : "✅ Passed")
+          : (LANG === "ro" ? "📨 Examen predat" : "📨 Exam submitted"));
+
+      setStatus(
+        `${result?.passed ? "🏆" : "📊"} ${LANG === "ro" ? "Rezultat" : "Result"}: ${mhFormatExamScoreValue(result?.score)}/${mhFormatExamScoreValue(result?.total_points)} • ${LANG === "ro" ? "prag" : "pass mark"}: ${mhFormatExamScoreValue(result?.pass_threshold ?? PASS_THRESHOLD)}`,
+        result?.passed ? "ok" : "legend"
+      );
+
+      renderExamItems(true);
+      updateExamProgress();
+      updateCounters();
+      renderCards();
+      await loadAppProgressFromDb(MH_AUTH_USER);
+    } catch (error) {
+      console.error("Secure exam submit failed:", error);
+      setStatus(
+        LANG === "ro"
+          ? "Examenul nu a putut fi corectat. Tentativa rămâne activă și poate fi reluată."
+          : "The exam could not be graded. The attempt remains active and can be resumed.",
+        "bad"
+      );
+      submitBtn.disabled = false;
+      startBtn.disabled = true;
+    } finally {
+      actionRunning = false;
+    }
+  }
+
+  function startTimer() {
+    if (examTimer) clearInterval(examTimer);
+    const endsAt = Date.parse(activeAttempt?.ends_at || "") || Number(getExamState(exam.id)?.endsAt || 0);
+    if (!endsAt) return;
 
     const tick = () => {
-      const msLeft = st.endsAt - Date.now();
-
+      const msLeft = endsAt - Date.now();
       leftEl.style.display = "inline-block";
       leftEl.textContent = formatExamCountdown(msLeft);
-
-      updateExamProgress();
-
       if (msLeft <= 0) {
-        void finishExamSession(
-          false,
-          (LANG === "ro") ? "⛔ Timp expirat" : "⛔ Time up"
-        );
+        clearInterval(examTimer);
+        examTimer = null;
+        void finishSecureExamSession({ timedOut: true });
       }
     };
 
     tick();
     examTimer = setInterval(tick, 1000);
-  } else {
-    renderHiddenUntilStart();
-
-    hoursSel.value = String(exam.defaultHours || 2);
-
-    startBtn.onclick = async () => {
-      startBtn.disabled = true;
-
-      const hours = Number(hoursSel.value || 2);
-      const endsAt = Date.now() + hours * 3600 * 1000;
-
-      let startedByAdmin = false;
-      try {
-        const activeUser = await getVerifiedActiveUser();
-        startedByAdmin = await isCurrentUserAdmin(activeUser);
-      } catch (err) {
-        console.warn("Could not resolve admin exam-test mode:", err);
-      }
-
-      let attemptRow = null;
-      try {
-        attemptRow = await recordExamAttemptStart(exam.id);
-      } catch (err) {
-        console.error("recordExamAttemptStart error:", err);
-      }
-
-      if (examHasStructuredItems(exam)) {
-        clearExamItemResults(exam.id);
-      }
-
-      const sessionState = setExamState(exam.id, {
-        endsAt,
-        attemptRecorded: Boolean(attemptRow),
-        startedByAdmin,
-        startedAt: Date.now()
-      });
-      setActiveExamLock({
-        examId: exam.id,
-        endsAt
-      });
-      refreshExamLockUi();
-    adminExamRecoveryController?.refresh();
-      void renderAdminCancelButton(sessionState);
-
-      renderExamItems(false);
-      setLocked(false);
-
-      hoursSel.disabled = true;
-      startBtn.disabled = true;
-
-      const tick = () => {
-        const msLeft = endsAt - Date.now();
-
-        leftEl.style.display = "inline-block";
-        leftEl.textContent = formatExamCountdown(msLeft);
-
-        updateExamProgress();
-
-        if (msLeft <= 0) {
-          void finishExamSession(
-            false,
-            (LANG === "ro") ? "⛔ Timp expirat" : "⛔ Time up"
-          );
-        }
-      };
-
-      tick();
-      examTimer = setInterval(tick, 1000);
-    };
   }
 
-  updateExamProgress();
+  async function renderAdminCancelButton() {
+    const renderEpoch = ++adminCancelRenderEpoch;
+    top.querySelector(".admin-exam-cancel-wrap")?.remove();
+
+    if (!activeAttempt?.attempt_id || !activeAttempt?.started_by_admin) return;
+    const activeUser = await getVerifiedActiveUser();
+    if (renderEpoch !== adminCancelRenderEpoch || !activeUser?.id) return;
+    if (!(await isCurrentUserAdmin(activeUser))) return;
+    if (renderEpoch !== adminCancelRenderEpoch) return;
+
+    const wrap = document.createElement("div");
+    wrap.className = "admin-exam-cancel-wrap";
+    const button = document.createElement("button");
+    button.className = "btn small";
+    button.type = "button";
+    button.textContent = LANG === "ro" ? "🛑 Anulează examenul" : "🛑 Cancel exam";
+    button.style.borderColor = "rgba(239,68,68,.55)";
+    button.style.background = "rgba(239,68,68,.14)";
+
+    button.addEventListener("click", async () => {
+      if (!confirm(LANG === "ro"
+        ? "Anulezi examenul de test? Răspunsurile și tentativa vor fi eliminate fără scor."
+        : "Cancel this test exam? Answers and the attempt will be removed without a score.")) return;
+
+      button.disabled = true;
+      try {
+        await cancelSecureExamAttempt(supabase, activeAttempt.attempt_id);
+        if (examTimer) clearInterval(examTimer);
+        examTimer = null;
+        clearStoredExamSession(exam.id);
+        clearExamItemResults(exam.id);
+        clearActiveExamLock();
+        refreshExamLockUi();
+        adminExamRecoveryController?.refresh();
+        document.getElementById("drawer")?.classList.remove("open");
+        selectTab("exams");
+        await loadAppProgressFromDb(MH_AUTH_USER);
+      } catch (error) {
+        console.error("Secure admin exam cancellation failed:", error);
+        button.disabled = false;
+        alert(LANG === "ro" ? "Tentativa nu a putut fi anulată." : "The attempt could not be cancelled.");
+      }
+    });
+
+    wrap.appendChild(button);
+    top.appendChild(wrap);
+  }
+
+  function activateAttemptUi() {
+    renderExamItems(false);
+    setLocked(false);
+    hoursSel.disabled = true;
+    startBtn.disabled = true;
+    submitBtn.style.display = "inline-flex";
+    submitBtn.disabled = false;
+    updateExamProgress();
+    refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
+    void renderAdminCancelButton();
+    startTimer();
+  }
+
+  async function restoreAttempt() {
+    startBtn.disabled = true;
+    hoursSel.disabled = true;
+    setStatus(LANG === "ro" ? "Se verifică dacă există o tentativă activă…" : "Checking for an active attempt…");
+
+    try {
+      const payload = await getActiveSecureExamAttempt(supabase, exam.id, LANG);
+      if (payload?.attempt_id && payload?.status === "active") {
+        applySecureAttempt(payload);
+        setStatus(LANG === "ro" ? "☁️ Tentativă securizată reluată din Supabase." : "☁️ Secure attempt resumed from Supabase.", "ok");
+        activateAttemptUi();
+        return;
+      }
+
+      clearStoredExamSession(exam.id);
+      clearExamItemResults(exam.id);
+      renderHiddenUntilStart();
+      setStatus("");
+      startBtn.disabled = false;
+      hoursSel.disabled = false;
+    } catch (error) {
+      console.error("Secure exam resume failed:", error);
+      renderHiddenUntilStart();
+      setStatus(LANG === "ro" ? "Nu s-a putut verifica tentativa activă. Reîncearcă după refresh." : "The active attempt could not be checked. Retry after refresh.", "bad");
+      startBtn.disabled = false;
+      hoursSel.disabled = false;
+    }
+  }
+
+  startBtn.addEventListener("click", async () => {
+    if (actionRunning) return;
+    actionRunning = true;
+    startBtn.disabled = true;
+    hoursSel.disabled = true;
+    setStatus(LANG === "ro" ? "Se creează snapshotul securizat…" : "Creating the secure snapshot…");
+
+    try {
+      clearExamItemResults(exam.id);
+      const payload = await startSecureExamAttempt(
+        supabase,
+        exam.id,
+        Number(hoursSel.value || exam.defaultHours || 2),
+        LANG
+      );
+      if (!applySecureAttempt(payload)) throw new Error("Invalid secure exam payload.");
+      setStatus(LANG === "ro" ? "🔐 Examen pornit. Răspunsurile se salvează în Supabase." : "🔐 Exam started. Answers are saved in Supabase.", "ok");
+      activateAttemptUi();
+    } catch (error) {
+      console.error("Secure exam start failed:", error);
+      setStatus(error?.message || (LANG === "ro" ? "Examenul nu a putut fi pornit." : "The exam could not be started."), "bad");
+      startBtn.disabled = false;
+      hoursSel.disabled = false;
+    } finally {
+      actionRunning = false;
+    }
+  });
+
+  submitBtn.addEventListener("click", () => {
+    if (!activeAttempt?.attempt_id || actionRunning) return;
+    const answered = computeExamAnsweredCount(runtimeExam);
+    const total = getExamRenderableItems(runtimeExam).length;
+    const confirmed = confirm(
+      LANG === "ro"
+        ? `Predai examenul acum? Ai răspuns la ${answered}/${total} itemi. După predare nu mai poți modifica răspunsurile.`
+        : `Submit the exam now? You answered ${answered}/${total} items. Answers cannot be changed afterwards.`
+    );
+    if (confirmed) void finishSecureExamSession();
+  });
+
+  renderHiddenUntilStart();
   document.getElementById("drawer").classList.add("open");
+  void restoreAttempt();
 }
+
 
   /* ===== Inputs & Tabs ===== */
   document.getElementById("q").addEventListener("input", e=>{ filter.q=e.target.value; page=1; renderCards(); drawFilterBar(); });
@@ -7377,10 +7220,15 @@ function openExam(exam){
     const needsCatalogReload = previousUserId !== nextUserId ||
       DATA.lessons.length === 0 || DATA.problems.length === 0 || DATA.exams.length === 0;
 
-    if (!needsCatalogReload) return;
+    if (!needsCatalogReload) {
+      await syncSecureExamLockFromServer();
+      setTimeout(() => resumeLockedExamIfAny(), 0);
+      return;
+    }
 
     try {
       await reloadAllContentFromSupabase(true);
+      await syncSecureExamLockFromServer();
       setTimeout(() => resumeLockedExamIfAny(), 0);
     } catch (error) {
       CONTENT_BOOT_ERROR = error;

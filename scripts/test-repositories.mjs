@@ -65,6 +65,13 @@ const {
   submitProblemAnswer
 } = await importBrowserModule("js/secure-evaluation-repository.js");
 const {
+  cancelSecureExamAttempt,
+  getActiveSecureExamAttempt,
+  saveSecureExamAnswer,
+  startSecureExamAttempt,
+  submitSecureExamAttempt
+} = await importBrowserModule("js/secure-exam-repository.js");
+const {
   getChapterLabel,
   getTagLabel,
   normalizeExam,
@@ -252,6 +259,39 @@ await assert.rejects(
   /Invalid hint number/
 );
 
+const secureExamCalls = [];
+const secureExamClient = {
+  async rpc(name, args) {
+    secureExamCalls.push({ name, args });
+    if (name === "mh_start_secure_exam_attempt") {
+      return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id, status: "active" }, error: null };
+    }
+    if (name === "mh_get_active_exam_attempt") {
+      return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id || "exam-1", status: "active" }, error: null };
+    }
+    if (name === "mh_save_secure_exam_answer") {
+      return { data: { saved: true, saved_at: "2026-07-26T10:00:00Z" }, error: null };
+    }
+    if (name === "mh_submit_secure_exam_attempt") {
+      return { data: { attempt_id: args.p_attempt_id, score: 80, total_points: 100, passed: true }, error: null };
+    }
+    return { data: { attempt_id: args.p_attempt_id, cancelled: true }, error: null };
+  }
+};
+
+await startSecureExamAttempt(secureExamClient, "exam-1", 2, "ro");
+await getActiveSecureExamAttempt(secureExamClient, "exam-1", "ro");
+await saveSecureExamAnswer(secureExamClient, "attempt-1", "item-1", { type: "open", answer_text: "42" });
+await submitSecureExamAttempt(secureExamClient, "attempt-1");
+await cancelSecureExamAttempt(secureExamClient, "attempt-1");
+
+assert.deepEqual(secureExamCalls.map((call) => call.name), [
+  "mh_start_secure_exam_attempt",
+  "mh_get_active_exam_attempt",
+  "mh_save_secure_exam_answer",
+  "mh_submit_secure_exam_attempt",
+  "mh_cancel_secure_exam_attempt"
+]);
 
 const examStorage = new SessionStorageMock();
 let examNow = 1_000;
@@ -264,9 +304,11 @@ const storedSession = examSessionStore.setExamState("exam-admin", {
   endsAt: 10_000,
   attemptRecorded: true,
   startedByAdmin: true,
-  startedAt: 1_000
+  startedAt: 1_000,
+  attemptId: "attempt-secure-1"
 });
 assert.equal(storedSession.startedByAdmin, true);
+assert.equal(storedSession.attemptId, "attempt-secure-1");
 assert.equal(examSessionStore.getExamState("exam-admin").attemptRecorded, true);
 
 examSessionStore.setActiveExamLock({ examId: "exam-admin", endsAt: 10_000 });

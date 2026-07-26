@@ -23,6 +23,7 @@ const moduleJsFiles = [
   "js/exam-session-state.js",
   "js/admin-exam-recovery.js",
   "js/secure-evaluation-repository.js",
+  "js/secure-exam-repository.js",
   "js/secure-problem-controller.js"
 ];
 
@@ -174,6 +175,7 @@ const examSessionStateSource = readFileSync(resolve(root, "js/exam-session-state
 const progressRepositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
 const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recovery.js"), "utf8");
 const secureEvaluationRepositorySource = readFileSync(resolve(root, "js/secure-evaluation-repository.js"), "utf8");
+const secureExamRepositorySource = readFileSync(resolve(root, "js/secure-exam-repository.js"), "utf8");
 const secureProblemControllerSource = readFileSync(resolve(root, "js/secure-problem-controller.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
@@ -193,6 +195,21 @@ if (!appSource.includes('from "./secure-evaluation-repository.js"')) {
 }
 if (!appSource.includes('from "./secure-problem-controller.js"')) {
   fail("app.js must use the Phase 11A secure problem controller.");
+}
+if (!appSource.includes('from "./secure-exam-repository.js"')) {
+  fail("app.js must use the Phase 11B secure exam repository.");
+}
+if (!secureExamRepositorySource.includes('"mh_start_secure_exam_attempt"')) {
+  fail("secure-exam-repository.js must start exams through mh_start_secure_exam_attempt().");
+}
+if (!secureExamRepositorySource.includes('"mh_save_secure_exam_answer"')) {
+  fail("secure-exam-repository.js must autosave answers through mh_save_secure_exam_answer().");
+}
+if (!secureExamRepositorySource.includes('"mh_submit_secure_exam_attempt"')) {
+  fail("secure-exam-repository.js must submit exams through mh_submit_secure_exam_attempt().");
+}
+if (!secureExamRepositorySource.includes('"mh_cancel_secure_exam_attempt"')) {
+  fail("secure-exam-repository.js must cancel admin test attempts through mh_cancel_secure_exam_attempt().");
 }
 if (!secureEvaluationRepositorySource.includes('"mh_submit_problem_answer"')) {
   fail("secure-evaluation-repository.js must submit answers through mh_submit_problem_answer().");
@@ -347,6 +364,24 @@ if (!adminContentModelSource.includes("export function validateExamPayload")) {
 }
 if (!examSessionStateSource.includes("export function createExamSessionStore")) {
   fail("exam-session-state.js must own persistent exam session state.");
+}
+if (!examSessionStateSource.includes("attemptId")) {
+  fail("Phase 11B exam session state must persist the secure attempt id.");
+}
+if (!appSource.includes("startSecureExamAttempt(")) {
+  fail("Phase 11B must start exams through the secure server RPC.");
+}
+if (!appSource.includes("saveSecureExamAnswer(")) {
+  fail("Phase 11B must autosave exam answers server-side.");
+}
+if (!appSource.includes("submitSecureExamAttempt(")) {
+  fail("Phase 11B must grade exams server-side.");
+}
+if (/SmartAnswer\.check\([\s\S]{0,240}exam/i.test(appSource)) {
+  fail("Exam answers must not be graded with SmartAnswer in the browser after Phase 11B.");
+}
+if (appSource.includes("scoreExamMcqItem(") || appSource.includes("isExactMcqSelectionCorrect(")) {
+  fail("Client-side exam scoring helpers must be removed after Phase 11B.");
 }
 if (!adminExamRecoverySource.includes("export function createAdminExamRecoveryController")) {
   fail("admin-exam-recovery.js must expose the emergency admin unlock controller.");

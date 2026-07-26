@@ -61,7 +61,8 @@ export function createExamSessionStore({
       endsAt,
       attemptRecorded: raw.attemptRecorded !== false,
       startedByAdmin: raw.startedByAdmin === true,
-      startedAt: Number(raw.startedAt) || null
+      startedAt: Number(raw.startedAt) || null,
+      attemptId: String(raw.attemptId || "").trim() || null
     };
   }
 
@@ -75,7 +76,8 @@ export function createExamSessionStore({
       endsAt,
       attemptRecorded: state?.attemptRecorded !== false,
       startedByAdmin: state?.startedByAdmin === true,
-      startedAt: Number(state?.startedAt) || now()
+      startedAt: Number(state?.startedAt) || now(),
+      attemptId: String(state?.attemptId || "").trim() || null
     };
 
     storage.setItem(stateKey(id), JSON.stringify(normalized));
