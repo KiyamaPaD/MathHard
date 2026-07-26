@@ -66,6 +66,8 @@ const {
   sortLessonsForProfile
 } = await importBrowserModule("js/profile-model.js");
 const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
+const appProgressModule = await importBrowserModule("js/app-progress.js");
+const { createAuthUiController } = await importBrowserModule("js/auth-ui-controller.js");
 
 function makeContentClient({ failures = {} } = {}) {
   const rows = {
@@ -227,5 +229,92 @@ assert.equal(profileStats.nextLesson.id, "lesson-2");
 assert.equal(profileStats.retryRecommended, true);
 assert.equal(formatExamLabel(profileStats.recommendedExam, "ro"), "Simulare (EN • 2026)");
 assert.deepEqual(sortLessonsForProfile(profileStats.catalog.lessons, "ro").map((item) => item.id), ["lesson-1", "lesson-2"]);
+
+
+const progressRows = {
+  user_lesson_progress: [{ lesson_id: "lesson-progress", learned: true }],
+  user_problem_progress: [{
+    problem_id: "problem-progress",
+    solved: true,
+    xp_earned: 9,
+    wrong_attempts: 1,
+    hints_used: 0
+  }],
+  user_exam_progress: [{ exam_id: "exam-progress", passed: true }]
+};
+
+const appProgressClient = {
+  auth: {
+    async getUser() {
+      return { data: { user: { id: "user-1" } }, error: null };
+    }
+  },
+  from(table) {
+    return {
+      select() {
+        return {
+          async eq() {
+            return { data: progressRows[table] || [], error: null };
+          }
+        };
+      }
+    };
+  }
+};
+
+let progressRefreshes = 0;
+let progressCounterRefreshes = 0;
+const appProgress = appProgressModule.createAppProgressController({
+  supabase: appProgressClient,
+  markLessonLearned: async (_client, lessonId) => ({ lesson_id: lessonId, learned: true }),
+  recordProblemEvent: async (_client, problemId) => ({
+    problem_id: problemId,
+    solved: true,
+    xp_earned: 8,
+    wrong_attempts: 1,
+    hints_used: 1
+  }),
+  startExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 1 }),
+  finishExamAttempt: async (_client, examId, score) => ({ exam_id: examId, best_score: score, passed: score >= 60 }),
+  createKeyedMutationQueue,
+  mergeCanonicalProblemProgress,
+  isExamProblem: () => false,
+  onCountersChanged: () => { progressCounterRefreshes += 1; },
+  onFullRefresh: () => { progressRefreshes += 1; }
+});
+
+await appProgress.loadAppProgressFromDb({ id: "user-1" });
+assert.equal(appProgressModule.learnedSet.has("lesson-progress"), true);
+assert.equal(appProgressModule.solvedSet.has("problem-progress"), true);
+assert.equal(appProgressModule.examsPassedSet.has("exam-progress"), true);
+assert.equal(appProgressModule.XP_TOTAL, 9);
+assert.equal(progressRefreshes, 2);
+
+await appProgress.markLessonLearnedSafe("lesson-new");
+assert.equal(appProgressModule.learnedSet.has("lesson-new"), true);
+await appProgress.recordProblemEventSafe("problem-new", "solved");
+assert.equal(appProgressModule.solvedSet.has("problem-new"), true);
+assert.ok(progressCounterRefreshes >= 2);
+
+const authSequence = [];
+const authController = createAuthUiController({
+  supabase: {
+    auth: {
+      async getSession() {
+        authSequence.push("session");
+        return { data: { session: { user: { id: "user-auth" } } }, error: null };
+      },
+      onAuthStateChange() {
+        return { data: { subscription: { unsubscribe() {} } } };
+      }
+    }
+  },
+  hideAdminButton: () => authSequence.push("hide"),
+  loadProgress: async (user) => authSequence.push(`progress:${user?.id || "guest"}`),
+  refreshAdminButton: async () => authSequence.push("admin")
+});
+
+await authController.sync();
+assert.deepEqual(authSequence, ["hide", "session", "progress:user-auth", "admin"]);
 
 console.log("MathHard repository tests passed.");

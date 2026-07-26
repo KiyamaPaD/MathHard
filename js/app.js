@@ -16,7 +16,6 @@ import {
   getTagLabel,
   getTagSearchBlob,
   normalizeExam,
-  normalizeExamItem,
   normalizeLesson,
   normalizeProblem
 } from "./content-model.js";
@@ -25,6 +24,23 @@ import {
   mergeCanonicalProblemProgress
 } from "./mutation-queue.js";
 import { SmartAnswer } from "./answer-engine.js";
+import {
+  createAppProgressController,
+  examsPassedSet,
+  learnedSet,
+  solvedSet,
+  XP_DETAILS,
+  XP_TOTAL
+} from "./app-progress.js";
+import { createAuthUiController } from "./auth-ui-controller.js";
+import {
+  clampOptionCount as mhClampOptionCount,
+  ensureDraftMcqShape as mhEnsureDraftMcqShape,
+  normalizeDraftExamItem as mhNormalizeDraftExamItem,
+  problemsArrayFromInput as mhProblemsArrayFromInput,
+  tagsFromInput as mhTagsFromInput,
+  validateExamPayload as mhValidateExamPayload
+} from "./admin-content-model.js";
 
 console.log("APP.JS LOADED");
 
@@ -1396,7 +1412,6 @@ console.log("APP.JS LOADED");
   /* LANG + THEME */
   let LANG = localStorage.getItem("mh_lang") || "ro";
   let THEME = localStorage.getItem("mh_theme") || "dark";
-  let MH_PROGRESS_READY = false;
   if(THEME==="light") document.body.classList.add("light");
   document.documentElement.lang = LANG;
   document.body.classList.add("mh-app");
@@ -2103,71 +2118,9 @@ console.log("APP.JS LOADED");
 
   let MH_EXAM_ITEMS_DRAFT = [];
 
-  function mhClampOptionCount(value) {
-    return Math.max(2, Math.min(8, Number(value) || 4));
-  }
 
-  function mhGetOptionLabels(optionMode, optionsCount) {
-    if (optionMode === "A-D") return ["A", "B", "C", "D"];
-    if (optionMode === "A-E") return ["A", "B", "C", "D", "E"];
 
-    const count = mhClampOptionCount(optionsCount);
-    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
-  }
 
-  function mhEnsureDraftMcqShape(item) {
-    const mode = item.option_mode || "A-D";
-    const labels = mhGetOptionLabels(mode, item.options_count || item.options?.length || 4);
-    const oldOptions = Array.isArray(item.options) ? item.options : [];
-
-    const byLabel = new Map(
-      oldOptions.map((opt, idx) => [
-        String(opt?.label || labels[idx] || "").trim().toUpperCase(),
-        opt
-      ])
-    );
-
-    item.options = labels.map((label, idx) => {
-      const old = byLabel.get(label) || oldOptions[idx] || {};
-      return {
-        id: old.id || `opt_${item.id || "item"}_${idx}`,
-        label,
-        text_ro: old.text_ro || old.text || "",
-        text_en: old.text_en || old.text || "",
-        is_correct: !!old.is_correct
-      };
-    });
-
-    item.options_count = labels.length;
-    item.option_mode = mode;
-
-    if (!item.allow_multiple) {
-      let foundOne = false;
-      item.options.forEach((opt) => {
-        if (opt.is_correct && !foundOne) {
-          foundOne = true;
-        } else if (opt.is_correct && foundOne) {
-          opt.is_correct = false;
-        }
-      });
-    }
-
-    return item;
-  }
-
-  function mhNormalizeDraftExamItem(item, index) {
-    const base = normalizeExamItem(item, index);
-
-    if (base.type === "mcq") {
-      return mhEnsureDraftMcqShape(base);
-    }
-
-    return {
-      ...base,
-      type: "open",
-      option_mode: base.option_mode || "A-D"
-    };
-  }
 
   function mhRenderExamItemsDraft() {
     if (!mhExamItemsList) return;
@@ -2931,19 +2884,7 @@ console.log("APP.JS LOADED");
     });
   }
 
-  function mhTagsFromInput(value) {
-    return String(value || "")
-      .split(",")
-      .map(x => x.trim())
-      .filter(Boolean);
-  }
 
-  function mhProblemsArrayFromInput(value) {
-    return String(value || "")
-      .split(",")
-      .map(x => x.trim())
-      .filter(Boolean);
-  }
 
   function mhBuildLessonPayload(formType) {
     const chapterRaw = document.getElementById("mh_chapter")?.value?.trim() || "";
@@ -3017,112 +2958,7 @@ console.log("APP.JS LOADED");
     };
   }
 
-  function mhHasAnyText(...values) {
-  return values.some(v => String(v ?? "").trim() !== "");
-}
 
-function mhValidateExamPayload(payload) {
-  const errors = [];
-  const items = Array.isArray(payload.items) ? payload.items : [];
-  const legacyProblems = Array.isArray(payload.problems) ? payload.problems.filter(Boolean) : [];
-
-  if (!payload.id) {
-    errors.push("Examenul trebuie să aibă ID.");
-  }
-
-  if (!mhHasAnyText(payload.title_ro, payload.title_en)) {
-    errors.push("Examenul trebuie să aibă titlu RO sau EN.");
-  }
-
-  if (!items.length && !legacyProblems.length) {
-    errors.push("Examenul trebuie să aibă măcar un item sau un problem ID.");
-  }
-
-  const seenIds = new Set();
-
-  items.forEach((rawItem, index) => {
-    const item = mhNormalizeDraftExamItem(rawItem, index);
-    const label = `Item ${index + 1}`;
-
-    if (!item.id) {
-      errors.push(`${label}: lipsește id-ul.`);
-    } else if (seenIds.has(item.id)) {
-      errors.push(`${label}: id duplicat (${item.id}).`);
-    } else {
-      seenIds.add(item.id);
-    }
-
-    if (!mhHasAnyText(item.prompt_ro, item.prompt_en)) {
-      errors.push(`${label}: lipsește prompt-ul (RO sau EN).`);
-    }
-
-    if (!Number.isFinite(Number(item.points)) || Number(item.points) < 0) {
-      errors.push(`${label}: punctaj invalid.`);
-    }
-
-    if (item.type === "open") {
-      if (!String(item.answer || "").trim()) {
-        errors.push(`${label}: item open fără answer.`);
-      }
-      return;
-    }
-
-    if (item.type === "mcq") {
-      const options = Array.isArray(item.options) ? item.options : [];
-      const correctCount = options.filter(opt => opt.is_correct).length;
-
-      if (options.length < 2) {
-        errors.push(`${label}: item mcq trebuie să aibă cel puțin 2 opțiuni.`);
-      }
-
-      if (options.length > 8) {
-        errors.push(`${label}: item mcq are prea multe opțiuni (maxim 8).`);
-      }
-
-      const labels = options.map(opt => String(opt.label || "").trim()).filter(Boolean);
-      if (labels.length !== options.length) {
-        errors.push(`${label}: una sau mai multe opțiuni nu au label valid.`);
-      } else if (new Set(labels).size !== labels.length) {
-        errors.push(`${label}: există label-uri duplicate la opțiuni.`);
-      }
-
-      options.forEach((opt, optIndex) => {
-        if (!mhHasAnyText(opt.text_ro, opt.text_en)) {
-          errors.push(`${label}: opțiunea ${opt.label || optIndex + 1} nu are text.`);
-        }
-      });
-
-      if (!item.allow_none && correctCount === 0) {
-        errors.push(`${label}: trebuie marcată cel puțin o variantă corectă.`);
-      }
-
-      if (!item.allow_multiple && correctCount > 1) {
-        errors.push(`${label}: allow_multiple este OFF, deci ai voie la o singură variantă corectă.`);
-      }
-
-      if (item.option_mode === "A-D" && options.length !== 4) {
-        errors.push(`${label}: modul A-D cere exact 4 opțiuni.`);
-      }
-
-      if (item.option_mode === "A-E" && options.length !== 5) {
-        errors.push(`${label}: modul A-E cere exact 5 opțiuni.`);
-      }
-
-      if (item.option_mode === "custom") {
-        const expectedCount = mhClampOptionCount(item.options_count || options.length || 4);
-        if (options.length !== expectedCount) {
-          errors.push(`${label}: numărul de opțiuni nu bate cu options_count.`);
-        }
-      }
-
-      return;
-    }
-
-    errors.push(`${label}: tip necunoscut (${item.type}).`);
-  });
-
-  return errors;
-}
 
   async function mhHandleAdminSubmit(e) {
     e.preventDefault();
@@ -4114,12 +3950,6 @@ function mhValidateExamPayload(payload) {
   }
 
   /* ===== STATE ===== */
-  let solvedSet = new Set();
-  let learnedSet = new Set();
-  let examsPassedSet = new Set();
-  let MH_AUTH_USER = null;
-  let MH_PROGRESS_USER = null;
-
   function isGuestContentLocked() {
     // Lessons, problems, exams, research and history are public content.
     // Authentication is required only for persistent progress, XP and profile
@@ -4264,22 +4094,6 @@ function mhValidateExamPayload(payload) {
   }
 
   // ===== XP SYSTEM (doar probleme normale, nu examene / quiz lecție) =====
-  let XP_TOTAL = 0;
-  let XP_DETAILS = {};
-
-  function getXPRecord(problemId){
-    if (!XP_DETAILS[problemId]){
-      XP_DETAILS[problemId] = {
-        xp: 0,
-        wrong: 0,
-        hints: 0,
-        solved: false,
-        usedHint1: false,
-        usedHint2: false
-      };
-    }
-    return XP_DETAILS[problemId];
-  }
 
   function updateXPHeader(){
     const el = document.getElementById("xpTotalHeader");
@@ -4287,13 +4101,6 @@ function mhValidateExamPayload(payload) {
   }
   updateXPHeader();
 
-  function recomputeXPTotal(){
-    XP_TOTAL = Object.values(XP_DETAILS || {}).reduce((sum, rec) => {
-      return sum + Number(rec?.xp || 0);
-    }, 0);
-
-    updateXPHeader();
-  }
 
   // probleme „de examen” (nu primesc XP)
   function isExamProblem(P){
@@ -4308,24 +4115,6 @@ function mhValidateExamPayload(payload) {
   }
 
   // acordă XP la prima rezolvare corectă
-  function awardXPForProblem(P){
-    if (isExamProblem(P)) return; 
-
-    const rec = getXPRecord(P.id);
-
-    if (rec.solved) return;
-
-    const penalty = (rec.wrong || 0) + (rec.hints || 0);
-    let xpEarned = 10 - penalty;
-
-    if (xpEarned < 0) xpEarned = 0;
-    if (xpEarned > 10) xpEarned = 10;
-
-    rec.solved = true;
-    rec.xp = xpEarned;
-
-    recomputeXPTotal();
-  }
 
   /* attempts state */
   let attempts = JSON.parse(localStorage.getItem("mh_attempts")||"{}");
@@ -4351,233 +4140,51 @@ function mhValidateExamPayload(payload) {
     updateRadarUI();
   }
 
-  async function getProgressUser(){
-    const { data, error } = await supabase.auth.getUser();
-    if (error) return null;
-    return data.user ?? null;
-  }
-
-  const progressMutationQueue = createKeyedMutationQueue();
-  const enqueueProgressMutation = progressMutationQueue.enqueue;
-
-function applyCanonicalProblemProgress(problemId, row, eventName) {
-  if (!row) return;
-
-  const merged = mergeCanonicalProblemProgress(
-    XP_DETAILS[problemId] || {},
-    row,
-    eventName
-  );
-
-  XP_DETAILS[problemId] = merged.record;
-
-  if (merged.solved) solvedSet.add(problemId);
-  else if (merged.terminalEvent) solvedSet.delete(problemId);
-
-  recomputeXPTotal();
-  updateCounters();
-
-  if (merged.terminalEvent) {
-    renderCards();
-    buildNestedTree();
-    buildTagPanel();
-    drawFilterBar();
-  }
-}
-
-function reconcileProgressAfterMutationError(label, error) {
-  // Never erase optimistic UI immediately after a write error. The previous
-  // reload reset solved/learned counters to zero and made successful local
-  // actions appear to "undo themselves". Keep the current state visible and
-  // surface the backend error for diagnosis.
-  console.error(`${label} error:`, error);
-}
-
-async function markLessonLearnedSafe(lessonId) {
-  if (!MH_PROGRESS_USER) return null;
-
-  return enqueueProgressMutation(`lesson:${lessonId}`, async () => {
-    try {
-      const row = await markLessonLearned(supabase, lessonId);
-      if (row?.learned) {
-        learnedSet.add(lessonId);
-        updateCounters();
-        renderCards();
-        buildNestedTree();
-        buildTagPanel();
-      }
-      return row;
-    } catch (error) {
-      reconcileProgressAfterMutationError("markLessonLearned", error);
-      return null;
-    }
+  const progressController = createAppProgressController({
+    supabase,
+    markLessonLearned,
+    recordProblemEvent,
+    startExamAttempt,
+    finishExamAttempt,
+    createKeyedMutationQueue,
+    mergeCanonicalProblemProgress,
+    isExamProblem,
+    onXpChanged: updateXPHeader,
+    onCountersChanged: updateCounters,
+    onLessonChanged: () => {
+      renderCards();
+      buildNestedTree();
+      buildTagPanel();
+    },
+    onTerminalProblemChanged: () => {
+      renderCards();
+      buildNestedTree();
+      buildTagPanel();
+      drawFilterBar();
+    },
+    onFullRefresh: refreshProgressUIFromDb
   });
-}
 
-async function recordProblemEventSafe(problemId, eventName) {
-  if (!MH_PROGRESS_USER) return null;
+  const {
+    awardXPForProblem,
+    getXPRecord,
+    loadAppProgressFromDb,
+    markLessonLearnedSafe,
+    recomputeXPTotal,
+    recordExamAttemptStart,
+    recordProblemEventSafe,
+    saveExamAttemptResultSafe,
+    updateExamAttemptScore
+  } = progressController;
 
-  return enqueueProgressMutation(`problem:${problemId}`, async () => {
-    try {
-      const row = await recordProblemEvent(supabase, problemId, eventName);
-      applyCanonicalProblemProgress(problemId, row, eventName);
-      return row;
-    } catch (error) {
-      reconcileProgressAfterMutationError("recordProblemEvent", error);
-      return null;
-    }
-  });
-}
 
-async function recordExamAttemptStart(examId) {
-  if (!MH_PROGRESS_USER) return null;
 
-  return enqueueProgressMutation(`exam:${examId}`, async () => {
-    try {
-      return await startExamAttempt(supabase, examId);
-    } catch (error) {
-      reconcileProgressAfterMutationError("startExamAttempt", error);
-      return null;
-    }
-  });
-}
 
-async function updateExamAttemptScore(examId, score, passedNow = false) {
-  if (!MH_PROGRESS_USER) return null;
 
-  return enqueueProgressMutation(`exam:${examId}`, async () => {
-    try {
-      const row = await finishExamAttempt(supabase, examId, score);
 
-      if (row?.passed) examsPassedSet.add(examId);
-      updateCounters();
-      return row;
-    } catch (error) {
-      reconcileProgressAfterMutationError("finishExamAttempt", error);
-      return null;
-    }
-  });
-}
 
-async function saveExamAttemptResultSafe(examId, score, passedNow = false) {
-  return updateExamAttemptScore(examId, score, passedNow);
-}
 
-  let appProgressLoadEpoch = 0;
 
-  async function loadAppProgressFromDb(userOverride = undefined){
-    const loadEpoch = ++appProgressLoadEpoch;
-    let progressUser = null;
-
-    try {
-      // `undefined` resolves the current session here; `null` explicitly means
-      // guest. A supplied user avoids an unnecessary network round-trip.
-      progressUser = userOverride === undefined
-        ? await getProgressUser()
-        : userOverride;
-
-      if (loadEpoch !== appProgressLoadEpoch) return;
-
-      MH_AUTH_USER = progressUser;
-      MH_PROGRESS_USER = progressUser;
-      solvedSet = new Set();
-      learnedSet = new Set();
-      examsPassedSet = new Set();
-      XP_TOTAL = 0;
-      XP_DETAILS = {};
-      MH_PROGRESS_READY = false;
-
-      if (!progressUser){
-        MH_PROGRESS_READY = true;
-        refreshProgressUIFromDb();
-        return;
-      }
-
-      // Unlock authenticated content immediately. Progress counters may fill
-      // in a moment later, but the catalog must not remain blocked by DB reads.
-      refreshProgressUIFromDb();
-
-      const userId = progressUser.id;
-      const [lessonResult, problemResult, examResult] = await Promise.all([
-        supabase
-          .from("user_lesson_progress")
-          .select("*")
-          .eq("user_id", userId),
-
-        supabase
-          .from("user_problem_progress")
-          .select("*")
-          .eq("user_id", userId),
-
-        supabase
-          .from("user_exam_progress")
-          .select("*")
-          .eq("user_id", userId)
-      ]);
-
-      // A logout/account switch may have happened while the requests ran.
-      if (loadEpoch !== appProgressLoadEpoch) return;
-
-      const progressErrors = [
-        ["lessons", lessonResult.error],
-        ["problems", problemResult.error],
-        ["exams", examResult.error]
-      ].filter(([, error]) => !!error);
-
-      for (const [section, error] of progressErrors) {
-        console.warn(`Could not load ${section} progress; continuing with empty data:`, error);
-      }
-
-      const lessonRows = lessonResult.error ? [] : (lessonResult.data || []);
-      const problemRows = problemResult.error ? [] : (problemResult.data || []);
-      const examRows = examResult.error ? [] : (examResult.data || []);
-
-      lessonRows.forEach(row => {
-        if (row.learned) learnedSet.add(row.lesson_id);
-      });
-
-      problemRows.forEach(row => {
-        const hintsUsed = Number(row.hints_used ?? row.hints ?? 0);
-        const wrongAttempts = Number(row.wrong_attempts ?? row.attempts ?? 0);
-
-        XP_DETAILS[row.problem_id] = {
-          xp: Number(row.xp_earned || 0),
-          wrong: wrongAttempts,
-          hints: hintsUsed,
-          solved: !!row.solved,
-          usedHint1: !!(row.used_hint1 ?? (hintsUsed >= 1)),
-          usedHint2: !!(row.used_hint2 ?? (hintsUsed >= 2))
-        };
-
-        if (row.solved) solvedSet.add(row.problem_id);
-      });
-
-      recomputeXPTotal();
-
-      examRows.forEach(row => {
-        if (row.passed) examsPassedSet.add(row.exam_id);
-      });
-
-      MH_PROGRESS_READY = true;
-      refreshProgressUIFromDb();
-    } catch (err) {
-      if (loadEpoch !== appProgressLoadEpoch) return;
-
-      console.error("Eroare la load progress din DB; catalogul rămâne disponibil:", err);
-
-      // Preserve the authenticated session. Progress failure degrades only the
-      // counters, never access to lessons/problems/exams.
-      MH_AUTH_USER = progressUser || null;
-      MH_PROGRESS_USER = progressUser || null;
-      solvedSet = new Set();
-      learnedSet = new Set();
-      examsPassedSet = new Set();
-      XP_TOTAL = 0;
-      XP_DETAILS = {};
-      MH_PROGRESS_READY = true;
-      refreshProgressUIFromDb();
-    }
-  }
 
   updateCounters();
   function isOlympiadSource(src=""){
@@ -7976,88 +7583,17 @@ function openExam(exam){
   window.addEventListener("load", initMathCube);
   })();
 
-  let authUiSyncEpoch = 0;
-  let authUiSyncTimer = null;
-  let pendingAuthSessionOverride = undefined;
-
-  async function syncAuthDependentUi(sessionOverride = undefined) {
-    const syncEpoch = ++authUiSyncEpoch;
-
-    // Auth-dependent controls always start closed. The verified admin check may
-    // reveal the button later, but a stale page can never keep it visible.
-    ++adminVisibilityEpoch;
-    setAdminButtonVisibility(false);
-
-    let session = sessionOverride;
-
-    if (session === undefined) {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.warn("Could not restore auth session:", error);
-        session = null;
-      } else {
-        session = data?.session || null;
-      }
-    }
-
-    if (syncEpoch !== authUiSyncEpoch) return;
-
-    // Progress only needs the authenticated user id; RLS remains the actual
-    // authorization boundary. Passing the restored user avoids the slower
-    // getUser() round-trip that previously made index.html look logged out
-    // until the tab received a visibilitychange event.
-    await loadAppProgressFromDb(session?.user || null);
-
-    if (syncEpoch !== authUiSyncEpoch) return;
-    if (!session?.user) return;
-
-    await refreshAdminButtonVisibility();
-  }
-
-  function scheduleAuthDependentUiSync(sessionOverride = undefined) {
-    // Collapse INITIAL_SESSION, pageshow and explicit boot into one operation.
-    // An explicit session (including null after logout) always wins over a
-    // generic "read it from storage" request.
-    if (sessionOverride !== undefined) {
-      pendingAuthSessionOverride = sessionOverride;
-    }
-
-    if (authUiSyncTimer) {
-      clearTimeout(authUiSyncTimer);
-    }
-
-    authUiSyncTimer = setTimeout(() => {
-      authUiSyncTimer = null;
-
-      const sessionForRun = pendingAuthSessionOverride;
-      pendingAuthSessionOverride = undefined;
-
-      syncAuthDependentUi(sessionForRun).catch((err) => {
-        console.error("Auth UI synchronization failed:", err);
-      });
-    }, 0);
-  }
-
-  supabase.auth.onAuthStateChange((event, session) => {
-    // Supabase recommends deferring further client calls from this callback.
-    scheduleAuthDependentUiSync(session || null);
+  const authUiController = createAuthUiController({
+    supabase,
+    hideAdminButton: () => {
+      ++adminVisibilityEpoch;
+      setAdminButtonVisibility(false);
+    },
+    loadProgress: loadAppProgressFromDb,
+    refreshAdminButton: refreshAdminButtonVisibility
   });
 
-  // A page restored from back/forward cache may contain stale counters and
-  // controls. Restore the local Supabase session and rebuild all auth UI.
-  window.addEventListener("pageshow", () => {
-    scheduleAuthDependentUiSync();
-  });
-
-  // Also synchronize when returning after login/logout in another page or tab.
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") return;
-    scheduleAuthDependentUiSync();
-  });
-
-  // Do not rely only on INITIAL_SESSION timing during module startup.
-  scheduleAuthDependentUiSync();
+  authUiController.start();
   
   /* ===== BOOT SITE IMPORTANT ===== */
   mhUpdateSidebarStaticTexts();

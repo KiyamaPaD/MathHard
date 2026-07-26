@@ -16,7 +16,10 @@ const moduleJsFiles = [
   "js/answer-engine.js",
   "js/mutation-queue.js",
   "js/profile-model.js",
-  "js/profile-text.js"
+  "js/profile-text.js",
+  "js/app-progress.js",
+  "js/auth-ui-controller.js",
+  "js/admin-content-model.js"
 ];
 
 const classicJsFiles = [
@@ -160,6 +163,9 @@ const answerEngineSource = readFileSync(resolve(root, "js/answer-engine.js"), "u
 const mutationQueueSource = readFileSync(resolve(root, "js/mutation-queue.js"), "utf8");
 const profileModelSource = readFileSync(resolve(root, "js/profile-model.js"), "utf8");
 const profileTextSource = readFileSync(resolve(root, "js/profile-text.js"), "utf8");
+const appProgressSource = readFileSync(resolve(root, "js/app-progress.js"), "utf8");
+const authUiControllerSource = readFileSync(resolve(root, "js/auth-ui-controller.js"), "utf8");
+const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-model.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -197,14 +203,23 @@ if (!contentRepositorySource.includes('supabase.from(table).select("*")')) {
 if (contentRepositorySource.includes("provenance") || contentRepositorySource.includes("sourceCounts")) {
   fail("Supabase-only content repository must not keep legacy merge provenance state.");
 }
-if (!appSource.includes("let MH_AUTH_USER = null")) {
-  fail("app.js must keep auth state separate from progress-query state.");
+if (!appSource.includes('from "./app-progress.js"')) {
+  fail("app.js must use the extracted app-progress.js controller.");
+}
+if (!appSource.includes('from "./auth-ui-controller.js"')) {
+  fail("app.js must use the extracted auth-ui-controller.js module.");
+}
+if (!appSource.includes('from "./admin-content-model.js"')) {
+  fail("app.js must use the extracted admin-content-model.js module.");
+}
+if (!appProgressSource.includes("let progressUser = null") || !appProgressSource.includes("let authUser = null")) {
+  fail("app-progress.js must keep auth identity separate from progress hydration state.");
 }
 if (!/function isGuestContentLocked\(\)\s*\{[\s\S]{0,400}return false;/.test(appSource)) {
   fail("Public learning content must not be blocked by progress/auth loading.");
 }
-if (!appSource.includes('.from("user_problem_progress")\n          .select("*")')) {
-  fail("app.js must load progress with schema-compatible select(*).");
+if (!appProgressSource.includes('.from("user_problem_progress")') || !appProgressSource.includes('.select("*")')) {
+  fail("app-progress.js must load progress with schema-compatible select(*).");
 }
 if (/const safe(?:Lesson|Problem|Exam)Rows\s*=\s*[^;]*\bsafe(?:Lesson|Problem|Exam)Rows\b/.test(profileSource)) {
   fail("profile.js contains a self-referencing safe progress variable.");
@@ -218,10 +233,13 @@ if (/exam_type:\s*document\.getElementById\(["']mh_exam_type/.test(appSource)) {
 if (!/default_hours:\s*Number\(document\.getElementById\(["']mh_exam_hours/.test(appSource)) {
   fail("Admin exam payload must write canonical default_hours.");
 }
-if (/function reconcileProgressAfterMutationError[\s\S]{0,500}loadAppProgressFromDb/.test(appSource)) {
+if (/function reconcileMutationError\([^)]*\)\s*\{[^}]*loadAppProgressFromDb/.test(appProgressSource)) {
   fail("Progress mutation errors must not immediately reload and erase optimistic UI state.");
 }
-if (!appSource.includes("if (merged.terminalEvent) {\n    renderCards();")) {
+if (!appProgressSource.includes("onTerminalProblemChanged(problemId, merged)")) {
+  fail("app-progress.js must notify the UI after terminal problem mutations.");
+}
+if (!/onTerminalProblemChanged:\s*\(\)\s*=>\s*\{[\s\S]{0,260}renderCards\(\)/.test(appSource)) {
   fail("Solved problem mutations must refresh problem cards immediately.");
 }
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
@@ -255,8 +273,20 @@ if (!profileModelSource.includes("export function buildProfileStats")) {
 if (!profileTextSource.includes("export const PROFILE_TEXT")) {
   fail("profile-text.js must own profile translations.");
 }
-if (appSource.split(/\r?\n/).length > 8300) {
-  fail("app.js exceeded the Phase 07 architecture ceiling of 8300 lines.");
+if (!appProgressSource.includes("export function createAppProgressController")) {
+  fail("app-progress.js must own app progress hydration and mutations.");
+}
+if (!authUiControllerSource.includes("export function createAuthUiController")) {
+  fail("auth-ui-controller.js must own auth-dependent UI synchronization.");
+}
+if (!adminContentModelSource.includes("export function validateExamPayload")) {
+  fail("admin-content-model.js must own admin exam normalization and validation.");
+}
+if (/function (?:mhClampOptionCount|mhEnsureDraftMcqShape|mhValidateExamPayload|loadAppProgressFromDb)\b/.test(appSource)) {
+  fail("app.js still contains logic extracted during Phase 08.");
+}
+if (appSource.split(/\r?\n/).length > 7800) {
+  fail("app.js exceeded the Phase 08 architecture ceiling of 7800 lines.");
 }
 if (profileSource.split(/\r?\n/).length > 1150) {
   fail("profile.js exceeded the Phase 07 architecture ceiling of 1150 lines.");
