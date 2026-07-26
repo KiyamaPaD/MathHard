@@ -37,7 +37,8 @@ const moduleJsFiles = [
   "js/ui-preferences-repository.js",
   "js/section-layout-controller.js",
   "js/browser-state.js",
-  "js/runtime-diagnostics.js"
+  "js/runtime-diagnostics.js",
+  "js/app-shell-controller.js"
 ];
 
 const classicJsFiles = [
@@ -55,6 +56,7 @@ const requiredFiles = [
   "css/problem-workspace.css",
   "css/quick-nav.css",
   "css/section-layout.css",
+  "css/app-shell.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -215,6 +217,8 @@ const quickNavCss = readFileSync(resolve(root, "css/quick-nav.css"), "utf8");
 const uiPreferencesRepositorySource = readFileSync(resolve(root, "js/ui-preferences-repository.js"), "utf8");
 const sectionLayoutControllerSource = readFileSync(resolve(root, "js/section-layout-controller.js"), "utf8");
 const sectionLayoutCss = readFileSync(resolve(root, "css/section-layout.css"), "utf8");
+const appShellSource = readFileSync(resolve(root, "js/app-shell-controller.js"), "utf8");
+const appShellCss = readFileSync(resolve(root, "css/app-shell.css"), "utf8");
 const browserStateSource = readFileSync(resolve(root, "js/browser-state.js"), "utf8");
 const runtimeDiagnosticsSource = readFileSync(resolve(root, "js/runtime-diagnostics.js"), "utf8");
 
@@ -516,6 +520,22 @@ if (!indexHtml.includes('href="css/section-layout.css"')) {
 }
 if (!indexHtml.includes('src="/js/section-layout-controller.js"')) {
   fail("Section layout controller is missing from index.html.");
+}
+if (!indexHtml.includes('href="css/app-shell.css"')) {
+  fail("Phase 14A app shell stylesheet is missing from index.html.");
+}
+if (!indexHtml.includes('src="/js/app-shell-controller.js"')) {
+  fail("Phase 14A app shell controller is missing from index.html.");
+}
+if (!appShellSource.includes("normalizeAppRoute") ||
+    !appShellSource.includes("mh-shell-workspace-panel") ||
+    !appShellSource.includes("data-shell-route")) {
+  fail("Phase 14A app shell routing contract is incomplete.");
+}
+if (!appShellCss.includes(".mh-shell-sidebar") ||
+    !appShellCss.includes(".mh-shell-bottom-nav") ||
+    !appShellCss.includes(".mh-shell-workspace-panel")) {
+  fail("Phase 14A responsive app shell styles are incomplete.");
 }
 if (!indexHtml.includes('id="mhCatalogWorkspace"')) {
   fail("The lessons/problems/exams workspace must be a collapsible Phase 12.2 section.");

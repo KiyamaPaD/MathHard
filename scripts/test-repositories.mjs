@@ -130,6 +130,12 @@ const {
   safeWriteJson,
   scopedStorageKey
 } = await importBrowserModule("js/browser-state.js");
+const { normalizeAppRoute, routeToCatalogTab } = await importBrowserModule("js/app-shell-controller.js");
+
+assert.equal(normalizeAppRoute("#problems"), "problems");
+assert.equal(normalizeAppRoute("unknown"), "dashboard");
+assert.equal(routeToCatalogTab("exams"), "exams");
+assert.equal(routeToCatalogTab("roadmap"), "");
 
 const brokenStorage = new SessionStorageMock();
 brokenStorage.setItem("broken", "{not-json");

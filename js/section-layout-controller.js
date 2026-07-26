@@ -25,7 +25,7 @@ const SECTION_CONFIG = Object.freeze([
   {
     key: "boss",
     id: "mhBoss",
-    titles: { ro: "🧠 Daily Boss Fight", en: "🧠 Daily Boss Fight" },
+    titles: { ro: "Antrenament rapid", en: "Antrenament rapid" },
   },
   {
     key: "radar",

@@ -2,7 +2,7 @@ const TEXT = {
   ro: {
     toggle: "Navigare rapidă",
     title: "Navigator MathHard",
-    subtitle: "Sari direct unde ai nevoie — fără doom scroll.",
+    subtitle: "Navigare între secțiuni.",
     close: "Închide navigatorul",
     compactOn: "⚡ Mod compact activ",
     compactOff: "⚡ Ascunde intro-ul lung",
@@ -13,7 +13,7 @@ const TEXT = {
     items: {
       hub: "Antrenamentul de azi",
       roadmap: "Roadmap",
-      boss: "Daily Boss Fight",
+      boss: "Antrenament rapid",
       radar: "Radarul tău",
       lessons: "Lecții",
       problems: "Probleme",
@@ -28,7 +28,7 @@ const TEXT = {
   en: {
     toggle: "Quick navigation",
     title: "MathHard Navigator",
-    subtitle: "Jump straight where you need — no doom scrolling.",
+    subtitle: "Navigate between sections.",
     close: "Close navigator",
     compactOn: "⚡ Compact mode active",
     compactOff: "⚡ Hide the long intro",
@@ -39,7 +39,7 @@ const TEXT = {
     items: {
       hub: "Today's training",
       roadmap: "Roadmap",
-      boss: "Daily Boss Fight",
+      boss: "Antrenament rapid",
       radar: "Your math radar",
       lessons: "Lessons",
       problems: "Problems",

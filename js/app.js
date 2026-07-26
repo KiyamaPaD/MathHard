@@ -129,10 +129,10 @@ import {
   const MAIN_UI_TEXT = {
     ro: {
       header: {
-        info_btn: "ℹ️ Dificultăți & Contoare",
-        about_btn: "👤 About me",
-        profile_btn: "📊 Profilul tău",
-        admin_btn: "🛠 Admin",
+        info_btn: "Ajutor",
+        about_btn: "Despre",
+        profile_btn: "Profil",
+        admin_btn: "Admin",
         modal_close: "Închide",
         stats_titles: [
           "Probleme rezolvate / Problems solved",
@@ -153,7 +153,7 @@ import {
 
       about: {
         title: "👋 Despre MathHard & autor",
-        subtitle: `Gândește-te la MathHard ca la un mic joc video de matematică: ai <b>lecții</b>, <b>probleme</b>, <b>XP</b> și <b>„boss fight-uri”</b> la examene.`,
+        subtitle: `Platformă pentru lecții, probleme, examene și progres.`,
         pills: [
           "📘 Lecții de la clasa a V-a până la facultate",
           "🧩 Probleme cu verificare instant",
@@ -240,7 +240,7 @@ import {
       },
 
       info_modal: {
-        title: "ℹ️ Dificultăți & Contoare",
+        title: "Ajutor",
         body: `
           <h4>Contoare</h4>
           <ul>
@@ -274,10 +274,10 @@ import {
 
     en: {
       header: {
-        info_btn: "ℹ️ Difficulty & Counters",
-        about_btn: "👤 About me",
-        profile_btn: "📊 Your profile",
-        admin_btn: "🛠 Admin",
+        info_btn: "Help",
+        about_btn: "Despre",
+        profile_btn: "Profile",
+        admin_btn: "Admin",
         modal_close: "Close",
         stats_titles: [
           "Problems solved",
@@ -298,7 +298,7 @@ import {
 
       about: {
         title: "👋 About MathHard & the author",
-        subtitle: `Think of MathHard as a small math video game: you have <b>lessons</b>, <b>problems</b>, <b>XP</b>, and <b>boss fights</b> in exams.`,
+        subtitle: `A platform for lessons, problems, exams and progress.`,
         pills: [
           "📘 Lessons from grade 5 to university",
           "🧩 Problems with instant checking",
@@ -385,7 +385,7 @@ import {
       },
 
       info_modal: {
-        title: "ℹ️ Difficulty & Counters",
+        title: "Help",
         body: `
           <h4>Counters</h4>
           <ul>
@@ -1120,34 +1120,34 @@ import {
 
     if (ro){
       label.textContent = "🔥 Antrenamentul de azi";
-      title.textContent = "15–20 de minute în care chiar simți progres.";
-      text.innerHTML = "Alege cum vrei să începi: continuă lecția începută, rezolvă un set mic de probleme sau intră direct într-un mini-examen.";
+      title.textContent = "Continuă";
+      text.innerHTML = "Alege următorul pas.";
 
       if (lessonTitle) lessonTitle.textContent = "▶️ Continuă lecțiile";
-      if (lessonSub)   lessonSub.textContent   = "te duce la tab-ul de lecții";
+      if (lessonSub)   lessonSub.textContent   = "";
 
       if (drillTitle)  drillTitle.textContent  = "⚡ 5 probleme rapide";
-      if (drillSub)    drillSub.textContent    = "antrenament direct pe probleme";
+      if (drillSub)    drillSub.textContent    = "";
 
       if (examTitle)   examTitle.textContent   = "🏆 Mini-examen";
-      if (examSub)     examSub.textContent     = "intră în seturile de examene";
+      if (examSub)     examSub.textContent     = "";
 
-      if (progLabel)   progLabel.textContent   = "🎯 Ținta de acum: 1 lecție + 5 probleme (poți să-ți schimbi ținta tu)";
+      if (progLabel)   progLabel.textContent   = "Ținta de azi: 1 lecție + 5 probleme";
     } else {
       label.textContent = "🔥 Today’s training";
-      title.textContent = "15–20 minutes where you actually feel progress.";
-      text.innerHTML = "Choose how to start: continue a lesson, do a short problem drill or jump into a mini-exam.";
+      title.textContent = "Continue";
+      text.innerHTML = "Choose your next step.";
 
       if (lessonTitle) lessonTitle.textContent = "▶️ Continue lessons";
-      if (lessonSub)   lessonSub.textContent   = "takes you to the Lessons tab";
+      if (lessonSub)   lessonSub.textContent   = "";
 
       if (drillTitle)  drillTitle.textContent  = "⚡ 5 quick problems";
-      if (drillSub)    drillSub.textContent    = "direct training on problems";
+      if (drillSub)    drillSub.textContent    = "";
 
       if (examTitle)   examTitle.textContent   = "🏆 Mini-exam";
-      if (examSub)     examSub.textContent     = "jump into the exam sets";
+      if (examSub)     examSub.textContent     = "";
 
-      if (progLabel)   progLabel.textContent   = "🎯 Goal: 1 lesson + 5 problems (you can later customize this)";
+      if (progLabel)   progLabel.textContent   = "Today: 1 lesson + 5 problems";
     }
   }
 
@@ -1187,14 +1187,14 @@ import {
 
     if (roadmapTitle) {
       roadmapTitle.textContent = ro
-        ? "🗺️ Roadmap-ul tău dinamic"
-        : "🗺️ Your dynamic roadmap";
+        ? "Roadmap"
+        : "Roadmap";
     }
 
     if (roadmapText) {
       roadmapText.textContent = ro
-        ? "Prerechizite, progres real și următorul pas recomandat — fără progres duplicat."
-        : "Prerequisites, real progress and a recommended next step — without duplicated progress.";
+        ? "Progres, prerechizite și următorul pas."
+        : "Progress, prerequisites and your next step.";
     }
 
     if (roadmapReset) {
@@ -1263,14 +1263,14 @@ import {
 
     if (bossTitle) {
       bossTitle.textContent = ro
-        ? "🧠 Daily Boss Fight"
-        : "🧠 Daily Boss Fight";
+        ? "Antrenament rapid"
+        : "Antrenament rapid";
     }
 
     if (bossText) {
       bossText.textContent = ro
-        ? "Un mini-antrenament cu probleme mixte. Bun de făcut când nu știi de unde să începi."
-        : "A mini training session with mixed problems. Great when you do not know where to start.";
+        ? "Probleme mixte, 10–15 minute."
+        : "Mixed problems, 10–15 minutes.";
     }
 
     if (bossMeta[0]) {
@@ -1279,20 +1279,20 @@ import {
 
     if (bossMeta[1]) {
       bossMeta[1].textContent = ro
-        ? "⚡ XP bonus moral (nu se calculează încă, doar te motivează 🙂)"
-        : "⚡ Moral bonus XP (not counted yet, just for motivation 🙂)";
+        ? ""
+        : "";
     }
 
     if (bossBtnProblems) {
       bossBtnProblems.textContent = ro
-        ? "🎯 Începe cu probleme mixte"
-        : "🎯 Start with mixed problems";
+        ? "Probleme mixte"
+        : "Mixed problems";
     }
 
     if (bossBtnExams) {
       bossBtnExams.textContent = ro
-        ? "📑 Deschide seturile de examene"
-        : "📑 Open exam sets";
+        ? "Examene"
+        : "Exams";
     }
 
     if (bossChips[0]) bossChips[0].textContent = ro ? "Algebră" : "Algebra";
@@ -1306,14 +1306,14 @@ import {
 
     if (radarTitle) {
       radarTitle.textContent = ro
-        ? "📊 „Radarul” tău de matematică"
-        : "📊 Your math radar";
+        ? "Explorează"
+        : "Explore";
     }
 
     if (radarText) {
       radarText.textContent = ro
-        ? "Vezi rapid în ce zone ai chef să mai lucrezi azi."
-        : "Quickly see which areas you feel like working on today.";
+        ? "Alege o zonă."
+        : "Choose an area.";
     }
 
     mhSetRadarCard(
@@ -1463,14 +1463,14 @@ import {
     ro: {
       header_logo_slogan: "Învață. Exersează. Reușește.",
       header_search_placeholder: "Caută…",
-      header_btn_info: "ℹ️ Dificultăți & Contoare",
-      header_btn_about: "👤 About me",
+      header_btn_info: "Ajutor",
+      header_btn_about: "Despre",
       header_btn_focus_off: "🎯 Focus",
       header_btn_focus_on: "🎯 Focus ON",
       header_btn_theme_dark: "🌙 Dark",
       header_btn_theme_light: "☀️ Light",
-      header_btn_profile: "📊 Profilul tău",
-      header_btn_admin: "🛠 Admin",
+      header_btn_profile: "Profil",
+      header_btn_admin: "Admin",
 
       header_counter_solved_title: "Probleme rezolvate / Problems solved",
       header_counter_learned_title: "Lecții învățate / Lessons learned",
@@ -1490,14 +1490,14 @@ import {
     en: {
       header_logo_slogan: "Learn. Practice. Succeed.",
       header_search_placeholder: "Search…",
-      header_btn_info: "ℹ️ Difficulty & Counters",
-      header_btn_about: "👤 About me",
+      header_btn_info: "Help",
+      header_btn_about: "Despre",
       header_btn_focus_off: "🎯 Focus",
       header_btn_focus_on: "🎯 Focus ON",
       header_btn_theme_dark: "🌙 Dark",
       header_btn_theme_light: "☀️ Light",
-      header_btn_profile: "📊 Your profile",
-      header_btn_admin: "🛠 Admin",
+      header_btn_profile: "Profile",
+      header_btn_admin: "Admin",
 
       header_counter_solved_title: "Problems solved",
       header_counter_learned_title: "Lessons learned",
