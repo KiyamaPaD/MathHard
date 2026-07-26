@@ -123,6 +123,33 @@ const {
   feedbackForAttempt,
   formatAttemptTime
 } = await importBrowserModule("js/problem-workspace-model.js");
+const {
+  normalizeProblemAttemptCache,
+  normalizeQuizAttemptCache,
+  safeReadJson,
+  safeWriteJson,
+  scopedStorageKey
+} = await importBrowserModule("js/browser-state.js");
+
+const brokenStorage = new SessionStorageMock();
+brokenStorage.setItem("broken", "{not-json");
+assert.deepEqual(safeReadJson(brokenStorage, "broken", {}), {});
+assert.equal(brokenStorage.getItem("broken"), null);
+assert.equal(safeWriteJson(brokenStorage, "valid", { ok: true }), true);
+assert.deepEqual(safeReadJson(brokenStorage, "valid", null), { ok: true });
+assert.equal(scopedStorageKey("mh_state", "user-1"), "mh_state:user-1");
+assert.equal(scopedStorageKey("mh_state", ""), "");
+assert.deepEqual(normalizeProblemAttemptCache({
+  p1: { tries: [{ value: "1/2", ok: true }] },
+  p2: [{ v: "3", correct: false, created_at: 42 }]
+}), {
+  p1: [{ value: "1/2", ok: true }],
+  p2: [{ value: "3", ok: false, ts: 42 }]
+});
+assert.deepEqual(normalizeQuizAttemptCache({ q1: { tries: [{ ok: true }] }, bad: [] }), {
+  q1: { tries: [{ ok: true }] },
+  bad: { tries: [] }
+});
 
 function makeContentClient({ rpcError = null, authenticated = true } = {}) {
   const catalog = {
@@ -183,6 +210,48 @@ await assert.rejects(
   }),
   /Authentication is required/i
 );
+
+// Fresh memory cache expires after the configured TTL.
+invalidateContentCatalogCache();
+const originalNow = Date.now;
+let fakeNow = 1_800_000_000_000;
+Date.now = () => fakeNow;
+let ttlRpcCalls = 0;
+const ttlClient = {
+  auth: { async getSession() { return { data: { session: { user: { id: "ttl-user" } } }, error: null }; } },
+  async rpc() {
+    ttlRpcCalls += 1;
+    return { data: { lessons: [{ id: `lesson-${ttlRpcCalls}` }], problems: [], exams: [] }, error: null };
+  }
+};
+await loadContentCatalog({ supabase: ttlClient });
+fakeNow += 11 * 60 * 1000;
+await loadContentCatalog({ supabase: ttlClient });
+assert.equal(ttlRpcCalls, 2);
+Date.now = originalNow;
+
+// An older in-flight response must never overwrite a newer force refresh.
+invalidateContentCatalogCache();
+const pendingCatalogCalls = [];
+const raceClient = {
+  auth: { async getSession() { return { data: { session: { user: { id: "race-user" } } }, error: null }; } },
+  rpc() {
+    return new Promise((resolve) => pendingCatalogCalls.push(resolve));
+  }
+};
+const olderLoad = loadContentCatalog({ supabase: raceClient, forceRefresh: true });
+await new Promise((resolve) => setImmediate(resolve));
+const newerLoad = loadContentCatalog({ supabase: raceClient, forceRefresh: true });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(pendingCatalogCalls.length, 2);
+pendingCatalogCalls[1]({ data: { lessons: [{ id: "fresh" }], problems: [], exams: [] }, error: null });
+await newerLoad;
+pendingCatalogCalls[0]({ data: { lessons: [{ id: "stale" }], problems: [], exams: [] }, error: null });
+const olderResult = await olderLoad;
+assert.equal(olderResult.lessons[0].id, "fresh");
+assert.equal(getContentCatalogDiagnostics().totals.lessonsTotal, 1);
+const cachedAfterRace = await loadContentCatalog({ supabase: raceClient });
+assert.equal(cachedAfterRace.lessons[0].id, "fresh");
 
 const calls = [];
 const progressClient = {
@@ -459,6 +528,7 @@ const progressRows = {
   user_exam_progress: [{ exam_id: "exam-progress", passed: true }]
 };
 
+const progressErrors = new Set();
 const appProgressClient = {
   auth: {
     async getUser() {
@@ -470,7 +540,9 @@ const appProgressClient = {
       select() {
         return {
           async eq() {
-            return { data: progressRows[table] || [], error: null };
+            return progressErrors.has(table)
+              ? { data: null, error: new Error(`${table} unavailable`) }
+              : { data: progressRows[table] || [], error: null };
           }
         };
       }
@@ -499,6 +571,23 @@ assert.equal(appProgressModule.solvedSet.has("problem-progress"), true);
 assert.equal(appProgressModule.examsPassedSet.has("exam-progress"), true);
 assert.equal(appProgressModule.XP_TOTAL, 9);
 assert.equal(progressRefreshes, 2);
+
+progressErrors.add("user_problem_progress");
+progressRows.user_lesson_progress = [];
+const originalWarn = console.warn;
+const progressWarnings = [];
+console.warn = (...args) => progressWarnings.push(args.map(String).join(" "));
+try {
+  await appProgress.loadAppProgressFromDb({ id: "user-1" });
+} finally {
+  console.warn = originalWarn;
+}
+assert.ok(progressWarnings.some((message) => message.includes("keeping the last known state")));
+assert.equal(appProgressModule.learnedSet.has("lesson-progress"), false);
+assert.equal(appProgressModule.solvedSet.has("problem-progress"), true);
+assert.equal(appProgressModule.XP_TOTAL, 9);
+progressErrors.clear();
+progressRows.user_lesson_progress = [{ lesson_id: "lesson-progress", learned: true }];
 
 await appProgress.markLessonLearnedSafe("lesson-new");
 assert.equal(appProgressModule.learnedSet.has("lesson-new"), true);

@@ -12,8 +12,6 @@ import {
   sortLessonsForProfile
 } from "./profile-model.js";
 
-globalThis.supabase = supabase;
-console.log("PROFILE.JS LOADED v5");
 
 const $ = (id) => document.getElementById(id);
 
@@ -696,8 +694,6 @@ async function handleDeleteAccount() {
       body: {}
     });
 
-    console.log("DELETE FUNCTION RESULT:", { data, error });
-
     if (error) throw error;
     if (!data?.ok) {
       throw new Error(data?.error || t("delete_unconfirmed"));
@@ -838,6 +834,53 @@ async function loadProfileStatsFromDb(userId) {
         ? `${localizedTitle(exams.last, LANG, exams.lastRow.exam_id)} • ${t("last_word")} ${formatScore(exams.lastRow.last_score)}`
         : "—"
     );
+
+    const partialErrors = [
+      lessonError ? "lessons" : null,
+      problemError ? "problems" : null,
+      examError ? "exams" : null
+    ].filter(Boolean);
+
+    function markProgressUnavailable(bar, text) {
+      if (bar) bar.style.width = "0%";
+      safeText(text, "—");
+    }
+
+    if (lessonError) {
+      safeText(profileLearned, "—");
+      safeText(detailLessonsLearned, "—");
+      safeText(detailLessonsUnlearned, "—");
+      safeText(nextLessonText, "—");
+      safeText(nextChapterText, "—");
+      safeText(profileRecentLesson, "—");
+      markProgressUnavailable(profileLessonsProgressBar, profileLessonsProgressText);
+    }
+
+    if (problemError) {
+      safeText(profileSolved, "—");
+      safeText(profileXP, "—");
+      safeText(profileAvgXpText, "—");
+      safeText(detailProblemsSolved, "—");
+      safeText(detailProblemsWrong, "—");
+      safeText(detailProblemsUnseen, "—");
+      safeText(profileRecentProblem, "—");
+      markProgressUnavailable(profileProblemsProgressBar, profileProblemsProgressText);
+    }
+
+    if (examError) {
+      safeText(profilePassed, "—");
+      safeText(detailExamsPassed, "—");
+      safeText(detailExamsUnpassed, "—");
+      safeText(detailExamsUnattempted, "—");
+      safeText(nextExamText, "—");
+      safeText(profileRecentExam, "—");
+      safeText(profileBestExam, "—");
+      safeText(profileExamAttempts, "—");
+      safeText(profileExamLastScore, "—");
+      markProgressUnavailable(profileExamsProgressBar, profileExamsProgressText);
+    }
+
+    return { partialErrors };
   } catch (err) {
     console.error("Eroare la încărcarea progresului:", err);
     setZeroStats();
@@ -852,12 +895,6 @@ async function loadProfileStatsFromDb(userId) {
 /* ========= CURRENT USER LOADER ========= */
 async function performCurrentUserLoad({ force = false } = {}) {
   const { data, error } = await supabase.auth.getUser();
-
-  console.log("GET USER RESULT:", {
-    email: data?.user?.email || null,
-    id: data?.user?.id || null,
-    error: error?.message || null
-  });
 
   if (error || !data?.user) {
     renderGuest();
@@ -879,8 +916,17 @@ async function performCurrentUserLoad({ force = false } = {}) {
   renderUser(data.user, profileRow);
 
   try {
-    await loadProfileStatsFromDb(data.user.id);
-    setStatus(t("auth_success"));
+    const statsResult = await loadProfileStatsFromDb(data.user.id);
+    if (statsResult?.partialErrors?.length) {
+      setStatus(
+        LANG === "ro"
+          ? `Unele statistici nu au putut fi încărcate (${statsResult.partialErrors.join(", ")}). Valorile necunoscute sunt marcate cu „—”.`
+          : `Some statistics could not be loaded (${statsResult.partialErrors.join(", ")}). Unknown values are marked with “—”.`,
+        true
+      );
+    } else {
+      setStatus(t("auth_success"));
+    }
   } catch (err) {
     setStatus(
       t("progress_load_error", { error: err.message || err }),
@@ -940,12 +986,6 @@ async function handleSignup() {
       }
     });
 
-    console.log("SIGNUP RESULT:", {
-      hasUser: !!data?.user,
-      hasSession: !!data?.session,
-      error: error?.message || null
-    });
-
     if (error) {
       setStatus(t("signup_error", { error: error.message }), true);
       return;
@@ -995,12 +1035,6 @@ async function handleLogin() {
       password
     });
 
-    console.log("LOGIN RESULT:", {
-      hasUser: !!data?.user,
-      hasSession: !!data?.session,
-      error: error?.message || null
-    });
-
     if (error) {
       setStatus(t("login_error", { error: error.message }), true);
       return;
@@ -1047,8 +1081,6 @@ changePasswordBtn?.addEventListener("click", handleChangePassword);
 deleteAccountBtn?.addEventListener("click", handleDeleteAccount);
 
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log("AUTH EVENT:", event, session);
-
   if (session?.user) {
     setTimeout(() => {
       loadCurrentUser().catch((err) => {

@@ -61,8 +61,15 @@ import { createRoadmapController } from "./roadmap-controller.js";
 import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
 import { invalidateRoadmapCache } from "./roadmap-repository.js";
 import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
-
-console.log("APP.JS LOADED");
+import {
+  normalizeProblemAttemptCache,
+  normalizeQuizAttemptCache,
+  replaceRecord,
+  safeReadJson,
+  safeRemoveStorageKey,
+  safeWriteJson,
+  scopedStorageKey
+} from "./browser-state.js";
 
 
   const DATA = createRuntimeData();
@@ -1667,20 +1674,22 @@ console.log("APP.JS LOADED");
     return `${y}-${m}-${day}`;
   }
 
-  function mhGetTodayProgressState() {
-    const key = "mh_today_training_v2";
-    const today = mhHubDayKey();
+  function mhTodayProgressStorageKey() {
+    return scopedStorageKey("mh_today_training_v3", MH_AUTH_USER?.id);
+  }
 
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) || "null");
-      if (saved && saved.day === today) {
-        return {
-          day: saved.day,
-          learnedToday: Number(saved.learnedToday || 0),
-          solvedToday: Number(saved.solvedToday || 0)
-        };
-      }
-    } catch (e) {}
+  function mhGetTodayProgressState() {
+    const key = mhTodayProgressStorageKey();
+    const today = mhHubDayKey();
+    const saved = key ? safeReadJson(localStorage, key, null) : null;
+
+    if (saved && saved.day === today) {
+      return {
+        day: saved.day,
+        learnedToday: Math.max(0, Number(saved.learnedToday || 0)),
+        solvedToday: Math.max(0, Number(saved.solvedToday || 0))
+      };
+    }
 
     const fresh = {
       day: today,
@@ -1688,12 +1697,13 @@ console.log("APP.JS LOADED");
       solvedToday: 0
     };
 
-    localStorage.setItem(key, JSON.stringify(fresh));
+    if (key) safeWriteJson(localStorage, key, fresh);
     return fresh;
   }
 
   function mhSaveTodayProgressState(state) {
-    localStorage.setItem("mh_today_training_v2", JSON.stringify(state));
+    const key = mhTodayProgressStorageKey();
+    if (key) safeWriteJson(localStorage, key, state);
   }
 
   function mhIncrementTodayProgress(kind) {
@@ -3117,7 +3127,7 @@ console.log("APP.JS LOADED");
   let adminVisibilityEpoch = 0;
   let adminExamRecoveryController = null;
 
-  function setAdminButtonVisibility(isVisible) {
+  function setAdminButtonVisibility(isVisible, { closeSurfaces = true } = {}) {
     if (!adminBtn) return;
 
     const visible = Boolean(isVisible);
@@ -3127,7 +3137,7 @@ console.log("APP.JS LOADED");
     adminBtn.disabled = !visible;
 
     // Fail closed: if access disappears, the admin drawer closes immediately.
-    if (!visible) {
+    if (!visible && closeSurfaces) {
       adminDrawer?.classList.remove("open");
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
@@ -3185,8 +3195,9 @@ console.log("APP.JS LOADED");
     // button after logout.
     const requestEpoch = ++adminVisibilityEpoch;
 
-    // Hide first and reveal only after both auth and role checks succeed.
-    setAdminButtonVisibility(false);
+    // Hide the entry point while verifying, but do not destroy an open editor
+    // during harmless token refreshes / tab visibility changes.
+    setAdminButtonVisibility(false, { closeSurfaces: false });
 
     const activeUser = await getVerifiedActiveUser();
     if (requestEpoch !== adminVisibilityEpoch) return false;
@@ -3301,15 +3312,12 @@ console.log("APP.JS LOADED");
   }
 
   function getExamItemStorageKey(examId){
-    return `mh_exam_item_results_${examId}`;
+    return scopedStorageKey(`mh_exam_item_results_${String(examId || "").trim()}`, MH_AUTH_USER?.id);
   }
 
   function getExamItemResults(examId){
-    try{
-      return JSON.parse(localStorage.getItem(getExamItemStorageKey(examId)) || "{}");
-    }catch(e){
-      return {};
-    }
+    const key = getExamItemStorageKey(examId);
+    return key ? safeReadJson(localStorage, key, {}) : {};
   }
 
   function setExamItemResult(examId, itemId, payload){
@@ -3319,7 +3327,8 @@ console.log("APP.JS LOADED");
       ...payload,
       updated_at: Date.now()
     };
-    localStorage.setItem(getExamItemStorageKey(examId), JSON.stringify(all));
+    const key = getExamItemStorageKey(examId);
+    if (key) safeWriteJson(localStorage, key, all);
     return all[itemId];
   }
 
@@ -3338,12 +3347,15 @@ console.log("APP.JS LOADED");
       };
     }
 
-    localStorage.setItem(getExamItemStorageKey(examId), JSON.stringify(normalized));
+    const key = getExamItemStorageKey(examId);
+    if (key) safeWriteJson(localStorage, key, normalized);
     return normalized;
   }
 
   function clearExamItemResults(examId){
-    localStorage.removeItem(getExamItemStorageKey(examId));
+    const key = getExamItemStorageKey(examId);
+    if (key) safeRemoveStorageKey(localStorage, key);
+    safeRemoveStorageKey(localStorage, `mh_exam_item_results_${examId}`);
   }
 
   function getExamItemTitle(item, index){
@@ -3424,7 +3436,7 @@ console.log("APP.JS LOADED");
       <div style="margin:8px 0">${prompt}</div>
       <div class="checkrow">
         <input id="exam-open-${exam.id}-${item.id}" autocomplete="off" placeholder="${LANG === "ro" ? "Răspuns…" : "Answer…"}" value="${esc(submitted)}" ${locked ? "disabled" : ""}>
-        <button class="btn" id="exam-open-btn-${exam.id}-${item.id}" ${locked ? "disabled" : ""}>💾 ${LANG === "ro" ? "Salvează" : "Save"}</button>
+        <button class="btn" id="exam-open-btn-${exam.id}-${item.id}" ${locked ? "disabled" : ""} type="button">💾 ${LANG === "ro" ? "Salvează" : "Save"}</button>
         <div id="exam-open-res-${exam.id}-${item.id}"></div>
       </div>
       <div class="mh-live-preview-wrap">
@@ -3447,26 +3459,32 @@ console.log("APP.JS LOADED");
     }
 
     let saveTimer = null;
-    let saving = false;
+    let saveRevision = 0;
+    let pendingSaves = 0;
 
     async function saveNow() {
-      if (locked || saving) return;
+      if (locked) return;
       const raw = String(input?.value || "").trim();
+      const revision = ++saveRevision;
       setExamItemResult(exam.id, item.id, { type: "open", answer_text: raw });
       if (typeof onChange === "function") onChange();
-      saving = true;
+      pendingSaves += 1;
       if (btn) btn.disabled = true;
       if (res) res.innerHTML = `<span class="legend">${LANG === "ro" ? "Se salvează…" : "Saving…"}</span>`;
       try {
         const row = await onSave(item.id, { type: "open", answer_text: raw });
-        setExamItemResult(exam.id, item.id, { type: "open", answer_text: raw, saved_at: row?.saved_at || new Date().toISOString() });
-        if (res) res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+        if (revision === saveRevision) {
+          setExamItemResult(exam.id, item.id, { type: "open", answer_text: raw, saved_at: row?.saved_at || new Date().toISOString() });
+          if (res) res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+        }
       } catch (error) {
         console.error("Secure exam answer save failed:", error);
-        if (res) res.innerHTML = `<span class="bad">${LANG === "ro" ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Retry."}</span>`;
+        if (revision === saveRevision && res) {
+          res.innerHTML = `<span class="bad">${LANG === "ro" ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Retry."}</span>`;
+        }
       } finally {
-        saving = false;
-        if (btn && !locked) btn.disabled = false;
+        pendingSaves = Math.max(0, pendingSaves - 1);
+        if (btn && !locked) btn.disabled = pendingSaves > 0;
       }
     }
 
@@ -3521,7 +3539,7 @@ console.log("APP.JS LOADED");
         `).join("")}
       </div>
       <div class="checkrow" style="margin-top:10px;">
-        <button class="btn" id="exam-mcq-btn-${exam.id}-${item.id}" ${locked ? "disabled" : ""}>💾 ${LANG === "ro" ? "Salvează selecția" : "Save selection"}</button>
+        <button class="btn" id="exam-mcq-btn-${exam.id}-${item.id}" ${locked ? "disabled" : ""} type="button">💾 ${LANG === "ro" ? "Salvează selecția" : "Save selection"}</button>
         <div id="exam-mcq-res-${exam.id}-${item.id}"></div>
       </div>
       ${renderSecureItemResult(exam, item)}
@@ -3538,34 +3556,40 @@ console.log("APP.JS LOADED");
     }
 
     let saveTimer = null;
-    let saving = false;
+    let saveRevision = 0;
+    let pendingSaves = 0;
 
     function selectedValues() {
       return inputs.filter((input) => input.checked).map((input) => input.value);
     }
 
     async function saveNow() {
-      if (locked || saving) return;
+      if (locked) return;
       const selected = selectedValues();
       if (!selected.length && !item.allow_none) {
         if (res) res.innerHTML = `<span class="bad">${LANG === "ro" ? "Selectează cel puțin o variantă." : "Select at least one option."}</span>`;
         return;
       }
+      const revision = ++saveRevision;
       setExamItemResult(exam.id, item.id, { type: "mcq", selected });
       if (typeof onChange === "function") onChange();
-      saving = true;
+      pendingSaves += 1;
       if (btn) btn.disabled = true;
       if (res) res.innerHTML = `<span class="legend">${LANG === "ro" ? "Se salvează…" : "Saving…"}</span>`;
       try {
         const row = await onSave(item.id, { type: "mcq", selected });
-        setExamItemResult(exam.id, item.id, { type: "mcq", selected, saved_at: row?.saved_at || new Date().toISOString() });
-        if (res) res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+        if (revision === saveRevision) {
+          setExamItemResult(exam.id, item.id, { type: "mcq", selected, saved_at: row?.saved_at || new Date().toISOString() });
+          if (res) res.innerHTML = `<span class="ok">☁️ ${LANG === "ro" ? "Salvat" : "Saved"}</span>`;
+        }
       } catch (error) {
         console.error("Secure exam selection save failed:", error);
-        if (res) res.innerHTML = `<span class="bad">${LANG === "ro" ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Retry."}</span>`;
+        if (revision === saveRevision && res) {
+          res.innerHTML = `<span class="bad">${LANG === "ro" ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Retry."}</span>`;
+        }
       } finally {
-        saving = false;
-        if (btn && !locked) btn.disabled = false;
+        pendingSaves = Math.max(0, pendingSaves - 1);
+        if (btn && !locked) btn.disabled = pendingSaves > 0;
       }
     }
 
@@ -3860,12 +3884,27 @@ console.log("APP.JS LOADED");
 
   // acordă XP la prima rezolvare corectă
 
-  /* attempts state */
-  let attempts = JSON.parse(localStorage.getItem("mh_attempts")||"{}");
-  function saveAttempts()
-  { 
-    localStorage.setItem("mh_attempts", JSON.stringify(attempts)); 
+  /* Local fallback attempt state. Canonical attempt history remains in Supabase. */
+  const attempts = {};
+
+  function problemAttemptStorageKey(user = MH_AUTH_USER) {
+    return scopedStorageKey("mh_problem_attempts_v3", user?.id);
   }
+
+  function loadProblemAttemptFallback(user = MH_AUTH_USER) {
+    replaceRecord(attempts, {});
+    const key = problemAttemptStorageKey(user);
+    if (!key) return;
+    replaceRecord(attempts, normalizeProblemAttemptCache(safeReadJson(sessionStorage, key, {})));
+  }
+
+  function saveAttempts() {
+    const key = problemAttemptStorageKey();
+    if (key) safeWriteJson(sessionStorage, key, normalizeProblemAttemptCache(attempts));
+  }
+
+  safeRemoveStorageKey(localStorage, "mh_attempts");
+  loadProblemAttemptFallback();
 
   function updateCounters(){
       document.getElementById("solvedCount").textContent = solvedSet.size;
@@ -5323,7 +5362,7 @@ console.log("APP.JS LOADED");
     }
 
     if (chips.length){
-      chips.push(`<button class="chipbtn clear" id="clearFilters">✖️ ${LANG === "ro" ? "Șterge filtre" : "Clear filters"}</button>`);
+      chips.push(`<button class="chipbtn clear" id="clearFilters" type="button">✖️ ${LANG === "ro" ? "Șterge filtre" : "Clear filters"}</button>`);
       fb.innerHTML = chips.join("");
       fb.style.display = "flex";
 
@@ -5442,9 +5481,28 @@ console.log("APP.JS LOADED");
 
   function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
 
-  /* ===== Lesson-quiz attempts ===== */
-  let quizAttempts = JSON.parse(localStorage.getItem("mh_quiz_attempts")||"{}");
-  function saveQuizAttempts(){ localStorage.setItem("mh_quiz_attempts", JSON.stringify(quizAttempts)); }
+  /* ===== Lesson-quiz attempts (scoped per authenticated account) ===== */
+  let quizAttempts = {};
+
+  function quizAttemptStorageKey(user = MH_AUTH_USER) {
+    return scopedStorageKey("mh_quiz_attempts_v2", user?.id);
+  }
+
+  function loadQuizAttemptFallback(user = MH_AUTH_USER) {
+    const key = quizAttemptStorageKey(user);
+    quizAttempts = key
+      ? normalizeQuizAttemptCache(safeReadJson(localStorage, key, {}))
+      : {};
+  }
+
+  function saveQuizAttempts(){
+    const key = quizAttemptStorageKey();
+    if (key) safeWriteJson(localStorage, key, normalizeQuizAttemptCache(quizAttempts));
+  }
+
+  safeRemoveStorageKey(localStorage, "mh_quiz_attempts");
+  safeRemoveStorageKey(localStorage, "mh_today_training_v2");
+  loadQuizAttemptFallback();
   function qKey(lessonId, qid){ return `${lessonId}::${qid}`; }
   function qGetTries(lessonId, qid){
     const k=qKey(lessonId,qid);
@@ -5594,11 +5652,11 @@ console.log("APP.JS LOADED");
       <div id="quizList"></div>
 
       <div class="quizActions">
-        <button class="btn" id="quizCheckAll">✅ ${isRO ? 'Verifică răspunsurile' : 'Check answers'}</button>
-        <button class="btn" id="quizRetryWrong">🎯 ${isRO ? 'Resetează doar greșitele' : 'Reset only wrong ones'}</button>
-        <button class="btn" id="quizNew">🔄 ${isRO ? 'Alt set de întrebări' : 'New set'}</button>
-        <button class="btn" id="quizReset">♻️ ${isRO ? 'Reset tot quiz-ul' : 'Reset whole quiz'}</button>
-        <button class="btn" id="quizBack">⬅️ ${isRO ? 'Înapoi la lecție' : 'Back to lesson'}</button>
+        <button class="btn" id="quizCheckAll" type="button">✅ ${isRO ? 'Verifică răspunsurile' : 'Check answers'}</button>
+        <button class="btn" id="quizRetryWrong" type="button">🎯 ${isRO ? 'Resetează doar greșitele' : 'Reset only wrong ones'}</button>
+        <button class="btn" id="quizNew" type="button">🔄 ${isRO ? 'Alt set de întrebări' : 'New set'}</button>
+        <button class="btn" id="quizReset" type="button">♻️ ${isRO ? 'Reset tot quiz-ul' : 'Reset whole quiz'}</button>
+        <button class="btn" id="quizBack" type="button">⬅️ ${isRO ? 'Înapoi la lecție' : 'Back to lesson'}</button>
       </div>
     `;
     content.appendChild(box);
@@ -5756,7 +5814,7 @@ console.log("APP.JS LOADED");
 
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
             <span class="qBadge" id="qBadge-${idx}" data-state="" style="display:none"></span>
-            <button class="explainBtn" id="expBtn-${idx}" style="display:${hasWrongHistory ? 'inline-block' : 'none'}">
+            <button class="explainBtn" id="expBtn-${idx}" style="display:${hasWrongHistory ? 'inline-block' : 'none'}" type="button">
               📘 ${isRO ? 'Explică' : 'Explain'}
             </button>
           </div>
@@ -5997,7 +6055,7 @@ console.log("APP.JS LOADED");
           <div>
             🔢 <b>${LANG === "ro" ? "Axa numerică (numere naturale)" : "Number line (natural numbers)"}</b>
           </div>
-          <button class="btn small" id="numlineToggleBtn-${WIDGET_ID}">
+          <button class="btn small" id="numlineToggleBtn-${WIDGET_ID}" type="button">
             ${LANG === "ro" ? "🙈 Ascunde axa" : "🙈 Hide number line"}
           </button>
         </div>
@@ -6311,8 +6369,8 @@ console.log("APP.JS LOADED");
       <div style="margin:8px 0">${st}</div>
       <div class="checkrow">
         <input id="${prefix}-ans" ${locked?'disabled':''} placeholder="${LANG==='ro'?'Răspuns…':'Answer…'}" />
-        <button class="btn" id="${prefix}-btn" ${locked?'disabled':''}>✅ ${LANG==='ro'?'Verifică':'Check'}</button>
-        <button class="btn" id="${prefix}-reset" ${locked?'disabled':''} title="Resetează UI-ul, păstrând istoricul">♻️ Reset</button>
+        <button class="btn" id="${prefix}-btn" ${locked?'disabled':''} type="button">✅ ${LANG==='ro'?'Verifică':'Check'}</button>
+        <button class="btn" id="${prefix}-reset" ${locked?'disabled':''} title="Resetează UI-ul, păstrând istoricul" type="button">♻️ Reset</button>
         <div id="${prefix}-res"></div>
       </div>
 
@@ -6510,8 +6568,8 @@ function openExam(exam){
       <option value="4">4h</option>
       <option value="5">5h</option>
     </select>
-    <button class="btn" id="startExam">🚀 Start</button>
-    <button class="btn" id="submitSecureExam" style="display:none;border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.14)">📨 ${LANG === "ro" ? "Predă examenul" : "Submit exam"}</button>
+    <button class="btn" id="startExam" type="button">🚀 Start</button>
+    <button class="btn" id="submitSecureExam" style="display:none;border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.14)" type="button">📨 ${LANG === "ro" ? "Predă examenul" : "Submit exam"}</button>
     <span class="examBadge examTimer" id="examLeft" style="display:none">--:--</span>
     <div class="progressRow">
       <span class="legend">${LANG === "ro" ? "Răspunsuri salvate" : "Saved answers"}:</span>
@@ -6569,13 +6627,15 @@ function openExam(exam){
     `;
   }
 
-  async function persistAnswer(itemId, answer) {
+  const examAnswerMutationQueue = createKeyedMutationQueue();
+
+  async function persistAnswer(itemId, answer, { finalFlush = false } = {}) {
+    if ((actionRunning || examFinished) && !finalFlush) return null;
     if (!activeAttempt?.attempt_id) throw new Error("No active secure exam attempt.");
-    return saveSecureExamAnswer(
-      supabase,
-      activeAttempt.attempt_id,
-      itemId,
-      answer
+    const attemptId = activeAttempt.attempt_id;
+    return examAnswerMutationQueue.enqueue(
+      `secure-exam:${attemptId}:${itemId}`,
+      () => saveSecureExamAnswer(supabase, attemptId, itemId, answer)
     );
   }
 
@@ -6659,10 +6719,10 @@ function openExam(exam){
       const row = rows[item.id] || {};
       if (item.type === "mcq") {
         if (Array.isArray(row.selected) && (row.selected.length || item.allow_none)) {
-          await persistAnswer(item.id, { type: "mcq", selected: row.selected });
+          await persistAnswer(item.id, { type: "mcq", selected: row.selected }, { finalFlush: true });
         }
       } else if (String(row.answer_text || "").trim()) {
-        await persistAnswer(item.id, { type: "open", answer_text: String(row.answer_text || "").trim() });
+        await persistAnswer(item.id, { type: "open", answer_text: String(row.answer_text || "").trim() }, { finalFlush: true });
       }
     }
   }
@@ -6675,7 +6735,9 @@ function openExam(exam){
     setStatus(LANG === "ro" ? "Se salvează ultimele răspunsuri și se corectează pe server…" : "Saving final answers and grading on the server…");
 
     try {
-      if (!timedOut) await persistAllLocalAnswers();
+      // Always flush the latest local values, including automatic timeout.
+      // Per-item mutation queues guarantee this final save runs after older autosaves.
+      await persistAllLocalAnswers();
       const result = await submitSecureExamAttempt(supabase, activeAttempt.attempt_id);
       examFinished = true;
       activeAttempt = { ...activeAttempt, ...result, status: "submitted" };
@@ -7308,12 +7370,19 @@ function openExam(exam){
     const nextUserId = nextUser?.id || "";
     MH_AUTH_USER = nextUser;
 
+    if (previousUserId !== nextUserId) {
+      loadProblemAttemptFallback(nextUser);
+      loadQuizAttemptFallback(nextUser);
+      if (previousUserId && nextUserId) clearLocalExamArtifactsOnLogout();
+    }
+
     if (!nextUserId) {
       clearRuntimeCatalog();
       invalidateContentCatalogCache();
       invalidateRoadmapCache();
       roadmapController?.clear();
       clearLocalExamArtifactsOnLogout();
+      setAdminButtonVisibility(false, { closeSurfaces: true });
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       adminDrawer?.classList.remove("open");
@@ -7363,7 +7432,7 @@ function openExam(exam){
     supabase,
     hideAdminButton: () => {
       ++adminVisibilityEpoch;
-      setAdminButtonVisibility(false);
+      setAdminButtonVisibility(false, { closeSurfaces: false });
     },
     loadProgress: loadAppProgressFromDb,
     refreshAdminButton: refreshAdminButtonVisibility,

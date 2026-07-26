@@ -35,7 +35,9 @@ const moduleJsFiles = [
   "js/problem-workspace-model.js",
   "js/quick-nav-controller.js",
   "js/ui-preferences-repository.js",
-  "js/section-layout-controller.js"
+  "js/section-layout-controller.js",
+  "js/browser-state.js",
+  "js/runtime-diagnostics.js"
 ];
 
 const classicJsFiles = [
@@ -54,6 +56,7 @@ const requiredFiles = [
   "css/quick-nav.css",
   "css/section-layout.css",
   "scripts/test-repositories.mjs",
+  "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
@@ -212,6 +215,8 @@ const quickNavCss = readFileSync(resolve(root, "css/quick-nav.css"), "utf8");
 const uiPreferencesRepositorySource = readFileSync(resolve(root, "js/ui-preferences-repository.js"), "utf8");
 const sectionLayoutControllerSource = readFileSync(resolve(root, "js/section-layout-controller.js"), "utf8");
 const sectionLayoutCss = readFileSync(resolve(root, "css/section-layout.css"), "utf8");
+const browserStateSource = readFileSync(resolve(root, "js/browser-state.js"), "utf8");
+const runtimeDiagnosticsSource = readFileSync(resolve(root, "js/runtime-diagnostics.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -596,6 +601,42 @@ if (!problemWorkspaceCss.includes(".mh-problem-layout")) {
 }
 if (!appSource.includes("getProblems: () => DATA.problems")) {
   fail("app.js must pass the catalog to the Phase 13B problem workspace.");
+}
+
+
+// Stability reset: browser recovery, diagnostics, storage isolation and race guards.
+if (!indexHtml.includes('src="/js/runtime-diagnostics.js"') || !profileHtml.includes('src="/js/runtime-diagnostics.js"')) {
+  fail("Runtime diagnostics must be loaded on both application pages.");
+}
+if (!appSource.includes('from "./browser-state.js"')) {
+  fail("app.js must use the safe browser-state helpers.");
+}
+if (!browserStateSource.includes("safeReadJson") || !browserStateSource.includes("scopedStorageKey")) {
+  fail("browser-state.js must expose safe parsing and per-user key helpers.");
+}
+if (!runtimeDiagnosticsSource.includes("unhandledrejection") || !runtimeDiagnosticsSource.includes("MathHardDiagnostics")) {
+  fail("runtime-diagnostics.js must capture async failures and expose sanitized reports.");
+}
+if (/JSON\.parse\(localStorage\.getItem\(["']mh_(?:attempts|quiz_attempts|today_training)/.test(appSource)) {
+  fail("app.js must not parse legacy global progress storage directly.");
+}
+if (/console\.log\(["'](?:AUTH EVENT:|GET USER RESULT:|LOGIN RESULT:|SIGNUP RESULT:|DELETE FUNCTION RESULT:)/.test(profileSource) || profileSource.includes("globalThis.supabase =")) {
+  fail("profile.js must not expose sessions or sensitive auth diagnostics in the console.");
+}
+if (/if\s*\(\s*!timedOut\s*\)\s*await\s+persistAllLocalAnswers/.test(appSource) || !appSource.includes("await persistAllLocalAnswers();")) {
+  fail("Secure exam submission must flush the latest answers even on timeout.");
+}
+if (!contentRepositorySource.includes("loadEpoch") || !contentRepositorySource.includes("CACHE_TTL_MS")) {
+  fail("Content loading must protect cache TTL and stale request races.");
+}
+if (!roadmapRepositorySource.includes("loadEpoch")) {
+  fail("Roadmap loading must protect against stale request overwrites.");
+}
+if (!secureProblemControllerSource.includes("workspaceSaveChain") || !secureProblemControllerSource.includes("Array.isArray(attempts[problem.id])")) {
+  fail("Problem workspace saves and legacy attempt fallbacks must be race-safe.");
+}
+if (indexHtml.includes('/img/preview.png')) {
+  fail("Open Graph image points to a removed asset.");
 }
 
 if (failed) {

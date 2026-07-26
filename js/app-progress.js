@@ -181,6 +181,7 @@ export function createAppProgressController({
 
   async function loadAppProgressFromDb(userOverride = undefined) {
     const currentEpoch = ++loadEpoch;
+    const previousUserId = authUser?.id || "";
     let resolvedUser = null;
 
     try {
@@ -190,17 +191,24 @@ export function createAppProgressController({
 
       if (currentEpoch !== loadEpoch) return;
 
+      const nextUserId = resolvedUser?.id || "";
+      const userChanged = previousUserId !== nextUserId;
       authUser = resolvedUser;
       progressUser = resolvedUser;
-      resetProgressState();
 
       if (!resolvedUser) {
+        resetProgressState();
         onFullRefresh();
         return;
       }
 
-      // Reveal authenticated UI immediately; counters can hydrate afterwards.
-      onFullRefresh();
+      // Never wipe an authenticated user's visible counters before the network
+      // answers. On a same-user refresh, successful groups replace their state
+      // atomically while failed groups keep the last known-good values.
+      if (userChanged) {
+        resetProgressState();
+        onFullRefresh();
+      }
 
       const userId = resolvedUser.id;
       const [lessonResult, problemResult, examResult] = await Promise.all([
@@ -227,51 +235,69 @@ export function createAppProgressController({
       ].filter(([, error]) => Boolean(error));
 
       for (const [section, error] of progressErrors) {
-        console.warn(`Could not load ${section} progress; continuing with empty data:`, error);
+        console.warn(`Could not load ${section} progress; keeping the last known state:`, error);
       }
 
-      const lessonRows = lessonResult.error ? [] : (lessonResult.data || []);
-      const problemRows = problemResult.error ? [] : (problemResult.data || []);
-      const examRows = examResult.error ? [] : (examResult.data || []);
+      if (!lessonResult.error) {
+        const nextLearned = new Set();
+        for (const row of lessonResult.data || []) {
+          if (row.learned) nextLearned.add(row.lesson_id);
+        }
+        learnedSet = nextLearned;
+      }
 
-      lessonRows.forEach((row) => {
-        if (row.learned) learnedSet.add(row.lesson_id);
-      });
+      if (!problemResult.error) {
+        const nextSolved = new Set();
+        const nextDetails = {};
 
-      problemRows.forEach((row) => {
-        const hintsUsed = Number(row.hints_used ?? row.hints ?? 0);
-        const wrongAttempts = Number(row.wrong_attempts ?? row.attempts ?? 0);
+        for (const row of problemResult.data || []) {
+          const hintsUsed = Number(row.hints_used ?? row.hints ?? 0);
+          const wrongAttempts = Number(row.wrong_attempts ?? row.attempts ?? 0);
 
-        XP_DETAILS[row.problem_id] = {
-          xp: Number(row.xp_earned || 0),
-          wrong: wrongAttempts,
-          hints: hintsUsed,
-          solved: Boolean(row.solved),
-          usedHint1: Boolean(row.used_hint1 ?? (hintsUsed >= 1)),
-          usedHint2: Boolean(row.used_hint2 ?? (hintsUsed >= 2))
-        };
+          nextDetails[row.problem_id] = {
+            xp: Number(row.xp_earned || 0),
+            wrong: wrongAttempts,
+            hints: hintsUsed,
+            solved: Boolean(row.solved),
+            usedHint1: Boolean(row.used_hint1 ?? (hintsUsed >= 1)),
+            usedHint2: Boolean(row.used_hint2 ?? (hintsUsed >= 2))
+          };
 
-        if (row.solved) solvedSet.add(row.problem_id);
-      });
+          if (row.solved) nextSolved.add(row.problem_id);
+        }
 
-      recomputeXPTotal();
+        solvedSet = nextSolved;
+        XP_DETAILS = nextDetails;
+        recomputeXPTotal();
+      }
 
-      examRows.forEach((row) => {
-        if (row.passed) examsPassedSet.add(row.exam_id);
-      });
+      if (!examResult.error) {
+        const nextPassed = new Set();
+        for (const row of examResult.data || []) {
+          if (row.passed) nextPassed.add(row.exam_id);
+        }
+        examsPassedSet = nextPassed;
+      }
 
       onFullRefresh();
+      return {
+        errors: progressErrors.map(([section, error]) => ({ section, error }))
+      };
     } catch (error) {
       if (currentEpoch !== loadEpoch) return;
 
-      console.error("Eroare la load progress din DB; catalogul rămâne disponibil:", error);
+      console.error("Eroare la load progress din DB; starea vizibilă anterioară este păstrată:", error);
 
+      const nextUserId = resolvedUser?.id || "";
+      const userChanged = previousUserId !== nextUserId;
       authUser = resolvedUser || null;
       progressUser = resolvedUser || null;
-      resetProgressState();
+      if (!resolvedUser || userChanged) resetProgressState();
       onFullRefresh();
+      return { errors: [{ section: "all", error }] };
     }
   }
+
 
   return {
     awardXPForProblem,

@@ -5,6 +5,7 @@ const STALE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 let memorySnapshot = null;
 let inFlightLoad = null;
+let loadEpoch = 0;
 
 function emptyCatalog() {
   return { lessons: [], problems: [], exams: [] };
@@ -163,6 +164,7 @@ export function catalogTotals(catalog) {
 }
 
 export function invalidateContentCatalogCache({ allUsers = true, userId = "" } = {}) {
+  loadEpoch += 1;
   memorySnapshot = null;
   inFlightLoad = null;
 
@@ -193,7 +195,9 @@ export function getContentCatalogDiagnostics() {
     userId: snapshot.userId || "",
     createdAt: Number(snapshot.createdAt || 0),
     status: snapshot.status,
-    staleGroups: [],
+    staleGroups: snapshot.status === "degraded"
+      ? [...new Set(asArray(snapshot.errors).map((entry) => entry?.group || "catalog"))]
+      : [],
     errors: [...asArray(snapshot.errors)]
   };
 }
@@ -207,17 +211,23 @@ export async function loadContentCatalog({
   const userId = authenticatedUser.id;
 
   if (memorySnapshot?.userId && memorySnapshot.userId !== userId) {
+    loadEpoch += 1;
     memorySnapshot = null;
     inFlightLoad = null;
   }
 
   if (forceRefresh) {
+    loadEpoch += 1;
     memorySnapshot = null;
     inFlightLoad = null;
   }
 
   if (!forceRefresh && memorySnapshot?.userId === userId) {
-    return memorySnapshot.catalog;
+    const age = Date.now() - Number(memorySnapshot.createdAt || 0);
+    if (Number.isFinite(age) && age >= 0 && age <= CACHE_TTL_MS) {
+      return memorySnapshot.catalog;
+    }
+    memorySnapshot = null;
   }
 
   if (!forceRefresh) {
@@ -231,15 +241,33 @@ export async function loadContentCatalog({
   if (inFlightLoad?.userId === userId) return inFlightLoad.promise;
 
   const staleStored = readStoredSnapshot(userId, { allowStale: true });
+  const requestEpoch = loadEpoch;
   const promise = (async () => {
     try {
       const snapshot = await fetchCatalogRpc(supabase, userId);
+      if (requestEpoch !== loadEpoch) {
+        const newerLoad = inFlightLoad?.userId === userId && inFlightLoad.epoch > requestEpoch
+          ? inFlightLoad.promise
+          : null;
+        if (newerLoad) return newerLoad;
+        if (memorySnapshot?.userId === userId) return memorySnapshot.catalog;
+        return snapshot.catalog;
+      }
+
       memorySnapshot = snapshot;
       writeStoredSnapshot(snapshot);
       return snapshot.catalog;
     } catch (error) {
+      if (requestEpoch !== loadEpoch) {
+        const newerLoad = inFlightLoad?.userId === userId && inFlightLoad.epoch > requestEpoch
+          ? inFlightLoad.promise
+          : null;
+        if (newerLoad) return newerLoad;
+        if (memorySnapshot?.userId === userId) return memorySnapshot.catalog;
+      }
+
       if (staleStored) {
-        memorySnapshot = makeSnapshot(staleStored.catalog, {
+        const degradedSnapshot = makeSnapshot(staleStored.catalog, {
           userId,
           createdAt: staleStored.createdAt,
           status: "degraded",
@@ -249,7 +277,8 @@ export async function loadContentCatalog({
             message: error?.message || String(error)
           }]
         });
-        return memorySnapshot.catalog;
+        if (requestEpoch === loadEpoch) memorySnapshot = degradedSnapshot;
+        return degradedSnapshot.catalog;
       }
       throw error;
     }
@@ -257,6 +286,6 @@ export async function loadContentCatalog({
     if (inFlightLoad?.promise === promise) inFlightLoad = null;
   });
 
-  inFlightLoad = { userId, promise };
+  inFlightLoad = { userId, epoch: requestEpoch, promise };
   return promise;
 }

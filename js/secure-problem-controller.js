@@ -97,7 +97,9 @@ export function createSecureProblemController({
     const title = translated(problem, language);
     const statement = translated(problem, language, "statement");
     const stars = problem.difficulty === 0 ? "0★" : "★".repeat(problem.difficulty);
-    const existingAttempts = attempts[problem.id] || [];
+    const existingAttempts = Array.isArray(attempts[problem.id])
+      ? attempts[problem.id]
+      : [];
 
     host.innerHTML = `
       <article class="problem mh-problem-workspace">
@@ -140,7 +142,7 @@ export function createSecureProblemController({
               <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
               <div class="checkrow">
                 <input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">
-                <button class="btn small" id="checkBtn">${ro ? "Verifică" : "Check"}</button>
+                <button class="btn small" id="checkBtn" type="button">${ro ? "Verifică" : "Check"}</button>
               </div>
               <div class="legend mh-problem-status" id="statusArea"></div>
               <div class="mh-live-preview-wrap">
@@ -154,8 +156,8 @@ export function createSecureProblemController({
                   ? "Trimiți răspunsul pentru validare și înregistrare server-side?"
                   : "Submit this answer for server-side validation and recording?"}</span>
                 <div class="check-confirm-buttons">
-                  <button class="btn small" id="confirmNo">${ro ? "Nu" : "No"}</button>
-                  <button class="btn small" id="confirmYes">${ro ? "Da" : "Yes"}</button>
+                  <button class="btn small" id="confirmNo" type="button">${ro ? "Nu" : "No"}</button>
+                  <button class="btn small" id="confirmYes" type="button">${ro ? "Da" : "Yes"}</button>
                 </div>
               </div>
             </section>
@@ -205,7 +207,7 @@ export function createSecureProblemController({
               </div>
               <div id="solutionContent" class="mh-solution-content" hidden></div>
               <div class="reveal">
-                <button class="reveal-btn" id="revealBtn">${ro ? "Arată răspunsul și soluția" : "Show answer and solution"}</button>
+                <button class="reveal-btn" id="revealBtn" type="button">${ro ? "Arată răspunsul și soluția" : "Show answer and solution"}</button>
                 <span class="legend" id="revealText" hidden></span>
               </div>
             </section>` : ""}
@@ -259,6 +261,10 @@ export function createSecureProblemController({
     let hint2Loaded = false;
     let submitting = false;
     let workspace = normalizeProblemWorkspace({});
+    let workspaceRevision = 0;
+    let workspaceLoadEpoch = 0;
+    let workspaceSaveChain = Promise.resolve();
+    let noteDirty = false;
 
     function renderAttempts(rows) {
       attemptsList.innerHTML = "";
@@ -300,12 +306,20 @@ export function createSecureProblemController({
       if (stats) stats.textContent = `${ro ? "greșeli" : "mistakes"}: ${current.wrong || 0} • ${ro ? "hinturi" : "hints"}: ${current.hints || 0}`;
     }
 
-    function renderWorkspace() {
+    function renderWorkspace({ syncNote = true } = {}) {
       bookmarkButton?.setAttribute("aria-pressed", String(workspace.bookmarked));
       if (bookmarkButton) bookmarkButton.innerHTML = workspace.bookmarked
         ? `★ ${ro ? "Salvată" : "Saved"}`
         : `☆ ${ro ? "Salvează" : "Bookmark"}`;
-      if (noteInput && noteInput.value !== workspace.note) noteInput.value = workspace.note;
+      if (
+        syncNote &&
+        noteInput &&
+        document.activeElement !== noteInput &&
+        !noteDirty &&
+        noteInput.value !== workspace.note
+      ) {
+        noteInput.value = workspace.note;
+      }
       modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.explanationMode === workspace.explanationMode));
 
       const unlocked = workspace.canViewSolution && workspace.solution;
@@ -322,10 +336,23 @@ export function createSecureProblemController({
 
     async function reloadWorkspace() {
       if (isExam) return;
+      const requestEpoch = ++workspaceLoadEpoch;
+      const revisionAtStart = workspaceRevision;
       try {
-        workspace = normalizeProblemWorkspace(await loadProblemWorkspace(supabase, problem.id, language));
-        renderWorkspace();
+        const remote = normalizeProblemWorkspace(await loadProblemWorkspace(supabase, problem.id, language));
+        if (requestEpoch !== workspaceLoadEpoch) return;
+
+        // Never let a slow initial/refetch response overwrite changes the user
+        // made while the request was in flight.
+        if (workspaceRevision !== revisionAtStart) {
+          remote.bookmarked = workspace.bookmarked;
+          remote.note = workspace.note;
+          remote.explanationMode = workspace.explanationMode;
+        }
+        workspace = remote;
+        renderWorkspace({ syncNote: workspaceRevision === revisionAtStart });
       } catch (error) {
+        if (requestEpoch !== workspaceLoadEpoch) return;
         console.warn("Problem workspace could not be loaded:", error);
         const fallback = existingAttempts.map((row, index) => ({
           id: index,
@@ -341,28 +368,50 @@ export function createSecureProblemController({
       }
     }
 
-    async function saveWorkspace(changes, successText) {
-      try {
-        const payload = await saveContentWorkspace(supabase, {
-          contentType: "problem",
-          contentId: problem.id,
-          bookmarked: changes.bookmarked,
-          note: changes.note,
-          explanationMode: changes.explanationMode
+    function saveWorkspace(changes, successText) {
+      const revision = ++workspaceRevision;
+      const snapshot = { ...changes };
+
+      workspaceSaveChain = workspaceSaveChain
+        .catch(() => undefined)
+        .then(async () => {
+          try {
+            const payload = await saveContentWorkspace(supabase, {
+              contentType: "problem",
+              contentId: problem.id,
+              bookmarked: snapshot.bookmarked,
+              note: snapshot.note,
+              explanationMode: snapshot.explanationMode
+            });
+
+            if (revision === workspaceRevision) {
+              workspace = normalizeProblemWorkspace({
+                ...workspace,
+                ...payload,
+                attempts: workspace.attempts,
+                solution: workspace.solution
+              });
+              if (Object.prototype.hasOwnProperty.call(snapshot, "note")) noteDirty = false;
+              renderWorkspace({ syncNote: false });
+              if (noteStatus && successText) noteStatus.textContent = successText;
+            }
+          } catch (error) {
+            console.error("Problem workspace save failed:", error);
+            if (revision === workspaceRevision && noteStatus) {
+              noteStatus.textContent = ro ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Try again.";
+            }
+            throw error;
+          }
         });
-        workspace = normalizeProblemWorkspace({ ...workspace, ...payload, attempts: workspace.attempts, solution: workspace.solution });
-        renderWorkspace();
-        if (noteStatus && successText) noteStatus.textContent = successText;
-      } catch (error) {
-        console.error("Problem workspace save failed:", error);
-        if (noteStatus) noteStatus.textContent = ro ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Try again.";
-      }
+
+      void workspaceSaveChain.catch(() => undefined);
+      return workspaceSaveChain;
     }
 
     bookmarkButton?.addEventListener("click", () => {
       const next = !workspace.bookmarked;
       workspace.bookmarked = next;
-      renderWorkspace();
+      renderWorkspace({ syncNote: false });
       void saveWorkspace({ bookmarked: next }, next ? (ro ? "Problemă salvată." : "Problem saved.") : (ro ? "Problemă eliminată din salvate." : "Problem removed from saved."));
     });
 
@@ -371,19 +420,23 @@ export function createSecureProblemController({
       noteStatus.textContent = ro ? "Se salvează…" : "Saving…";
       void saveWorkspace({ note: noteInput.value }, ro ? "Notiță salvată." : "Note saved.");
     });
-    noteInput?.addEventListener("input", saveNoteDebounced);
+    noteInput?.addEventListener("input", () => {
+      workspace.note = noteInput.value;
+      noteDirty = true;
+      saveNoteDebounced();
+    });
 
     modeButtons.forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.explanationMode;
       workspace.explanationMode = mode;
-      renderWorkspace();
+      renderWorkspace({ syncNote: false });
       void saveWorkspace({ explanationMode: mode });
     }));
 
     function pushLocalAttempt(value, ok) {
-      const rows = attempts[problem.id] || [];
-      rows.push({ value, ok: Boolean(ok) });
-      attempts[problem.id] = rows;
+      const rows = Array.isArray(attempts[problem.id]) ? attempts[problem.id] : [];
+      rows.push({ value, ok: Boolean(ok), ts: Date.now() });
+      attempts[problem.id] = rows.slice(-200);
       saveAttempts();
     }
 

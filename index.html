@@ -26,7 +26,7 @@
     data-i18n-content="og_description"
   />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="/img/preview.png" />
+  <meta property="og:image" content="/img/Screenshot_6.png" />
   <meta name="theme-color" content="#0b1020" />
 
   <!-- Warm up the two origins used during module/auth startup. -->
@@ -128,13 +128,13 @@
         </div>
 
         <div class="header-actions">
-          <button class="btn small" id="infoBtn" data-i18n="btn_info">ℹ️ Dificultăți &amp; Contoare</button>
-          <button class="btn small" id="aboutBtn" data-i18n="btn_about">👤 About me</button>
-          <button class="btn small" id="langBtn">🌐 RO/EN</button>
-          <button class="btn small" id="focusBtn" data-i18n="btn_focus">🎯 Focus Mode</button>
-          <button class="btn small" id="themeBtn" data-i18n="btn_theme">🌙 Dark</button>
+          <button class="btn small" id="infoBtn" data-i18n="btn_info" type="button">ℹ️ Dificultăți &amp; Contoare</button>
+          <button class="btn small" id="aboutBtn" data-i18n="btn_about" type="button">👤 About me</button>
+          <button class="btn small" id="langBtn" type="button">🌐 RO/EN</button>
+          <button class="btn small" id="focusBtn" data-i18n="btn_focus" type="button">🎯 Focus Mode</button>
+          <button class="btn small" id="themeBtn" data-i18n="btn_theme" type="button">🌙 Dark</button>
           <a class="btn small" id="profileBtn" href="/profile.html" data-i18n="btn_profile">📊 Profilul tău</a>
-          <button class="btn small" id="adminBtn" data-i18n="btn_admin" hidden aria-hidden="true" style="display:none">🛠 Admin</button>
+          <button class="btn small" id="adminBtn" data-i18n="btn_admin" hidden aria-hidden="true" style="display:none" type="button">🛠 Admin</button>
         </div>
       </div>
     </div>
@@ -214,17 +214,17 @@
       </div>
 
       <div class="mh-hub-right">
-        <button class="hub-cta" id="hubLessonBtn">
+        <button class="hub-cta" id="hubLessonBtn" type="button">
           <span class="hub-cta-title" id="hubLessonTitle" data-i18n="hub_lesson_title">▶️ Continuă lecțiile</span>
           <span class="hub-cta-sub" id="hubLessonSub" data-i18n="hub_lesson_sub">te duce la tab-ul de lecții</span>
         </button>
 
-        <button class="hub-cta" id="hubDrillBtn">
+        <button class="hub-cta" id="hubDrillBtn" type="button">
           <span class="hub-cta-title" id="hubDrillTitle" data-i18n="hub_drill_title">⚡ 5 probleme rapide</span>
           <span class="hub-cta-sub" id="hubDrillSub" data-i18n="hub_drill_sub">antrenament direct pe probleme</span>
         </button>
 
-        <button class="hub-cta" id="hubExamBtn">
+        <button class="hub-cta" id="hubExamBtn" type="button">
           <span class="hub-cta-title" id="hubExamTitle" data-i18n="hub_exam_title">🏆 Mini-examen</span>
           <span class="hub-cta-sub" id="hubExamSub" data-i18n="hub_exam_sub">intră în seturile de examene</span>
         </button>
@@ -413,7 +413,7 @@
             id="olympOnlyBtn"
             title="Afișează doar probleme de olimpiadă"
             data-i18n-title="olymp_only_title"
-          >
+           type="button">
             <span data-i18n="olymp_only_label">🏅 Doar olimpiadă:</span> <b id="olympOnlyState">OFF</b>
           </button>
 
@@ -450,7 +450,7 @@
 
       <div id="cards" class="grid"></div>
       <div class="paginate">
-        <button class="btn" id="loadMore" data-i18n="load_more">Load more</button>
+        <button class="btn" id="loadMore" data-i18n="load_more" type="button">Load more</button>
       </div>
     </main>
 
@@ -463,7 +463,7 @@
     <div class="panel">
       <header class="bar" style="justify-content:space-between">
         <div style="display:flex;gap:10px;align-items:center">
-          <button class="btn" id="closeDrawer" data-i18n="close_drawer">✖️ Închide</button>
+          <button class="btn" id="closeDrawer" data-i18n="close_drawer" type="button">✖️ Închide</button>
           <div id="viewTitle" class="logo" style="font-weight:800"></div>
         </div>
         <div class="counter">📎 <span id="viewMeta"></span></div>
@@ -497,12 +497,12 @@
             style="display:none"
             data-i18n="lesson_quiz_btn"
             data-i18n-title="lesson_quiz_title"
-          >
+           type="button">
             🧪 Verificare lecție
           </button>
 
-          <button class="go-problems" id="goProblemsBtn" data-i18n="go_problems_btn">📄 Vezi probleme propuse</button>
-          <button class="understood" id="understoodBtn" data-i18n="understood_btn">🔒 Derulează până jos…</button>
+          <button class="go-problems" id="goProblemsBtn" data-i18n="go_problems_btn" type="button">📄 Vezi probleme propuse</button>
+          <button class="understood" id="understoodBtn" data-i18n="understood_btn" type="button">🔒 Derulează până jos…</button>
         </div>
       </div>
     </div>
@@ -513,7 +513,7 @@
     <div class="panel">
       <header class="bar" style="justify-content:space-between">
         <div style="display:flex;gap:10px;align-items:center">
-          <button class="btn" id="closeAdmin" data-i18n="admin_close">✖️ Închide</button>
+          <button class="btn" id="closeAdmin" data-i18n="admin_close" type="button">✖️ Închide</button>
           <div class="logo" style="font-weight:800" data-i18n="admin_title">🛠 Admin MathHard</div>
         </div>
         <div class="counter">🔐 <span id="adminStatus">Supabase</span></div>
@@ -897,7 +897,7 @@
       <h3 id="modalTitle">ℹ️ Dificultăți & Contoare</h3>
       <div id="modalBody"></div>
       <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px">
-        <button class="btn" id="closeModal" data-i18n="close_modal">Închide</button>
+        <button class="btn" id="closeModal" data-i18n="close_modal" type="button">Închide</button>
       </div>
     </div>
   </div>
@@ -1055,12 +1055,13 @@
       </div>
 
       <div class="about-footer">
-        <button class="btn small" id="aboutCloseBtn" data-i18n="about_close">Închide</button>
+        <button class="btn small" id="aboutCloseBtn" data-i18n="about_close" type="button">Închide</button>
       </div>
     </div>
   </div>
 
   <script defer src="/js/animation-numberline.js"></script>
+  <script type="module" src="/js/runtime-diagnostics.js"></script>
   <script type="module" src="/js/app.js"></script>
   <script type="module" src="/js/quick-nav-controller.js"></script>
   <script type="module" src="/js/section-layout-controller.js"></script>

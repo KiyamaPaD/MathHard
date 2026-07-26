@@ -3,6 +3,7 @@ import { normalizeRoadmapCatalog } from "./roadmap-model.js";
 let memoryCatalog = null;
 let memoryUserId = "";
 let inFlight = null;
+let loadEpoch = 0;
 
 function unwrapRpc(data) {
   return Array.isArray(data) && data.length === 1 ? data[0] : data;
@@ -23,6 +24,7 @@ async function resolveUser(supabase) {
 }
 
 export function invalidateRoadmapCache() {
+  loadEpoch += 1;
   memoryCatalog = null;
   memoryUserId = "";
   inFlight = null;
@@ -31,17 +33,37 @@ export function invalidateRoadmapCache() {
 export async function loadRoadmapCatalog({ supabase, forceRefresh = false } = {}) {
   const user = await resolveUser(supabase);
 
+  if (memoryUserId && memoryUserId !== user.id) {
+    invalidateRoadmapCache();
+  }
+
+  if (forceRefresh) {
+    loadEpoch += 1;
+    memoryCatalog = null;
+    inFlight = null;
+  }
+
   if (!forceRefresh && memoryCatalog && memoryUserId === user.id) {
     return memoryCatalog;
   }
 
   if (!forceRefresh && inFlight?.userId === user.id) return inFlight.promise;
 
+  const requestEpoch = loadEpoch;
   const promise = (async () => {
     const { data, error } = await supabase.rpc("mh_get_roadmap_catalog");
     if (error) throw error;
 
     const catalog = normalizeRoadmapCatalog(unwrapRpc(data));
+    if (requestEpoch !== loadEpoch) {
+      const newerLoad = inFlight?.userId === user.id && inFlight.epoch > requestEpoch
+        ? inFlight.promise
+        : null;
+      if (newerLoad) return newerLoad;
+      if (memoryCatalog && memoryUserId === user.id) return memoryCatalog;
+      return catalog;
+    }
+
     memoryCatalog = catalog;
     memoryUserId = user.id;
     return catalog;
@@ -49,7 +71,7 @@ export async function loadRoadmapCatalog({ supabase, forceRefresh = false } = {}
     if (inFlight?.promise === promise) inFlight = null;
   });
 
-  inFlight = { userId: user.id, promise };
+  inFlight = { userId: user.id, epoch: requestEpoch, promise };
   return promise;
 }
 
