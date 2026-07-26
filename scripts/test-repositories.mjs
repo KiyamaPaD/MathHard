@@ -33,6 +33,14 @@ class SessionStorageMock {
   clear() {
     this.#values.clear();
   }
+
+  get length() {
+    return this.#values.size;
+  }
+
+  key(index) {
+    return [...this.#values.keys()][index] ?? null;
+  }
 }
 
 globalThis.sessionStorage = new SessionStorageMock();
@@ -76,23 +84,26 @@ const {
   formatExamCountdown
 } = await importBrowserModule("js/exam-session-state.js");
 
-function makeContentClient({ failures = {} } = {}) {
-  const rows = {
-    mh_lessons: [{ id: "lesson-1", title_ro: "Lecție Supabase" }],
-    mh_problems: [{ id: "problem-1", lesson_id: "lesson-1", answer: "2" }],
-    mh_exams: [{ id: "exam-1", problems: ["problem-1"] }]
+function makeContentClient({ rpcError = null, authenticated = true } = {}) {
+  const catalog = {
+    lessons: [{ id: "lesson-1", title_ro: "Lecție Supabase" }],
+    problems: [{ id: "problem-1", lesson_id: "lesson-1", answer: "2" }],
+    exams: [{ id: "exam-1", problems: ["problem-1"] }]
   };
 
   return {
-    from(table) {
-      return {
-        async select() {
-          if (failures[table]) {
-            return { data: null, error: new Error(failures[table]) };
-          }
-          return { data: rows[table] || [], error: null };
-        }
-      };
+    auth: {
+      async getSession() {
+        return {
+          data: { session: authenticated ? { user: { id: "user-content" } } : null },
+          error: null
+        };
+      }
+    },
+    async rpc(name) {
+      assert.equal(name, "mh_get_content_catalog");
+      if (rpcError) return { data: null, error: new Error(rpcError) };
+      return { data: catalog, error: null };
     }
   };
 }
@@ -106,24 +117,31 @@ assert.deepEqual(catalogTotals(catalog), {
   problemsTotal: 1,
   examsTotal: 1
 });
-assert.equal(getContentCatalogDiagnostics().status, "supabase");
+assert.equal(getContentCatalogDiagnostics().status, "supabase-rpc");
+assert.equal(getContentCatalogDiagnostics().userId, "user-content");
 
 const degradedCatalog = await loadContentCatalog({
-  supabase: makeContentClient({ failures: { mh_problems: "temporary failure" } }),
+  supabase: makeContentClient({ rpcError: "temporary failure" }),
   forceRefresh: true
 });
 
 assert.equal(degradedCatalog.problems.length, 1);
 assert.equal(getContentCatalogDiagnostics().status, "degraded");
-assert.deepEqual(getContentCatalogDiagnostics().staleGroups, ["problems"]);
 
 invalidateContentCatalogCache();
 await assert.rejects(
   () => loadContentCatalog({
-    supabase: makeContentClient({ failures: { mh_lessons: "offline" } }),
+    supabase: makeContentClient({ rpcError: "offline" }),
     forceRefresh: true
   }),
-  /could not be loaded from Supabase/i
+  /offline/i
+);
+
+await assert.rejects(
+  () => loadContentCatalog({
+    supabase: makeContentClient({ authenticated: false })
+  }),
+  /Authentication is required/i
 );
 
 const calls = [];

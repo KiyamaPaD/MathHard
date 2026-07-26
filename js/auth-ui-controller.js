@@ -2,7 +2,8 @@ export function createAuthUiController({
   supabase,
   hideAdminButton,
   loadProgress,
-  refreshAdminButton
+  refreshAdminButton,
+  onSessionResolved = async () => {}
 }) {
   if (!supabase?.auth) {
     throw new Error("createAuthUiController requires supabase.auth");
@@ -32,6 +33,9 @@ export function createAuthUiController({
 
     if (currentEpoch !== syncEpoch) return;
 
+    await onSessionResolved(session || null);
+
+    if (currentEpoch !== syncEpoch) return;
     await loadProgress(session?.user || null);
 
     if (currentEpoch !== syncEpoch) return;

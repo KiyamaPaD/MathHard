@@ -1,6 +1,8 @@
 import { supabase } from "./supabase-client.js";
 import {
   getContentCatalogDiagnostics,
+  invalidateContentCatalogCache,
+  isContentAuthRequiredError,
   loadContentCatalog
 } from "./content-repository.js";
 import {
@@ -34,6 +36,7 @@ import {
   XP_TOTAL
 } from "./app-progress.js";
 import { createAuthUiController } from "./auth-ui-controller.js";
+import { createAdminExamRecoveryController } from "./admin-exam-recovery.js";
 import {
   createExamSessionStore,
   formatExamCountdown
@@ -52,15 +55,26 @@ console.log("APP.JS LOADED");
 
   const DATA = createRuntimeData();
   let CONTENT_BOOT_ERROR = null;
+  let MH_AUTH_USER = null;
 
   try {
-    const initialCatalog = await loadContentCatalog({ supabase });
-    DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
-    DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
-    DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
+    const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
+    if (initialAuthError) throw initialAuthError;
+
+    MH_AUTH_USER = initialAuthData?.session?.user || null;
+    if (MH_AUTH_USER?.id) {
+      const initialCatalog = await loadContentCatalog({ supabase, user: MH_AUTH_USER });
+      DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
+      DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
+      DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
+    } else {
+      invalidateContentCatalogCache();
+    }
   } catch (error) {
-    CONTENT_BOOT_ERROR = error;
-    console.error("Catalogul MathHard nu a putut fi încărcat:", error);
+    if (!isContentAuthRequiredError(error)) {
+      CONTENT_BOOT_ERROR = error;
+      console.error("Catalogul MathHard nu a putut fi încărcat:", error);
+    }
   }
 
   /* ===== Utils ===== */
@@ -2011,10 +2025,24 @@ console.log("APP.JS LOADED");
     target.push(...(items || []).map(normalizer));
   }
 
+  function clearRuntimeCatalog() {
+    DATA.lessons.length = 0;
+    DATA.problems.length = 0;
+    DATA.exams.length = 0;
+    CONTENT_BOOT_ERROR = null;
+  }
+
   async function reloadAllContentFromSupabase(forceRefresh = false) {
+    if (!MH_AUTH_USER?.id) {
+      clearRuntimeCatalog();
+      invalidateContentCatalogCache();
+      throw new Error("Authentication is required before loading content.");
+    }
+
     const catalog = await loadContentCatalog({
       supabase,
-      forceRefresh
+      forceRefresh,
+      user: MH_AUTH_USER
     });
 
     replaceCatalogTarget(DATA.lessons, catalog.lessons, normalizeLesson);
@@ -3057,6 +3085,7 @@ console.log("APP.JS LOADED");
   mhRenderAdminList();
 
   let adminVisibilityEpoch = 0;
+  let adminExamRecoveryController = null;
 
   function setAdminButtonVisibility(isVisible) {
     if (!adminBtn) return;
@@ -3070,6 +3099,7 @@ console.log("APP.JS LOADED");
     // Fail closed: if access disappears, the admin drawer closes immediately.
     if (!visible) {
       adminDrawer?.classList.remove("open");
+      adminExamRecoveryController?.setAdmin(false);
     }
   }
 
@@ -3135,6 +3165,7 @@ console.log("APP.JS LOADED");
     if (requestEpoch !== adminVisibilityEpoch) return false;
 
     setAdminButtonVisibility(isAdmin);
+    adminExamRecoveryController?.setAdmin(isAdmin);
     return isAdmin;
   }
 
@@ -3172,6 +3203,7 @@ console.log("APP.JS LOADED");
       }
 
       setAdminButtonVisibility(true);
+      adminExamRecoveryController?.setAdmin(true);
       adminDrawer?.classList.add("open");
       if (mhPublishStatus) mhPublishStatus.textContent = "";
     } catch (err) {
@@ -3188,6 +3220,8 @@ console.log("APP.JS LOADED");
     // Invalidate every in-flight role check before waiting for sign-out.
     ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
+    adminExamRecoveryController?.setAdmin(false);
+    invalidateContentCatalogCache();
 
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -3811,11 +3845,7 @@ console.log("APP.JS LOADED");
 
   /* ===== STATE ===== */
   function isGuestContentLocked() {
-    // Lessons, problems, exams, research and history are public content.
-    // Authentication is required only for persistent progress, XP and profile
-    // synchronization. This keeps the learning catalog usable even when an
-    // auth/progress request is slow or temporarily fails.
-    return false;
+    return !MH_AUTH_USER?.id;
   }
 
   function getGuestLockTitle() {
@@ -4038,6 +4068,18 @@ console.log("APP.JS LOADED");
     saveExamAttemptResultSafe,
     updateExamAttemptScore
   } = progressController;
+
+  adminExamRecoveryController = createAdminExamRecoveryController({
+    cancelAttempt: cancelExamAttemptSafe,
+    getLanguage: () => LANG,
+    onRecovered: async () => {
+      refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
+      renderCards();
+      drawFilterBar();
+      setTimeout(() => window.location.reload(), 50);
+    }
+  });
 
 
 
@@ -5297,6 +5339,7 @@ console.log("APP.JS LOADED");
 
     wireGlobalExamClickGuards();
     refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
 
     document.getElementById("problemSortBox").style.display = (TAB==="problems")?"flex":"none";
   }
@@ -6908,6 +6951,7 @@ function openExam(exam){
         clearExamItemResults(exam.id);
       }
       refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
 
       if (leftEl) {
         leftEl.style.display = "inline-block";
@@ -7004,6 +7048,7 @@ function openExam(exam){
     clearExamState(exam.id);
     clearActiveExamLock();
     refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
 
     setLocked(true);
     updateHeaderMeta();
@@ -7042,6 +7087,7 @@ function openExam(exam){
     clearExamState(exam.id);
     clearActiveExamLock();
     refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
 
     void saveExamAttemptResultSafe(exam.id, computeExamScore(exam), false);
   }
@@ -7058,6 +7104,7 @@ function openExam(exam){
       endsAt: st.endsAt
     });
     refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
     void renderAdminCancelButton(st);
 
     const tick = () => {
@@ -7119,6 +7166,7 @@ function openExam(exam){
         endsAt
       });
       refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
       void renderAdminCancelButton(sessionState);
 
       renderExamItems(false);
@@ -7183,6 +7231,7 @@ function openExam(exam){
     document.getElementById("problemSortBox").style.display = (TAB === "problems") ? "flex" : "none";
 
     refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
   }
 
   document.querySelectorAll(".tab").forEach(tb => {
@@ -7553,6 +7602,66 @@ function openExam(exam){
   window.addEventListener("load", initMathCube);
   })();
 
+  function clearLocalExamArtifactsOnLogout() {
+    try {
+      for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (
+          key === "mh_active_exam_lock_v1" ||
+          key === "mh_active_exam_lock_v2" ||
+          key?.startsWith("mh_exam_")
+        ) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (error) {
+      console.warn("Could not clear local exam artifacts on logout:", error);
+    }
+  }
+
+  async function handleResolvedAuthSession(session) {
+    const nextUser = session?.user || null;
+    const previousUserId = MH_AUTH_USER?.id || "";
+    const nextUserId = nextUser?.id || "";
+    MH_AUTH_USER = nextUser;
+
+    if (!nextUserId) {
+      clearRuntimeCatalog();
+      invalidateContentCatalogCache();
+      clearLocalExamArtifactsOnLogout();
+      adminExamRecoveryController?.setAdmin(false);
+      adminDrawer?.classList.remove("open");
+      mhRemoveContentStatusBanner();
+      buildNestedTree();
+      buildTagPanel();
+      renderCards();
+      drawFilterBar();
+      updateRadarUI();
+      refreshExamLockUi();
+      adminExamRecoveryController?.refresh();
+      return;
+    }
+
+    const needsCatalogReload = previousUserId !== nextUserId ||
+      DATA.lessons.length === 0 || DATA.problems.length === 0 || DATA.exams.length === 0;
+
+    if (!needsCatalogReload) return;
+
+    try {
+      await reloadAllContentFromSupabase(true);
+      setTimeout(() => resumeLockedExamIfAny(), 0);
+    } catch (error) {
+      CONTENT_BOOT_ERROR = error;
+      mhShowContentStatusBanner({
+        message: LANG === "ro"
+          ? "Catalogul securizat nu a putut fi încărcat. Verifică sesiunea și conexiunea, apoi reîncearcă."
+          : "The secured catalog could not be loaded. Check your session and connection, then retry.",
+        isError: true,
+        retry: true
+      });
+    }
+  }
+
   const authUiController = createAuthUiController({
     supabase,
     hideAdminButton: () => {
@@ -7560,7 +7669,8 @@ function openExam(exam){
       setAdminButtonVisibility(false);
     },
     loadProgress: loadAppProgressFromDb,
-    refreshAdminButton: refreshAdminButtonVisibility
+    refreshAdminButton: refreshAdminButtonVisibility,
+    onSessionResolved: handleResolvedAuthSession
   });
 
   authUiController.start();
@@ -7583,6 +7693,7 @@ function openExam(exam){
   wireOlympControls();
   wireGlobalExamClickGuards();
   refreshExamLockUi();
+    adminExamRecoveryController?.refresh();
 
   if (CONTENT_BOOT_ERROR) {
     mhShowContentStatusBanner({

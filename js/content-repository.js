@@ -1,12 +1,7 @@
-const CACHE_VERSION = 7;
-const CACHE_KEY = `mh_content_catalog_v${CACHE_VERSION}`;
+const CACHE_VERSION = 10;
+const CACHE_PREFIX = `mh_content_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const CATALOG_GROUPS = [
-  { key: "lessons", table: "mh_lessons" },
-  { key: "problems", table: "mh_problems" },
-  { key: "exams", table: "mh_exams" }
-];
 
 let memorySnapshot = null;
 let inFlightLoad = null;
@@ -43,43 +38,60 @@ function getStorage() {
   }
 }
 
+function cacheKeyForUser(userId) {
+  return `${CACHE_PREFIX}:${String(userId || "").trim()}`;
+}
+
+export class MathHardAuthRequiredError extends Error {
+  constructor(message = "Authentication is required to load MathHard content.") {
+    super(message);
+    this.name = "MathHardAuthRequiredError";
+    this.code = "MH_AUTH_REQUIRED";
+  }
+}
+
+export function isContentAuthRequiredError(error) {
+  return error?.code === "MH_AUTH_REQUIRED" || error?.name === "MathHardAuthRequiredError";
+}
+
 function makeSnapshot(catalog, {
-  status = "supabase",
-  staleGroups = [],
+  userId = "",
+  status = "supabase-rpc",
   errors = [],
   createdAt = Date.now()
 } = {}) {
   return {
+    userId: String(userId || ""),
     createdAt,
     catalog: sanitizeCatalog(catalog),
     status,
-    staleGroups: [...staleGroups],
     errors: [...errors]
   };
 }
 
-function readStoredSnapshot({ allowStale = false } = {}) {
+function readStoredSnapshot(userId, { allowStale = false } = {}) {
   const storage = getStorage();
-  if (!storage) return null;
+  if (!storage || !userId) return null;
 
   try {
-    const raw = storage.getItem(CACHE_KEY);
+    const raw = storage.getItem(cacheKeyForUser(userId));
     if (!raw) return null;
 
     const parsed = JSON.parse(raw);
+    const storedUserId = String(parsed?.userId || "");
     const createdAt = Number(parsed?.createdAt || 0);
     const age = Date.now() - createdAt;
     const maxAge = allowStale ? STALE_CACHE_TTL_MS : CACHE_TTL_MS;
 
-    if (!createdAt || age > maxAge) {
-      storage.removeItem(CACHE_KEY);
+    if (storedUserId !== String(userId) || !createdAt || age > maxAge) {
+      storage.removeItem(cacheKeyForUser(userId));
       return null;
     }
 
     return makeSnapshot(parsed.catalog, {
+      userId,
       createdAt,
       status: age <= CACHE_TTL_MS ? "cache-fresh" : "cache-stale",
-      staleGroups: asArray(parsed.staleGroups),
       errors: asArray(parsed.errors)
     });
   } catch (error) {
@@ -90,15 +102,15 @@ function readStoredSnapshot({ allowStale = false } = {}) {
 
 function writeStoredSnapshot(snapshot) {
   const storage = getStorage();
-  if (!storage) return;
+  if (!storage || !snapshot?.userId) return;
 
   try {
     storage.setItem(
-      CACHE_KEY,
+      cacheKeyForUser(snapshot.userId),
       JSON.stringify({
+        userId: snapshot.userId,
         createdAt: snapshot.createdAt,
         catalog: snapshot.catalog,
-        staleGroups: snapshot.staleGroups,
         errors: snapshot.errors
       })
     );
@@ -107,64 +119,38 @@ function writeStoredSnapshot(snapshot) {
   }
 }
 
-async function fetchSupabaseGroup(supabase, table) {
-  const { data, error } = await supabase.from(table).select("*");
-  if (error) throw error;
-  return asArray(data);
-}
+async function resolveAuthenticatedUser(supabase, userOverride = undefined) {
+  if (userOverride !== undefined) {
+    if (!userOverride?.id) throw new MathHardAuthRequiredError();
+    return userOverride;
+  }
 
-async function fetchSupabaseCatalog(supabase, fallbackSnapshot = null) {
-  if (!supabase) {
+  if (!supabase?.auth) {
     throw new Error("Supabase client is required to load the MathHard catalog.");
   }
 
-  const settled = await Promise.allSettled(
-    CATALOG_GROUPS.map(({ table }) => fetchSupabaseGroup(supabase, table))
-  );
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
 
-  const catalog = emptyCatalog();
-  const staleGroups = [];
-  const errors = [];
+  const user = data?.session?.user || null;
+  if (!user?.id) throw new MathHardAuthRequiredError();
+  return user;
+}
 
-  CATALOG_GROUPS.forEach(({ key, table }, index) => {
-    const result = settled[index];
-
-    if (result.status === "fulfilled") {
-      catalog[key] = result.value;
-      return;
-    }
-
-    const fallback = asArray(fallbackSnapshot?.catalog?.[key]);
-    if (fallback.length > 0) {
-      catalog[key] = fallback;
-      staleGroups.push(key);
-    }
-
-    errors.push({
-      group: key,
-      table,
-      message: result.reason?.message || String(result.reason || "Unknown Supabase error")
-    });
-  });
-
-  const missingWithoutFallback = CATALOG_GROUPS
-    .map(({ key }) => key)
-    .filter((key) => errors.some((entry) => entry.group === key) && catalog[key].length === 0);
-
-  if (missingWithoutFallback.length > 0) {
-    const error = new Error(
-      `MathHard catalog could not be loaded from Supabase: ${missingWithoutFallback.join(", ")}.`
-    );
-    error.name = "MathHardCatalogLoadError";
-    error.details = errors;
-    throw error;
+function unwrapCatalogRpcPayload(data) {
+  const candidate = Array.isArray(data) && data.length === 1 ? data[0] : data;
+  if (candidate?.catalog && typeof candidate.catalog === "object") {
+    return candidate.catalog;
   }
+  return candidate;
+}
 
-  return makeSnapshot(catalog, {
-    status: staleGroups.length ? "degraded" : "supabase",
-    staleGroups,
-    errors
-  });
+async function fetchCatalogRpc(supabase, userId) {
+  const { data, error } = await supabase.rpc("mh_get_content_catalog");
+  if (error) throw error;
+
+  const catalog = sanitizeCatalog(unwrapCatalogRpcPayload(data));
+  return makeSnapshot(catalog, { userId, status: "supabase-rpc" });
 }
 
 export function catalogTotals(catalog) {
@@ -176,7 +162,7 @@ export function catalogTotals(catalog) {
   };
 }
 
-export function invalidateContentCatalogCache() {
+export function invalidateContentCatalogCache({ allUsers = true, userId = "" } = {}) {
   memorySnapshot = null;
   inFlightLoad = null;
 
@@ -184,9 +170,19 @@ export function invalidateContentCatalogCache() {
   if (!storage) return;
 
   try {
-    storage.removeItem(CACHE_KEY);
+    if (!allUsers && userId) {
+      storage.removeItem(cacheKeyForUser(userId));
+      return;
+    }
+
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index);
+      if (key?.startsWith(`${CACHE_PREFIX}:`) || key?.startsWith("mh_content_catalog_v")) {
+        storage.removeItem(key);
+      }
+    }
   } catch {
-    // Cache invalidation must never block Admin operations.
+    // Cache invalidation must never block logout or Admin operations.
   }
 }
 
@@ -194,65 +190,73 @@ export function getContentCatalogDiagnostics() {
   const snapshot = memorySnapshot || makeSnapshot(emptyCatalog(), { status: "empty" });
   return {
     totals: catalogTotals(snapshot.catalog),
+    userId: snapshot.userId || "",
     createdAt: Number(snapshot.createdAt || 0),
     status: snapshot.status,
-    staleGroups: [...asArray(snapshot.staleGroups)],
+    staleGroups: [],
     errors: [...asArray(snapshot.errors)]
   };
 }
 
 export async function loadContentCatalog({
   supabase,
-  forceRefresh = false
+  forceRefresh = false,
+  user = undefined
 } = {}) {
-  if (forceRefresh) {
-    // Keep stored cache available as a safety net, but bypass memory.
+  const authenticatedUser = await resolveAuthenticatedUser(supabase, user);
+  const userId = authenticatedUser.id;
+
+  if (memorySnapshot?.userId && memorySnapshot.userId !== userId) {
     memorySnapshot = null;
     inFlightLoad = null;
   }
 
-  if (!forceRefresh && memorySnapshot) {
+  if (forceRefresh) {
+    memorySnapshot = null;
+    inFlightLoad = null;
+  }
+
+  if (!forceRefresh && memorySnapshot?.userId === userId) {
     return memorySnapshot.catalog;
   }
 
   if (!forceRefresh) {
-    const freshStored = readStoredSnapshot();
+    const freshStored = readStoredSnapshot(userId);
     if (freshStored) {
       memorySnapshot = freshStored;
       return freshStored.catalog;
     }
   }
 
-  if (inFlightLoad) return inFlightLoad;
+  if (inFlightLoad?.userId === userId) return inFlightLoad.promise;
 
-  inFlightLoad = (async () => {
-    const staleStored = readStoredSnapshot({ allowStale: true });
-
+  const staleStored = readStoredSnapshot(userId, { allowStale: true });
+  const promise = (async () => {
     try {
-      const snapshot = await fetchSupabaseCatalog(supabase, staleStored);
+      const snapshot = await fetchCatalogRpc(supabase, userId);
       memorySnapshot = snapshot;
       writeStoredSnapshot(snapshot);
       return snapshot.catalog;
     } catch (error) {
       if (staleStored) {
         memorySnapshot = makeSnapshot(staleStored.catalog, {
+          userId,
           createdAt: staleStored.createdAt,
           status: "degraded",
-          staleGroups: CATALOG_GROUPS.map(({ key }) => key),
           errors: [{
             group: "catalog",
-            table: "Supabase",
+            table: "mh_get_content_catalog",
             message: error?.message || String(error)
           }]
         });
         return memorySnapshot.catalog;
       }
-
       throw error;
     }
   })().finally(() => {
-    inFlightLoad = null;
+    if (inFlightLoad?.promise === promise) inFlightLoad = null;
   });
 
-  return inFlightLoad;
+  inFlightLoad = { userId, promise };
+  return promise;
 }

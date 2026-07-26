@@ -1,5 +1,8 @@
 import { supabase } from "./supabase-client.js";
-import { loadContentCatalog } from "./content-repository.js";
+import {
+  invalidateContentCatalogCache,
+  loadContentCatalog
+} from "./content-repository.js";
 import { PROFILE_TEXT } from "./profile-text.js";
 import {
   buildProfileStats,
@@ -396,7 +399,27 @@ function applyProfileStaticTexts() {
 }
 
 /* ========= RENDER ========= */
+function clearSensitiveBrowserState() {
+  invalidateContentCatalogCache();
+
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (
+        key === "mh_active_exam_lock_v1" ||
+        key === "mh_active_exam_lock_v2" ||
+        key?.startsWith("mh_exam_")
+      ) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not clear sensitive browser state:", error);
+  }
+}
+
 function renderGuest() {
+  clearSensitiveBrowserState();
   CURRENT_USER = null;
   CURRENT_PROFILE_ROW = null;
   LAST_LOADED_USER_ID = null;

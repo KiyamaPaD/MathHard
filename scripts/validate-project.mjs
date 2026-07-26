@@ -20,7 +20,8 @@ const moduleJsFiles = [
   "js/app-progress.js",
   "js/auth-ui-controller.js",
   "js/admin-content-model.js",
-  "js/exam-session-state.js"
+  "js/exam-session-state.js",
+  "js/admin-exam-recovery.js"
 ];
 
 const classicJsFiles = [
@@ -169,6 +170,7 @@ const authUiControllerSource = readFileSync(resolve(root, "js/auth-ui-controller
 const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-model.js"), "utf8");
 const examSessionStateSource = readFileSync(resolve(root, "js/exam-session-state.js"), "utf8");
 const progressRepositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
+const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recovery.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -200,8 +202,14 @@ if (!profileSource.includes('from "./profile-model.js"')) {
 if (!profileSource.includes('from "./profile-text.js"')) {
   fail("profile.js must use the extracted profile-text.js module.");
 }
-if (!contentRepositorySource.includes('supabase.from(table).select("*")')) {
-  fail("content-repository.js must read catalog tables from Supabase.");
+if (!contentRepositorySource.includes('supabase.rpc("mh_get_content_catalog")')) {
+  fail("content-repository.js must load the authenticated catalog through mh_get_content_catalog().");
+}
+if (!contentRepositorySource.includes("MathHardAuthRequiredError")) {
+  fail("content-repository.js must fail closed when no authenticated session exists.");
+}
+if (/supabase\.from\(["']mh_(lessons|problems|exams)["']\)/.test(contentRepositorySource)) {
+  fail("Normal catalog loading must not query content tables directly after Phase 10.");
 }
 if (contentRepositorySource.includes("provenance") || contentRepositorySource.includes("sourceCounts")) {
   fail("Supabase-only content repository must not keep legacy merge provenance state.");
@@ -218,11 +226,20 @@ if (!appSource.includes('from "./admin-content-model.js"')) {
 if (!appSource.includes('from "./exam-session-state.js"')) {
   fail("app.js must use the extracted exam-session-state.js module.");
 }
+if (!appSource.includes('from "./admin-exam-recovery.js"')) {
+  fail("app.js must use the Phase 10 admin exam recovery controller.");
+}
 if (!appProgressSource.includes("let progressUser = null") || !appProgressSource.includes("let authUser = null")) {
   fail("app-progress.js must keep auth identity separate from progress hydration state.");
 }
-if (!/function isGuestContentLocked\(\)\s*\{[\s\S]{0,400}return false;/.test(appSource)) {
-  fail("Public learning content must not be blocked by progress/auth loading.");
+if (!/function isGuestContentLocked\(\)\s*\{[\s\S]{0,180}return !MH_AUTH_USER\?\.id;/.test(appSource)) {
+  fail("Phase 10 must require authentication before rendering learning content.");
+}
+if (!appSource.includes("invalidateContentCatalogCache")) {
+  fail("app.js must clear secured catalog caches on logout/account changes.");
+}
+if (!authUiControllerSource.includes("onSessionResolved")) {
+  fail("auth-ui-controller.js must expose session resolution to the authenticated content gate.");
 }
 if (!appProgressSource.includes('.from("user_problem_progress")') || !appProgressSource.includes('.select("*")')) {
   fail("app-progress.js must load progress with schema-compatible select(*).");
@@ -291,6 +308,12 @@ if (!adminContentModelSource.includes("export function validateExamPayload")) {
 if (!examSessionStateSource.includes("export function createExamSessionStore")) {
   fail("exam-session-state.js must own persistent exam session state.");
 }
+if (!adminExamRecoverySource.includes("export function createAdminExamRecoveryController")) {
+  fail("admin-exam-recovery.js must expose the emergency admin unlock controller.");
+}
+if (!adminExamRecoverySource.includes("Deblochează examenul activ")) {
+  fail("The Phase 10 emergency unlock control is missing its Romanian UI label.");
+}
 if (!progressRepositorySource.includes("export async function cancelExamAttempt")) {
   fail("progress-repository.js must expose admin exam cancellation.");
 }
@@ -309,8 +332,8 @@ if (/const ACTIVE_EXAM_LOCK_KEY|function getExamState\(|function setExamState\(/
 if (/function (?:mhClampOptionCount|mhEnsureDraftMcqShape|mhValidateExamPayload|loadAppProgressFromDb)\b/.test(appSource)) {
   fail("app.js still contains logic extracted during Phase 08.");
 }
-if (appSource.split(/\r?\n/).length > 7700) {
-  fail("app.js exceeded the Phase 09 architecture ceiling of 7700 lines.");
+if (appSource.split(/\r?\n/).length > 7850) {
+  fail("app.js exceeded the Phase 10 architecture ceiling of 7850 lines.");
 }
 if (profileSource.split(/\r?\n/).length > 1150) {
   fail("profile.js exceeded the Phase 07 architecture ceiling of 1150 lines.");
