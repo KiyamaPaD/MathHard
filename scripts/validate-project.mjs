@@ -11,7 +11,12 @@ const moduleJsFiles = [
   "js/supabase-client.js",
   "js/content-repository.js",
   "js/progress-repository.js",
-  "js/runtime-config.js"
+  "js/runtime-config.js",
+  "js/content-model.js",
+  "js/answer-engine.js",
+  "js/mutation-queue.js",
+  "js/profile-model.js",
+  "js/profile-text.js"
 ];
 
 const classicJsFiles = [
@@ -150,6 +155,11 @@ const profileHtml = readFileSync(resolve(root, "profile.html"), "utf8");
 const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
 const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
 const contentRepositorySource = readFileSync(resolve(root, "js/content-repository.js"), "utf8");
+const contentModelSource = readFileSync(resolve(root, "js/content-model.js"), "utf8");
+const answerEngineSource = readFileSync(resolve(root, "js/answer-engine.js"), "utf8");
+const mutationQueueSource = readFileSync(resolve(root, "js/mutation-queue.js"), "utf8");
+const profileModelSource = readFileSync(resolve(root, "js/profile-model.js"), "utf8");
+const profileTextSource = readFileSync(resolve(root, "js/profile-text.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -165,6 +175,21 @@ if (!appSource.includes('from "./progress-repository.js"')) {
 }
 if (!appSource.includes('from "./runtime-config.js"')) {
   fail("app.js must load non-content runtime configuration from runtime-config.js.");
+}
+if (!appSource.includes('from "./content-model.js"')) {
+  fail("app.js must use the extracted content-model.js module.");
+}
+if (!appSource.includes('from "./answer-engine.js"')) {
+  fail("app.js must use the extracted answer-engine.js module.");
+}
+if (!appSource.includes('from "./mutation-queue.js"')) {
+  fail("app.js must use the extracted mutation-queue.js module.");
+}
+if (!profileSource.includes('from "./profile-model.js"')) {
+  fail("profile.js must use the extracted profile-model.js module.");
+}
+if (!profileSource.includes('from "./profile-text.js"')) {
+  fail("profile.js must use the extracted profile-text.js module.");
 }
 if (!contentRepositorySource.includes('supabase.from(table).select("*")')) {
   fail("content-repository.js must read catalog tables from Supabase.");
@@ -196,7 +221,7 @@ if (!/default_hours:\s*Number\(document\.getElementById\(["']mh_exam_hours/.test
 if (/function reconcileProgressAfterMutationError[\s\S]{0,500}loadAppProgressFromDb/.test(appSource)) {
   fail("Progress mutation errors must not immediately reload and erase optimistic UI state.");
 }
-if (!appSource.includes("if (terminalEvent) {\n    renderCards();")) {
+if (!appSource.includes("if (merged.terminalEvent) {\n    renderCards();")) {
   fail("Solved problem mutations must refresh problem cards immediately.");
 }
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
@@ -207,6 +232,34 @@ if (!appSource.includes('const sourceText = "Supabase";')) {
 }
 if (/src=["']\/?js\/data\.js["']/i.test(indexHtml) || /src=["']\/?js\/data\.js["']/i.test(profileHtml)) {
   fail("Production pages must not load the removed data.js asset.");
+}
+
+if (appSource.includes("const CHAPTER_TRANSLATIONS =") || appSource.includes("const TAG_TRANSLATIONS =")) {
+  fail("app.js must not contain the extracted chapter/tag dictionaries.");
+}
+if (profileSource.includes("const PROFILE_TEXT =")) {
+  fail("profile.js must not contain the extracted profile translation dictionary.");
+}
+if (!contentModelSource.includes("export function normalizeExam")) {
+  fail("content-model.js must own catalog normalization.");
+}
+if (!answerEngineSource.includes("export const SmartAnswer")) {
+  fail("answer-engine.js must own smart answer validation.");
+}
+if (!mutationQueueSource.includes("export function createKeyedMutationQueue")) {
+  fail("mutation-queue.js must own keyed mutation serialization.");
+}
+if (!profileModelSource.includes("export function buildProfileStats")) {
+  fail("profile-model.js must own profile progress aggregation.");
+}
+if (!profileTextSource.includes("export const PROFILE_TEXT")) {
+  fail("profile-text.js must own profile translations.");
+}
+if (appSource.split(/\r?\n/).length > 8300) {
+  fail("app.js exceeded the Phase 07 architecture ceiling of 8300 lines.");
+}
+if (profileSource.split(/\r?\n/).length > 1150) {
+  fail("profile.js exceeded the Phase 07 architecture ceiling of 1150 lines.");
 }
 
 try {

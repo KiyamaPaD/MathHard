@@ -49,6 +49,23 @@ const {
   recordProblemEvent,
   startExamAttempt
 } = await importBrowserModule("js/progress-repository.js");
+const {
+  getChapterLabel,
+  getTagLabel,
+  normalizeExam,
+  normalizeLesson,
+  normalizeProblem
+} = await importBrowserModule("js/content-model.js");
+const {
+  createKeyedMutationQueue,
+  mergeCanonicalProblemProgress
+} = await importBrowserModule("js/mutation-queue.js");
+const {
+  buildProfileStats,
+  formatExamLabel,
+  sortLessonsForProfile
+} = await importBrowserModule("js/profile-model.js");
+const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
 
 function makeContentClient({ failures = {} } = {}) {
   const rows = {
@@ -124,5 +141,91 @@ await assert.rejects(
   () => recordProblemEvent(progressClient, "problem-1", "invalid"),
   /Invalid problem event/
 );
+
+
+const exactFraction = SmartAnswer.check({
+  user: "2/4",
+  expected: "1/2",
+  problem: { statement_ro: "Scrie fracția" }
+});
+assert.equal(exactFraction.ok, true);
+
+const setAnswer = SmartAnswer.check({
+  user: "{2,1}",
+  expected: "{1,2}",
+  problem: { statement_ro: "Determinați mulțimea" }
+});
+assert.equal(setAnswer.ok, true);
+
+const normalizedLesson = normalizeLesson({
+  id: "lesson-model",
+  chapter_en: "Algebra",
+  tags: ["ecuatii"]
+});
+assert.equal(normalizedLesson.chapter, "Algebra");
+assert.deepEqual(normalizedLesson.tags, ["ecuatii"]);
+
+const normalizedProblem = normalizeProblem({
+  id: "problem-model",
+  lesson_id: "lesson-model",
+  olymp_level: "J"
+});
+assert.equal(normalizedProblem.lessonId, "lesson-model");
+assert.equal(normalizedProblem.olympLevel, "J");
+
+const normalizedExam = normalizeExam({
+  id: "exam-model",
+  default_hours: 3,
+  items: [{ type: "mcq", options: [{ label: "A", is_correct: true }] }]
+});
+assert.equal(normalizedExam.defaultHours, 3);
+assert.equal(normalizedExam.items[0].options_count, 1);
+assert.equal(getChapterLabel("ecuatii", "en"), "Equations");
+assert.equal(getTagLabel("multimi", "ro"), "mulțimi");
+
+const mutationOrder = [];
+const queue = createKeyedMutationQueue();
+await Promise.all([
+  queue.enqueue("problem:1", async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    mutationOrder.push("first");
+  }),
+  queue.enqueue("problem:1", async () => {
+    mutationOrder.push("second");
+  })
+]);
+assert.deepEqual(mutationOrder, ["first", "second"]);
+assert.equal(queue.pendingCount, 0);
+
+const mergedProblem = mergeCanonicalProblemProgress(
+  { solved: true, xp: 7 },
+  { solved: false, xp_earned: 0, wrong_attempts: 1 },
+  "wrong"
+);
+assert.equal(mergedProblem.solved, true);
+assert.equal(mergedProblem.record.xp, 7);
+
+const profileStats = buildProfileStats({
+  lessonRows: [{ lesson_id: "lesson-1", learned: true, learned_at: "2026-01-01" }],
+  problemRows: [{ problem_id: "problem-1", solved: true, xp_earned: 8, solved_at: "2026-01-02" }],
+  examRows: [{ exam_id: "exam-1", passed: false, best_score: 45, attempts_count: 2 }],
+  catalog: {
+    lessons: [
+      { id: "lesson-2", grade: "VI", chapter: "B", title_ro: "A doua" },
+      { id: "lesson-1", grade: "V", chapter: "A", title_ro: "Prima" }
+    ],
+    problems: [{ id: "problem-1", title_ro: "Problemă" }],
+    exams: [{ id: "exam-1", type: "EN", year: 2026, title_ro: "Simulare" }]
+  },
+  lang: "ro"
+});
+assert.equal(profileStats.counts.learned, 1);
+assert.equal(profileStats.counts.solved, 1);
+assert.equal(profileStats.counts.xpTotal, 8);
+assert.equal(profileStats.counts.totalExamAttempts, 2);
+assert.equal(profileStats.nextLesson.id, "lesson-2");
+assert.equal(profileStats.retryRecommended, true);
+assert.equal(formatExamLabel(profileStats.recommendedExam, "ro"), "Simulare (EN • 2026)");
+assert.deepEqual(sortLessonsForProfile(profileStats.catalog.lessons, "ro").map((item) => item.id), ["lesson-1", "lesson-2"]);
 
 console.log("MathHard repository tests passed.");
