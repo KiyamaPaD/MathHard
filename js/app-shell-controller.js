@@ -59,6 +59,7 @@ const TEXT = {
       language: "Limbă",
       collapse: "Compactează meniul",
       expand: "Extinde meniul",
+      closeAdmin: "Închide Admin",
     },
     continue: "Continuă",
     menu: "Meniu",
@@ -94,6 +95,7 @@ const TEXT = {
       language: "Language",
       collapse: "Collapse menu",
       expand: "Expand menu",
+      closeAdmin: "Close Admin",
     },
     continue: "Continue",
     menu: "Menu",
@@ -104,6 +106,7 @@ const TEXT = {
 const NAV_ITEMS = Object.freeze([
   { route: "dashboard", icon: "⌂", group: "main" },
   { route: "roadmap", icon: "◇", group: "main" },
+  { route: "profile", icon: "◉", group: "main", href: "/profile.html" },
   { route: "lessons", icon: "▤", group: "learn" },
   { route: "problems", icon: "◆", group: "learn" },
   { route: "exams", icon: "▣", group: "learn" },
@@ -127,6 +130,15 @@ function language() {
 }
 
 function buttonMarkup(item) {
+  if (item.href) {
+    return `
+      <a class="mh-shell-nav-button" href="${item.href}" data-shell-link="${item.route}">
+        <span class="mh-shell-nav-icon" aria-hidden="true">${item.icon}</span>
+        <span class="mh-shell-nav-label" data-shell-label="${item.route}"></span>
+      </a>
+    `;
+  }
+
   return `
     <button class="mh-shell-nav-button" type="button" data-shell-route="${item.route}">
       <span class="mh-shell-nav-icon" aria-hidden="true">${item.icon}</span>
@@ -183,6 +195,10 @@ function createShellMarkup() {
       <section class="mh-shell-workspace-panel" data-panel="roadmap" id="mhShellPanelRoadmap" hidden></section>
       <section class="mh-shell-workspace-panel" data-panel="catalog" id="mhShellPanelCatalog" hidden></section>
     </main>
+    <button class="mh-admin-floating-close" id="mhAdminFloatingClose" type="button" hidden>
+      <span aria-hidden="true">✕</span>
+      <span data-admin-close-label>Închide Admin</span>
+    </button>
     <nav class="mh-shell-bottom-nav" id="mhShellBottomNav" aria-label="Mobile navigation">
       <button type="button" data-shell-route="dashboard"><span>⌂</span><span data-shell-label="dashboard"></span></button>
       <button type="button" data-shell-route="roadmap"><span>◇</span><span data-shell-label="roadmap"></span></button>
@@ -250,6 +266,9 @@ function applyLanguage() {
   document.getElementById("mhShellSidebarToggleLabel").textContent = compact
     ? text.nav.expand
     : text.nav.collapse;
+
+  const adminCloseLabel = document.querySelector("[data-admin-close-label]");
+  if (adminCloseLabel) adminCloseLabel.textContent = text.nav.closeAdmin;
 
   const route = normalizeAppRoute(location.hash);
   updateWorkspaceCopy(route);
@@ -381,6 +400,25 @@ function bindNavigation() {
   });
 }
 
+function bindAdminClose() {
+  const drawer = document.getElementById("adminDrawer");
+  const floatingClose = document.getElementById("mhAdminFloatingClose");
+  if (!drawer || !floatingClose) return;
+
+  const sync = () => {
+    const open = drawer.classList.contains("open");
+    floatingClose.hidden = !open;
+    document.body.classList.toggle("mh-admin-drawer-open", open);
+  };
+
+  floatingClose.addEventListener("click", () => proxyClick("closeAdmin"));
+  new MutationObserver(sync).observe(drawer, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  sync();
+}
+
 function watchAdmin() {
   createAdminNavButton();
   const adminButton = document.getElementById("adminBtn");
@@ -418,6 +456,7 @@ function init() {
   bindNavigation();
   bindContinue();
   watchAdmin();
+  bindAdminClose();
 
   const languageObserver = new MutationObserver(applyLanguage);
   languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });

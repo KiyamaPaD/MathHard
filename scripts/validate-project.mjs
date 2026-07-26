@@ -659,6 +659,17 @@ if (indexHtml.includes('/img/preview.png')) {
   fail("Open Graph image points to a removed asset.");
 }
 
+
+if (!appShellSource.includes('href="${item.href}"') || !appShellSource.includes('{ route: "profile"')) {
+  fail("Phase 14A hotfix must expose Profile in the desktop app shell.");
+}
+if (!appShellSource.includes("mhAdminFloatingClose") || !appShellSource.includes("bindAdminClose")) {
+  fail("Phase 14A hotfix must provide a persistent Admin close control.");
+}
+if (!appShellCss.includes(".mh-admin-floating-close") || !appShellCss.includes("border-radius: 18px")) {
+  fail("Phase 14A hotfix must include rounded navigation and Admin close styles.");
+}
+
 if (failed) {
   process.exitCode = 1;
 } else {
