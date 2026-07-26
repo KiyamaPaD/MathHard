@@ -113,6 +113,16 @@ const {
   createExamSessionStore,
   formatExamCountdown
 } = await importBrowserModule("js/exam-session-state.js");
+const {
+  loadProblemWorkspace,
+  normalizeProblemWorkspace,
+  saveContentWorkspace
+} = await importBrowserModule("js/problem-workspace-repository.js");
+const {
+  buildProblemRecommendations,
+  feedbackForAttempt,
+  formatAttemptTime
+} = await importBrowserModule("js/problem-workspace-model.js");
 
 function makeContentClient({ rpcError = null, authenticated = true } = {}) {
   const catalog = {
@@ -642,5 +652,66 @@ assert.deepEqual(serializeUiPreferences(DEFAULT_UI_PREFERENCES), {
     catalog: true
   }
 });
+
+
+
+// Phase 13B: problem workspace persistence and recommendation model.
+const workspaceCalls = [];
+const workspaceClient = {
+  async rpc(name, args) {
+    workspaceCalls.push({ name, args });
+    if (name === "mh_get_problem_workspace") {
+      return {
+        data: {
+          bookmarked: true,
+          note: "Remember the sign.",
+          explanation_mode: "boss",
+          can_view_solution: true,
+          solution: { answer: "4", simple: "Add two and two.", boss: "Boss mode: 2 + 2 = 4." },
+          attempts: [{ id: 1, answer: "3", correct: false, verification_mode: "numeric", created_at: "2026-07-26T12:00:00Z" }]
+        },
+        error: null
+      };
+    }
+    return {
+      data: { bookmarked: false, note: "Updated", explanation_mode: "simple" },
+      error: null
+    };
+  }
+};
+
+const workspacePayload = normalizeProblemWorkspace(
+  await loadProblemWorkspace(workspaceClient, "problem-1", "ro")
+);
+assert.equal(workspacePayload.bookmarked, true);
+assert.equal(workspacePayload.explanationMode, "boss");
+assert.equal(workspacePayload.attempts[0].answer, "3");
+assert.equal(workspacePayload.canViewSolution, true);
+
+await saveContentWorkspace(workspaceClient, {
+  contentType: "problem",
+  contentId: "problem-1",
+  bookmarked: false,
+  note: "Updated",
+  explanationMode: "simple"
+});
+assert.equal(workspaceCalls[0].name, "mh_get_problem_workspace");
+assert.equal(workspaceCalls[1].name, "mh_save_content_workspace");
+assert.equal(workspaceCalls[1].args.p_note, "Updated");
+
+const recommendations = buildProblemRecommendations({
+  currentProblem: { id: "p1", lesson_id: "l1", difficulty: 2 },
+  problems: [
+    { id: "p1", lesson_id: "l1", difficulty: 2 },
+    { id: "p2", lesson_id: "l1", difficulty: 3 },
+    { id: "p3", lesson_id: "l2", difficulty: 2 },
+    { id: "p4", lesson_id: "l1", difficulty: 1 }
+  ],
+  solvedIds: new Set(["p4"]),
+  limit: 2
+});
+assert.deepEqual(recommendations.map((item) => item.id), ["p2", "p3"]);
+assert.match(feedbackForAttempt({ language: "ro", wrongAttempts: 2, hasHint1: true }), /Hint 1/);
+assert.ok(formatAttemptTime("2026-07-26T12:00:00Z", "ro"));
 
 console.log("MathHard repository tests passed.");

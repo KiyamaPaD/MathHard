@@ -2685,6 +2685,12 @@ console.log("APP.JS LOADED");
     setVal("mh_answer", item.answer);
     setVal("mh_hint1_ro", item.hint1_ro);
     setVal("mh_hint2_ro", item.hint2_ro);
+    setVal("mh_solution_ro", item.solution_ro);
+    setVal("mh_solution_en", item.solution_en);
+    setVal("mh_explanation_simple_ro", item.explanation_simple_ro);
+    setVal("mh_explanation_simple_en", item.explanation_simple_en);
+    setVal("mh_explanation_boss_ro", item.explanation_boss_ro);
+    setVal("mh_explanation_boss_en", item.explanation_boss_en);
 
     setVal("mh_exam_type", item.exam_type ?? item.type);
     setVal("mh_exam_year", item.exam_year ?? item.year);
@@ -2982,6 +2988,12 @@ console.log("APP.JS LOADED");
 
       hint1_ro: document.getElementById("mh_hint1_ro").value.trim(),
       hint2_ro: document.getElementById("mh_hint2_ro").value.trim(),
+      solution_ro: document.getElementById("mh_solution_ro").value.trim(),
+      solution_en: document.getElementById("mh_solution_en").value.trim(),
+      explanation_simple_ro: document.getElementById("mh_explanation_simple_ro").value.trim(),
+      explanation_simple_en: document.getElementById("mh_explanation_simple_en").value.trim(),
+      explanation_boss_ro: document.getElementById("mh_explanation_boss_ro").value.trim(),
+      explanation_boss_en: document.getElementById("mh_explanation_boss_en").value.trim(),
 
       source: ""
     };
@@ -6226,6 +6238,9 @@ console.log("APP.JS LOADED");
     supabase,
     getLanguage: () => LANG,
     getLessons: () => DATA.lessons,
+    getProblems: () => DATA.problems,
+    getSolvedIds: () => solvedSet,
+    onOpenProblem: (candidate) => openViewer(candidate, "problem"),
     isExamProblem,
     getXPRecord,
     isProblemSolved: (problemId) => solvedSet.has(problemId),

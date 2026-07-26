@@ -1,0 +1,223 @@
+/* MathHard Phase 13B — problem workspace v2 */
+.mh-problem-workspace {
+  display: grid;
+  gap: 18px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.mh-problem-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--bg)), var(--bg));
+}
+
+.mh-problem-hero h2 {
+  margin: 5px 0 7px;
+  font-size: clamp(1.45rem, 2.5vw, 2.15rem);
+}
+
+.mh-problem-hero-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mh-bookmark-btn[aria-pressed="true"] {
+  border-color: #f7c948;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f7c948 20%, transparent);
+}
+
+.mh-problem-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 310px);
+  gap: 18px;
+  align-items: start;
+}
+
+.mh-problem-main,
+.mh-problem-side {
+  display: grid;
+  gap: 14px;
+}
+
+.mh-problem-side {
+  position: sticky;
+  top: 12px;
+}
+
+.mh-problem-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 17px;
+  background: color-mix(in srgb, var(--bg) 95%, white 5%);
+  box-shadow: 0 14px 34px -30px rgba(0, 0, 0, .7);
+}
+
+.mh-problem-card h3 {
+  margin: 0 0 11px;
+  font-size: 1rem;
+}
+
+.mh-secure-caption {
+  margin-bottom: 12px;
+}
+
+.mh-answer-card .checkrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.mh-answer-card #answerInput,
+.mh-note-card textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 11px 12px;
+}
+
+.mh-note-card textarea {
+  resize: vertical;
+  min-height: 180px;
+  line-height: 1.5;
+}
+
+.mh-problem-status {
+  min-height: 1.35em;
+  margin-top: 8px;
+  font-weight: 800;
+}
+
+.mh-feedback-card {
+  border-left: 4px solid var(--accent);
+}
+
+.mh-feedback-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.mh-server-attempts {
+  display: grid;
+  gap: 7px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.mh-server-attempts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--bg) 88%, var(--accent) 12%);
+  word-break: break-word;
+}
+
+.mh-server-attempts li small {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.mh-solution-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mh-explanation-modes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mh-explanation-modes button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.mh-explanation-modes button.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.mh-solution-content {
+  margin-top: 12px;
+  line-height: 1.65;
+  padding: 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 82%, var(--accent) 18%);
+}
+
+.mh-problem-recommendations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 9px;
+}
+
+.mh-recommendation-card {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 12px;
+  cursor: pointer;
+}
+
+.mh-recommendation-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.mh-recommendation-card span {
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+@media (max-width: 920px) {
+  .mh-problem-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-problem-side {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .mh-problem-hero,
+  .mh-problem-card {
+    padding: 13px;
+    border-radius: 15px;
+  }
+
+  .mh-answer-card .checkrow {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-server-attempts li {
+    display: grid;
+  }
+}

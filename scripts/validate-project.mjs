@@ -31,6 +31,8 @@ const moduleJsFiles = [
   "js/roadmap-admin-controller.js",
   "js/roadmap-admin-model.js",
   "js/learning-workspace-controller.js",
+  "js/problem-workspace-repository.js",
+  "js/problem-workspace-model.js",
   "js/quick-nav-controller.js",
   "js/ui-preferences-repository.js",
   "js/section-layout-controller.js"
@@ -48,6 +50,7 @@ const requiredFiles = [
   "css/roadmap.css",
   "css/roadmap-studio.css",
   "css/learning-workspace.css",
+  "css/problem-workspace.css",
   "css/quick-nav.css",
   "css/section-layout.css",
   "scripts/test-repositories.mjs",
@@ -197,6 +200,9 @@ const roadmapControllerSource = readFileSync(resolve(root, "js/roadmap-controlle
 const roadmapAdminControllerSource = readFileSync(resolve(root, "js/roadmap-admin-controller.js"), "utf8");
 const roadmapAdminModelSource = readFileSync(resolve(root, "js/roadmap-admin-model.js"), "utf8");
 const learningWorkspaceControllerSource = readFileSync(resolve(root, "js/learning-workspace-controller.js"), "utf8");
+const problemWorkspaceRepositorySource = readFileSync(resolve(root, "js/problem-workspace-repository.js"), "utf8");
+const problemWorkspaceModelSource = readFileSync(resolve(root, "js/problem-workspace-model.js"), "utf8");
+const problemWorkspaceCss = readFileSync(resolve(root, "css/problem-workspace.css"), "utf8");
 const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
 const roadmapStudioCss = readFileSync(resolve(root, "css/roadmap-studio.css"), "utf8");
 const learningWorkspaceCss = readFileSync(resolve(root, "css/learning-workspace.css"), "utf8");
@@ -558,6 +564,38 @@ if (!learningWorkspaceControllerSource.includes("findNodeByContent") || !learnin
 }
 if (!roadmapStudioCss.includes("mh-roadmap-admin-quick-add")) {
   fail("Roadmap Studio v2 styling is incomplete.");
+}
+
+
+if (!indexHtml.includes('css/problem-workspace.css')) {
+  fail("Phase 13B problem workspace stylesheet is missing from index.html.");
+}
+if (!secureProblemControllerSource.includes('from "./problem-workspace-repository.js"')) {
+  fail("secure-problem-controller.js must use the Phase 13B workspace repository.");
+}
+if (!secureProblemControllerSource.includes('id="problemBookmarkBtn"')) {
+  fail("Phase 13B bookmark control is missing from the problem workspace.");
+}
+if (!secureProblemControllerSource.includes('id="problemNote"')) {
+  fail("Phase 13B personal note editor is missing from the problem workspace.");
+}
+if (!secureProblemControllerSource.includes('data-explanation-mode="boss"')) {
+  fail("Phase 13B explanation modes are missing from the problem workspace.");
+}
+if (!problemWorkspaceRepositorySource.includes('"mh_get_problem_workspace"')) {
+  fail("problem-workspace-repository.js must load workspace state through mh_get_problem_workspace().");
+}
+if (!problemWorkspaceRepositorySource.includes('"mh_save_content_workspace"')) {
+  fail("problem-workspace-repository.js must save workspace state through mh_save_content_workspace().");
+}
+if (!problemWorkspaceModelSource.includes("buildProblemRecommendations")) {
+  fail("problem-workspace-model.js must provide recommendations.");
+}
+if (!problemWorkspaceCss.includes(".mh-problem-layout")) {
+  fail("Phase 13B problem workspace layout styles are missing.");
+}
+if (!appSource.includes("getProblems: () => DATA.problems")) {
+  fail("app.js must pass the catalog to the Phase 13B problem workspace.");
 }
 
 if (failed) {

@@ -4,6 +4,16 @@ import {
   revealProblemAnswer,
   submitProblemAnswer
 } from "./secure-evaluation-repository.js";
+import {
+  loadProblemWorkspace,
+  normalizeProblemWorkspace,
+  saveContentWorkspace
+} from "./problem-workspace-repository.js";
+import {
+  buildProblemRecommendations,
+  feedbackForAttempt,
+  formatAttemptTime
+} from "./problem-workspace-model.js";
 
 function messageFor(language, key, ok = false) {
   const messages = {
@@ -33,10 +43,33 @@ function messageFor(language, key, ok = false) {
   return messages[lang][key] || (ok ? messages[lang].correct : messages[lang].wrong);
 }
 
+function debounce(callback, delay = 700) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => callback(...args), delay);
+  };
+}
+
+function translated(item, language, field = "title") {
+  const first = language === "en" ? item?.[`${field}_en`] : item?.[`${field}_ro`];
+  const second = language === "en" ? item?.[`${field}_ro`] : item?.[`${field}_en`];
+  return String(first || second || item?.id || "");
+}
+
+function solutionText(solution, mode, language) {
+  if (!solution) return "";
+  const safeMode = new Set(["academic", "simple", "boss"]).has(mode) ? mode : "simple";
+  return String(solution?.[safeMode] || solution?.simple || solution?.academic || solution?.answer || "");
+}
+
 export function createSecureProblemController({
   supabase,
   getLanguage,
   getLessons,
+  getProblems = () => [],
+  getSolvedIds = () => new Set(),
+  onOpenProblem,
   isExamProblem,
   getXPRecord,
   isProblemSolved,
@@ -55,129 +88,167 @@ export function createSecureProblemController({
     if (!host) return;
 
     const language = getLanguage() === "en" ? "en" : "ro";
+    const ro = language === "ro";
     const lesson = getLessons().find((item) => item.id === problem.lessonId) || {};
     const isExam = isExamProblem(problem);
     const record = getXPRecord(problem.id);
     const hasHint1 = Boolean(problem.has_hint1 ?? (problem.hint1_ro || problem.hint1_en));
     const hasHint2 = Boolean(problem.has_hint2 ?? (problem.hint2_ro || problem.hint2_en));
-    const title = language === "ro"
-      ? (problem.title_ro || problem.title_en || `Problema ${problem.id}`)
-      : (problem.title_en || problem.title_ro || `Problem ${problem.id}`);
-    const statement = language === "ro"
-      ? (problem.statement_ro || problem.statement_en || "")
-      : (problem.statement_en || problem.statement_ro || "");
+    const title = translated(problem, language);
+    const statement = translated(problem, language, "statement");
     const stars = problem.difficulty === 0 ? "0★" : "★".repeat(problem.difficulty);
     const existingAttempts = attempts[problem.id] || [];
 
     host.innerHTML = `
-      <article class="problem">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <article class="problem mh-problem-workspace">
+        <header class="mh-problem-hero">
           <div>
             <div class="stars">🧩 ${stars}</div>
-            <h2 style="margin:4px 0 6px;">${escapeHtml(title)}</h2>
+            <h2>${escapeHtml(title)}</h2>
             <div class="legend">
-              📘 ${escapeHtml(language === "ro"
-                ? (lesson.title_ro || lesson.title_en || lesson.chapter || "")
-                : (lesson.title_en || lesson.title_ro || lesson.chapter || ""))}
+              📘 ${escapeHtml(translated(lesson, language) || lesson.chapter || "")}
               ${lesson.grade ? ` • 🎓 ${escapeHtml(lesson.grade)}` : ""}
             </div>
           </div>
-          ${!isExam ? `
-          <div style="text-align:right;" class="problem-xp-box">
-            <div class="legend">${language === "ro" ? "⚡ XP validat de server" : "⚡ Server-validated XP"}</div>
-            <div class="xp-inline-number" id="probXpValue">${record.xp || 0} / 10</div>
-            <div class="legend" id="probXpStats" style="font-size:11px;">
-              ${language === "ro" ? "greșeli" : "mistakes"}: ${record.wrong || 0} • ${language === "ro" ? "hinturi" : "hints"}: ${record.hints || 0}
-            </div>
-          </div>` : ""}
-        </div>
-
-        <hr style="border-color:var(--border);opacity:.4;margin:8px 0 10px;">
-
-        <div class="legend" style="margin-bottom:6px;">
-          ${language === "ro"
-            ? "Răspunsul este verificat în Supabase. XP = 10 − greșeli − hinturi; după reveal, XP-ul acelei rezolvări este 0."
-            : "Your answer is checked in Supabase. XP = 10 − mistakes − hints; after reveal, that solve earns 0 XP."}
-        </div>
-
-        <div class="problem-statement">${statement}</div>
-
-        <div class="checkrow">
-          <input id="answerInput" autocomplete="off" placeholder="${language === "ro" ? "Răspunsul tău…" : "Your answer…"}">
-          <button class="btn small" id="checkBtn">${language === "ro" ? "Verifică" : "Check"}</button>
-          <span class="legend" id="statusArea"></span>
-        </div>
-
-        <div class="mh-live-preview-wrap">
-          <div class="legend">Preview live</div>
-          <div class="mh-live-preview-box" id="answerPreviewBox"></div>
-        </div>
-
-        <div class="mh-math-input-host" id="answerMathToolbar"></div>
-
-        <div class="check-confirm" id="checkConfirm">
-          <span>${language === "ro"
-            ? "Ești sigur că vrei să trimiți răspunsul? Încercarea va fi validată și înregistrată pe server."
-            : "Are you sure you want to submit? The attempt will be validated and recorded on the server."}</span>
-          <div class="check-confirm-buttons">
-            <button class="btn small" id="confirmNo">${language === "ro" ? "Nu" : "No"}</button>
-            <button class="btn small" id="confirmYes">${language === "ro" ? "Da" : "Yes"}</button>
+          <div class="mh-problem-hero-actions">
+            <button class="btn small mh-bookmark-btn" id="problemBookmarkBtn" type="button" aria-pressed="false">
+              ☆ ${ro ? "Salvează" : "Bookmark"}
+            </button>
+            ${!isExam ? `
+            <div class="problem-xp-box">
+              <div class="legend">${ro ? "⚡ XP validat de server" : "⚡ Server-validated XP"}</div>
+              <div class="xp-inline-number" id="probXpValue">${record.xp || 0} / 10</div>
+              <div class="legend" id="probXpStats">
+                ${ro ? "greșeli" : "mistakes"}: ${record.wrong || 0} • ${ro ? "hinturi" : "hints"}: ${record.hints || 0}
+              </div>
+            </div>` : ""}
           </div>
+        </header>
+
+        <div class="mh-problem-layout">
+          <main class="mh-problem-main">
+            <section class="mh-problem-card">
+              <div class="legend mh-secure-caption">
+                ${ro
+                  ? "Răspunsul și XP-ul sunt validate în Supabase. După reveal, rezolvarea valorează 0 XP."
+                  : "The answer and XP are validated in Supabase. After reveal, the solve earns 0 XP."}
+              </div>
+              <div class="problem-statement">${statement}</div>
+            </section>
+
+            <section class="mh-problem-card mh-answer-card">
+              <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
+              <div class="checkrow">
+                <input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">
+                <button class="btn small" id="checkBtn">${ro ? "Verifică" : "Check"}</button>
+              </div>
+              <div class="legend mh-problem-status" id="statusArea"></div>
+              <div class="mh-live-preview-wrap">
+                <div class="legend">Preview live</div>
+                <div class="mh-live-preview-box" id="answerPreviewBox"></div>
+              </div>
+              <div class="mh-math-input-host" id="answerMathToolbar"></div>
+
+              <div class="check-confirm" id="checkConfirm">
+                <span>${ro
+                  ? "Trimiți răspunsul pentru validare și înregistrare server-side?"
+                  : "Submit this answer for server-side validation and recording?"}</span>
+                <div class="check-confirm-buttons">
+                  <button class="btn small" id="confirmNo">${ro ? "Nu" : "No"}</button>
+                  <button class="btn small" id="confirmYes">${ro ? "Da" : "Yes"}</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="mh-problem-card mh-feedback-card">
+              <h3>🧭 ${ro ? "Feedback de lucru" : "Work feedback"}</h3>
+              <p id="problemFeedbackText"></p>
+            </section>
+
+            <section class="mh-problem-card">
+              <details class="collapsible" open>
+                <summary>📜 ${ro ? "Istoricul încercărilor" : "Attempt history"} (<span id="attemptCount">${existingAttempts.length}</span>)</summary>
+                <div id="attemptHistoryStatus" class="legend">${ro ? "Se sincronizează cu Supabase…" : "Syncing with Supabase…"}</div>
+                <ul class="attempts mh-server-attempts" id="attemptsList"></ul>
+              </details>
+            </section>
+
+            <div class="hints" id="hintsBox">
+              ${hasHint1 && !isExam ? `
+              <div class="hint" id="hintWrap1" style="display:none;">
+                <details>
+                  <summary>💡 Hint 1 (${ro ? "după 2 greșeli" : "after 2 mistakes"})</summary>
+                  <p data-hint-content>${ro ? "Deschide pentru a încărca hintul securizat." : "Open to load the secure hint."}</p>
+                </details>
+              </div>` : ""}
+              ${hasHint2 && !isExam ? `
+              <div class="hint" id="hintWrap2" style="display:none;">
+                <details>
+                  <summary>💡 Hint 2 (${ro ? "după 4 greșeli" : "after 4 mistakes"})</summary>
+                  <p data-hint-content>${ro ? "Deschide pentru a încărca hintul securizat." : "Open to load the secure hint."}</p>
+                </details>
+              </div>` : ""}
+            </div>
+
+            ${!isExam ? `
+            <section class="mh-problem-card mh-solution-card">
+              <div class="mh-solution-heading">
+                <h3>🧠 ${ro ? "Explicație și soluție" : "Explanation and solution"}</h3>
+                <div class="mh-explanation-modes" role="group" aria-label="Explanation mode">
+                  <button type="button" data-explanation-mode="academic">🎓 ${ro ? "Academic" : "Academic"}</button>
+                  <button type="button" data-explanation-mode="simple">✨ ${ro ? "Simplu" : "Simple"}</button>
+                  <button type="button" data-explanation-mode="boss">🔥 Boss</button>
+                </div>
+              </div>
+              <div id="solutionLocked" class="legend">
+                ${ro ? "Soluția se deblochează după rezolvare sau după reveal." : "The solution unlocks after solving or revealing the answer."}
+              </div>
+              <div id="solutionContent" class="mh-solution-content" hidden></div>
+              <div class="reveal">
+                <button class="reveal-btn" id="revealBtn">${ro ? "Arată răspunsul și soluția" : "Show answer and solution"}</button>
+                <span class="legend" id="revealText" hidden></span>
+              </div>
+            </section>` : ""}
+
+            <section class="mh-problem-card">
+              <h3>➡️ ${ro ? "Continuă antrenamentul" : "Continue training"}</h3>
+              <div class="mh-problem-recommendations" id="problemRecommendations"></div>
+            </section>
+          </main>
+
+          <aside class="mh-problem-side">
+            <section class="mh-problem-card mh-note-card">
+              <h3>📝 ${ro ? "Notița mea" : "My note"}</h3>
+              <textarea id="problemNote" rows="10" maxlength="10000" placeholder="${ro
+                ? "Scrie ideea principală, greșeala făcută sau metoda de reținut…"
+                : "Write the key idea, your mistake or the method to remember…"}"></textarea>
+              <div class="legend" id="problemNoteStatus">${ro ? "Salvare automată per cont" : "Autosaved per account"}</div>
+            </section>
+          </aside>
         </div>
-
-        <details class="collapsible" style="margin-top:10px;">
-          <summary>📜 ${language === "ro" ? "Istoric local al răspunsurilor" : "Local answer history"}</summary>
-          <ul class="attempts" id="attemptsList"></ul>
-        </details>
-
-        <div class="hints" id="hintsBox" style="margin-top:10px;">
-          ${hasHint1 && !isExam ? `
-          <div class="hint" id="hintWrap1" style="display:none;">
-            <details>
-              <summary>💡 Hint 1 (${language === "ro" ? "după 2 răspunsuri greșite" : "after 2 wrong answers"})</summary>
-              <p data-hint-content>${language === "ro" ? "Deschide pentru a încărca hintul securizat." : "Open to load the secure hint."}</p>
-            </details>
-          </div>` : ""}
-
-          ${hasHint2 && !isExam ? `
-          <div class="hint" id="hintWrap2" style="display:none;">
-            <details>
-              <summary>💡 Hint 2 (${language === "ro" ? "după 4 răspunsuri greșite" : "after 4 wrong answers"})</summary>
-              <p data-hint-content>${language === "ro" ? "Deschide pentru a încărca hintul securizat." : "Open to load the secure hint."}</p>
-            </details>
-          </div>` : ""}
-        </div>
-
-        ${!isExam ? `
-        <div class="reveal">
-          <button class="reveal-btn" id="revealBtn">${language === "ro" ? "Arată răspunsul corect" : "Show correct answer"}</button>
-          <span class="legend" id="revealText" style="display:none;margin-left:8px;"></span>
-        </div>` : ""}
       </article>
     `;
 
     renderMath(host);
-    void logLearningEvent(
-      supabase,
-      "problem_opened",
-      "problem",
-      problem.id,
-      { language }
-    ).catch((error) => console.warn("problem_opened event failed:", error));
+    void logLearningEvent(supabase, "problem_opened", "problem", problem.id, { language })
+      .catch((error) => console.warn("problem_opened event failed:", error));
 
     const attemptsList = host.querySelector("#attemptsList");
-    existingAttempts.forEach((row) => {
-      const item = document.createElement("li");
-      item.textContent = `${row.ok ? "✅" : "❌"} ${row.value}`;
-      attemptsList.appendChild(item);
-    });
-
+    const attemptCount = host.querySelector("#attemptCount");
+    const attemptStatus = host.querySelector("#attemptHistoryStatus");
     const input = host.querySelector("#answerInput");
     const checkButton = host.querySelector("#checkBtn");
     const confirmBox = host.querySelector("#checkConfirm");
     const yesButton = host.querySelector("#confirmYes");
     const noButton = host.querySelector("#confirmNo");
     const statusArea = host.querySelector("#statusArea");
+    const feedbackText = host.querySelector("#problemFeedbackText");
+    const bookmarkButton = host.querySelector("#problemBookmarkBtn");
+    const noteInput = host.querySelector("#problemNote");
+    const noteStatus = host.querySelector("#problemNoteStatus");
+    const solutionLocked = host.querySelector("#solutionLocked");
+    const solutionContent = host.querySelector("#solutionContent");
+    const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
     bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox"));
 
     const hintWrap1 = host.querySelector("#hintWrap1");
@@ -187,15 +258,37 @@ export function createSecureProblemController({
     let hint1Loaded = false;
     let hint2Loaded = false;
     let submitting = false;
+    let workspace = normalizeProblemWorkspace({});
+
+    function renderAttempts(rows) {
+      attemptsList.innerHTML = "";
+      rows.forEach((row) => {
+        const item = document.createElement("li");
+        const when = formatAttemptTime(row.createdAt, language);
+        item.innerHTML = `<span>${row.correct ? "✅" : "❌"} ${escapeHtml(row.answer)}</span>${when ? `<small>${escapeHtml(when)}</small>` : ""}`;
+        attemptsList.appendChild(item);
+      });
+      attemptCount.textContent = String(rows.length);
+      attemptStatus.textContent = rows.length
+        ? (ro ? "Istoric securizat, salvat pe cont." : "Secure history saved to your account.")
+        : (ro ? "Nu există încă încercări." : "No attempts yet.");
+    }
+
+    function renderFeedback() {
+      const current = getXPRecord(problem.id);
+      feedbackText.textContent = feedbackForAttempt({
+        language,
+        wrongAttempts: current.wrong,
+        hasHint1,
+        hasHint2
+      });
+    }
 
     function refreshHints() {
       const current = getXPRecord(problem.id);
-      if (hintWrap1) {
-        hintWrap1.style.display = current.wrong >= 2 || current.usedHint1 ? "block" : "none";
-      }
-      if (hintWrap2) {
-        hintWrap2.style.display = current.wrong >= 4 || current.usedHint2 ? "block" : "none";
-      }
+      if (hintWrap1) hintWrap1.style.display = current.wrong >= 2 || current.usedHint1 ? "block" : "none";
+      if (hintWrap2) hintWrap2.style.display = current.wrong >= 4 || current.usedHint2 ? "block" : "none";
+      renderFeedback();
     }
 
     function refreshXp() {
@@ -204,30 +297,100 @@ export function createSecureProblemController({
       const value = host.querySelector("#probXpValue");
       const stats = host.querySelector("#probXpStats");
       if (value) value.textContent = `${current.xp || 0} / 10`;
-      if (stats) {
-        stats.textContent = `${language === "ro" ? "greșeli" : "mistakes"}: ${current.wrong || 0} • ${language === "ro" ? "hinturi" : "hints"}: ${current.hints || 0}`;
+      if (stats) stats.textContent = `${ro ? "greșeli" : "mistakes"}: ${current.wrong || 0} • ${ro ? "hinturi" : "hints"}: ${current.hints || 0}`;
+    }
+
+    function renderWorkspace() {
+      bookmarkButton?.setAttribute("aria-pressed", String(workspace.bookmarked));
+      if (bookmarkButton) bookmarkButton.innerHTML = workspace.bookmarked
+        ? `★ ${ro ? "Salvată" : "Saved"}`
+        : `☆ ${ro ? "Salvează" : "Bookmark"}`;
+      if (noteInput && noteInput.value !== workspace.note) noteInput.value = workspace.note;
+      modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.explanationMode === workspace.explanationMode));
+
+      const unlocked = workspace.canViewSolution && workspace.solution;
+      if (solutionLocked) solutionLocked.hidden = Boolean(unlocked);
+      if (solutionContent) {
+        solutionContent.hidden = !unlocked;
+        solutionContent.innerHTML = unlocked
+          ? `<div>${escapeHtml(solutionText(workspace.solution, workspace.explanationMode, language)).replaceAll("\n", "<br>")}</div>`
+          : "";
+        if (unlocked) renderMath(solutionContent);
+      }
+      renderAttempts(workspace.attempts);
+    }
+
+    async function reloadWorkspace() {
+      if (isExam) return;
+      try {
+        workspace = normalizeProblemWorkspace(await loadProblemWorkspace(supabase, problem.id, language));
+        renderWorkspace();
+      } catch (error) {
+        console.warn("Problem workspace could not be loaded:", error);
+        const fallback = existingAttempts.map((row, index) => ({
+          id: index,
+          answer: row.value,
+          correct: Boolean(row.ok),
+          verificationMode: "local",
+          createdAt: ""
+        }));
+        renderAttempts(fallback);
+        if (attemptStatus) attemptStatus.textContent = ro
+          ? "Supabase nu a răspuns; se afișează istoricul local temporar."
+          : "Supabase did not respond; temporary local history is shown.";
       }
     }
 
-    function pushAttempt(value, ok) {
+    async function saveWorkspace(changes, successText) {
+      try {
+        const payload = await saveContentWorkspace(supabase, {
+          contentType: "problem",
+          contentId: problem.id,
+          bookmarked: changes.bookmarked,
+          note: changes.note,
+          explanationMode: changes.explanationMode
+        });
+        workspace = normalizeProblemWorkspace({ ...workspace, ...payload, attempts: workspace.attempts, solution: workspace.solution });
+        renderWorkspace();
+        if (noteStatus && successText) noteStatus.textContent = successText;
+      } catch (error) {
+        console.error("Problem workspace save failed:", error);
+        if (noteStatus) noteStatus.textContent = ro ? "Salvarea a eșuat. Reîncearcă." : "Save failed. Try again.";
+      }
+    }
+
+    bookmarkButton?.addEventListener("click", () => {
+      const next = !workspace.bookmarked;
+      workspace.bookmarked = next;
+      renderWorkspace();
+      void saveWorkspace({ bookmarked: next }, next ? (ro ? "Problemă salvată." : "Problem saved.") : (ro ? "Problemă eliminată din salvate." : "Problem removed from saved."));
+    });
+
+    const saveNoteDebounced = debounce(() => {
+      if (!noteInput) return;
+      noteStatus.textContent = ro ? "Se salvează…" : "Saving…";
+      void saveWorkspace({ note: noteInput.value }, ro ? "Notiță salvată." : "Note saved.");
+    });
+    noteInput?.addEventListener("input", saveNoteDebounced);
+
+    modeButtons.forEach((button) => button.addEventListener("click", () => {
+      const mode = button.dataset.explanationMode;
+      workspace.explanationMode = mode;
+      renderWorkspace();
+      void saveWorkspace({ explanationMode: mode });
+    }));
+
+    function pushLocalAttempt(value, ok) {
       const rows = attempts[problem.id] || [];
       rows.push({ value, ok: Boolean(ok) });
       attempts[problem.id] = rows;
       saveAttempts();
-
-      const item = document.createElement("li");
-      item.textContent = `${ok ? "✅" : "❌"} ${value}`;
-      attemptsList.appendChild(item);
     }
 
     async function checkAnswer() {
       const value = (input.value || "").trim();
       if (!value || submitting) {
-        if (!value) {
-          statusArea.textContent = language === "ro"
-            ? "Completează mai întâi răspunsul."
-            : "Type an answer first.";
-        }
+        if (!value) statusArea.textContent = ro ? "Completează mai întâi răspunsul." : "Type an answer first.";
         return;
       }
 
@@ -240,21 +403,12 @@ export function createSecureProblemController({
         const wasAlreadySolved = isProblemSolved(problem.id);
         const result = await submitProblemAnswer(supabase, problem.id, value, language);
         const ok = Boolean(result?.ok);
-        pushAttempt(value, ok);
-
-        if (result?.progress) {
-          applyProblemProgressResult(problem.id, result.progress, ok ? "solved" : "wrong");
-        }
+        pushLocalAttempt(value, ok);
+        if (result?.progress) applyProblemProgressResult(problem.id, result.progress, ok ? "solved" : "wrong");
 
         if (ok) {
-          statusArea.textContent = messageFor(
-            language,
-            result?.message_key === "already_solved" ? "already_solved" : "correct",
-            true
-          );
-          if (!wasAlreadySolved && result?.progress?.solved) {
-            incrementTodayProgress("problem");
-          }
+          statusArea.textContent = messageFor(language, result?.message_key === "already_solved" ? "already_solved" : "correct", true);
+          if (!wasAlreadySolved && result?.progress?.solved) incrementTodayProgress("problem");
         } else {
           statusArea.textContent = messageFor(language, "wrong");
           input.disabled = false;
@@ -264,6 +418,7 @@ export function createSecureProblemController({
 
         refreshHints();
         refreshXp();
+        await reloadWorkspace();
       } catch (error) {
         console.error("Secure problem submission failed:", error);
         statusArea.textContent = messageFor(language, "unavailable");
@@ -277,9 +432,8 @@ export function createSecureProblemController({
     async function loadHint(number, details, wrap) {
       if (!details?.open || !wrap) return;
       if ((number === 1 && hint1Loaded) || (number === 2 && hint2Loaded)) return;
-
       const content = wrap.querySelector("[data-hint-content]");
-      if (content) content.textContent = language === "ro" ? "Se încarcă…" : "Loading…";
+      if (content) content.textContent = ro ? "Se încarcă…" : "Loading…";
 
       try {
         const result = await requestProblemHint(supabase, problem.id, number, language);
@@ -289,14 +443,12 @@ export function createSecureProblemController({
           if (content) content.textContent = `${messageFor(language, "hint_locked")} (${current}/${needed})`;
           return;
         }
-
-        if (result?.progress) {
-          applyProblemProgressResult(problem.id, result.progress, `hint${number}`);
-        }
+        if (result?.progress) applyProblemProgressResult(problem.id, result.progress, `hint${number}`);
         if (content) content.textContent = result?.hint || messageFor(language, "hint_missing");
         if (number === 1) hint1Loaded = true;
         if (number === 2) hint2Loaded = true;
         refreshXp();
+        renderFeedback();
       } catch (error) {
         console.error(`Secure hint ${number} failed:`, error);
         if (content) content.textContent = messageFor(language, "unavailable");
@@ -305,23 +457,19 @@ export function createSecureProblemController({
 
     refreshHints();
     refreshXp();
+    renderAttempts(existingAttempts.map((row, index) => ({ id: index, answer: row.value, correct: Boolean(row.ok), createdAt: "" })));
 
     if (record.solved) {
       input.disabled = true;
       checkButton.disabled = true;
-      statusArea.textContent = language === "ro" ? "✅ Problemă rezolvată." : "✅ Problem solved.";
+      statusArea.textContent = ro ? "✅ Problemă rezolvată." : "✅ Problem solved.";
     }
 
     checkButton.addEventListener("click", () => {
       if (!checkButton.disabled) confirmBox.style.display = "flex";
     });
-    noButton?.addEventListener("click", () => {
-      confirmBox.style.display = "none";
-    });
-    yesButton?.addEventListener("click", () => {
-      confirmBox.style.display = "none";
-      void checkAnswer();
-    });
+    noButton?.addEventListener("click", () => { confirmBox.style.display = "none"; });
+    yesButton?.addEventListener("click", () => { confirmBox.style.display = "none"; void checkAnswer(); });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -335,31 +483,47 @@ export function createSecureProblemController({
     const revealButton = host.querySelector("#revealBtn");
     const revealText = host.querySelector("#revealText");
     let revealedAnswer = "";
-
     revealButton?.addEventListener("click", async () => {
       if (revealedAnswer) {
-        revealText.style.display = revealText.style.display === "none" ? "inline" : "none";
+        revealText.hidden = !revealText.hidden;
         return;
       }
-
       revealButton.disabled = true;
       try {
         const result = await revealProblemAnswer(supabase, problem.id, language);
         revealedAnswer = String(result?.answer || "");
-        if (result?.progress) {
-          applyProblemProgressResult(problem.id, result.progress, "reveal");
-        }
-        revealText.textContent = `${language === "ro" ? "Răspuns corect:" : "Correct answer:"} ${revealedAnswer}`;
-        revealText.style.display = "inline";
+        if (result?.progress) applyProblemProgressResult(problem.id, result.progress, "reveal");
+        revealText.textContent = `${ro ? "Răspuns corect:" : "Correct answer:"} ${revealedAnswer}`;
+        revealText.hidden = false;
         refreshXp();
+        await reloadWorkspace();
       } catch (error) {
         console.error("Secure answer reveal failed:", error);
         revealText.textContent = messageFor(language, "reveal_failed");
-        revealText.style.display = "inline";
+        revealText.hidden = false;
       } finally {
         revealButton.disabled = false;
       }
     });
+
+    const recommendations = buildProblemRecommendations({
+      currentProblem: problem,
+      problems: getProblems(),
+      solvedIds: getSolvedIds(),
+      limit: 4
+    });
+    const recommendationHost = host.querySelector("#problemRecommendations");
+    recommendations.forEach((candidate) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mh-recommendation-card";
+      button.innerHTML = `<strong>${escapeHtml(translated(candidate, language))}</strong><span>${"★".repeat(Number(candidate.difficulty || 0)) || "0★"}${getSolvedIds().has(candidate.id) ? ` • ✅ ${ro ? "rezolvată" : "solved"}` : ""}</span>`;
+      button.addEventListener("click", () => onOpenProblem?.(candidate));
+      recommendationHost.appendChild(button);
+    });
+    if (!recommendations.length) recommendationHost.textContent = ro ? "Nu există încă recomandări." : "No recommendations yet.";
+
+    void reloadWorkspace();
   }
 
   return { renderProblem };
