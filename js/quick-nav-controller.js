@@ -1,5 +1,3 @@
-const QUICK_NAV_COMPACT_KEY = "mh_quick_nav_compact_v1";
-
 const TEXT = {
   ro: {
     toggle: "Navigare rapidă",
@@ -9,9 +7,14 @@ const TEXT = {
     compactOn: "⚡ Mod compact activ",
     compactOff: "⚡ Ascunde intro-ul lung",
     top: "⬆️ Sus",
+    expandAll: "＋ Arată toate",
+    collapseAll: "− Închide toate",
+    resetLayout: "↺ Resetează aspectul",
     items: {
       hub: "Antrenamentul de azi",
       roadmap: "Roadmap",
+      boss: "Daily Boss Fight",
+      radar: "Radarul tău",
       lessons: "Lecții",
       problems: "Probleme",
       exams: "Examene",
@@ -30,9 +33,14 @@ const TEXT = {
     compactOn: "⚡ Compact mode active",
     compactOff: "⚡ Hide the long intro",
     top: "⬆️ Top",
+    expandAll: "＋ Show all",
+    collapseAll: "− Close all",
+    resetLayout: "↺ Reset layout",
     items: {
       hub: "Today's training",
       roadmap: "Roadmap",
+      boss: "Daily Boss Fight",
+      radar: "Your math radar",
       lessons: "Lessons",
       problems: "Problems",
       exams: "Exams",
@@ -48,6 +56,8 @@ const TEXT = {
 const ITEMS = [
   { key: "hub", icon: "🔥", kind: "anchor", target: "mhHub" },
   { key: "roadmap", icon: "🗺️", kind: "anchor", target: "mhRoadmap" },
+  { key: "boss", icon: "🧠", kind: "anchor", target: "mhBoss" },
+  { key: "radar", icon: "📊", kind: "anchor", target: "mhRadar" },
   { key: "lessons", icon: "📘", kind: "tab", target: "lessons" },
   { key: "problems", icon: "🧩", kind: "tab", target: "problems" },
   { key: "exams", icon: "📑", kind: "tab", target: "exams" },
@@ -62,22 +72,6 @@ function getLanguage() {
   return document.documentElement.lang?.toLowerCase().startsWith("en") ? "en" : "ro";
 }
 
-function safeReadCompactPreference() {
-  try {
-    return localStorage.getItem(QUICK_NAV_COMPACT_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function safeWriteCompactPreference(enabled) {
-  try {
-    localStorage.setItem(QUICK_NAV_COMPACT_KEY, enabled ? "1" : "0");
-  } catch {
-    // Compact mode remains usable for the current page even when storage is unavailable.
-  }
-}
-
 function isAdminButtonVisible() {
   const button = document.getElementById("adminBtn");
   if (!button || button.hidden || button.getAttribute("aria-hidden") === "true") return false;
@@ -87,6 +81,18 @@ function isAdminButtonVisible() {
 function scrollToElement(element) {
   if (!element) return;
   element.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function requestSectionOpen(sectionId) {
+  window.dispatchEvent(new CustomEvent("mh:open-section-request", {
+    detail: { sectionId },
+  }));
+}
+
+function requestLayoutAction(action) {
+  window.dispatchEvent(new CustomEvent("mh:section-layout-request", {
+    detail: { action },
+  }));
 }
 
 function createQuickNav() {
@@ -125,6 +131,11 @@ function createQuickNav() {
       <button class="mh-quick-nav-close" id="mhQuickNavClose" type="button">✖</button>
     </div>
     <div class="mh-quick-nav-grid" id="mhQuickNavGrid"></div>
+    <div class="mh-quick-nav-layout-actions" aria-label="Layout controls">
+      <button class="mh-quick-nav-layout-action" data-layout-action="expand-all" type="button"></button>
+      <button class="mh-quick-nav-layout-action" data-layout-action="collapse-all" type="button"></button>
+      <button class="mh-quick-nav-layout-action" data-layout-action="reset" type="button"></button>
+    </div>
     <div class="mh-quick-nav-footer">
       <button class="mh-quick-nav-compact" id="mhQuickNavCompact" type="button"></button>
       <button class="mh-quick-nav-top" id="mhQuickNavTop" type="button"></button>
@@ -151,6 +162,9 @@ function createQuickNav() {
   const closeButton = panel.querySelector("#mhQuickNavClose");
   const compactButton = panel.querySelector("#mhQuickNavCompact");
   const topButton = panel.querySelector("#mhQuickNavTop");
+  const expandAllButton = panel.querySelector('[data-layout-action="expand-all"]');
+  const collapseAllButton = panel.querySelector('[data-layout-action="collapse-all"]');
+  const resetButton = panel.querySelector('[data-layout-action="reset"]');
   let previouslyFocused = null;
 
   const setOpen = (open) => {
@@ -199,6 +213,9 @@ function createQuickNav() {
     panel.querySelector("#mhQuickNavSubtitle").textContent = strings.subtitle;
     closeButton.setAttribute("aria-label", strings.close);
     topButton.textContent = strings.top;
+    expandAllButton.textContent = strings.expandAll;
+    collapseAllButton.textContent = strings.collapseAll;
+    resetButton.textContent = strings.resetLayout;
 
     for (const item of grid.querySelectorAll("[data-quick-nav-key]")) {
       const label = item.querySelector(".mh-quick-nav-item-label");
@@ -212,18 +229,20 @@ function createQuickNav() {
     const { quickNavKind: kind, quickNavTarget: target } = button.dataset;
 
     if (kind === "anchor") {
+      requestSectionOpen(target);
       setOpen(false);
-      scrollToElement(document.getElementById(target));
+      window.setTimeout(() => scrollToElement(document.getElementById(target)), 30);
       return;
     }
 
     if (kind === "tab") {
+      requestSectionOpen("mhCatalogWorkspace");
       const tab = document.querySelector(`#tabs .tab[data-tab="${CSS.escape(target)}"]`);
       if (tab) tab.click();
       setOpen(false);
       window.setTimeout(() => {
-        scrollToElement(document.querySelector("main .toolbar") || document.querySelector("main"));
-      }, 30);
+        scrollToElement(document.querySelector("#mhCatalogWorkspace .toolbar") || document.querySelector("main .toolbar") || document.querySelector("main"));
+      }, 40);
       return;
     }
 
@@ -250,15 +269,24 @@ function createQuickNav() {
     if (button) activateItem(button);
   });
 
+  panel.querySelector(".mh-quick-nav-layout-actions").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-layout-action]");
+    if (!button) return;
+    requestLayoutAction(button.dataset.layoutAction);
+  });
+
   compactButton.addEventListener("click", () => {
     const enabled = !document.body.classList.contains("mh-compact-home");
-    document.body.classList.toggle("mh-compact-home", enabled);
-    safeWriteCompactPreference(enabled);
-    updateCompactButton();
+    window.dispatchEvent(new CustomEvent("mh:compact-home-request", {
+      detail: { enabled },
+    }));
 
     if (enabled) {
       setOpen(false);
-      window.setTimeout(() => scrollToElement(document.getElementById("mhRoadmap")), 20);
+      window.setTimeout(() => {
+        requestSectionOpen("mhRoadmap");
+        scrollToElement(document.getElementById("mhRoadmap"));
+      }, 30);
     }
   });
 
@@ -266,6 +294,8 @@ function createQuickNav() {
     setOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
+
+  window.addEventListener("mh:layout-preferences-changed", updateCompactButton);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
@@ -299,7 +329,6 @@ function createQuickNav() {
     });
   }
 
-  document.body.classList.toggle("mh-compact-home", safeReadCompactPreference());
   updateLanguage();
   updateAdminItem();
   updateActiveTab();

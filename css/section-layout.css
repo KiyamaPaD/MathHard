@@ -1,0 +1,180 @@
+/* MathHard personalized collapsible sections — Phase 12.2 */
+
+.mh-collapsible-section {
+  position: relative;
+  transition: padding 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.mh-section-collapse-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 34px;
+  margin: -3px 0 5px;
+}
+
+.mh-section-collapse-label {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+.mh-section-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--bg) 68%, transparent);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+
+.mh-section-collapse-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+
+.mh-section-collapse-toggle:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.mh-section-collapse-chevron {
+  width: 16px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.mh-collapsible-section-body[hidden] {
+  display: none !important;
+}
+
+.mh-collapsible-section.is-collapsed {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  box-shadow: 0 12px 30px -28px var(--ring);
+}
+
+.mh-collapsible-section.is-collapsed .mh-section-collapse-control {
+  justify-content: space-between;
+  margin: 0;
+}
+
+.mh-collapsible-section.is-collapsed .mh-section-collapse-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.mh-collapsible-section.is-collapsed .mh-section-collapse-toggle {
+  color: var(--text);
+}
+
+.mh-catalog-workspace {
+  max-width: 1240px;
+  margin-top: 10px;
+  padding: 12px 10px 0;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+}
+
+.mh-catalog-workspace > .mh-collapsible-section-body > .wrap {
+  margin-top: 0;
+}
+
+.mh-layout-save-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 90;
+  max-width: min(390px, calc(100vw - 36px));
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  color: var(--text);
+  box-shadow: 0 20px 52px -28px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(16px);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.mh-layout-save-toast[data-tone="ok"] {
+  border-color: color-mix(in srgb, var(--ok) 65%, var(--border));
+}
+
+.mh-layout-save-toast[data-tone="warning"] {
+  border-color: color-mix(in srgb, #f59e0b 68%, var(--border));
+}
+
+.mh-quick-nav-layout-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mh-quick-nav-layout-action {
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mh-quick-nav-layout-action:hover {
+  border-color: var(--accent);
+}
+
+.mh-quick-nav-layout-action[data-layout-action="reset"] {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .mh-section-collapse-control {
+    min-height: 32px;
+  }
+
+  .mh-section-collapse-toggle {
+    min-height: 32px;
+    padding: 5px 9px;
+  }
+
+  .mh-catalog-workspace {
+    margin-left: 10px;
+    margin-right: 10px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .mh-layout-save-toast {
+    right: 12px;
+    bottom: 70px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh-collapsible-section,
+  .mh-section-collapse-toggle {
+    transition: none;
+  }
+}

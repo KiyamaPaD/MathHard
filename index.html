@@ -40,6 +40,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/roadmap.css" />
   <link rel="stylesheet" href="css/quick-nav.css" />
+  <link rel="stylesheet" href="css/section-layout.css" />
   <script defer src="js/katex-init.js"></script>
 </head>
 <body>
@@ -341,7 +342,8 @@
     </div>
   </section>
 
-  <div class="wrap">
+  <section class="mh-section mh-catalog-workspace" id="mhCatalogWorkspace">
+    <div class="wrap">
     <aside id="siteAside">
       <div class="mobile-aside-head">
         <strong data-i18n="mobile_aside_title">📚 Filtre & capitole</strong>
@@ -450,7 +452,8 @@
     </main>
 
     <div class="mobile-aside-backdrop" id="mobileAsideBackdrop"></div>
-  </div>
+    </div>
+  </section>
 
   <!-- Drawer -->
   <div class="drawer" id="drawer">
@@ -1014,5 +1017,6 @@
   <script defer src="/js/animation-numberline.js"></script>
   <script type="module" src="/js/app.js"></script>
   <script type="module" src="/js/quick-nav-controller.js"></script>
+  <script type="module" src="/js/section-layout-controller.js"></script>
 </body>
 </html>

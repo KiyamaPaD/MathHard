@@ -29,7 +29,9 @@ const moduleJsFiles = [
   "js/roadmap-repository.js",
   "js/roadmap-controller.js",
   "js/roadmap-admin-controller.js",
-  "js/quick-nav-controller.js"
+  "js/quick-nav-controller.js",
+  "js/ui-preferences-repository.js",
+  "js/section-layout-controller.js"
 ];
 
 const classicJsFiles = [
@@ -43,6 +45,7 @@ const requiredFiles = [
   "README.md",
   "css/roadmap.css",
   "css/quick-nav.css",
+  "css/section-layout.css",
   "scripts/test-repositories.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -192,6 +195,9 @@ const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
 
 const quickNavSource = readFileSync(resolve(root, "js/quick-nav-controller.js"), "utf8");
 const quickNavCss = readFileSync(resolve(root, "css/quick-nav.css"), "utf8");
+const uiPreferencesRepositorySource = readFileSync(resolve(root, "js/ui-preferences-repository.js"), "utf8");
+const sectionLayoutControllerSource = readFileSync(resolve(root, "js/section-layout-controller.js"), "utf8");
+const sectionLayoutCss = readFileSync(resolve(root, "css/section-layout.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -476,14 +482,45 @@ if (!indexHtml.includes('href="css/quick-nav.css"')) {
 if (!indexHtml.includes('src="/js/quick-nav-controller.js"')) {
   fail("Quick navigation controller is missing from index.html.");
 }
-if (!quickNavSource.includes('QUICK_NAV_COMPACT_KEY')) {
-  fail("Quick navigation must preserve the compact-home preference.");
+if (!quickNavSource.includes('mh:compact-home-request')) {
+  fail("Quick navigation must delegate compact-home persistence to the shared layout controller.");
 }
 if (!quickNavSource.includes('data-tab="${CSS.escape(target)}"')) {
   fail("Quick navigation must activate the existing MathHard tabs instead of duplicating tab state.");
 }
 if (!quickNavCss.includes('body.mh-compact-home #hero')) {
   fail("Quick navigation stylesheet must implement compact-home mode.");
+}
+
+if (!indexHtml.includes('href="css/section-layout.css"')) {
+  fail("Section layout stylesheet is missing from index.html.");
+}
+if (!indexHtml.includes('src="/js/section-layout-controller.js"')) {
+  fail("Section layout controller is missing from index.html.");
+}
+if (!indexHtml.includes('id="mhCatalogWorkspace"')) {
+  fail("The lessons/problems/exams workspace must be a collapsible Phase 12.2 section.");
+}
+if (!uiPreferencesRepositorySource.includes('"mh_get_ui_preferences"') ||
+    !uiPreferencesRepositorySource.includes('"mh_save_ui_preferences"')) {
+  fail("UI preferences must load and save through the authenticated Supabase RPCs.");
+}
+if (!sectionLayoutControllerSource.includes('mh:layout-preferences-changed') ||
+    !sectionLayoutControllerSource.includes('mh:section-layout-request')) {
+  fail("The section layout controller must expose synchronized layout events.");
+}
+for (const sectionId of ["mhHub", "mhRoadmap", "mhBoss", "mhRadar", "mhCatalogWorkspace"]) {
+  if (!sectionLayoutControllerSource.includes(`id: "${sectionId}"`)) {
+    fail(`Phase 12.2 collapsible section is missing from the controller: ${sectionId}`);
+  }
+}
+if (!sectionLayoutCss.includes('.mh-collapsible-section.is-collapsed') ||
+    !sectionLayoutCss.includes('.mh-section-collapse-toggle')) {
+  fail("Phase 12.2 collapsible section styling is incomplete.");
+}
+if (!quickNavSource.includes('data-layout-action="expand-all"') ||
+    !quickNavSource.includes('data-layout-action="reset"')) {
+  fail("Quick navigation must expose show-all, close-all, and reset layout controls.");
 }
 
 if (failed) {

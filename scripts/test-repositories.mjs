@@ -95,6 +95,12 @@ const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
 const appProgressModule = await importBrowserModule("js/app-progress.js");
 const { createAuthUiController } = await importBrowserModule("js/auth-ui-controller.js");
 const {
+  DEFAULT_UI_PREFERENCES,
+  mergeUiPreferences,
+  normalizeUiPreferences,
+  serializeUiPreferences
+} = await importBrowserModule("js/ui-preferences-repository.js");
+const {
   ACTIVE_EXAM_LOCK_KEY,
   LEGACY_ACTIVE_EXAM_LOCK_KEY,
   createExamSessionStore,
@@ -572,5 +578,33 @@ const completedRoadmapView = buildRoadmapView({
 
 assert.equal(completedRoadmapView.nodeStates.get("n3").status, "done");
 assert.equal(completedRoadmapView.progress.percent, 100);
+
+const normalizedUiPreferences = normalizeUiPreferences({
+  compact_home: true,
+  sections: { roadmap: false, catalog: false, unknown: false }
+});
+assert.equal(normalizedUiPreferences.compactHome, true);
+assert.equal(normalizedUiPreferences.sections.roadmap, false);
+assert.equal(normalizedUiPreferences.sections.catalog, false);
+assert.equal(normalizedUiPreferences.sections.hub, true);
+assert.equal("unknown" in normalizedUiPreferences.sections, false);
+
+const mergedUiPreferences = mergeUiPreferences(normalizedUiPreferences, {
+  sections: { roadmap: true, boss: false }
+});
+assert.equal(mergedUiPreferences.sections.roadmap, true);
+assert.equal(mergedUiPreferences.sections.boss, false);
+assert.equal(mergedUiPreferences.sections.catalog, false);
+assert.deepEqual(serializeUiPreferences(DEFAULT_UI_PREFERENCES), {
+  version: 1,
+  compact_home: false,
+  sections: {
+    hub: true,
+    roadmap: true,
+    boss: true,
+    radar: true,
+    catalog: true
+  }
+});
 
 console.log("MathHard repository tests passed.");
