@@ -19,7 +19,8 @@ const moduleJsFiles = [
   "js/profile-text.js",
   "js/app-progress.js",
   "js/auth-ui-controller.js",
-  "js/admin-content-model.js"
+  "js/admin-content-model.js",
+  "js/exam-session-state.js"
 ];
 
 const classicJsFiles = [
@@ -166,6 +167,8 @@ const profileTextSource = readFileSync(resolve(root, "js/profile-text.js"), "utf
 const appProgressSource = readFileSync(resolve(root, "js/app-progress.js"), "utf8");
 const authUiControllerSource = readFileSync(resolve(root, "js/auth-ui-controller.js"), "utf8");
 const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-model.js"), "utf8");
+const examSessionStateSource = readFileSync(resolve(root, "js/exam-session-state.js"), "utf8");
+const progressRepositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -211,6 +214,9 @@ if (!appSource.includes('from "./auth-ui-controller.js"')) {
 }
 if (!appSource.includes('from "./admin-content-model.js"')) {
   fail("app.js must use the extracted admin-content-model.js module.");
+}
+if (!appSource.includes('from "./exam-session-state.js"')) {
+  fail("app.js must use the extracted exam-session-state.js module.");
 }
 if (!appProgressSource.includes("let progressUser = null") || !appProgressSource.includes("let authUser = null")) {
   fail("app-progress.js must keep auth identity separate from progress hydration state.");
@@ -282,11 +288,29 @@ if (!authUiControllerSource.includes("export function createAuthUiController")) 
 if (!adminContentModelSource.includes("export function validateExamPayload")) {
   fail("admin-content-model.js must own admin exam normalization and validation.");
 }
+if (!examSessionStateSource.includes("export function createExamSessionStore")) {
+  fail("exam-session-state.js must own persistent exam session state.");
+}
+if (!progressRepositorySource.includes("export async function cancelExamAttempt")) {
+  fail("progress-repository.js must expose admin exam cancellation.");
+}
+if (!appProgressSource.includes("cancelExamAttemptSafe")) {
+  fail("app-progress.js must serialize admin exam cancellation with other exam mutations.");
+}
+if (!appSource.includes("Anulează examenul") || !appSource.includes("startedByAdmin")) {
+  fail("app.js must expose the admin-only active-exam cancellation flow.");
+}
+if (appSource.includes("renderAdminExamForceStopButton") || appSource.includes("saveExamAttemptResultSafe(exam.id, currentScore")) {
+  fail("Legacy force-stop behavior must not save a cancelled exam score.");
+}
+if (/const ACTIVE_EXAM_LOCK_KEY|function getExamState\(|function setExamState\(/.test(appSource)) {
+  fail("app.js still contains exam persistence logic extracted during Phase 09.");
+}
 if (/function (?:mhClampOptionCount|mhEnsureDraftMcqShape|mhValidateExamPayload|loadAppProgressFromDb)\b/.test(appSource)) {
   fail("app.js still contains logic extracted during Phase 08.");
 }
-if (appSource.split(/\r?\n/).length > 7800) {
-  fail("app.js exceeded the Phase 08 architecture ceiling of 7800 lines.");
+if (appSource.split(/\r?\n/).length > 7700) {
+  fail("app.js exceeded the Phase 09 architecture ceiling of 7700 lines.");
 }
 if (profileSource.split(/\r?\n/).length > 1150) {
   fail("profile.js exceeded the Phase 07 architecture ceiling of 1150 lines.");

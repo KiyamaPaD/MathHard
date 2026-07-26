@@ -44,6 +44,7 @@ const {
   loadContentCatalog
 } = await importBrowserModule("js/content-repository.js");
 const {
+  cancelExamAttempt,
   finishExamAttempt,
   markLessonLearned,
   recordProblemEvent,
@@ -68,6 +69,12 @@ const {
 const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
 const appProgressModule = await importBrowserModule("js/app-progress.js");
 const { createAuthUiController } = await importBrowserModule("js/auth-ui-controller.js");
+const {
+  ACTIVE_EXAM_LOCK_KEY,
+  LEGACY_ACTIVE_EXAM_LOCK_KEY,
+  createExamSessionStore,
+  formatExamCountdown
+} = await importBrowserModule("js/exam-session-state.js");
 
 function makeContentClient({ failures = {} } = {}) {
   const rows = {
@@ -130,12 +137,14 @@ const progressClient = {
 await markLessonLearned(progressClient, "lesson-1");
 await recordProblemEvent(progressClient, "problem-1", "wrong");
 await startExamAttempt(progressClient, "exam-1");
+await cancelExamAttempt(progressClient, "exam-1");
 await finishExamAttempt(progressClient, "exam-1", 72.5);
 
 assert.deepEqual(calls, [
   { name: "mh_mark_lesson_learned", args: { p_lesson_id: "lesson-1" } },
   { name: "mh_record_problem_event", args: { p_problem_id: "problem-1", p_event: "wrong" } },
   { name: "mh_start_exam_attempt", args: { p_exam_id: "exam-1" } },
+  { name: "mh_cancel_exam_attempt", args: { p_exam_id: "exam-1" } },
   { name: "mh_finish_exam_attempt", args: { p_exam_id: "exam-1", p_score: 72.5 } }
 ]);
 
@@ -144,6 +153,45 @@ await assert.rejects(
   /Invalid problem event/
 );
 
+
+const examStorage = new SessionStorageMock();
+let examNow = 1_000;
+const examSessionStore = createExamSessionStore({
+  storage: examStorage,
+  now: () => examNow
+});
+
+const storedSession = examSessionStore.setExamState("exam-admin", {
+  endsAt: 10_000,
+  attemptRecorded: true,
+  startedByAdmin: true,
+  startedAt: 1_000
+});
+assert.equal(storedSession.startedByAdmin, true);
+assert.equal(examSessionStore.getExamState("exam-admin").attemptRecorded, true);
+
+examSessionStore.setActiveExamLock({ examId: "exam-admin", endsAt: 10_000 });
+assert.equal(examSessionStore.hasActiveExamLock(), true);
+assert.equal(examSessionStore.isOtherExamLocked("exam-admin"), false);
+assert.equal(examSessionStore.isOtherExamLocked("exam-other"), true);
+assert.ok(examStorage.getItem(ACTIVE_EXAM_LOCK_KEY));
+
+examSessionStore.clearSession("exam-admin");
+assert.equal(examSessionStore.getExamState("exam-admin"), null);
+assert.equal(examSessionStore.hasActiveExamLock(), false);
+
+examStorage.setItem(LEGACY_ACTIVE_EXAM_LOCK_KEY, JSON.stringify({
+  examId: "exam-legacy",
+  endsAt: 20_000
+}));
+assert.equal(examSessionStore.getActiveExamLock().examId, "exam-legacy");
+assert.equal(examStorage.getItem(LEGACY_ACTIVE_EXAM_LOCK_KEY), null);
+assert.ok(examStorage.getItem(ACTIVE_EXAM_LOCK_KEY));
+
+examNow = 25_000;
+assert.equal(examSessionStore.getActiveExamLock(), null);
+assert.equal(formatExamCountdown(3_661_000), "01:01:01");
+assert.equal(formatExamCountdown(61_000), "01:01");
 
 const exactFraction = SmartAnswer.check({
   user: "2/4",
@@ -276,6 +324,7 @@ const appProgress = appProgressModule.createAppProgressController({
   }),
   startExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 1 }),
   finishExamAttempt: async (_client, examId, score) => ({ exam_id: examId, best_score: score, passed: score >= 60 }),
+  cancelExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 0, started_at: null }),
   createKeyedMutationQueue,
   mergeCanonicalProblemProgress,
   isExamProblem: () => false,
@@ -294,6 +343,8 @@ await appProgress.markLessonLearnedSafe("lesson-new");
 assert.equal(appProgressModule.learnedSet.has("lesson-new"), true);
 await appProgress.recordProblemEventSafe("problem-new", "solved");
 assert.equal(appProgressModule.solvedSet.has("problem-new"), true);
+const cancelledAttempt = await appProgress.cancelExamAttemptSafe("exam-new");
+assert.equal(cancelledAttempt.attempts_count, 0);
 assert.ok(progressCounterRefreshes >= 2);
 
 const authSequence = [];

@@ -18,6 +18,7 @@ export function createAppProgressController({
   recordProblemEvent,
   startExamAttempt,
   finishExamAttempt,
+  cancelExamAttempt,
   createKeyedMutationQueue,
   mergeCanonicalProblemProgress,
   isExamProblem,
@@ -149,6 +150,19 @@ export function createAppProgressController({
     });
   }
 
+  async function cancelExamAttemptSafe(examId) {
+    if (!progressUser) return null;
+
+    return enqueueProgressMutation(`exam:${examId}`, async () => {
+      try {
+        return await cancelExamAttempt(supabase, examId);
+      } catch (error) {
+        reconcileMutationError("cancelExamAttempt", error);
+        return null;
+      }
+    });
+  }
+
   async function updateExamAttemptScore(examId, score) {
     if (!progressUser) return null;
 
@@ -271,6 +285,7 @@ export function createAppProgressController({
 
   return {
     awardXPForProblem,
+    cancelExamAttemptSafe,
     getXPRecord,
     loadAppProgressFromDb,
     markLessonLearnedSafe,

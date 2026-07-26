@@ -191,6 +191,58 @@ async function legacyStartExamAttempt(supabase, examId) {
   return data;
 }
 
+async function legacyCancelExamAttempt(supabase, examId) {
+  const user = await getAuthenticatedUser(supabase);
+
+  const { data: roleRow, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (roleError) throw roleError;
+  if (roleRow?.role !== "admin") {
+    throw new Error("Admin role required to cancel an exam attempt.");
+  }
+
+  const { data: existing, error: readError } = await supabase
+    .from("user_exam_progress")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("exam_id", examId)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (!existing) {
+    return {
+      exam_id: examId,
+      attempts_count: 0,
+      best_score: 0,
+      last_score: 0,
+      passed: false,
+      started_at: null,
+      passed_at: null
+    };
+  }
+
+  const payload = {
+    attempts_count: Math.max(0, Number(existing.attempts_count || 0) - 1),
+    started_at: null,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from("user_exam_progress")
+    .update(payload)
+    .eq("user_id", user.id)
+    .eq("exam_id", examId)
+    .select("exam_id, attempts_count, best_score, last_score, passed, started_at, passed_at")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 async function legacyFinishExamAttempt(supabase, examId, score) {
   const user = await getAuthenticatedUser(supabase);
   const safeScore = Math.max(0, Math.min(100000, Number(score) || 0));
@@ -258,6 +310,16 @@ export async function startExamAttempt(supabase, examId) {
     "mh_start_exam_attempt",
     { p_exam_id: id },
     () => legacyStartExamAttempt(supabase, id)
+  );
+}
+
+export async function cancelExamAttempt(supabase, examId) {
+  const id = cleanId(examId, "exam id");
+  return callRpcOrFallback(
+    supabase,
+    "mh_cancel_exam_attempt",
+    { p_exam_id: id },
+    () => legacyCancelExamAttempt(supabase, id)
   );
 }
 

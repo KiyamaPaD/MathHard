@@ -4,6 +4,7 @@ import {
   loadContentCatalog
 } from "./content-repository.js";
 import {
+  cancelExamAttempt,
   finishExamAttempt,
   markLessonLearned,
   recordProblemEvent,
@@ -33,6 +34,10 @@ import {
   XP_TOTAL
 } from "./app-progress.js";
 import { createAuthUiController } from "./auth-ui-controller.js";
+import {
+  createExamSessionStore,
+  formatExamCountdown
+} from "./exam-session-state.js";
 import {
   clampOptionCount as mhClampOptionCount,
   ensureDraftMcqShape as mhEnsureDraftMcqShape,
@@ -3733,93 +3738,23 @@ console.log("APP.JS LOADED");
     return items.reduce((sum, item) => sum + Number(item.points || 0), 0);
   }
 
-  /* Persistent exam timer  */
-  function getExamState(id){
-    try{ return JSON.parse(localStorage.getItem("mh_exam_"+id)||"null"); }catch(e){ return null; }
-  }
-  function setExamState(id, st){
-    localStorage.setItem("mh_exam_"+id, JSON.stringify(st));
-  }
-  function clearExamState(id){
-    localStorage.removeItem("mh_exam_"+id);
-  }
+  /* Persistent exam session state */
+  const examSessionStore = createExamSessionStore();
+  const {
+    clearActiveExamLock,
+    clearExamState,
+    clearSession: clearStoredExamSession,
+    getActiveExamLock,
+    getExamState,
+    hasActiveExamLock: isExamLockActive,
+    setActiveExamLock,
+    setExamState
+  } = examSessionStore;
 
-  const ACTIVE_EXAM_LOCK_KEY = "mh_active_exam_lock_v1";
-
-  let ACTIVE_EXAM_LOCK = readActiveExamLock();
   let EXAM_LOCK_RESUME_DONE = false;
-
-  function readActiveExamLock() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(ACTIVE_EXAM_LOCK_KEY) || "null");
-      if (!raw || !raw.active || !raw.examId) {
-        return { active: false, examId: null, endsAt: null };
-      }
-      return raw;
-    } catch (e) {
-      return { active: false, examId: null, endsAt: null };
-    }
-  }
-
-  function writeActiveExamLock() {
-    if (!ACTIVE_EXAM_LOCK?.active) {
-      localStorage.removeItem(ACTIVE_EXAM_LOCK_KEY);
-      document.body.classList.remove("exam-locked");
-      return;
-    }
-
-    localStorage.setItem(ACTIVE_EXAM_LOCK_KEY, JSON.stringify(ACTIVE_EXAM_LOCK));
-    document.body.classList.add("exam-locked");
-  }
-
-  function getActiveExamLock() {
-    try {
-      const raw = localStorage.getItem(ACTIVE_EXAM_LOCK_KEY);
-      if (!raw) return null;
-
-      const parsed = JSON.parse(raw);
-
-      if (!parsed || !parsed.examId || !parsed.endsAt) return null;
-
-    
-      if (Date.now() >= Number(parsed.endsAt)) {
-        localStorage.removeItem(ACTIVE_EXAM_LOCK_KEY);
-        return null;
-      }
-
-      return {
-        examId: String(parsed.examId),
-        endsAt: Number(parsed.endsAt)
-      };
-    } catch (e) {
-      localStorage.removeItem(ACTIVE_EXAM_LOCK_KEY);
-      return null;
-    }
-  }
-
-  function isExamLockActive() {
-    return !!getActiveExamLock();
-  }
-
-  function setActiveExamLock(payload) {
-    if (!payload?.examId || !payload?.endsAt) return;
-
-    localStorage.setItem(
-      ACTIVE_EXAM_LOCK_KEY,
-      JSON.stringify({
-        examId: String(payload.examId),
-        endsAt: Number(payload.endsAt)
-      })
-    );
-  }
-
-  function clearActiveExamLock() {
-    localStorage.removeItem(ACTIVE_EXAM_LOCK_KEY);
-  }
 
   function showExamLockMessage() {
     const lock = getActiveExamLock();
-
     if (!lock) return;
 
     const lockedExam = EXAMS.find(x => x.id === lock.examId);
@@ -3831,8 +3766,8 @@ console.log("APP.JS LOADED");
 
     alert(
       LANG === "ro"
-        ? `Ai deja un examen activ: ${title}. Termină-l, lasă-l să expire sau oprește-l din admin test.`
-        : `You already have an active exam: ${title}. Finish it, let it expire, or stop it from admin test.`
+        ? `Ai deja un examen activ: ${title}. Termină-l, lasă-l să expire sau anulează-l din contul admin.`
+        : `You already have an active exam: ${title}. Finish it, let it expire, or cancel it from the admin account.`
     );
   }
 
@@ -3843,88 +3778,13 @@ console.log("APP.JS LOADED");
     if (!lock) return;
 
     const exam = EXAMS.find(x => x.id === lock.examId);
-    if (!exam) return;
+    if (!exam) {
+      clearActiveExamLock();
+      return;
+    }
 
     EXAM_LOCK_RESUME_DONE = true;
     openExam(exam);
-  }
-
-  if (ACTIVE_EXAM_LOCK?.active) {
-    document.body.classList.add("exam-locked");
-  }
-
-  function forceStopExamSession(exam, leftEl, setLocked) {
-    if (examTimer) {
-      clearInterval(examTimer);
-      examTimer = null;
-    }
-
-    clearExamState(exam.id);
-    clearActiveExamLock();
-    refreshExamLockUi();
-
-    setLocked(true);
-
-    if (leftEl) {
-      leftEl.style.display = "inline-block";
-      leftEl.textContent = (LANG === "ro")
-        ? "🛑 Examen oprit de admin"
-        : "🛑 Exam stopped by admin";
-    }
-  }
-
-  async function renderAdminExamForceStopButton(exam, hostEl) {
-    if (!hostEl || !exam?.id) return;
-
-    hostEl.querySelector(".admin-force-stop-wrap")?.remove();
-
-    const isAdmin = await isCurrentUserAdmin();
-    if (!isAdmin) return;
-
-    const wrap = document.createElement("div");
-    wrap.className = "admin-force-stop-wrap";
-    wrap.style.display = "flex";
-    wrap.style.alignItems = "center";
-    wrap.style.gap = "8px";
-    wrap.style.flexWrap = "wrap";
-
-    const btn = document.createElement("button");
-    btn.className = "btn small";
-    btn.type = "button";
-    btn.textContent = "🛑 Oprește examenul (admin test)";
-    btn.style.borderColor = "rgba(239,68,68,.45)";
-    btn.style.background = "rgba(239,68,68,.12)";
-
-    btn.onclick = async () => {
-      const ok = confirm(`Sigur vrei să oprești forțat examenul ${exam.id}?`);
-      if (!ok) return;
-
-        try {
-          const currentScore = computeExamScore(exam);
-
-          await saveExamAttemptResultSafe(exam.id, currentScore, false);
-
-          clearActiveExamLock();
-
-          if (typeof clearExamState === "function") {
-            clearExamState(exam.id);
-          }
-
-          if (typeof examTimer !== "undefined" && examTimer) {
-            clearInterval(examTimer);
-            examTimer = null;
-          }
-
-          alert("Examen oprit forțat din admin.");
-          document.getElementById("drawer")?.classList.remove("open");
-        } catch (err) {
-          console.error("Admin force stop exam error:", err);
-          alert("Force stop failed: " + (err.message || err));
-        }
-    };
-
-    wrap.appendChild(btn);
-    hostEl.appendChild(wrap);
   }
 
   /* ===== Olimpiadă — detecție & nivel ===== */
@@ -4146,6 +4006,7 @@ console.log("APP.JS LOADED");
     recordProblemEvent,
     startExamAttempt,
     finishExamAttempt,
+    cancelExamAttempt,
     createKeyedMutationQueue,
     mergeCanonicalProblemProgress,
     isExamProblem,
@@ -4167,6 +4028,7 @@ console.log("APP.JS LOADED");
 
   const {
     awardXPForProblem,
+    cancelExamAttemptSafe,
     getXPRecord,
     loadAppProgressFromDb,
     markLessonLearnedSafe,
@@ -6897,13 +6759,6 @@ console.log("APP.JS LOADED");
 
   /* ===== Exam viewer ===== */
   let examTimer=null;
-  function fmtHMSms(msLeft){
-    let s = Math.max(0, Math.floor(msLeft/1000));
-    const h=Math.floor(s/3600); s%=3600;
-    const m=Math.floor(s/60); s%=60;
-    const hh = h>0? (String(h).padStart(2,'0')+':') : '';
-    return `${hh}${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
 
 function openExam(exam){
 
@@ -6962,7 +6817,6 @@ function openExam(exam){
   `;
   content.appendChild(top);
 
-  renderAdminExamForceStopButton(exam, top);
 
   const list = document.createElement("div");
   content.appendChild(list);
@@ -6974,6 +6828,104 @@ function openExam(exam){
   const leftEl = document.getElementById("examLeft");
 
   let examFinished = false;
+  let adminCancelRenderEpoch = 0;
+
+  async function renderAdminCancelButton(sessionState = getExamState(exam.id)) {
+    const renderEpoch = ++adminCancelRenderEpoch;
+    top.querySelector(".admin-exam-cancel-wrap")?.remove();
+
+    if (!sessionState?.startedByAdmin) return;
+    if (!isSameExamCurrentlyLocked(exam.id)) return;
+
+    const activeUser = await getVerifiedActiveUser();
+    if (renderEpoch !== adminCancelRenderEpoch) return;
+    if (!activeUser?.id) return;
+
+    const isAdmin = await isCurrentUserAdmin(activeUser);
+    if (renderEpoch !== adminCancelRenderEpoch || !isAdmin) return;
+
+    const wrap = document.createElement("div");
+    wrap.className = "admin-exam-cancel-wrap";
+    wrap.style.display = "flex";
+    wrap.style.alignItems = "center";
+    wrap.style.gap = "8px";
+    wrap.style.flexWrap = "wrap";
+
+    const button = document.createElement("button");
+    button.className = "btn small";
+    button.type = "button";
+    button.textContent = LANG === "ro"
+      ? "🛑 Anulează examenul"
+      : "🛑 Cancel exam";
+    button.style.borderColor = "rgba(239,68,68,.55)";
+    button.style.background = "rgba(239,68,68,.14)";
+
+    button.addEventListener("click", async () => {
+      const currentState = getExamState(exam.id);
+      if (!currentState?.startedByAdmin || !isSameExamCurrentlyLocked(exam.id)) {
+        wrap.remove();
+        return;
+      }
+
+      const confirmed = confirm(
+        LANG === "ro"
+          ? "Anulezi examenul de test? Cronometrul se oprește, răspunsurile sesiunii se șterg, iar tentativa nu va fi păstrată."
+          : "Cancel this test exam? The timer will stop, session answers will be cleared, and the attempt will not be kept."
+      );
+      if (!confirmed) return;
+
+      button.disabled = true;
+      button.textContent = LANG === "ro" ? "Se anulează…" : "Cancelling…";
+
+      const previousFinishedState = examFinished;
+      examFinished = true;
+
+      if (currentState.attemptRecorded) {
+        const cancelledRow = await cancelExamAttemptSafe(exam.id);
+        if (!cancelledRow) {
+          examFinished = previousFinishedState;
+          button.disabled = false;
+          button.textContent = LANG === "ro"
+            ? "🛑 Anulează examenul"
+            : "🛑 Cancel exam";
+          alert(
+            LANG === "ro"
+              ? "Tentativa nu a putut fi anulată în Supabase. Examenul a rămas activ ca să nu stricăm statisticile."
+              : "The attempt could not be cancelled in Supabase. The exam remains active to protect your statistics."
+          );
+          return;
+        }
+      }
+
+      if (examTimer) {
+        clearInterval(examTimer);
+        examTimer = null;
+      }
+
+      clearStoredExamSession(exam.id);
+      setLocked(true);
+      if (examHasStructuredItems(exam)) {
+        clearExamItemResults(exam.id);
+      }
+      refreshExamLockUi();
+
+      if (leftEl) {
+        leftEl.style.display = "inline-block";
+        leftEl.textContent = LANG === "ro"
+          ? "🛑 Examen anulat de admin"
+          : "🛑 Exam cancelled by admin";
+      }
+
+      wrap.remove();
+      renderCards();
+      drawFilterBar();
+      document.getElementById("drawer")?.classList.remove("open");
+      selectTab("exams");
+    });
+
+    wrap.appendChild(button);
+    top.appendChild(wrap);
+  }
 
   function setLocked(lock){
     list.querySelectorAll("input, button, select, textarea").forEach(el => {
@@ -7106,12 +7058,13 @@ function openExam(exam){
       endsAt: st.endsAt
     });
     refreshExamLockUi();
+    void renderAdminCancelButton(st);
 
     const tick = () => {
       const msLeft = st.endsAt - Date.now();
 
       leftEl.style.display = "inline-block";
-      leftEl.textContent = fmtHMSms(msLeft);
+      leftEl.textContent = formatExamCountdown(msLeft);
 
       updateExamProgress();
 
@@ -7131,11 +7084,22 @@ function openExam(exam){
     hoursSel.value = String(exam.defaultHours || 2);
 
     startBtn.onclick = async () => {
+      startBtn.disabled = true;
+
       const hours = Number(hoursSel.value || 2);
       const endsAt = Date.now() + hours * 3600 * 1000;
 
+      let startedByAdmin = false;
       try {
-        await recordExamAttemptStart(exam.id);
+        const activeUser = await getVerifiedActiveUser();
+        startedByAdmin = await isCurrentUserAdmin(activeUser);
+      } catch (err) {
+        console.warn("Could not resolve admin exam-test mode:", err);
+      }
+
+      let attemptRow = null;
+      try {
+        attemptRow = await recordExamAttemptStart(exam.id);
       } catch (err) {
         console.error("recordExamAttemptStart error:", err);
       }
@@ -7144,12 +7108,18 @@ function openExam(exam){
         clearExamItemResults(exam.id);
       }
 
-      setExamState(exam.id, { endsAt });
+      const sessionState = setExamState(exam.id, {
+        endsAt,
+        attemptRecorded: Boolean(attemptRow),
+        startedByAdmin,
+        startedAt: Date.now()
+      });
       setActiveExamLock({
         examId: exam.id,
         endsAt
       });
       refreshExamLockUi();
+      void renderAdminCancelButton(sessionState);
 
       renderExamItems(false);
       setLocked(false);
@@ -7161,7 +7131,7 @@ function openExam(exam){
         const msLeft = endsAt - Date.now();
 
         leftEl.style.display = "inline-block";
-        leftEl.textContent = fmtHMSms(msLeft);
+        leftEl.textContent = formatExamCountdown(msLeft);
 
         updateExamProgress();
 
