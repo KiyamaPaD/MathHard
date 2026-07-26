@@ -24,7 +24,11 @@ const moduleJsFiles = [
   "js/admin-exam-recovery.js",
   "js/secure-evaluation-repository.js",
   "js/secure-exam-repository.js",
-  "js/secure-problem-controller.js"
+  "js/secure-problem-controller.js",
+  "js/roadmap-model.js",
+  "js/roadmap-repository.js",
+  "js/roadmap-controller.js",
+  "js/roadmap-admin-controller.js"
 ];
 
 const classicJsFiles = [
@@ -36,6 +40,7 @@ const requiredFiles = [
   "index.html",
   "profile.html",
   "README.md",
+  "css/roadmap.css",
   "scripts/test-repositories.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -177,6 +182,11 @@ const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recove
 const secureEvaluationRepositorySource = readFileSync(resolve(root, "js/secure-evaluation-repository.js"), "utf8");
 const secureExamRepositorySource = readFileSync(resolve(root, "js/secure-exam-repository.js"), "utf8");
 const secureProblemControllerSource = readFileSync(resolve(root, "js/secure-problem-controller.js"), "utf8");
+const roadmapModelSource = readFileSync(resolve(root, "js/roadmap-model.js"), "utf8");
+const roadmapRepositorySource = readFileSync(resolve(root, "js/roadmap-repository.js"), "utf8");
+const roadmapControllerSource = readFileSync(resolve(root, "js/roadmap-controller.js"), "utf8");
+const roadmapAdminControllerSource = readFileSync(resolve(root, "js/roadmap-admin-controller.js"), "utf8");
+const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -407,6 +417,37 @@ if (/const ACTIVE_EXAM_LOCK_KEY|function getExamState\(|function setExamState\(/
 if (/function (?:mhClampOptionCount|mhEnsureDraftMcqShape|mhValidateExamPayload|loadAppProgressFromDb)\b/.test(appSource)) {
   fail("app.js still contains logic extracted during Phase 08.");
 }
+if (!indexHtml.includes('id="mhDynamicRoadmap"') || !indexHtml.includes('css/roadmap.css')) {
+  fail("Phase 12 dynamic roadmap root or stylesheet is missing from index.html.");
+}
+if (!indexHtml.includes('id="mhRoadmapAdminStudio"')) {
+  fail("Phase 12 Roadmap Studio root is missing from the Admin drawer.");
+}
+if (!appSource.includes('from "./roadmap-controller.js"') || !appSource.includes('from "./roadmap-admin-controller.js"')) {
+  fail("app.js must use the extracted Phase 12 roadmap controllers.");
+}
+if (!appSource.includes("roadmapController?.refreshProgress()")) {
+  fail("Roadmap progress must refresh when canonical lesson/problem/exam progress changes.");
+}
+if (!roadmapRepositorySource.includes('supabase.rpc("mh_get_roadmap_catalog")')) {
+  fail("roadmap-repository.js must load the graph through mh_get_roadmap_catalog().");
+}
+if (!roadmapRepositorySource.includes('supabase.rpc("mh_select_roadmap"')) {
+  fail("roadmap selection must persist through mh_select_roadmap().");
+}
+if (!roadmapModelSource.includes("export function buildRoadmapView")) {
+  fail("roadmap-model.js must own prerequisite and completion derivation.");
+}
+if (!roadmapControllerSource.includes("data-roadmap-next") || !roadmapControllerSource.includes("unmetPrerequisites")) {
+  fail("The user roadmap controller must expose next-step and prerequisite UI.");
+}
+if (!roadmapAdminControllerSource.includes("Roadmap Studio") || !roadmapAdminControllerSource.includes("replaceNodePrerequisites")) {
+  fail("The Admin roadmap editor must support graph nodes and prerequisites.");
+}
+if (!roadmapCss.includes(".mh-roadmap-node.is-locked") || !roadmapCss.includes(".mh-roadmap-progress-ring")) {
+  fail("Phase 12 roadmap status/progress styling is incomplete.");
+}
+
 if (appSource.split(/\r?\n/).length > 7850) {
   fail("app.js exceeded the Phase 10 architecture ceiling of 7850 lines.");
 }

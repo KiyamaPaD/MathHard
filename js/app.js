@@ -57,6 +57,9 @@ import {
   tagsFromInput as mhTagsFromInput,
   validateExamPayload as mhValidateExamPayload
 } from "./admin-content-model.js";
+import { createRoadmapController } from "./roadmap-controller.js";
+import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
+import { invalidateRoadmapCache } from "./roadmap-repository.js";
 
 console.log("APP.JS LOADED");
 
@@ -64,6 +67,8 @@ console.log("APP.JS LOADED");
   const DATA = createRuntimeData();
   let CONTENT_BOOT_ERROR = null;
   let MH_AUTH_USER = null;
+  let roadmapController = null;
+  let roadmapAdminController = null;
 
   try {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
@@ -1173,14 +1178,14 @@ console.log("APP.JS LOADED");
 
     if (roadmapTitle) {
       roadmapTitle.textContent = ro
-        ? "🗺️ Parcursul tău la matematică"
-        : "🗺️ Your math journey";
+        ? "🗺️ Roadmap-ul tău dinamic"
+        : "🗺️ Your dynamic roadmap";
     }
 
     if (roadmapText) {
       roadmapText.textContent = ro
-        ? "Alegi etapa care te interesează și îți filtrez automat conținutul."
-        : "Choose the stage you care about and I automatically filter the content for you.";
+        ? "Prerechizite, progres real și următorul pas recomandat — fără progres duplicat."
+        : "Prerequisites, real progress and a recommended next step — without duplicated progress.";
     }
 
     if (roadmapReset) {
@@ -1938,7 +1943,9 @@ console.log("APP.JS LOADED");
   renderCards(); 
   updateHubText();      
   mhApplyRoadmapBossRadarTexts();
-  updateHubNumbers();   
+  updateHubNumbers();
+  roadmapController?.render();
+  roadmapAdminController?.render();
   drawFilterBar();
   };
 
@@ -2071,6 +2078,7 @@ console.log("APP.JS LOADED");
       mhRenderAdminList();
     }
 
+    roadmapController?.render();
     mhRenderContentStatusFromDiagnostics();
     return catalog;
   }
@@ -3108,6 +3116,7 @@ console.log("APP.JS LOADED");
     if (!visible) {
       adminDrawer?.classList.remove("open");
       adminExamRecoveryController?.setAdmin(false);
+      roadmapAdminController?.setAdmin(false);
     }
   }
 
@@ -3174,6 +3183,7 @@ console.log("APP.JS LOADED");
 
     setAdminButtonVisibility(isAdmin);
     adminExamRecoveryController?.setAdmin(isAdmin);
+    roadmapAdminController?.setAdmin(isAdmin);
     return isAdmin;
   }
 
@@ -3212,7 +3222,9 @@ console.log("APP.JS LOADED");
 
       setAdminButtonVisibility(true);
       adminExamRecoveryController?.setAdmin(true);
+      roadmapAdminController?.setAdmin(true);
       adminDrawer?.classList.add("open");
+      await roadmapAdminController?.load();
       if (mhPublishStatus) mhPublishStatus.textContent = "";
     } catch (err) {
       setAdminButtonVisibility(false);
@@ -3229,7 +3241,9 @@ console.log("APP.JS LOADED");
     ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
     adminExamRecoveryController?.setAdmin(false);
+    roadmapAdminController?.setAdmin(false);
     invalidateContentCatalogCache();
+    invalidateRoadmapCache();
 
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -3854,6 +3868,7 @@ console.log("APP.JS LOADED");
     renderCards();
     drawFilterBar();
     updateRadarUI();
+    roadmapController?.refreshProgress();
   }
 
   const progressController = createAppProgressController({
@@ -3871,12 +3886,14 @@ console.log("APP.JS LOADED");
       renderCards();
       buildNestedTree();
       buildTagPanel();
+      roadmapController?.refreshProgress();
     },
     onTerminalProblemChanged: () => {
       renderCards();
       buildNestedTree();
       buildTagPanel();
       drawFilterBar();
+      roadmapController?.refreshProgress();
     },
     onFullRefresh: refreshProgressUIFromDb
   });
@@ -3903,6 +3920,53 @@ console.log("APP.JS LOADED");
       renderCards();
       drawFilterBar();
       setTimeout(() => window.location.reload(), 50);
+    }
+  });
+
+
+  function openRoadmapContent(node) {
+    if (hasActiveExamLock()) {
+      showGlobalExamLockMessage();
+      return;
+    }
+
+    const type = String(node?.node_type || "");
+    const contentId = String(node?.content_id || "");
+    const collection = type === "lesson"
+      ? DATA.lessons
+      : type === "problem"
+        ? DATA.problems
+        : type === "exam"
+          ? DATA.exams
+          : [];
+    const item = collection.find((entry) => entry.id === contentId);
+
+    if (!item) {
+      alert(LANG === "ro"
+        ? "Conținutul acestui pas nu este publicat încă."
+        : "Content for this step has not been published yet.");
+      return;
+    }
+
+    if (type === "exam") openExam(item);
+    else openViewer(item);
+  }
+
+  roadmapController = createRoadmapController({
+    root: document.getElementById("mhDynamicRoadmap"),
+    supabase,
+    getUser: () => MH_AUTH_USER,
+    getLanguage: () => LANG,
+    getProgress: () => ({ learnedSet, solvedSet, examsPassedSet }),
+    getContentCatalog: () => DATA,
+    onOpenContent: openRoadmapContent
+  });
+
+  roadmapAdminController = createRoadmapAdminController({
+    root: document.getElementById("mhRoadmapAdminStudio"),
+    supabase,
+    onChanged: async () => {
+      await roadmapController?.load(true);
     }
   });
 
@@ -7203,8 +7267,11 @@ function openExam(exam){
     if (!nextUserId) {
       clearRuntimeCatalog();
       invalidateContentCatalogCache();
+      invalidateRoadmapCache();
+      roadmapController?.clear();
       clearLocalExamArtifactsOnLogout();
       adminExamRecoveryController?.setAdmin(false);
+      roadmapAdminController?.setAdmin(false);
       adminDrawer?.classList.remove("open");
       mhRemoveContentStatusBanner();
       buildNestedTree();
@@ -7221,14 +7288,20 @@ function openExam(exam){
       DATA.lessons.length === 0 || DATA.problems.length === 0 || DATA.exams.length === 0;
 
     if (!needsCatalogReload) {
-      await syncSecureExamLockFromServer();
+      await Promise.all([
+        syncSecureExamLockFromServer(),
+        roadmapController?.load(false)
+      ]);
       setTimeout(() => resumeLockedExamIfAny(), 0);
       return;
     }
 
     try {
       await reloadAllContentFromSupabase(true);
-      await syncSecureExamLockFromServer();
+      await Promise.all([
+        syncSecureExamLockFromServer(),
+        roadmapController?.load(true)
+      ]);
       setTimeout(() => resumeLockedExamIfAny(), 0);
     } catch (error) {
       CONTENT_BOOT_ERROR = error;
@@ -7254,6 +7327,13 @@ function openExam(exam){
   });
 
   authUiController.start();
+  if (MH_AUTH_USER?.id) {
+    void roadmapController?.load(false).catch((error) => {
+      console.warn("Initial roadmap load failed:", error);
+    });
+  } else {
+    roadmapController?.render();
+  }
   
   /* ===== BOOT SITE IMPORTANT ===== */
   mhUpdateSidebarStaticTexts();

@@ -79,6 +79,10 @@ const {
   normalizeProblem
 } = await importBrowserModule("js/content-model.js");
 const {
+  buildRoadmapView,
+  normalizeRoadmapCatalog
+} = await importBrowserModule("js/roadmap-model.js");
+const {
   createKeyedMutationQueue,
   mergeCanonicalProblemProgress
 } = await importBrowserModule("js/mutation-queue.js");
@@ -507,5 +511,66 @@ const authController = createAuthUiController({
 
 await authController.sync();
 assert.deepEqual(authSequence, ["hide", "session", "progress:user-auth", "admin"]);
+
+
+const normalizedRoadmaps = normalizeRoadmapCatalog({
+  selected_roadmap_id: "ubb",
+  schema_version: "phase-12",
+  roadmaps: [{
+    id: "ubb",
+    title_ro: "Road to UBB",
+    position: 0,
+    sections: [{ id: "core", title_ro: "Core", position: 0 }],
+    nodes: [
+      { id: "n1", section_id: "core", node_type: "lesson", content_id: "l1", required: true, content_exists: true, position: 0 },
+      { id: "n2", section_id: "core", node_type: "problem", content_id: "p1", required: true, content_exists: true, position: 1 },
+      { id: "n3", section_id: "core", node_type: "milestone", required: true, content_exists: true, position: 2 },
+      { id: "n4", section_id: "core", node_type: "lesson", content_id: "missing", required: false, content_exists: false, position: 3 }
+    ],
+    edges: [
+      { prerequisite_node_id: "n1", dependent_node_id: "n2", edge_type: "required" },
+      { prerequisite_node_id: "n2", dependent_node_id: "n3", edge_type: "required" }
+    ]
+  }]
+});
+
+assert.equal(normalizedRoadmaps.selectedRoadmapId, "ubb");
+assert.equal(normalizedRoadmaps.roadmaps[0].nodes.length, 4);
+
+const firstRoadmapView = buildRoadmapView({
+  roadmap: normalizedRoadmaps.roadmaps[0],
+  catalog: {
+    lessons: [{ id: "l1", title_ro: "Lecția 1" }],
+    problems: [{ id: "p1", title_ro: "Problema 1" }],
+    exams: []
+  },
+  learnedSet: new Set(["l1"]),
+  solvedSet: new Set(),
+  examsPassedSet: new Set(),
+  language: "ro"
+});
+
+assert.equal(firstRoadmapView.nodeStates.get("n1").status, "done");
+assert.equal(firstRoadmapView.nodeStates.get("n2").status, "available");
+assert.equal(firstRoadmapView.nodeStates.get("n3").status, "locked");
+assert.equal(firstRoadmapView.nodeStates.get("n4").status, "planned");
+assert.equal(firstRoadmapView.progress.percent, 50);
+assert.equal(firstRoadmapView.nextNode.node.id, "n2");
+
+const completedRoadmapView = buildRoadmapView({
+  roadmap: normalizedRoadmaps.roadmaps[0],
+  catalog: {
+    lessons: [{ id: "l1", title_ro: "Lecția 1" }],
+    problems: [{ id: "p1", title_ro: "Problema 1" }],
+    exams: []
+  },
+  learnedSet: new Set(["l1"]),
+  solvedSet: new Set(["p1"]),
+  examsPassedSet: new Set(),
+  language: "ro"
+});
+
+assert.equal(completedRoadmapView.nodeStates.get("n3").status, "done");
+assert.equal(completedRoadmapView.progress.percent, 100);
 
 console.log("MathHard repository tests passed.");
