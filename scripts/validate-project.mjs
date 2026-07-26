@@ -28,7 +28,8 @@ const moduleJsFiles = [
   "js/roadmap-model.js",
   "js/roadmap-repository.js",
   "js/roadmap-controller.js",
-  "js/roadmap-admin-controller.js"
+  "js/roadmap-admin-controller.js",
+  "js/quick-nav-controller.js"
 ];
 
 const classicJsFiles = [
@@ -41,6 +42,7 @@ const requiredFiles = [
   "profile.html",
   "README.md",
   "css/roadmap.css",
+  "css/quick-nav.css",
   "scripts/test-repositories.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -187,6 +189,9 @@ const roadmapRepositorySource = readFileSync(resolve(root, "js/roadmap-repositor
 const roadmapControllerSource = readFileSync(resolve(root, "js/roadmap-controller.js"), "utf8");
 const roadmapAdminControllerSource = readFileSync(resolve(root, "js/roadmap-admin-controller.js"), "utf8");
 const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
+
+const quickNavSource = readFileSync(resolve(root, "js/quick-nav-controller.js"), "utf8");
+const quickNavCss = readFileSync(resolve(root, "css/quick-nav.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -462,6 +467,23 @@ try {
   });
 } catch (error) {
   fail(`Repository tests failed.\n${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
+}
+
+
+if (!indexHtml.includes('href="css/quick-nav.css"')) {
+  fail("Quick navigation stylesheet is missing from index.html.");
+}
+if (!indexHtml.includes('src="/js/quick-nav-controller.js"')) {
+  fail("Quick navigation controller is missing from index.html.");
+}
+if (!quickNavSource.includes('QUICK_NAV_COMPACT_KEY')) {
+  fail("Quick navigation must preserve the compact-home preference.");
+}
+if (!quickNavSource.includes('data-tab="${CSS.escape(target)}"')) {
+  fail("Quick navigation must activate the existing MathHard tabs instead of duplicating tab state.");
+}
+if (!quickNavCss.includes('body.mh-compact-home #hero')) {
+  fail("Quick navigation stylesheet must implement compact-home mode.");
 }
 
 if (failed) {
