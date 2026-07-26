@@ -38,7 +38,10 @@ const moduleJsFiles = [
   "js/section-layout-controller.js",
   "js/browser-state.js",
   "js/runtime-diagnostics.js",
-  "js/app-shell-controller.js"
+  "js/app-shell-controller.js",
+  "js/analytics-model.js",
+  "js/analytics-repository.js",
+  "js/analytics-controller.js"
 ];
 
 const classicJsFiles = [
@@ -57,6 +60,7 @@ const requiredFiles = [
   "css/quick-nav.css",
   "css/section-layout.css",
   "css/app-shell.css",
+  "css/analytics.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -221,6 +225,10 @@ const appShellSource = readFileSync(resolve(root, "js/app-shell-controller.js"),
 const appShellCss = readFileSync(resolve(root, "css/app-shell.css"), "utf8");
 const browserStateSource = readFileSync(resolve(root, "js/browser-state.js"), "utf8");
 const runtimeDiagnosticsSource = readFileSync(resolve(root, "js/runtime-diagnostics.js"), "utf8");
+const analyticsModelSource = readFileSync(resolve(root, "js/analytics-model.js"), "utf8");
+const analyticsRepositorySource = readFileSync(resolve(root, "js/analytics-repository.js"), "utf8");
+const analyticsControllerSource = readFileSync(resolve(root, "js/analytics-controller.js"), "utf8");
+const analyticsCss = readFileSync(resolve(root, "css/analytics.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -710,6 +718,35 @@ if (!problemWorkspaceCss.includes('.drawer.is-problem-workspace > .panel > heade
     !problemWorkspaceCss.includes('grid-template-rows: auto minmax(0, 1fr)') ||
     !problemWorkspaceCss.includes('.drawer.is-problem-workspace > .panel > .content:not(.viewer)')) {
   fail("Phase 14A.4 must replace the overlapping problem header with a dedicated two-row surface.");
+}
+
+
+// Phase 15A: server-backed mastery and analytics workspace.
+if (!indexHtml.includes('href="css/analytics.css"')) {
+  fail("Phase 15A analytics stylesheet is missing from index.html.");
+}
+if (!appShellSource.includes('"analytics"') ||
+    !appShellSource.includes('id="mhShellPanelAnalytics"') ||
+    !appShellSource.includes("mh:analytics-route")) {
+  fail("Phase 15A Analytics route or app-shell workspace is incomplete.");
+}
+if (!analyticsRepositorySource.includes('"mh_get_user_analytics"')) {
+  fail("analytics-repository.js must load server-backed analytics through mh_get_user_analytics().");
+}
+if (!analyticsModelSource.includes("buildAnalyticsInsights") ||
+    !analyticsModelSource.includes("aggregateDailyActivity") ||
+    !analyticsModelSource.includes("heatLevel")) {
+  fail("analytics-model.js is missing mastery or chart helpers.");
+}
+if (!analyticsControllerSource.includes("mh-analytics-heatmap") ||
+    !analyticsControllerSource.includes("mh-analytics-chapters") ||
+    !analyticsControllerSource.includes("supabase.auth.onAuthStateChange")) {
+  fail("analytics-controller.js must render heatmap/mastery and react to authentication changes.");
+}
+if (!analyticsCss.includes(".mh-analytics-summary-grid") ||
+    !analyticsCss.includes(".mh-analytics-heatmap") ||
+    !analyticsCss.includes(".mh-analytics-donut")) {
+  fail("Phase 15A analytics visual system is incomplete.");
 }
 
 if (failed) {

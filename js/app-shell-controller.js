@@ -7,6 +7,7 @@ const ROUTES = Object.freeze([
   "research",
   "history",
   "xp",
+  "analytics",
 ]);
 
 const CATALOG_ROUTES = new Set(["lessons", "problems", "exams", "research", "history", "xp"]);
@@ -41,6 +42,7 @@ const TEXT = {
       research: ["Cercetare", "Concepte avansate și idei de explorat."],
       history: ["Istorie", "Oameni și idei din matematică."],
       xp: ["Progres", "XP și activitatea ta."],
+      analytics: ["Analytics", "Mastery, acuratețe și consistență."],
     },
     nav: {
       dashboard: "Acasă",
@@ -51,6 +53,7 @@ const TEXT = {
       research: "Cercetare",
       history: "Istorie",
       xp: "Progres",
+      analytics: "Analytics",
       profile: "Profil",
       admin: "Admin",
       about: "Despre",
@@ -77,6 +80,7 @@ const TEXT = {
       research: ["Research", "Advanced concepts and ideas to explore."],
       history: ["History", "People and ideas in mathematics."],
       xp: ["Progress", "XP and activity."],
+      analytics: ["Analytics", "Mastery, accuracy and consistency."],
     },
     nav: {
       dashboard: "Home",
@@ -87,6 +91,7 @@ const TEXT = {
       research: "Research",
       history: "History",
       xp: "Progress",
+      analytics: "Analytics",
       profile: "Profile",
       admin: "Admin",
       about: "About",
@@ -111,6 +116,7 @@ const NAV_ITEMS = Object.freeze([
   { route: "problems", icon: "◆", group: "learn" },
   { route: "exams", icon: "▣", group: "learn" },
   { route: "xp", icon: "↗", group: "learn" },
+  { route: "analytics", icon: "◫", group: "learn" },
   { route: "research", icon: "⌁", group: "explore" },
   { route: "history", icon: "◷", group: "explore" },
 ]);
@@ -194,6 +200,7 @@ function createShellMarkup() {
       </section>
       <section class="mh-shell-workspace-panel" data-panel="roadmap" id="mhShellPanelRoadmap" hidden></section>
       <section class="mh-shell-workspace-panel" data-panel="catalog" id="mhShellPanelCatalog" hidden></section>
+      <section class="mh-shell-workspace-panel" data-panel="analytics" id="mhShellPanelAnalytics" hidden></section>
     </main>
     <button class="mh-admin-floating-close" id="mhAdminFloatingClose" type="button" hidden>
       <span aria-hidden="true">✕</span>
@@ -320,6 +327,7 @@ function moveExistingContent() {
 function panelForRoute(route) {
   if (route === "dashboard") return "dashboard";
   if (route === "roadmap") return "roadmap";
+  if (route === "analytics") return "analytics";
   return "catalog";
 }
 
@@ -350,6 +358,9 @@ function activateRoute(rawRoute, { replace = false, scroll = true } = {}) {
     window.dispatchEvent(new CustomEvent("mh:open-section-request", { detail: { sectionId: "mhCatalogWorkspace" } }));
     selectCatalogTab(route);
   }
+  window.dispatchEvent(new CustomEvent("mh:analytics-route", {
+    detail: { active: panel === "analytics" }
+  }));
 
   updateWorkspaceCopy(route);
   const hash = `#${route}`;

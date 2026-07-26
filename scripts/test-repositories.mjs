@@ -119,6 +119,13 @@ const {
   saveContentWorkspace
 } = await importBrowserModule("js/problem-workspace-repository.js");
 const {
+  aggregateDailyActivity,
+  buildAnalyticsInsights,
+  heatLevel,
+  normalizeAnalyticsPayload,
+  progressPercent
+} = await importBrowserModule("js/analytics-model.js");
+const {
   buildProblemRecommendations,
   feedbackForAttempt,
   formatAttemptTime
@@ -136,6 +143,8 @@ assert.equal(normalizeAppRoute("#problems"), "problems");
 assert.equal(normalizeAppRoute("unknown"), "dashboard");
 assert.equal(routeToCatalogTab("exams"), "exams");
 assert.equal(routeToCatalogTab("roadmap"), "");
+assert.equal(normalizeAppRoute("#analytics"), "analytics");
+assert.equal(routeToCatalogTab("analytics"), "");
 
 const brokenStorage = new SessionStorageMock();
 brokenStorage.setItem("broken", "{not-json");
@@ -808,5 +817,29 @@ const recommendations = buildProblemRecommendations({
 assert.deepEqual(recommendations.map((item) => item.id), ["p2", "p3"]);
 assert.match(feedbackForAttempt({ language: "ro", wrongAttempts: 2, hasHint1: true }), /Hint 1/);
 assert.ok(formatAttemptTime("2026-07-26T12:00:00Z", "ro"));
+
+
+// Phase 15A: analytics normalization, insight ranking and chart helpers.
+const analyticsPayload = normalizeAnalyticsPayload({
+  range_days: 90,
+  summary: { answer_attempts: 10, correct_answers: 7, accuracy: 70, xp_total: 42 },
+  chapters: [
+    { chapter: "Algebra", mastery: 82, activity: 14 },
+    { chapter: "Geometry", mastery: 31, activity: 8 },
+    { chapter: "Analysis", mastery: 58, activity: 9 }
+  ],
+  daily_activity: Array.from({ length: 60 }, (_, index) => ({
+    date: `2026-06-${String((index % 30) + 1).padStart(2, "0")}`,
+    events: 1,
+    xp: index % 2
+  }))
+});
+assert.equal(analyticsPayload.summary.correctAnswers, 7);
+assert.equal(progressPercent(3, 4), 75);
+assert.equal(heatLevel(5, 10), 2);
+const analyticsInsights = buildAnalyticsInsights(analyticsPayload);
+assert.equal(analyticsInsights.strengths[0].chapter, "Algebra");
+assert.equal(analyticsInsights.weaknesses[0].chapter, "Geometry");
+assert.ok(aggregateDailyActivity(analyticsPayload.dailyActivity, 30).length <= 30);
 
 console.log("MathHard repository tests passed.");
