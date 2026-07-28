@@ -8,9 +8,13 @@ import {
 import {
   cancelExamAttempt,
   finishExamAttempt,
-  markLessonLearned,
   startExamAttempt
 } from "./progress-repository.js";
+import {
+  completeLessonQuiz,
+  markLessonRead,
+  startLessonReading
+} from "./lesson-status-repository.js";
 import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
 import { logLearningEvent } from "./secure-evaluation-repository.js";
 import {
@@ -39,6 +43,7 @@ import {
   createAppProgressController,
   examsPassedSet,
   learnedSet,
+  readSet,
   solvedSet,
   XP_DETAILS,
   XP_TOTAL
@@ -1876,6 +1881,10 @@ import {
 
   /* lesson timer state */
   let lessonTimer=null, lessonSecondsLeft=0, lessonScrolled=false;
+  let lessonReadingSessionId="";
+  let lessonReadingLessonId="";
+  let lessonReadingEligibleAt=0;
+  let lessonReadSaving=false;
   let bottomObserver=null;
 
   /* ===== FOCUS MODE ===== */
@@ -3988,7 +3997,9 @@ ${details}`);
 
   const progressController = createAppProgressController({
     supabase,
-    markLessonLearned,
+    startLessonReading,
+    markLessonRead,
+    completeLessonQuiz,
     startExamAttempt,
     finishExamAttempt,
     cancelExamAttempt,
@@ -4015,11 +4026,13 @@ ${details}`);
 
   const {
     cancelExamAttemptSafe,
+    completeLessonQuizSafe,
     getXPRecord,
     loadAppProgressFromDb,
-    markLessonLearnedSafe,
+    markLessonReadSafe,
     recomputeXPTotal,
     recordExamAttemptStart,
+    startLessonReadingSafe,
     applyProblemProgressResult,
     saveExamAttemptResultSafe,
     updateExamAttemptScore
@@ -4072,7 +4085,7 @@ ${details}`);
     supabase,
     getUser: () => MH_AUTH_USER,
     getLanguage: () => LANG,
-    getProgress: () => ({ learnedSet, solvedSet, examsPassedSet }),
+    getProgress: () => ({ learnedSet, readSet, solvedSet, examsPassedSet }),
     getContentCatalog: () => DATA,
     onOpenContent: openRoadmapContent
   });
@@ -4490,6 +4503,12 @@ ${details}`);
         ? "📄 Vezi probleme propuse"
         : "📄 View suggested problems";
     }
+
+    if (lessonReadingLessonId) {
+      const viewer = document.getElementById("viewContent");
+      const contentScrollable = Boolean(viewer && viewer.scrollHeight > viewer.clientHeight + 8);
+      setUnderstoodAvailability(contentScrollable);
+    }
   }
 
   /* ===== Sidebar (super categorii) ===== */
@@ -4546,7 +4565,11 @@ ${details}`);
                 ? (lesson.title_ro || lesson.title_en)
                 : (lesson.title_en || lesson.title_ro);
 
-              const check = learnedSet.has(lesson.id) ? ` <span class="check">✅</span>` : "";
+              const check = learnedSet.has(lesson.id)
+                ? ` <span class="check" title="${LANG === "ro" ? "Învățată" : "Learned"}">🎓</span>`
+                : readSet.has(lesson.id)
+                  ? ` <span class="check" title="${LANG === "ro" ? "Citită" : "Read"}">📖</span>`
+                  : "";
               a.innerHTML = "📄 " + title + check;
               a.onclick = () => {
                 TAB = "lessons";
@@ -5299,9 +5322,16 @@ ${details}`);
         ? (item.title_ro || item.title_en || "Lecție")
         : (item.title_en || item.title_ro || "Lesson");
 
+      const lessonStatus = learnedSet.has(item.id)
+        ? `<span class="tag mh-lesson-status-chip is-learned">🎓 ${LANG === "ro" ? "Învățată" : "Learned"}</span>`
+        : readSet.has(item.id)
+          ? `<span class="tag mh-lesson-status-chip is-read">📖 ${LANG === "ro" ? "Citită" : "Read"}</span>`
+          : `<span class="tag mh-lesson-status-chip is-new">○ ${LANG === "ro" ? "Necitită" : "Unread"}</span>`;
+
       div.innerHTML = `
         <div class="title">📘 ${esc(title)}</div>
         ${lessonMeta(item)}
+        <div class="meta">${lessonStatus}</div>
         <div class="src">${esc((item.sources && item.sources.join(", ")) || "")}</div>
       `;
 
@@ -5441,20 +5471,152 @@ ${details}`);
   }
 
   /* ===== Viewer: Lecții / Tips ===== */
+  function hasLessonVerification(lessonId){
+    const bank = window.DATA_QUIZZES?.[String(lessonId || "")];
+    return Array.isArray(bank) && bank.length > 0;
+  }
   function fmtTime(s){ const m=Math.floor(s/60), ss=("0"+(s%60)).slice(-2); return `${m}:${ss}`; }
   function stopLessonTimer(){
     if(lessonTimer){ clearInterval(lessonTimer); lessonTimer=null; }
     if(bottomObserver){ bottomObserver.disconnect(); bottomObserver=null; }
     document.getElementById("lessonTimerBox").style.display="none";
-    lessonSecondsLeft=0; lessonScrolled=false;
+    lessonSecondsLeft=0;
+    lessonScrolled=false;
+    lessonReadingSessionId="";
+    lessonReadingLessonId="";
+    lessonReadingEligibleAt=0;
+    lessonReadSaving=false;
   }
   function setUnderstoodAvailability(contentScrollable){
     const und=document.getElementById("understoodBtn");
-    const needScroll = contentScrollable && !lessonScrolled ? (LANG==='ro'?'Derulează până jos':'Scroll to the bottom') : '';
-    const needTime = (lessonSecondsLeft>0) ? (LANG==='ro'?'Așteaptă timerul':'Wait for timer') : '';
-    const label = (lessonSecondsLeft>0||(!lessonScrolled && contentScrollable)) ? `🔒 ${[needScroll,needTime].filter(Boolean).join(' & ')}` : (LANG==='ro'?'👍 Ai înțeles?':'👍 Understood?');
-    und.textContent=label;
-    und.disabled=!((lessonSecondsLeft===0) && (lessonScrolled || !contentScrollable));
+    const quizBtn=document.getElementById("quizBtn");
+    const timerBox=document.getElementById("lessonTimerBox");
+    const lessonId=lessonReadingLessonId;
+    const isLearned=Boolean(lessonId && learnedSet.has(lessonId));
+    const isRead=Boolean(lessonId && (readSet.has(lessonId) || isLearned));
+    const hasVerification=Boolean(lessonId && hasLessonVerification(lessonId));
+
+    if (!und || !quizBtn) return;
+    und.disabled=true;
+    und.classList.toggle("is-read", isRead && !isLearned);
+    und.classList.toggle("is-learned", isLearned);
+    if (isLearned){
+      und.textContent=LANG==='ro' ? '🎓 Lecție învățată' : '🎓 Lesson learned';
+      quizBtn.disabled=!hasVerification;
+      quizBtn.textContent=hasVerification
+        ? (LANG==='ro' ? '✅ Reia verificarea' : '✅ Retake check')
+        : (LANG==='ro' ? '⏳ Verificare în pregătire' : '⏳ Check coming soon');
+      quizBtn.title=hasVerification
+        ? (LANG==='ro' ? 'Lecția este deja învățată. Poți reface verificarea.' : 'The lesson is already learned. You can retake the check.')
+        : (LANG==='ro' ? 'Această lecție nu are încă o verificare publicată.' : 'This lesson does not have a published check yet.');
+      if (timerBox) timerBox.style.display='none';
+      return;
+    }
+    if (isRead){
+      und.textContent=LANG==='ro' ? '📖 Lecție citită' : '📖 Lesson read';
+      quizBtn.disabled=!hasVerification;
+      quizBtn.textContent=hasVerification
+        ? (LANG==='ro' ? '🧪 Verificare lecție' : '🧪 Lesson check')
+        : (LANG==='ro' ? '⏳ Verificare în pregătire' : '⏳ Check coming soon');
+      quizBtn.title=hasVerification
+        ? (LANG==='ro' ? 'Rezolvă toate grilele corect pentru statusul Învățată.' : 'Solve every quiz item correctly to earn Learned status.')
+        : (LANG==='ro' ? 'Lecția rămâne Citită până când publici o verificare.' : 'The lesson remains Read until a check is published.');
+      if (timerBox) timerBox.style.display='none';
+      return;
+    }
+    const needScroll=contentScrollable && !lessonScrolled
+      ? (LANG==='ro' ? 'derulează până jos' : 'scroll to the bottom')
+      : '';
+    const needTime=lessonSecondsLeft>0
+      ? `${LANG==='ro' ? 'așteaptă' : 'wait'} ${fmtTime(lessonSecondsLeft)}`
+      : '';
+    const requirements=[needScroll, needTime].filter(Boolean);
+
+    und.textContent=lessonReadSaving
+      ? (LANG==='ro' ? '☁️ Se salvează statusul Citită…' : '☁️ Saving Read status…')
+      : `🔒 ${requirements.join(LANG==='ro' ? ' și ' : ' and ') || (LANG==='ro' ? 'se pregătește citirea' : 'preparing reading')}`;
+    quizBtn.disabled=true;
+    quizBtn.textContent=LANG==='ro' ? '🔒 Verificare blocată' : '🔒 Check locked';
+    quizBtn.title=LANG==='ro'
+      ? 'Verificarea se deblochează după un minut și după ce ajungi la finalul lecției.'
+      : 'The check unlocks after one minute and after you reach the end of the lesson.';
+    if (timerBox) timerBox.style.display='inline-flex';
+  }
+
+  async function maybeCompleteLessonRead(contentScrollable){
+    const lessonId=lessonReadingLessonId;
+    if (!lessonId || readSet.has(lessonId) || learnedSet.has(lessonId)) {
+      setUnderstoodAvailability(contentScrollable);
+      return;
+    }
+    if (lessonReadSaving || lessonSecondsLeft>0 || (contentScrollable && !lessonScrolled) || !lessonReadingSessionId) {
+      setUnderstoodAvailability(contentScrollable);
+      return;
+    }
+    lessonReadSaving=true;
+    setUnderstoodAvailability(contentScrollable);
+    const row=await markLessonReadSafe(lessonId, lessonReadingSessionId);
+    lessonReadSaving=false;
+    if (lessonId !== lessonReadingLessonId) return;
+    if (row?.read_completed || row?.learned) {
+      readSet.add(lessonId);
+      lessonSecondsLeft=0;
+      if (lessonTimer){ clearInterval(lessonTimer); lessonTimer=null; }
+      renderCards();
+      buildNestedTree();
+      roadmapController?.refreshProgress();
+    }
+    setUnderstoodAvailability(contentScrollable);
+  }
+
+  async function startLessonReadTracking(lesson, contentScrollable){
+    const lessonId=String(lesson?.id || '');
+    lessonReadingLessonId=lessonId;
+    lessonReadingSessionId='';
+    lessonReadingEligibleAt=0;
+    lessonReadSaving=false;
+    if (readSet.has(lessonId) || learnedSet.has(lessonId)) {
+      lessonSecondsLeft=0;
+      setUnderstoodAvailability(contentScrollable);
+      return;
+    }
+    lessonSecondsLeft=60;
+    setUnderstoodAvailability(contentScrollable);
+    const row=await startLessonReadingSafe(lessonId);
+    if (lessonId !== lessonReadingLessonId) return;
+
+    if (!row) {
+      const und=document.getElementById('understoodBtn');
+      if (und) und.textContent=LANG==='ro' ? '⚠️ Citirea nu poate fi salvată' : '⚠️ Reading cannot be saved';
+      return;
+    }
+    if (row.read_completed || row.learned) {
+      readSet.add(lessonId);
+      if (row.learned) learnedSet.add(lessonId);
+      lessonSecondsLeft=0;
+      setUnderstoodAvailability(contentScrollable);
+      return;
+    }
+    lessonReadingSessionId=String(row.session_id || '');
+    const eligibleAt=Date.parse(row.eligible_at || '');
+    lessonReadingEligibleAt=Number.isFinite(eligibleAt) ? eligibleAt : Date.now()+60_000;
+    lessonSecondsLeft=Math.max(0, Math.ceil((lessonReadingEligibleAt-Date.now())/1000));
+    if (lessonTimer) clearInterval(lessonTimer);
+    lessonTimer=setInterval(()=>{
+      lessonSecondsLeft=Math.max(0, Math.ceil((lessonReadingEligibleAt-Date.now())/1000));
+      const tSpan=document.getElementById('lessonTimer');
+      if (tSpan) tSpan.textContent=fmtTime(lessonSecondsLeft);
+      setUnderstoodAvailability(contentScrollable);
+      if (lessonSecondsLeft===0){
+        clearInterval(lessonTimer);
+        lessonTimer=null;
+        void maybeCompleteLessonRead(contentScrollable);
+      }
+    },1000);
+    const tSpan=document.getElementById('lessonTimer');
+    if (tSpan) tSpan.textContent=fmtTime(lessonSecondsLeft);
+    setUnderstoodAvailability(contentScrollable);
+    void maybeCompleteLessonRead(contentScrollable);
   }
   function buildLessonHTML(L){
     const isRO = (LANG === "ro");
@@ -5677,6 +5839,19 @@ ${details}`);
 
   // desenează quiz-ul în viewer (înlocuiește conținutul lecției)
   function openLessonQuiz(L){
+    if (!readSet.has(L.id) && !learnedSet.has(L.id)) {
+      alert(LANG === 'ro'
+        ? 'Verificarea se deblochează după ce citești lecția timp de cel puțin un minut și ajungi la final.'
+        : 'The check unlocks after you read the lesson for at least one minute and reach the end.');
+      return;
+    }
+    if (!hasLessonVerification(L.id)) {
+      alert(LANG === 'ro'
+        ? 'Această lecție nu are încă o verificare publicată.'
+        : 'This lesson does not have a published check yet.');
+      return;
+    }
+
     stopLessonTimer();
 
     const isRO = (typeof LANG !== "undefined" ? LANG === "ro" : true);
@@ -5709,6 +5884,11 @@ ${details}`);
         <div class="progressRow" style="margin-top:10px;">
           <div class="progressBar"><i id="quizSummaryBar" style="width:0%"></i></div>
         </div>
+        <div class="mh-lesson-quiz-status" id="quizCompletionStatus" aria-live="polite">
+          ${learnedSet.has(L.id)
+            ? (isRO ? '🎓 Status: Învățată' : '🎓 Status: Learned')
+            : (isRO ? '📖 Status: Citită. Obține toate răspunsurile corecte pentru Învățată.' : '📖 Status: Read. Get every answer correct for Learned.')}
+        </div>
       </div>
 
       <div id="quizList"></div>
@@ -5726,6 +5906,8 @@ ${details}`);
     const list = box.querySelector("#quizList");
     const summaryText = box.querySelector("#quizSummaryText");
     const summaryBar = box.querySelector("#quizSummaryBar");
+    const completionStatus = box.querySelector("#quizCompletionStatus");
+    const checkAllButton = box.querySelector("#quizCheckAll");
 
     const fmtStamp = (ts) => {
       const d = new Date(ts);
@@ -5939,7 +6121,7 @@ ${details}`);
       return false;
     }
 
-    function gradeAll(){
+    async function gradeAll(){
       let correctCount = 0;
 
       qs.forEach((Q, idx) => {
@@ -5948,6 +6130,51 @@ ${details}`);
 
       updateQuizSummary();
       content.scrollTop = 0;
+
+      if (correctCount === qs.length && qs.length > 0) {
+        const wasLearned = learnedSet.has(L.id);
+        if (checkAllButton) checkAllButton.disabled = true;
+        if (completionStatus) {
+          completionStatus.textContent = isRO
+            ? '☁️ Se salvează statusul Învățată…'
+            : '☁️ Saving Learned status…';
+        }
+
+        const row = await completeLessonQuizSafe(L.id);
+        if (row?.learned) {
+          if (!wasLearned) mhIncrementTodayProgress("lesson");
+          learnedSet.add(L.id);
+          readSet.add(L.id);
+          updateCounters();
+          renderCards();
+          buildNestedTree();
+          buildTagPanel();
+          roadmapController?.refreshProgress();
+          document.getElementById("viewTitle").textContent = "🎓 " + (isRO
+            ? (L.title_ro || L.title_en || L.id)
+            : (L.title_en || L.title_ro || L.id));
+          if (completionStatus) {
+            completionStatus.textContent = isRO
+              ? '🎓 Lecție învățată. Roadmap-ul și contoarele au fost actualizate.'
+              : '🎓 Lesson learned. The roadmap and counters were updated.';
+            completionStatus.classList.add('is-complete');
+          }
+          const statusButton = document.getElementById('understoodBtn');
+          if (statusButton) {
+            statusButton.textContent = isRO ? '🎓 Lecție învățată' : '🎓 Lesson learned';
+            statusButton.classList.add('is-learned');
+          }
+        } else if (completionStatus) {
+          completionStatus.textContent = isRO
+            ? '⚠️ Răspunsurile sunt corecte, dar statusul nu a putut fi salvat. Reîncearcă.'
+            : '⚠️ The answers are correct, but the status could not be saved. Retry.';
+        }
+        if (checkAllButton) checkAllButton.disabled = false;
+      } else if (completionStatus && !learnedSet.has(L.id)) {
+        completionStatus.textContent = isRO
+          ? `📖 Lecție citită. Pentru Învățată ai nevoie de ${qs.length}/${qs.length} corecte.`
+          : `📖 Lesson read. You need ${qs.length}/${qs.length} correct for Learned.`;
+      }
 
       return correctCount;
     }
@@ -5981,7 +6208,7 @@ ${details}`);
       updateQuizSummary();
     }
 
-    box.querySelector("#quizCheckAll").onclick = gradeAll;
+    box.querySelector("#quizCheckAll").onclick = () => { void gradeAll(); };
 
     box.querySelector("#quizRetryWrong").onclick = () => {
       resetOnlyWrong();
@@ -6020,9 +6247,16 @@ ${details}`);
       undBtn.style.display = show ? "inline-flex" : "none";
       undBtn.disabled = true;
       undBtn.textContent = LANG === "ro"
-        ? "👍 Ai înțeles?"
-        : "👍 Understood?";
+        ? "🔒 Se verifică progresul lecturii"
+        : "🔒 Checking reading progress";
       undBtn.onclick = null;
+    }
+
+    if (quizBtn) {
+      quizBtn.disabled = true;
+      quizBtn.textContent = LANG === "ro"
+        ? "🔒 Verificare blocată"
+        : "🔒 Check locked";
     }
 
     if (timerBox) timerBox.style.display = "none";
@@ -6050,8 +6284,10 @@ ${details}`);
     learningWorkspaceController?.open(item, isProblem ? "problem" : "lesson");
     const title=(LANG==="ro"? (item.title_ro||item.title_en):(item.title_en||item.title_ro));
     const done = isProblem ? solvedSet.has(item.id) : learnedSet.has(item.id);
+    const lessonRead = !isProblem && readSet.has(item.id);
+    const statusPrefix = done ? (isProblem ? "✅ " : "🎓 ") : lessonRead ? "📖 " : "";
 
-    document.getElementById("viewTitle").textContent = (done?"✅ ":"") + title;
+    document.getElementById("viewTitle").textContent = statusPrefix + title;
     const meta = isProblem ? ("🟨 " + (item.difficulty===0?"dif. 0":"★".repeat(item.difficulty)))
                           : (item.grade? ("🎓 "+(/^(OL-)/.test(item.grade)?("Olimp. "+item.grade.replace('OL-','')):item.grade)): ("📂 " + getChapterLabel(item.chapter)));
     document.getElementById("viewMeta").textContent=meta;
@@ -6209,6 +6445,7 @@ ${details}`);
 
       const needsScroll = content.scrollHeight > content.clientHeight + 8;
       lessonScrolled = !needsScroll;
+      lessonReadingLessonId = item.id;
 
       const quizBtn = document.getElementById("quizBtn");
       quizBtn.style.display = "inline-flex";
@@ -6216,7 +6453,13 @@ ${details}`);
       mhUpdateLessonDrawerButtons();
       setLessonOnlyActionsVisible(true);
 
-      quizBtn.onclick = ()=> openLessonQuiz(item);
+      quizBtn.onclick = ()=> {
+        if (!readSet.has(item.id) && !learnedSet.has(item.id)) {
+          setUnderstoodAvailability(needsScroll);
+          return;
+        }
+        openLessonQuiz(item);
+      };
 
       const sentinel = content.querySelector('#bottomSentinel');
       if(needsScroll && sentinel){
@@ -6224,37 +6467,15 @@ ${details}`);
           if(entry.isIntersecting){
             lessonScrolled = true;
             setUnderstoodAvailability(true);
+            void maybeCompleteLessonRead(true);
             if(bottomObserver){ bottomObserver.disconnect(); bottomObserver=null; }
           }
         }, { root: content, threshold: 1.0 });
         bottomObserver.observe(sentinel);
       }
 
-      // 1 minute timer
-      lessonSecondsLeft = 60;
-      const tBox=document.getElementById("lessonTimerBox"), tSpan=document.getElementById("lessonTimer");
-      tBox.style.display="inline-flex"; tSpan.textContent=fmtTime(lessonSecondsLeft);
-      lessonTimer=setInterval(()=>{
-        lessonSecondsLeft=Math.max(0, lessonSecondsLeft-1);
-        tSpan.textContent=fmtTime(lessonSecondsLeft);
-        if(lessonSecondsLeft===0){ clearInterval(lessonTimer); lessonTimer=null; setUnderstoodAvailability(true); }
-      },1000);
-      setUnderstoodAvailability(true);
-
-      und.onclick=()=>{
-        const ready = (lessonSecondsLeft===0) && (lessonScrolled || !needsScroll);
-        if(!ready) return;
-        if(!learnedSet.has(item.id)){
-          learnedSet.add(item.id);
-          mhIncrementTodayProgress("lesson");
-          void markLessonLearnedSafe(item.id);
-          updateCounters();
-          document.getElementById("viewTitle").textContent="✅ "+title;
-          renderCards(); buildNestedTree(); buildTagPanel();
-          und.textContent = (LANG==='ro'?'✅ Marcată ca înțeleasă!':'✅ Marked as understood!');
-          und.disabled=true;
-        }
-      };
+      und.onclick=null;
+      void startLessonReadTracking(item, needsScroll);
     }
 
     document.getElementById("drawer").classList.add("open");

@@ -11,6 +11,7 @@ const moduleJsFiles = [
   "js/supabase-client.js",
   "js/content-repository.js",
   "js/progress-repository.js",
+  "js/lesson-status-repository.js",
   "js/runtime-config.js",
   "js/content-model.js",
   "js/answer-engine.js",
@@ -67,6 +68,7 @@ const requiredFiles = [
   "css/roadmap-studio.css",
   "css/learning-workspace.css",
   "css/problem-workspace.css",
+  "css/lesson-status.css",
   "css/quick-nav.css",
   "css/section-layout.css",
   "css/app-shell.css",
@@ -213,6 +215,7 @@ const authUiControllerSource = readFileSync(resolve(root, "js/auth-ui-controller
 const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-model.js"), "utf8");
 const examSessionStateSource = readFileSync(resolve(root, "js/exam-session-state.js"), "utf8");
 const progressRepositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
+const lessonStatusRepositorySource = readFileSync(resolve(root, "js/lesson-status-repository.js"), "utf8");
 const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recovery.js"), "utf8");
 const secureEvaluationRepositorySource = readFileSync(resolve(root, "js/secure-evaluation-repository.js"), "utf8");
 const secureExamRepositorySource = readFileSync(resolve(root, "js/secure-exam-repository.js"), "utf8");
@@ -226,6 +229,7 @@ const learningWorkspaceControllerSource = readFileSync(resolve(root, "js/learnin
 const problemWorkspaceRepositorySource = readFileSync(resolve(root, "js/problem-workspace-repository.js"), "utf8");
 const problemWorkspaceModelSource = readFileSync(resolve(root, "js/problem-workspace-model.js"), "utf8");
 const problemWorkspaceCss = readFileSync(resolve(root, "css/problem-workspace.css"), "utf8");
+const lessonStatusCss = readFileSync(resolve(root, "css/lesson-status.css"), "utf8");
 const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
 const roadmapStudioCss = readFileSync(resolve(root, "css/roadmap-studio.css"), "utf8");
 const learningWorkspaceCss = readFileSync(resolve(root, "css/learning-workspace.css"), "utf8");
@@ -904,6 +908,33 @@ if (!adminHistoryModelSource.includes("changedFields") ||
     !adminHistoryControllerSource.includes("data-admin-restore-version") ||
     !adminHistoryCss.includes(".mh-admin-history-layout")) {
   fail("Phase 17C Admin history UI or diff model is incomplete.");
+}
+
+// Phase 17C.2: distinct Read / Learned lesson states and gated lesson checks.
+if (!indexHtml.includes('href="css/lesson-status.css"')) {
+  fail("Phase 17C.2 lesson-status stylesheet is missing from index.html.");
+}
+if (!appSource.includes('from "./lesson-status-repository.js"') ||
+    !appSource.includes("startLessonReadTracking") ||
+    !appSource.includes("completeLessonQuizSafe") ||
+    !appSource.includes("Verificare blocată")) {
+  fail("Phase 17C.2 lesson Read / Learned flow is incomplete in app.js.");
+}
+if (!appProgressSource.includes("export let readSet") ||
+    !appProgressSource.includes("markLessonReadSafe") ||
+    !appProgressSource.includes("completeLessonQuizSafe")) {
+  fail("Phase 17C.2 lesson status state is missing from app-progress.js.");
+}
+if (!lessonStatusRepositorySource.includes('"mh_start_lesson_reading"') ||
+    !lessonStatusRepositorySource.includes('"mh_mark_lesson_read"') ||
+    !lessonStatusRepositorySource.includes('"mh_complete_lesson_quiz"')) {
+  fail("Phase 17C.2 lesson status repository is missing secure RPCs.");
+}
+if (!roadmapModelSource.includes("readSet") ||
+    !roadmapControllerSource.includes('"Citită"') ||
+    !lessonStatusCss.includes(".mh-lesson-status-chip") ||
+    !lessonStatusCss.includes(".mh-roadmap-node.is-read")) {
+  fail("Phase 17C.2 lesson status visual integration is incomplete.");
 }
 
 if (failed) {

@@ -593,7 +593,24 @@ let progressRefreshes = 0;
 let progressCounterRefreshes = 0;
 const appProgress = appProgressModule.createAppProgressController({
   supabase: appProgressClient,
-  markLessonLearned: async (_client, lessonId) => ({ lesson_id: lessonId, learned: true }),
+  startLessonReading: async (_client, lessonId) => ({
+    lesson_id: lessonId,
+    read_completed: false,
+    learned: false,
+    session_id: "session-1",
+    eligible_at: new Date(Date.now() + 60_000).toISOString()
+  }),
+  markLessonRead: async (_client, lessonId) => ({
+    lesson_id: lessonId,
+    read_completed: true,
+    learned: false
+  }),
+  completeLessonQuiz: async (_client, lessonId) => ({
+    lesson_id: lessonId,
+    read_completed: true,
+    quiz_passed: true,
+    learned: true
+  }),
   startExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 1 }),
   finishExamAttempt: async (_client, examId, score) => ({ exam_id: examId, best_score: score, passed: score >= 60 }),
   cancelExamAttempt: async (_client, examId) => ({ exam_id: examId, attempts_count: 0, started_at: null }),
@@ -606,6 +623,7 @@ const appProgress = appProgressModule.createAppProgressController({
 
 await appProgress.loadAppProgressFromDb({ id: "user-1" });
 assert.equal(appProgressModule.learnedSet.has("lesson-progress"), true);
+assert.equal(appProgressModule.readSet.has("lesson-progress"), true);
 assert.equal(appProgressModule.solvedSet.has("problem-progress"), true);
 assert.equal(appProgressModule.examsPassedSet.has("exam-progress"), true);
 assert.equal(appProgressModule.XP_TOTAL, 9);
@@ -628,7 +646,11 @@ assert.equal(appProgressModule.XP_TOTAL, 9);
 progressErrors.clear();
 progressRows.user_lesson_progress = [{ lesson_id: "lesson-progress", learned: true }];
 
-await appProgress.markLessonLearnedSafe("lesson-new");
+const readingSession = await appProgress.startLessonReadingSafe("lesson-new");
+assert.equal(readingSession.session_id, "session-1");
+await appProgress.markLessonReadSafe("lesson-new", "session-1");
+assert.equal(appProgressModule.readSet.has("lesson-new"), true);
+await appProgress.completeLessonQuizSafe("lesson-new");
 assert.equal(appProgressModule.learnedSet.has("lesson-new"), true);
 appProgress.applyProblemProgressResult("problem-new", {
   problem_id: "problem-new",
@@ -707,6 +729,24 @@ assert.equal(firstRoadmapView.nodeStates.get("n3").status, "locked");
 assert.equal(firstRoadmapView.nodeStates.get("n4").status, "planned");
 assert.equal(firstRoadmapView.progress.percent, 50);
 assert.equal(firstRoadmapView.nextNode.node.id, "n2");
+
+const readOnlyRoadmapView = buildRoadmapView({
+  roadmap: normalizedRoadmaps.roadmaps[0],
+  catalog: {
+    lessons: [{ id: "l1", title_ro: "Lecția 1" }],
+    problems: [{ id: "p1", title_ro: "Problema 1" }],
+    exams: []
+  },
+  learnedSet: new Set(),
+  readSet: new Set(["l1"]),
+  solvedSet: new Set(),
+  examsPassedSet: new Set(),
+  language: "ro"
+});
+
+assert.equal(readOnlyRoadmapView.nodeStates.get("n1").read, true);
+assert.equal(readOnlyRoadmapView.nodeStates.get("n1").status, "available");
+assert.equal(readOnlyRoadmapView.progress.percent, 0);
 
 const completedRoadmapView = buildRoadmapView({
   roadmap: normalizedRoadmaps.roadmaps[0],
