@@ -164,12 +164,15 @@ assert.deepEqual(
 );
 assert.equal(
   adminDraftStorageKey({ mode: "edit", type: "lesson", id: "v-demo" }, "user-id"),
-  "mh_admin_content_draft_v1:user-id:edit:lesson:v-demo"
+  "mh_admin_content_draft_v2:user-id:edit:lesson:v-demo"
 );
 const {
   DEFAULT_UI_PREFERENCES,
+  invalidateUiPreferencesCache,
+  loadUiPreferences,
   mergeUiPreferences,
   normalizeUiPreferences,
+  saveUiPreferences,
   serializeUiPreferences
 } = await importBrowserModule("js/ui-preferences-repository.js");
 const {
@@ -321,7 +324,7 @@ assert.deepEqual(catalogTotals(catalog), {
   examsTotal: 1
 });
 assert.equal(getContentCatalogDiagnostics().status, "supabase-rpc");
-assert.equal(getContentCatalogDiagnostics().userId, "user-content");
+assert.equal(getContentCatalogDiagnostics().userId, "[authenticated]");
 
 const degradedCatalog = await loadContentCatalog({
   supabase: makeContentClient({ rpcError: "temporary failure" }),
@@ -861,6 +864,39 @@ const completedRoadmapView = buildRoadmapView({
 assert.equal(completedRoadmapView.nodeStates.get("n3").status, "done");
 assert.equal(completedRoadmapView.progress.percent, 100);
 
+const roadmapRepositoryModule = await import(
+  `${pathToFileURL(resolve(root, "js/roadmap-repository.js")).href}?phase18c3=${Date.now()}`
+);
+roadmapRepositoryModule.invalidateRoadmapCache();
+let roadmapAuthChecks = 0;
+let roadmapRpcCalls = 0;
+const roadmapClient = {
+  auth: {
+    async getUser() {
+      roadmapAuthChecks += 1;
+      return { data: { user: { id: "roadmap-user" } }, error: null };
+    }
+  },
+  async rpc(name) {
+    roadmapRpcCalls += 1;
+    assert.equal(name, "mh_get_roadmap_catalog");
+    return {
+      data: { selected_roadmap_id: "", schema_version: "phase-18c3", roadmaps: [] },
+      error: null
+    };
+  }
+};
+await roadmapRepositoryModule.loadRoadmapCatalog({
+  supabase: roadmapClient,
+  user: { id: "roadmap-user" }
+});
+await roadmapRepositoryModule.loadRoadmapCatalog({
+  supabase: roadmapClient,
+  user: { id: "roadmap-user" }
+});
+assert.equal(roadmapAuthChecks, 0);
+assert.equal(roadmapRpcCalls, 1);
+
 
 assert.equal(slugifyRoadmapValue("Funcții și grafice"), "functii-si-grafice");
 assert.equal(
@@ -927,6 +963,31 @@ const onboardedPreferences = mergeUiPreferences(DEFAULT_UI_PREFERENCES, {
 assert.equal(onboardedPreferences.onboarding.completed, true);
 assert.equal(onboardedPreferences.onboarding.version, 1);
 
+invalidateUiPreferencesCache();
+const uiPreferenceCalls = [];
+const uiPreferenceClient = {
+  async rpc(name, args = {}) {
+    uiPreferenceCalls.push({ name, args });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (name === "mh_get_ui_preferences") {
+      return { data: { compact_home: true, sections: { roadmap: false } }, error: null };
+    }
+    return { data: args.p_preferences, error: null };
+  }
+};
+const [sharedPreferencesA, sharedPreferencesB] = await Promise.all([
+  loadUiPreferences(uiPreferenceClient, { userId: "prefs-user" }),
+  loadUiPreferences(uiPreferenceClient, { userId: "prefs-user" })
+]);
+assert.equal(uiPreferenceCalls.filter((call) => call.name === "mh_get_ui_preferences").length, 1);
+assert.equal(sharedPreferencesA.compactHome, true);
+assert.deepEqual(sharedPreferencesA, sharedPreferencesB);
+await saveUiPreferences(uiPreferenceClient, mergeUiPreferences(sharedPreferencesA, {
+  sections: { roadmap: true }
+}), { userId: "prefs-user" });
+const cachedPreferences = await loadUiPreferences(uiPreferenceClient, { userId: "prefs-user" });
+assert.equal(cachedPreferences.sections.roadmap, true);
+assert.equal(uiPreferenceCalls.filter((call) => call.name === "mh_get_ui_preferences").length, 1);
 
 
 // Phase 13B: problem workspace persistence and recommendation model.

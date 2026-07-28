@@ -6,6 +6,37 @@ export const UI_SECTION_KEYS = Object.freeze([
   "catalog",
 ]);
 
+
+const MAX_CACHED_USERS = 4;
+const preferencesByUser = new Map();
+const preferenceLoadsByUser = new Map();
+
+function normalizeUserScope(userId) {
+  const value = String(userId || "").trim();
+  return value && value.length <= 160 ? value : "";
+}
+
+function rememberPreferences(userId, preferences) {
+  const scope = normalizeUserScope(userId);
+  if (!scope) return;
+  preferencesByUser.delete(scope);
+  preferencesByUser.set(scope, normalizeUiPreferences(preferences));
+  while (preferencesByUser.size > MAX_CACHED_USERS) {
+    preferencesByUser.delete(preferencesByUser.keys().next().value);
+  }
+}
+
+export function invalidateUiPreferencesCache(userId = "") {
+  const scope = normalizeUserScope(userId);
+  if (scope) {
+    preferencesByUser.delete(scope);
+    preferenceLoadsByUser.delete(scope);
+    return;
+  }
+  preferencesByUser.clear();
+  preferenceLoadsByUser.clear();
+}
+
 export const DEFAULT_UI_PREFERENCES = Object.freeze({
   version: 2,
   compactHome: false,
@@ -97,17 +128,43 @@ export function mergeUiPreferences(base, patch) {
   });
 }
 
-export async function loadUiPreferences(supabase) {
+export async function loadUiPreferences(
+  supabase,
+  { userId = "", forceRefresh = false } = {}
+) {
   if (!supabase?.rpc) {
     throw new Error("Supabase client is required.");
   }
 
-  const { data, error } = await supabase.rpc("mh_get_ui_preferences");
-  if (error) throw error;
-  return normalizeUiPreferences(data || {});
+  const scope = normalizeUserScope(userId);
+  if (!forceRefresh && scope && preferencesByUser.has(scope)) {
+    return normalizeUiPreferences(preferencesByUser.get(scope));
+  }
+  if (!forceRefresh && scope && preferenceLoadsByUser.has(scope)) {
+    return preferenceLoadsByUser.get(scope);
+  }
+
+  const request = (async () => {
+    const { data, error } = await supabase.rpc("mh_get_ui_preferences");
+    if (error) throw error;
+    const normalized = normalizeUiPreferences(data || {});
+    rememberPreferences(scope, normalized);
+    return normalized;
+  })().finally(() => {
+    if (scope && preferenceLoadsByUser.get(scope) === request) {
+      preferenceLoadsByUser.delete(scope);
+    }
+  });
+
+  if (scope) preferenceLoadsByUser.set(scope, request);
+  return request;
 }
 
-export async function saveUiPreferences(supabase, preferences) {
+export async function saveUiPreferences(
+  supabase,
+  preferences,
+  { userId = "" } = {}
+) {
   if (!supabase?.rpc) {
     throw new Error("Supabase client is required.");
   }
@@ -118,5 +175,7 @@ export async function saveUiPreferences(supabase, preferences) {
   });
 
   if (error) throw error;
-  return normalizeUiPreferences(data || payload);
+  const normalized = normalizeUiPreferences(data || payload);
+  rememberPreferences(userId, normalized);
+  return normalized;
 }

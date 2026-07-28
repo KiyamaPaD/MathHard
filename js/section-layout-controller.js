@@ -243,7 +243,7 @@ function createController() {
     writeLocalPreferences(userIdAtStart, stateAtStart);
 
     try {
-      const saved = await saveUiPreferences(supabase, stateAtStart);
+      const saved = await saveUiPreferences(supabase, stateAtStart, { userId: activeUserId });
       if (
         activeUserId !== userIdAtStart ||
         revisionAtStart !== saveRevision
@@ -374,12 +374,12 @@ function createController() {
     applyState(state);
 
     try {
-      let remote = await loadUiPreferences(supabase);
+      let remote = await loadUiPreferences(supabase, { userId: user.id });
       if (token !== hydrationToken || activeUserId !== user.id) return;
 
       if (!local && legacyCompact && !remote.compactHome) {
         remote = mergeUiPreferences(remote, { compactHome: true });
-        remote = await saveUiPreferences(supabase, remote);
+        remote = await saveUiPreferences(supabase, remote, { userId: user.id });
         if (token !== hydrationToken || activeUserId !== user.id) return;
       }
 

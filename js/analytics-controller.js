@@ -384,6 +384,8 @@ export function createAnalyticsController({ host } = {}) {
   let currentData = null;
   let loadEpoch = 0;
   let active = false;
+  let loadPromise = null;
+  let reloadAfterCurrent = false;
 
   root.innerHTML = `
     <div class="mh-analytics-shell">
@@ -446,29 +448,47 @@ export function createAnalyticsController({ host } = {}) {
     state.innerHTML = renderDashboard(currentData);
   }
 
-  async function load(force = false) {
-    if (!active && !force) return;
-    const epoch = ++loadEpoch;
+  function load(force = false) {
+    if (!active && !force) return Promise.resolve();
+    if (loadPromise) {
+      if (force) reloadAfterCurrent = true;
+      return loadPromise;
+    }
+
+    const request = ++loadEpoch;
     if (!currentData || force) renderLoading();
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (epoch !== loadEpoch) return;
-      if (!session?.user) {
-        currentData = null;
-        renderAuth();
-        return;
-      }
+    const promise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (request !== loadEpoch) return;
+        if (!session?.user) {
+          currentData = null;
+          renderAuth();
+          return;
+        }
 
-      const next = await loadUserAnalytics(supabase, { days: range, locale: locale() });
-      if (epoch !== loadEpoch) return;
-      currentData = next;
-      renderData();
-    } catch (error) {
-      if (epoch !== loadEpoch) return;
-      console.error("MathHard analytics could not be loaded:", error);
-      renderError(error);
-    }
+        const next = await loadUserAnalytics(supabase, { days: range, locale: locale() });
+        if (request !== loadEpoch) return;
+        currentData = next;
+        renderData();
+      } catch (error) {
+        if (request !== loadEpoch) return;
+        console.error("MathHard analytics could not be loaded:", error);
+        renderError(error);
+      }
+    })().finally(() => {
+      if (loadPromise === promise) loadPromise = null;
+      if (reloadAfterCurrent && active) {
+        reloadAfterCurrent = false;
+        queueMicrotask(() => void load(true));
+      } else {
+        reloadAfterCurrent = false;
+      }
+    });
+
+    loadPromise = promise;
+    return promise;
   }
 
   function activate() {

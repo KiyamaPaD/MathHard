@@ -13,6 +13,7 @@ function fail(message) { errors.push(message); }
 function warn(message) { warnings.push(message); }
 
 const htmlFiles = ["index.html", "profile.html"];
+const performanceBootstrap = read("js/performance-bootstrap.js");
 const jsFiles = readdirSync(resolve(root, "js"))
   .filter((name) => name.endsWith(".js"))
   .map((name) => `js/${name}`);
@@ -41,7 +42,11 @@ for (const htmlPath of htmlFiles) {
     }
   }
 
-  if (!html.includes('/js/runtime-diagnostics.js')) {
+  const diagnosticsLoaded = html.includes('/js/runtime-diagnostics.js') ||
+    (htmlPath === "index.html" &&
+      html.includes('/js/performance-bootstrap.js') &&
+      performanceBootstrap.includes('./runtime-diagnostics.js'));
+  if (!diagnosticsLoaded) {
     fail(`${htmlPath}: runtime diagnostics module is not loaded.`);
   }
   if (!/<meta\s+name=["']viewport["'][^>]*width=device-width/i.test(html)) {

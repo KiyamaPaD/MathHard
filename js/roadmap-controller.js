@@ -189,7 +189,7 @@ export function createRoadmapController({
       if (!nextId || nextId === selectedRoadmapId) return;
       event.target.disabled = true;
       try {
-        await selectRoadmap(supabase, nextId);
+        await selectRoadmap(supabase, nextId, { user: getUser?.() });
         selectedRoadmapId = nextId;
         render();
       } catch (selectionError) {
@@ -311,7 +311,7 @@ export function createRoadmapController({
     error = null;
     render();
     try {
-      catalog = await loadRoadmapCatalog({ supabase, forceRefresh });
+      catalog = await loadRoadmapCatalog({ supabase, forceRefresh, user: getUser?.() });
       selectedRoadmapId = catalog.selectedRoadmapId || catalog.roadmaps[0]?.id || "";
       return catalog;
     } catch (loadError) {

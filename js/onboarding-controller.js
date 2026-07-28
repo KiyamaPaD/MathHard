@@ -103,14 +103,14 @@ function createModal() {
 async function completeOnboarding({ user, preferences, roadmapId = "", route = "dashboard" }) {
   const completion = { completed: true, version: ONBOARDING_VERSION };
   const next = mergeUiPreferences(preferences, { onboarding: completion });
-  if (roadmapId) await selectRoadmap(supabase, roadmapId);
+  if (roadmapId) await selectRoadmap(supabase, roadmapId, { user });
 
   // Persist the local completion marker first so refresh/tab restore cannot reopen
   // onboarding while the Supabase preference write is still in flight.
   writeLocal(user.id, completion);
 
   try {
-    const savedRemote = await saveUiPreferences(supabase, next);
+    const savedRemote = await saveUiPreferences(supabase, next, { userId: user.id });
     const saved = mergeUiPreferences(savedRemote, { onboarding: completion });
     window.dispatchEvent(new CustomEvent("mh:ui-preferences-updated", {
       detail: { preferences: saved }
@@ -130,7 +130,7 @@ async function openForUser(user, { force = false } = {}) {
   let preferences;
   const localOnboarding = readLocal(user.id) || {};
   try {
-    preferences = await loadUiPreferences(supabase);
+    preferences = await loadUiPreferences(supabase, { userId: user.id });
   } catch {
     preferences = mergeUiPreferences({}, { onboarding: localOnboarding });
   }
@@ -163,7 +163,7 @@ async function openForUser(user, { force = false } = {}) {
   let selectedId = "";
   let catalog = { roadmaps: [], selectedRoadmapId: "" };
   try {
-    catalog = await loadRoadmapCatalog({ supabase });
+    catalog = await loadRoadmapCatalog({ supabase, user });
     selectedId = catalog.selectedRoadmapId || catalog.roadmaps[0]?.id || "";
     list.innerHTML = catalog.roadmaps.length ? catalog.roadmaps.map((roadmap) => {
       const text = translated(roadmap, language());

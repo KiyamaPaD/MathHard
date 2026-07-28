@@ -16,7 +16,6 @@ import {
   startLessonReading
 } from "./lesson-status-repository.js";
 import { createLessonQuizController } from "./lesson-quiz-controller.js";
-import { createLessonQuizAdminController } from "./lesson-quiz-admin-controller.js";
 import { loadLessonQuizAvailability } from "./lesson-quiz-repository.js";
 import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
 import { logLearningEvent } from "./secure-evaluation-repository.js";
@@ -66,14 +65,9 @@ import {
   validateExamPayload as mhValidateExamPayload
 } from "./admin-content-model.js";
 import { createRoadmapController } from "./roadmap-controller.js";
-import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
-import { createAdminStudioController, suggestDuplicateId } from "./admin-studio-controller.js";
-import { createAdminDraftController } from "./admin-draft-controller.js";
-import { createAdminHistoryController } from "./admin-history-controller.js";
-import { deleteAdminContentSafely, getAdminContentUsage } from "./admin-history-repository.js";
-import { createGamificationAdminController } from "./gamification-admin-controller.js";
 import { invalidateRoadmapCache } from "./roadmap-repository.js";
 import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
+import { loadNumberLineRuntime } from "./runtime-loader.js";
 import {
   normalizeProblemAttemptCache,
   normalizeQuizAttemptCache,
@@ -96,20 +90,87 @@ import {
   let adminHistoryController = null;
   let learningWorkspaceController = null;
   let lessonQuizAdminController = null;
+  let adminRuntime = null;
+  let adminRuntimePromise = null;
+  let adminControllersPromise = null;
   let LESSON_QUIZ_AVAILABILITY = new Map();
+  let lessonQuizAvailabilityRequest = null;
+  let lessonQuizAvailabilityEpoch = 0;
+
+  async function loadAdminRuntime() {
+    if (adminRuntime) return adminRuntime;
+    if (adminRuntimePromise) return adminRuntimePromise;
+
+    adminRuntimePromise = Promise.all([
+      import("./lesson-quiz-admin-controller.js"),
+      import("./roadmap-admin-controller.js"),
+      import("./admin-studio-controller.js"),
+      import("./admin-draft-controller.js"),
+      import("./admin-history-controller.js"),
+      import("./admin-history-repository.js"),
+      import("./gamification-admin-controller.js")
+    ]).then(([
+      lessonQuizModule,
+      roadmapAdminModule,
+      adminStudioModule,
+      adminDraftModule,
+      adminHistoryModule,
+      adminHistoryRepositoryModule,
+      gamificationAdminModule
+    ]) => {
+      adminRuntime = {
+        ...lessonQuizModule,
+        ...roadmapAdminModule,
+        ...adminStudioModule,
+        ...adminDraftModule,
+        ...adminHistoryModule,
+        ...adminHistoryRepositoryModule,
+        ...gamificationAdminModule
+      };
+      return adminRuntime;
+    }).catch((error) => {
+      adminRuntimePromise = null;
+      throw error;
+    });
+
+    return adminRuntimePromise;
+  }
 
   async function refreshLessonQuizAvailability() {
-    if (!MH_AUTH_USER?.id) {
+    const userId = MH_AUTH_USER?.id || "";
+    if (!userId) {
+      lessonQuizAvailabilityEpoch += 1;
+      lessonQuizAvailabilityRequest = null;
       LESSON_QUIZ_AVAILABILITY = new Map();
       return LESSON_QUIZ_AVAILABILITY;
     }
-    try {
-      LESSON_QUIZ_AVAILABILITY = await loadLessonQuizAvailability(supabase);
-    } catch (error) {
-      console.warn("Lesson quiz availability could not be loaded:", error);
-      LESSON_QUIZ_AVAILABILITY = new Map();
+    if (lessonQuizAvailabilityRequest?.userId === userId) {
+      return lessonQuizAvailabilityRequest.promise;
     }
-    return LESSON_QUIZ_AVAILABILITY;
+
+    const requestEpoch = ++lessonQuizAvailabilityEpoch;
+    const promise = loadLessonQuizAvailability(supabase)
+      .then((availability) => {
+        if (requestEpoch === lessonQuizAvailabilityEpoch && MH_AUTH_USER?.id === userId) {
+          LESSON_QUIZ_AVAILABILITY = availability;
+        }
+        return LESSON_QUIZ_AVAILABILITY;
+      })
+      .catch((error) => {
+        if (requestEpoch === lessonQuizAvailabilityEpoch && MH_AUTH_USER?.id === userId) {
+          console.warn("Lesson quiz availability could not be loaded:", error);
+          LESSON_QUIZ_AVAILABILITY = new Map();
+        }
+        return LESSON_QUIZ_AVAILABILITY;
+      })
+      .finally(() => {
+        if (lessonQuizAvailabilityRequest?.promise === promise) {
+          lessonQuizAvailabilityRequest = null;
+        }
+      });
+
+    lessonQuizAvailabilityRequest = { userId, promise };
+    return promise;
   }
 
   try {
@@ -118,11 +179,13 @@ import {
 
     MH_AUTH_USER = initialAuthData?.session?.user || null;
     if (MH_AUTH_USER?.id) {
-      const initialCatalog = await loadContentCatalog({ supabase, user: MH_AUTH_USER });
+      const [initialCatalog] = await Promise.all([
+        loadContentCatalog({ supabase, user: MH_AUTH_USER }),
+        refreshLessonQuizAvailability()
+      ]);
       DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
       DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
       DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
-      await refreshLessonQuizAvailability();
     } else {
       invalidateContentCatalogCache();
     }
@@ -1983,9 +2046,14 @@ import {
   qInput.placeholder = (LANG==="ro" ? "Caută…" : "Search…");
 
   const numHost = document.getElementById(`numlineHost-${WIDGET_ID}`);
-  if (numHost && window.MH_NumberLinePy) {
-    MH_NumberLinePy.unmount(WIDGET_ID);
-    MH_NumberLinePy.mount(WIDGET_ID, numHost);
+  if (numHost) {
+    void loadNumberLineRuntime()
+      .then((runtime) => {
+        if (!numHost.isConnected) return;
+        runtime.unmount(WIDGET_ID);
+        runtime.mount(WIDGET_ID, numHost);
+      })
+      .catch((error) => console.warn("Number line language refresh failed:", error));
   }
 
   
@@ -2890,10 +2958,12 @@ import {
   function mhPrepareDuplicate(item) {
     if (!item?.id) return;
     mhFillAdminFormFromItem(item);
-    const duplicateId = suggestDuplicateId(
-      item.id,
-      mhGetAdminItems().map((candidate) => candidate.id)
-    );
+    const duplicateId = adminRuntime?.suggestDuplicateId
+      ? adminRuntime.suggestDuplicateId(
+          item.id,
+          mhGetAdminItems().map((candidate) => candidate.id)
+        )
+      : `${item.id}-copy`;
     mhSetAdminModeCreate();
     const idInput = document.getElementById("mh_id");
     if (idInput) {
@@ -2938,7 +3008,7 @@ import {
     if (!id || !tableName) return;
 
     try {
-      const usage = await getAdminContentUsage(supabase, tableName, id);
+      const usage = await adminRuntime.getAdminContentUsage(supabase, tableName, id);
       const references = Array.isArray(usage?.references) ? usage.references : [];
       if (Number(usage?.total || 0) > 0) {
         const details = references
@@ -2952,7 +3022,7 @@ ${details}`);
       }
 
       if (!confirm(`Ștergi definitiv ${type}: ${id}? Operația va rămâne în istoricul Admin și poate fi restaurată.`)) return;
-      await deleteAdminContentSafely(supabase, tableName, id);
+      await adminRuntime.deleteAdminContentSafely(supabase, tableName, id);
 
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
@@ -3142,87 +3212,136 @@ ${details}`);
     adminDrawer?.classList.remove("open");
   });
 
-  lessonQuizAdminController = createLessonQuizAdminController({
-    host: document.getElementById("mhLessonQuizAdmin"),
-    supabase,
-    getUserId: () => MH_AUTH_USER?.id || "",
-    onSaved: async () => {
-      await refreshLessonQuizAvailability();
-      renderCards();
-      buildNestedTree();
-      roadmapController?.refreshProgress();
-      mhUpdateLessonDrawerButtons();
-    }
-  });
-  lessonQuizAdminController.setContext("lesson", "", false);
+  async function ensureAdminControllers() {
+    if (adminControllersPromise) return adminControllersPromise;
 
-  adminHistoryController = createAdminHistoryController({
-    root: document.getElementById("mhAdminHistoryStudio"),
-    supabase,
-    getLanguage: () => LANG,
-    onRestored: async () => {
-      await reloadAllContentFromSupabase(true);
-      mhRenderAdminList();
-      await roadmapController?.load(true);
-      learningWorkspaceController?.refresh();
-    }
-  });
+    adminControllersPromise = (async () => {
+      const runtime = await loadAdminRuntime();
 
-  gamificationAdminController = createGamificationAdminController({
-    host: document.getElementById("mhGamificationAdminStudio"),
-    supabase
-  });
-
-  adminStudioController = createAdminStudioController({
-    root: document.getElementById("mhAdminStudio"),
-    getLanguage: () => LANG,
-    onCreate: (type) => mhCreateAdminItem(type),
-    onEdit: (item) => mhFillAdminFormFromItem(item),
-    onDuplicate: (item) => mhPrepareDuplicate(item),
-    onDelete: (item) => mhDeleteAdminItem(item),
-    onPreview: (item) => mhPreviewAdminItem(item),
-    onRefresh: async () => {
-      await reloadAllContentFromSupabase(true);
-      mhRenderAdminList();
-    },
-    onLogout: async () => {
-      await logoutAdmin();
-      adminDrawer?.classList.remove("open");
-    },
-    onPanelChange: (panelName) => {
-      if (panelName === "gamification") void gamificationAdminController?.load();
-      if (panelName === "history") void adminHistoryController?.load();
-    },
-    getUserId: () => MH_AUTH_USER?.id || ""
-  });
-
-  adminDraftController = createAdminDraftController({
-    form: document.getElementById("mhPublish"),
-    getUserId: () => MH_AUTH_USER?.id || "",
-    getContext: () => ({
-      mode: MH_ADMIN_STATE.mode,
-      type: MH_ADMIN_STATE.editType || document.getElementById("mh_type")?.value || "lesson",
-      id: MH_ADMIN_STATE.editId || ""
-    }),
-    getExamItems: () => MH_EXAM_ITEMS_DRAFT,
-    setExamItems: (items) => {
-      MH_EXAM_ITEMS_DRAFT = Array.isArray(items)
-        ? items.map((item, index) => mhNormalizeDraftExamItem(item, index))
-        : [];
-      mhRenderExamItemsDraft();
-    },
-    getLessonTab: () => document.querySelector("[data-lesson-editor-tab].is-active")?.dataset.lessonEditorTab || "content",
-    setLessonTab: mhSetLessonEditorTab,
-    onAfterRestore: () => {
-      const type = document.getElementById("mh_type")?.value || "lesson";
-      mhSetTypeBlocks(type);
-      if (type === "lesson" && MH_ADMIN_STATE.editId) {
-        lessonQuizAdminController?.setContext("lesson", MH_ADMIN_STATE.editId, true);
+      if (!lessonQuizAdminController) {
+        lessonQuizAdminController = runtime.createLessonQuizAdminController({
+          host: document.getElementById("mhLessonQuizAdmin"),
+          supabase,
+          getUserId: () => MH_AUTH_USER?.id || "",
+          onSaved: async () => {
+            await refreshLessonQuizAvailability();
+            renderCards();
+            buildNestedTree();
+            roadmapController?.refreshProgress();
+            mhUpdateLessonDrawerButtons();
+          }
+        });
+        lessonQuizAdminController.setContext("lesson", "", false);
       }
-      const status = document.getElementById("mhPublishStatus");
-      if (status) status.textContent = "Draft local restaurat.";
-    }
-  });
+
+      if (!adminHistoryController) {
+        adminHistoryController = runtime.createAdminHistoryController({
+          root: document.getElementById("mhAdminHistoryStudio"),
+          supabase,
+          getLanguage: () => LANG,
+          onRestored: async () => {
+            await reloadAllContentFromSupabase(true);
+            mhRenderAdminList();
+            await roadmapController?.load(true);
+            learningWorkspaceController?.refresh();
+          }
+        });
+      }
+
+      if (!gamificationAdminController) {
+        gamificationAdminController = runtime.createGamificationAdminController({
+          host: document.getElementById("mhGamificationAdminStudio"),
+          supabase
+        });
+      }
+
+      if (!adminStudioController) {
+        adminStudioController = runtime.createAdminStudioController({
+          root: document.getElementById("mhAdminStudio"),
+          getLanguage: () => LANG,
+          onCreate: (type) => mhCreateAdminItem(type),
+          onEdit: (item) => mhFillAdminFormFromItem(item),
+          onDuplicate: (item) => mhPrepareDuplicate(item),
+          onDelete: (item) => mhDeleteAdminItem(item),
+          onPreview: (item) => mhPreviewAdminItem(item),
+          onRefresh: async () => {
+            await reloadAllContentFromSupabase(true);
+            mhRenderAdminList();
+          },
+          onLogout: async () => {
+            await logoutAdmin();
+            adminDrawer?.classList.remove("open");
+          },
+          onPanelChange: (panelName) => {
+            if (panelName === "gamification") void gamificationAdminController?.load();
+            if (panelName === "history") void adminHistoryController?.load();
+          },
+          getUserId: () => MH_AUTH_USER?.id || ""
+        });
+      }
+
+      if (!adminDraftController) {
+        adminDraftController = runtime.createAdminDraftController({
+          form: document.getElementById("mhPublish"),
+          getUserId: () => MH_AUTH_USER?.id || "",
+          getContext: () => ({
+            mode: MH_ADMIN_STATE.mode,
+            type: MH_ADMIN_STATE.editType || document.getElementById("mh_type")?.value || "lesson",
+            id: MH_ADMIN_STATE.editId || ""
+          }),
+          getExamItems: () => MH_EXAM_ITEMS_DRAFT,
+          setExamItems: (items) => {
+            MH_EXAM_ITEMS_DRAFT = Array.isArray(items)
+              ? items.map((item, index) => mhNormalizeDraftExamItem(item, index))
+              : [];
+            mhRenderExamItemsDraft();
+          },
+          getLessonTab: () => document.querySelector("[data-lesson-editor-tab].is-active")?.dataset.lessonEditorTab || "content",
+          setLessonTab: mhSetLessonEditorTab,
+          onAfterRestore: () => {
+            const type = document.getElementById("mh_type")?.value || "lesson";
+            mhSetTypeBlocks(type);
+            if (type === "lesson" && MH_ADMIN_STATE.editId) {
+              lessonQuizAdminController?.setContext("lesson", MH_ADMIN_STATE.editId, true);
+            }
+            const status = document.getElementById("mhPublishStatus");
+            if (status) status.textContent = "Draft local restaurat.";
+          }
+        });
+      }
+
+      if (!roadmapAdminController && roadmapController) {
+        roadmapAdminController = runtime.createRoadmapAdminController({
+          root: document.getElementById("mhRoadmapAdminStudio"),
+          supabase,
+          getContentCatalog: () => DATA,
+          onChanged: async () => {
+            await roadmapController?.load(true);
+            learningWorkspaceController?.refresh();
+          }
+        });
+      }
+
+      mhSetTypeBlocks(document.getElementById("mh_type")?.value || "lesson");
+      mhSetAdminModeCreate();
+      mhRenderAdminList();
+      restoreLastAdminEditorContext();
+
+      return {
+        lessonQuizAdminController,
+        adminHistoryController,
+        gamificationAdminController,
+        adminStudioController,
+        adminDraftController,
+        roadmapAdminController
+      };
+    })().catch((error) => {
+      adminControllersPromise = null;
+      throw error;
+    });
+
+    return adminControllersPromise;
+  }
 
   function restoreLastAdminEditorContext() {
     const last = adminDraftController?.readLastContext();
@@ -3378,6 +3497,9 @@ ${details}`);
         return;
       }
 
+      await ensureAdminControllers();
+      if (requestEpoch !== adminVisibilityEpoch) return;
+
       setAdminButtonVisibility(true);
       adminExamRecoveryController?.setAdmin(true);
       roadmapAdminController?.setAdmin(true);
@@ -3425,6 +3547,12 @@ ${details}`);
     ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
 
+    adminBtn.addEventListener("pointerenter", () => {
+      void loadAdminRuntime();
+    }, { passive: true });
+    adminBtn.addEventListener("focus", () => {
+      void loadAdminRuntime();
+    });
     adminBtn.addEventListener("click", async () => {
       await openAdminFlow();
     });
@@ -4155,16 +4283,6 @@ ${details}`);
     getProgress: () => ({ learnedSet, readSet, solvedSet, examsPassedSet }),
     getContentCatalog: () => DATA,
     onOpenContent: openRoadmapContent
-  });
-
-  roadmapAdminController = createRoadmapAdminController({
-    root: document.getElementById("mhRoadmapAdminStudio"),
-    supabase,
-    getContentCatalog: () => DATA,
-    onChanged: async () => {
-      await roadmapController?.load(true);
-      learningWorkspaceController?.refresh();
-    }
   });
 
   learningWorkspaceController = createLearningWorkspaceController({
@@ -5957,10 +6075,15 @@ ${details}`);
     let mounted = false;
     let visible = true;
 
-  function mountAxis(){
-    if (!mounted && window.MH_NumberLinePy) {
-      MH_NumberLinePy.mount(WIDGET_ID, host);
+  async function mountAxis(){
+    if (mounted || !host?.isConnected) return;
+    try {
+      const runtime = await loadNumberLineRuntime();
+      if (mounted || !host?.isConnected || !visible) return;
+      runtime.mount(WIDGET_ID, host);
       mounted = true;
+    } catch (error) {
+      console.warn("Number line runtime could not be loaded:", error);
     }
   }
   function unmountAxis(){
@@ -5979,19 +6102,7 @@ ${details}`);
       }
   }
 
-    function whenNumLineReady(cb){
-    if (window.MH_NumberLinePy && typeof MH_NumberLinePy.mount === 'function') {
-      cb(); return;
-    }
-    const iv = setInterval(() => {
-      if (window.MH_NumberLinePy && typeof MH_NumberLinePy.mount === 'function') {
-        clearInterval(iv); cb();
-      }
-      }, 100);
-      setTimeout(() => clearInterval(iv), 15000);
-    }
-
-    whenNumLineReady(() => { mountAxis(); });
+    void mountAxis();
 
     btn.onclick = () => {
         if (visible) {
@@ -6001,8 +6112,8 @@ ${details}`);
           setBtnLabel();
         } else {
           host.style.display = '';
-          whenNumLineReady(() => { mountAxis(); });
           visible = true;
+          void mountAxis();
           setBtnLabel();
         }
       };

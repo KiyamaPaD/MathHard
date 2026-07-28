@@ -276,6 +276,8 @@ export function createGamificationController({ host }) {
   let data = null;
   let epoch = 0;
   let busy = false;
+  let loadPromise = null;
+  let reloadAfterCurrent = false;
 
   function feedback(message, kind = "") {
     const node = host.querySelector("[data-game-feedback]");
@@ -373,30 +375,48 @@ export function createGamificationController({ host }) {
     bindActions();
   }
 
-  async function load(force = false) {
-    if (!active && !force) return;
+  function load(force = false) {
+    if (!active && !force) return Promise.resolve();
+    if (loadPromise) {
+      if (force) reloadAfterCurrent = true;
+      return loadPromise;
+    }
+
     const request = ++epoch;
     if (!data || force) renderLoading();
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (request !== epoch) return;
-      if (!session?.user) {
-        data = null;
-        renderAuth();
-        return;
-      }
+    const promise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (request !== epoch) return;
+        if (!session?.user) {
+          data = null;
+          renderAuth();
+          return;
+        }
 
-      const next = await loadGamificationDashboard(supabase, { locale: locale() });
-      if (request !== epoch) return;
-      data = next;
-      renderData();
-      window.dispatchEvent(new CustomEvent("mh:gamification-data", { detail: next.summary }));
-    } catch (error) {
-      if (request !== epoch) return;
-      console.error("MathHard gamification could not be loaded:", error);
-      renderError(error);
-    }
+        const next = await loadGamificationDashboard(supabase, { locale: locale() });
+        if (request !== epoch) return;
+        data = next;
+        renderData();
+        window.dispatchEvent(new CustomEvent("mh:gamification-data", { detail: next.summary }));
+      } catch (error) {
+        if (request !== epoch) return;
+        console.error("MathHard gamification could not be loaded:", error);
+        renderError(error);
+      }
+    })().finally(() => {
+      if (loadPromise === promise) loadPromise = null;
+      if (reloadAfterCurrent && active) {
+        reloadAfterCurrent = false;
+        queueMicrotask(() => void load(true));
+      } else {
+        reloadAfterCurrent = false;
+      }
+    });
+
+    loadPromise = promise;
+    return promise;
   }
 
   function activate() {

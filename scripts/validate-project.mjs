@@ -45,6 +45,8 @@ const moduleJsFiles = [
   "js/section-layout-controller.js",
   "js/browser-state.js",
   "js/runtime-diagnostics.js",
+  "js/runtime-loader.js",
+  "js/performance-bootstrap.js",
   "js/app-shell-controller.js",
   "js/analytics-model.js",
   "js/analytics-repository.js",
@@ -97,6 +99,7 @@ const requiredFiles = [
   "404.html",
   "offline.html",
   "scripts/test-repositories.mjs",
+  "scripts/performance-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -274,6 +277,8 @@ const appShellCss = readFileSync(resolve(root, "css/app-shell.css"), "utf8");
 const mobileHardeningCss = readFileSync(resolve(root, "css/mobile-hardening.css"), "utf8");
 const browserStateSource = readFileSync(resolve(root, "js/browser-state.js"), "utf8");
 const runtimeDiagnosticsSource = readFileSync(resolve(root, "js/runtime-diagnostics.js"), "utf8");
+const runtimeLoaderSource = readFileSync(resolve(root, "js/runtime-loader.js"), "utf8");
+const performanceBootstrapSource = readFileSync(resolve(root, "js/performance-bootstrap.js"), "utf8");
 const analyticsModelSource = readFileSync(resolve(root, "js/analytics-model.js"), "utf8");
 const analyticsRepositorySource = readFileSync(resolve(root, "js/analytics-repository.js"), "utf8");
 const analyticsControllerSource = readFileSync(resolve(root, "js/analytics-controller.js"), "utf8");
@@ -551,8 +556,8 @@ if (!indexHtml.includes('id="mhDynamicRoadmap"') || !indexHtml.includes('css/roa
 if (!indexHtml.includes('id="mhRoadmapAdminStudio"')) {
   fail("Phase 12 Roadmap Studio root is missing from the Admin drawer.");
 }
-if (!appSource.includes('from "./roadmap-controller.js"') || !appSource.includes('from "./roadmap-admin-controller.js"')) {
-  fail("app.js must use the extracted Phase 12 roadmap controllers.");
+if (!appSource.includes('from "./roadmap-controller.js"') || !appSource.includes('import("./roadmap-admin-controller.js")')) {
+  fail("app.js must use the extracted Phase 12 roadmap controllers, with Admin loaded on demand.");
 }
 if (!appSource.includes("roadmapController?.refreshProgress()")) {
   fail("Roadmap progress must refresh when canonical lesson/problem/exam progress changes.");
@@ -593,11 +598,23 @@ try {
 }
 
 
+try {
+  execFileSync(process.execPath, [resolve(root, "scripts/performance-audit.mjs")], {
+    cwd: root,
+    stdio: "pipe"
+  });
+} catch (error) {
+  fail(`Performance audit failed.
+${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
+}
+
+
 if (!indexHtml.includes('href="css/quick-nav.css"')) {
   fail("Quick navigation stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/quick-nav-controller.js"')) {
-  fail("Quick navigation controller is missing from index.html.");
+if (!indexHtml.includes('src="/js/performance-bootstrap.js"') ||
+    !performanceBootstrapSource.includes('./quick-nav-controller.js')) {
+  fail("Quick navigation controller must be loaded through the performance bootstrap.");
 }
 if (!quickNavSource.includes('mh:compact-home-request')) {
   fail("Quick navigation must delegate compact-home persistence to the shared layout controller.");
@@ -612,8 +629,8 @@ if (!quickNavCss.includes('body.mh-compact-home #hero')) {
 if (!indexHtml.includes('href="css/section-layout.css"')) {
   fail("Section layout stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/section-layout-controller.js"')) {
-  fail("Section layout controller is missing from index.html.");
+if (!performanceBootstrapSource.includes('./section-layout-controller.js')) {
+  fail("Section layout controller must be loaded through the performance bootstrap.");
 }
 if (!indexHtml.includes('href="css/app-shell.css"')) {
   fail("Phase 14A app shell stylesheet is missing from index.html.");
@@ -719,8 +736,9 @@ if (!appSource.includes("getProblems: () => DATA.problems")) {
 
 
 // Stability reset: browser recovery, diagnostics, storage isolation and race guards.
-if (!indexHtml.includes('src="/js/runtime-diagnostics.js"') || !profileHtml.includes('src="/js/runtime-diagnostics.js"')) {
-  fail("Runtime diagnostics must be loaded on both application pages.");
+if (!performanceBootstrapSource.includes('./runtime-diagnostics.js') ||
+    !profileHtml.includes('src="/js/runtime-diagnostics.js"')) {
+  fail("Runtime diagnostics must load lazily on index.html and directly on profile.html.");
 }
 if (!appSource.includes('from "./browser-state.js"')) {
   fail("app.js must use the safe browser-state helpers.");
@@ -837,8 +855,8 @@ if (!analyticsCss.includes(".mh-analytics-summary-grid") ||
 
 // Phase 16: server-backed levels, achievements, challenge and opt-in leaderboard.
 if (!indexHtml.includes('href="css/gamification.css"') ||
-    !indexHtml.includes('/js/gamification-controller.js')) {
-  fail("Phase 16 gamification assets are missing from index.html.");
+    !performanceBootstrapSource.includes('./gamification-controller.js')) {
+  fail("Phase 16 gamification assets or lazy route loading are missing.");
 }
 if (!appShellSource.includes('"gamification"') ||
     !appShellSource.includes('id="mhShellPanelGamification"') ||
@@ -887,8 +905,8 @@ for (const requiredAdminId of [
     fail(`Phase 17A Admin Studio is missing #${requiredAdminId}.`);
   }
 }
-if (!appSource.includes('from "./admin-studio-controller.js"')) {
-  fail("app.js must import the Phase 17A Admin Studio controller.");
+if (!appSource.includes('import("./admin-studio-controller.js")')) {
+  fail("app.js must lazy-load the Phase 17A Admin Studio controller.");
 }
 if (!adminStudioSource.includes("filterAdminItems") || !adminStudioSource.includes("suggestDuplicateId")) {
   fail("Phase 17A Admin Studio must provide filtering and safe duplicate IDs.");
@@ -907,7 +925,7 @@ if (!indexHtml.includes('href="css/gamification-studio.css"') ||
     !indexHtml.includes('id="mhGamificationAdminStudio"')) {
   fail("Phase 17B Gamification Studio shell is incomplete.");
 }
-if (!appSource.includes('from "./gamification-admin-controller.js"') ||
+if (!appSource.includes('import("./gamification-admin-controller.js")') ||
     !appSource.includes('panelName === "gamification"')) {
   fail("app.js must initialize Phase 17B Gamification Studio on demand.");
 }
@@ -944,10 +962,11 @@ if (!indexHtml.includes('href="css/admin-history.css"') ||
     !indexHtml.includes('id="mhAdminGlobalSearch"')) {
   fail("Phase 17C Admin history or global search shell is incomplete.");
 }
-if (!appSource.includes('from "./admin-history-controller.js"') ||
+if (!appSource.includes('import("./admin-history-controller.js")') ||
+    !appSource.includes('import("./admin-history-repository.js")') ||
     !appSource.includes("getAdminContentUsage") ||
     !appSource.includes("deleteAdminContentSafely")) {
-  fail("Phase 17C app integration must use version history and dependency-safe deletes.");
+  fail("Phase 17C app integration must use lazy version history and dependency-safe deletes.");
 }
 if (!roadmapRepositorySource.includes('mh_admin_save_roadmap_positions') ||
     !roadmapRepositorySource.includes('mh_admin_validate_roadmap')) {
@@ -1011,7 +1030,7 @@ if (!indexHtml.includes('href="css/lesson-quiz-admin.css"') ||
   fail("Phase 17C.3 lesson quiz Admin shell is incomplete.");
 }
 if (!appSource.includes('from "./lesson-quiz-controller.js"') ||
-    !appSource.includes('from "./lesson-quiz-admin-controller.js"') ||
+    !appSource.includes('import("./lesson-quiz-admin-controller.js")') ||
     !appSource.includes("refreshLessonQuizAvailability") ||
     !appSource.includes("lessonQuizController.open")) {
   fail("Phase 17C.3 secure lesson quiz integration is incomplete in app.js.");
@@ -1038,12 +1057,12 @@ if (!lessonQuizRepositorySource.includes("mh_admin_set_lesson_quiz_published") |
 }
 
 // Phase 17C.3.2: persistent workspace and Admin draft recovery.
-if (!appSource.includes('from "./admin-draft-controller.js"') ||
+if (!appSource.includes('import("./admin-draft-controller.js")') ||
     !appSource.includes("restoreLastAdminEditorContext") ||
     !appSource.includes("adminStudioController?.restoreState()")) {
   fail("Phase 17C.3.2 persistent Admin workspace integration is incomplete.");
 }
-if (!adminDraftControllerSource.includes("mh_admin_content_draft_v1") ||
+if (!adminDraftControllerSource.includes("mh_admin_content_draft_v2") ||
     !adminDraftControllerSource.includes("visibilitychange") ||
     !adminDraftControllerSource.includes("pagehide")) {
   fail("Phase 17C.3.2 Admin content draft recovery is incomplete.");
@@ -1096,10 +1115,10 @@ const uiPreferencesSource18B = readFileSync(resolve(root, "js/ui-preferences-rep
 if (!indexHtml.includes('href="/css/ui-feedback.css"') ||
     !indexHtml.includes('href="/css/onboarding.css"') ||
     !indexHtml.includes('src="/js/ui-feedback.js"') ||
-    !indexHtml.includes('src="/js/onboarding-controller.js"') ||
+    !performanceBootstrapSource.includes('./onboarding-controller.js') ||
     !profileHtml.includes('href="/css/ui-feedback.css"') ||
     !profileHtml.includes('src="/js/ui-feedback.js"')) {
-  fail("Phase 18B shared UI states or onboarding are missing from the pages.");
+  fail("Phase 18B shared UI states or lazy onboarding are missing from the pages.");
 }
 if (!uiFeedbackSource18B.includes("normalizeUiError") ||
     !uiFeedbackSource18B.includes("renderUiState") ||
@@ -1161,6 +1180,34 @@ if (!runtimeDiagnosticsSource.includes("collectLayoutDiagnostics") ||
     layoutDiagnosticsBlock.includes("textContent") ||
     layoutDiagnosticsBlock.includes(".value")) {
   fail("Phase 18C layout diagnostics must report geometry without collecting page text.");
+}
+
+// Phase 18C.3: route-aware lazy loading and duplicate-request guards.
+if (!indexHtml.includes('src="/js/performance-bootstrap.js"') ||
+    indexHtml.includes('src="/js/analytics-controller.js"') ||
+    indexHtml.includes('src="/js/gamification-controller.js"') ||
+    indexHtml.includes('src="/js/animation-numberline.js"')) {
+  fail("Phase 18C.3 heavy route modules and the number-line runtime must not load eagerly.");
+}
+if (!performanceBootstrapSource.includes("requestIdleCallback") ||
+    !performanceBootstrapSource.includes('mh:analytics-route') ||
+    !performanceBootstrapSource.includes('mh:gamification-route')) {
+  fail("Phase 18C.3 performance bootstrap must support idle and route-aware loading.");
+}
+if (!runtimeLoaderSource.includes("loadClassicScriptOnce") ||
+    !runtimeLoaderSource.includes("loadNumberLineRuntime") ||
+    !appSource.includes('from "./runtime-loader.js"')) {
+  fail("Phase 18C.3 number-line runtime must load once and only when requested.");
+}
+if (!appSource.includes("loadAdminRuntime") ||
+    !appSource.includes('import("./roadmap-admin-controller.js")') ||
+    !analyticsControllerSource.includes("reloadAfterCurrent") ||
+    !gamificationControllerSource.includes("reloadAfterCurrent")) {
+  fail("Phase 18C.3 Admin and dashboard requests must be lazy and coalesced.");
+}
+if (!uiPreferencesRepositorySource.includes("preferenceLoadsByUser") ||
+    !roadmapRepositorySource.includes("userOverride")) {
+  fail("Phase 18C.3 user preference and roadmap loads must reuse authenticated context.");
 }
 
 if (failed) {

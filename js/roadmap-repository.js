@@ -15,8 +15,12 @@ function requireClient(supabase) {
   }
 }
 
-async function resolveUser(supabase) {
+async function resolveUser(supabase, userOverride = undefined) {
   requireClient(supabase);
+  if (userOverride !== undefined) {
+    if (!userOverride?.id) throw new Error("Authentication is required to load roadmaps.");
+    return userOverride;
+  }
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
   if (!data?.user?.id) throw new Error("Authentication is required to load roadmaps.");
@@ -30,8 +34,8 @@ export function invalidateRoadmapCache() {
   inFlight = null;
 }
 
-export async function loadRoadmapCatalog({ supabase, forceRefresh = false } = {}) {
-  const user = await resolveUser(supabase);
+export async function loadRoadmapCatalog({ supabase, forceRefresh = false, user = undefined } = {}) {
+  user = await resolveUser(supabase, user);
 
   if (memoryUserId && memoryUserId !== user.id) {
     invalidateRoadmapCache();
@@ -75,11 +79,11 @@ export async function loadRoadmapCatalog({ supabase, forceRefresh = false } = {}
   return promise;
 }
 
-export async function selectRoadmap(supabase, roadmapId) {
+export async function selectRoadmap(supabase, roadmapId, { user = undefined } = {}) {
   const id = String(roadmapId || "").trim();
   if (!id) throw new Error("Roadmap id is required.");
 
-  await resolveUser(supabase);
+  await resolveUser(supabase, user);
   const { data, error } = await supabase.rpc("mh_select_roadmap", {
     p_roadmap_id: id
   });
