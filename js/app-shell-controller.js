@@ -8,6 +8,7 @@ const ROUTES = Object.freeze([
   "history",
   "xp",
   "analytics",
+  "gamification",
 ]);
 
 const CATALOG_ROUTES = new Set(["lessons", "problems", "exams", "research", "history", "xp"]);
@@ -43,6 +44,7 @@ const TEXT = {
       history: ["Istorie", "Oameni și idei din matematică."],
       xp: ["Progres", "XP și activitatea ta."],
       analytics: ["Analytics", "Mastery, acuratețe și consistență."],
+      gamification: ["Recompense", "Nivel, obiectiv zilnic și achievements."],
     },
     nav: {
       dashboard: "Acasă",
@@ -54,6 +56,7 @@ const TEXT = {
       history: "Istorie",
       xp: "Progres",
       analytics: "Analytics",
+      gamification: "Recompense",
       profile: "Profil",
       admin: "Admin",
       about: "Despre",
@@ -81,6 +84,7 @@ const TEXT = {
       history: ["History", "People and ideas in mathematics."],
       xp: ["Progress", "XP and activity."],
       analytics: ["Analytics", "Mastery, accuracy and consistency."],
+      gamification: ["Rewards", "Level, daily goal and achievements."],
     },
     nav: {
       dashboard: "Home",
@@ -92,6 +96,7 @@ const TEXT = {
       history: "History",
       xp: "Progress",
       analytics: "Analytics",
+      gamification: "Rewards",
       profile: "Profile",
       admin: "Admin",
       about: "About",
@@ -117,6 +122,7 @@ const NAV_ITEMS = Object.freeze([
   { route: "exams", icon: "▣", group: "learn" },
   { route: "xp", icon: "↗", group: "learn" },
   { route: "analytics", icon: "◫", group: "learn" },
+  { route: "gamification", icon: "✦", group: "learn" },
   { route: "research", icon: "⌁", group: "explore" },
   { route: "history", icon: "◷", group: "explore" },
 ]);
@@ -201,6 +207,7 @@ function createShellMarkup() {
       <section class="mh-shell-workspace-panel" data-panel="roadmap" id="mhShellPanelRoadmap" hidden></section>
       <section class="mh-shell-workspace-panel" data-panel="catalog" id="mhShellPanelCatalog" hidden></section>
       <section class="mh-shell-workspace-panel" data-panel="analytics" id="mhShellPanelAnalytics" hidden></section>
+      <section class="mh-shell-workspace-panel" data-panel="gamification" id="mhShellPanelGamification" hidden></section>
     </main>
     <button class="mh-admin-floating-close" id="mhAdminFloatingClose" type="button" hidden>
       <span aria-hidden="true">✕</span>
@@ -328,6 +335,7 @@ function panelForRoute(route) {
   if (route === "dashboard") return "dashboard";
   if (route === "roadmap") return "roadmap";
   if (route === "analytics") return "analytics";
+  if (route === "gamification") return "gamification";
   return "catalog";
 }
 
@@ -360,6 +368,9 @@ function activateRoute(rawRoute, { replace = false, scroll = true } = {}) {
   }
   window.dispatchEvent(new CustomEvent("mh:analytics-route", {
     detail: { active: panel === "analytics" }
+  }));
+  window.dispatchEvent(new CustomEvent("mh:gamification-route", {
+    detail: { active: panel === "gamification" }
   }));
 
   updateWorkspaceCopy(route);

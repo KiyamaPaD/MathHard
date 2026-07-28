@@ -126,6 +126,13 @@ const {
   progressPercent
 } = await importBrowserModule("js/analytics-model.js");
 const {
+  achievementProgress,
+  clampDailyGoal,
+  levelRemaining,
+  normalizeGamificationPayload,
+  progressPercent: gamificationProgressPercent
+} = await importBrowserModule("js/gamification-model.js");
+const {
   buildProblemRecommendations,
   feedbackForAttempt,
   formatAttemptTime
@@ -145,6 +152,8 @@ assert.equal(routeToCatalogTab("exams"), "exams");
 assert.equal(routeToCatalogTab("roadmap"), "");
 assert.equal(normalizeAppRoute("#analytics"), "analytics");
 assert.equal(routeToCatalogTab("analytics"), "");
+assert.equal(normalizeAppRoute("#gamification"), "gamification");
+assert.equal(routeToCatalogTab("gamification"), "");
 
 const brokenStorage = new SessionStorageMock();
 brokenStorage.setItem("broken", "{not-json");
@@ -841,5 +850,41 @@ const analyticsInsights = buildAnalyticsInsights(analyticsPayload);
 assert.equal(analyticsInsights.strengths[0].chapter, "Algebra");
 assert.equal(analyticsInsights.weaknesses[0].chapter, "Geometry");
 assert.ok(aggregateDailyActivity(analyticsPayload.dailyActivity, 30).length <= 30);
+
+// Phase 16: normalized levels, goals, achievements and leaderboard rows.
+const gamificationPayload = normalizeGamificationPayload({
+  summary: {
+    level: 4,
+    total_xp: 260,
+    level_start_xp: 225,
+    level_next_xp: 400,
+    level_progress: 20,
+    daily_goal: 5,
+    daily_progress: 3,
+    current_streak: 4,
+    leaderboard_opt_in: true,
+    solved_problems: 12
+  },
+  weekly_challenge: {
+    id: "weekly-2026-30",
+    title: "Weekly",
+    target: 8,
+    progress: 5,
+    reward_xp: 40
+  },
+  achievements: [{
+    id: "problems-50",
+    title: "50",
+    criteria: { metric: "solved_problems", threshold: 50 },
+    unlocked: false
+  }],
+  leaderboard: [{ rank: 1, display_name: "Ada", level: 4, total_xp: 260 }]
+});
+assert.equal(gamificationPayload.summary.level, 4);
+assert.equal(clampDailyGoal(100), 50);
+assert.equal(gamificationProgressPercent(3, 5), 60);
+assert.equal(levelRemaining(gamificationPayload.summary), 140);
+assert.equal(achievementProgress(gamificationPayload.achievements[0], gamificationPayload.summary).percent, 24);
+assert.equal(gamificationPayload.leaderboard[0].displayName, "Ada");
 
 console.log("MathHard repository tests passed.");

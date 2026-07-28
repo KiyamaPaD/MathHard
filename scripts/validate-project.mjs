@@ -41,7 +41,10 @@ const moduleJsFiles = [
   "js/app-shell-controller.js",
   "js/analytics-model.js",
   "js/analytics-repository.js",
-  "js/analytics-controller.js"
+  "js/analytics-controller.js",
+  "js/gamification-model.js",
+  "js/gamification-repository.js",
+  "js/gamification-controller.js"
 ];
 
 const classicJsFiles = [
@@ -61,6 +64,7 @@ const requiredFiles = [
   "css/section-layout.css",
   "css/app-shell.css",
   "css/analytics.css",
+  "css/gamification.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -229,6 +233,10 @@ const analyticsModelSource = readFileSync(resolve(root, "js/analytics-model.js")
 const analyticsRepositorySource = readFileSync(resolve(root, "js/analytics-repository.js"), "utf8");
 const analyticsControllerSource = readFileSync(resolve(root, "js/analytics-controller.js"), "utf8");
 const analyticsCss = readFileSync(resolve(root, "css/analytics.css"), "utf8");
+const gamificationModelSource = readFileSync(resolve(root, "js/gamification-model.js"), "utf8");
+const gamificationRepositorySource = readFileSync(resolve(root, "js/gamification-repository.js"), "utf8");
+const gamificationControllerSource = readFileSync(resolve(root, "js/gamification-controller.js"), "utf8");
+const gamificationCss = readFileSync(resolve(root, "css/gamification.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -747,6 +755,38 @@ if (!analyticsCss.includes(".mh-analytics-summary-grid") ||
     !analyticsCss.includes(".mh-analytics-heatmap") ||
     !analyticsCss.includes(".mh-analytics-donut")) {
   fail("Phase 15A analytics visual system is incomplete.");
+}
+
+// Phase 16: server-backed levels, achievements, challenge and opt-in leaderboard.
+if (!indexHtml.includes('href="css/gamification.css"') ||
+    !indexHtml.includes('/js/gamification-controller.js')) {
+  fail("Phase 16 gamification assets are missing from index.html.");
+}
+if (!appShellSource.includes('"gamification"') ||
+    !appShellSource.includes('id="mhShellPanelGamification"') ||
+    !appShellSource.includes("mh:gamification-route")) {
+  fail("Phase 16 gamification route or app-shell workspace is incomplete.");
+}
+if (!gamificationRepositorySource.includes('"mh_get_gamification_dashboard"') ||
+    !gamificationRepositorySource.includes('"mh_set_daily_goal"') ||
+    !gamificationRepositorySource.includes('"mh_set_leaderboard_opt_in"') ||
+    !gamificationRepositorySource.includes('"mh_claim_weekly_challenge"')) {
+  fail("gamification-repository.js must use all Phase 16 secure RPCs.");
+}
+if (!gamificationModelSource.includes("normalizeGamificationPayload") ||
+    !gamificationModelSource.includes("achievementProgress") ||
+    !gamificationModelSource.includes("levelRemaining")) {
+  fail("gamification-model.js is missing normalization or progress helpers.");
+}
+if (!gamificationControllerSource.includes("mh-game-achievements-grid") ||
+    !gamificationControllerSource.includes("mh-game-leaderboard") ||
+    !gamificationControllerSource.includes("supabase.auth.onAuthStateChange")) {
+  fail("gamification-controller.js must render achievements/leaderboard and react to auth changes.");
+}
+if (!gamificationCss.includes(".mh-game-level-card") ||
+    !gamificationCss.includes(".mh-game-achievements-grid") ||
+    !gamificationCss.includes(".mh-game-leaderboard-row")) {
+  fail("Phase 16 gamification visual system is incomplete.");
 }
 
 if (failed) {
