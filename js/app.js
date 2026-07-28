@@ -3992,7 +3992,7 @@ ${details}`);
     renderCards();
     drawFilterBar();
     updateRadarUI();
-    roadmapController?.refreshProgress();
+    roadmapController?.refreshProgress(); mhUpdateLessonDrawerButtons();
   }
 
   const progressController = createAppProgressController({
@@ -4012,7 +4012,7 @@ ${details}`);
       renderCards();
       buildNestedTree();
       buildTagPanel();
-      roadmapController?.refreshProgress();
+      roadmapController?.refreshProgress(); mhUpdateLessonDrawerButtons();
     },
     onTerminalProblemChanged: () => {
       renderCards();
@@ -6453,8 +6453,8 @@ ${details}`);
       const quizBtn = document.getElementById("quizBtn");
       quizBtn.style.display = "inline-flex";
 
-      mhUpdateLessonDrawerButtons();
       setLessonOnlyActionsVisible(true);
+      mhUpdateLessonDrawerButtons();
 
       quizBtn.onclick = ()=> {
         if (!readSet.has(item.id) && !learnedSet.has(item.id)) {

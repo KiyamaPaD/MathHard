@@ -945,6 +945,10 @@ if (!roadmapModelSource.includes("readSet") ||
     !lessonStatusCss.includes(".mh-roadmap-node.is-read")) {
   fail("Phase 17C.2 lesson status visual integration is incomplete.");
 }
+if (!appSource.includes("roadmapController?.refreshProgress(); mhUpdateLessonDrawerButtons();") ||
+    appSource.indexOf("setLessonOnlyActionsVisible(true);") > appSource.indexOf("mhUpdateLessonDrawerButtons();", appSource.indexOf("setLessonOnlyActionsVisible(true);"))) {
+  fail("Phase 17C.2.4 must reconcile the open lesson verification button after progress changes.");
+}
 
 if (failed) {
   process.exitCode = 1;

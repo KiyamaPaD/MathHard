@@ -1046,4 +1046,10 @@ assert.deepEqual(
 assert.equal(adminEntityLabel("mh_exams", "ro"), "Examen");
 assert.equal(normalizeVersionEntry({ id: 3, snapshot: { id: "p-1" } }).snapshot.id, "p-1");
 
+// Phase 17C.2.4: lesson verification must be reconciled after progress changes.
+const appSource17c24 = await readFile(resolve(root, "js/app.js"), "utf8");
+assert.match(appSource17c24, /onLessonChanged: \(\) =>[\s\S]*mhUpdateLessonDrawerButtons\(\)/);
+const showLessonActionsAt = appSource17c24.indexOf("setLessonOnlyActionsVisible(true);");
+assert.ok(showLessonActionsAt >= 0 && appSource17c24.indexOf("mhUpdateLessonDrawerButtons();", showLessonActionsAt) > showLessonActionsAt);
+
 console.log("MathHard repository tests passed.");
