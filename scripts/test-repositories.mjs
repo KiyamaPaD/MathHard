@@ -1138,4 +1138,15 @@ assert.match(appSource17c24, /onLessonChanged: \(\) =>[\s\S]*mhUpdateLessonDrawe
 const showLessonActionsAt = appSource17c24.indexOf("setLessonOnlyActionsVisible(true);");
 assert.ok(showLessonActionsAt >= 0 && appSource17c24.indexOf("mhUpdateLessonDrawerButtons();", showLessonActionsAt) > showLessonActionsAt);
 
+// Phase 18A: loading screen is shared, explicit, and independent from window.load.
+const loadingScreenSource = await readFile(resolve(root, "js/loading-screen.js"), "utf8");
+const katexInitSource18A = await readFile(resolve(root, "js/katex-init.js"), "utf8");
+const indexSource18A = await readFile(resolve(root, "index.html"), "utf8");
+const profileSource18A = await readFile(resolve(root, "profile.html"), "utf8");
+assert.match(loadingScreenSource, /window\.MathHardLoading = Object\.freeze/);
+assert.match(loadingScreenSource, /slowThresholdMs = 10000/);
+assert.match(indexSource18A, /id="math-loader"/);
+assert.match(profileSource18A, /id="math-loader"/);
+assert.doesNotMatch(katexInitSource18A, /loader-hidden|math-loader/);
+
 console.log("MathHard repository tests passed.");

@@ -1059,11 +1059,15 @@ supabase.auth.onAuthStateChange((event, session) => {
 /* ========= BOOT IMPORTANT ========= */
 initializeProfileExperience({ lang: LANG });
 applyProfileStaticTexts();
-loadCurrentUser().catch((err) => {
-  console.error("Initial loadCurrentUser error:", err);
-  renderGuest();
-  setStatus(t("initial_load_error", { error: err.message || err }), true);
-});
+loadCurrentUser()
+  .catch((err) => {
+    console.error("Initial loadCurrentUser error:", err);
+    renderGuest();
+    setStatus(t("initial_load_error", { error: err.message || err }), true);
+  })
+  .finally(() => {
+    window.MathHardLoading?.ready();
+  });
 
 window.addEventListener("storage", (e) => {
   if (e.key === "mh_lang") {

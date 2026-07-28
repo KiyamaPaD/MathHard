@@ -7427,4 +7427,6 @@ function openExam(exam){
     }
   })();
 
+  window.MathHardLoading?.ready();
+
 ///Amin!

@@ -64,7 +64,8 @@ const moduleJsFiles = [
 
 const classicJsFiles = [
   "js/animation-numberline.js",
-  "js/katex-init.js"
+  "js/katex-init.js",
+  "js/loading-screen.js"
 ];
 
 const requiredFiles = [
@@ -86,6 +87,7 @@ const requiredFiles = [
   "css/gamification-studio.css",
   "css/admin-history.css",
   "css/profile.css",
+  "css/loading-screen.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -1048,6 +1050,31 @@ if (!lessonQuizAdminControllerSource.includes("mh_lesson_quiz_admin_draft_v1") |
 if (!profileSource.includes("mh_active_workspace_v1") ||
     !profileSource.includes("backHomeBtn")) {
   fail("Phase 17C.3.2 profile return route persistence is incomplete.");
+}
+
+// Phase 18A: clean loading screen controlled by application readiness.
+const loadingScreenSource = readFileSync(resolve(root, "js/loading-screen.js"), "utf8");
+const loadingScreenCss = readFileSync(resolve(root, "css/loading-screen.css"), "utf8");
+const katexInitSource18A = readFileSync(resolve(root, "js/katex-init.js"), "utf8");
+if (!indexHtml.includes('href="/css/loading-screen.css"') ||
+    !indexHtml.includes('src="/js/loading-screen.js"') ||
+    !indexHtml.includes('id="math-loader"') ||
+    !profileHtml.includes('href="/css/loading-screen.css"') ||
+    !profileHtml.includes('src="/js/loading-screen.js"') ||
+    !profileHtml.includes('id="math-loader"')) {
+  fail("Phase 18A loading screen must be shared by index.html and profile.html.");
+}
+if (!loadingScreenSource.includes("window.MathHardLoading") ||
+    !loadingScreenSource.includes("slowThresholdMs") ||
+    !loadingScreenSource.includes("prefers-reduced-motion") && !loadingScreenCss.includes("prefers-reduced-motion")) {
+  fail("Phase 18A loading controller or reduced-motion fallback is incomplete.");
+}
+if (!appSource.includes("window.MathHardLoading?.ready()") ||
+    !profileSource.includes("window.MathHardLoading?.ready()")) {
+  fail("Phase 18A application and profile must explicitly complete their loading screens.");
+}
+if (katexInitSource18A.includes("math-loader") || katexInitSource18A.includes("loader-hidden")) {
+  fail("KaTeX initialization must not control the application loading screen.");
 }
 
 if (failed) {

@@ -38,6 +38,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="/css/loading-screen.css" />
   <link rel="stylesheet" href="css/roadmap.css" />
   <link rel="stylesheet" href="css/roadmap-studio.css" />
   <link rel="stylesheet" href="css/learning-workspace.css" />
@@ -52,20 +53,19 @@
   <link rel="stylesheet" href="css/admin-studio.css" />
   <link rel="stylesheet" href="css/admin-history.css" />
   <link rel="stylesheet" href="css/gamification-studio.css" />
+  <script defer src="/js/loading-screen.js"></script>
   <script defer src="js/katex-init.js"></script>
 </head>
 <body>
-  <!-- LOADING SCREEN MATHHARD -->
-  <div id="math-loader">
-    <div class="loader-content">
-      <div class="loader-logo">MathHard</div>
-      <div class="loader-subtitle" data-i18n="loader_subtitle">
-        Exersezi matematică, strângi XP și urci de la lecții de bază până la olimpiadă și BAC.
-      </div>
-      <div class="loader-equations">
-        <span>\(\lim_{x\to 0}\frac{\sin x}{x}=1\)</span>
-        <span>\(a^2+b^2=c^2\)</span>
-        <span>\(\sum_{k=1}^n k = \frac{n(n+1)}{2}\)</span>
+  <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
+    <div class="mh-loading-panel">
+      <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true" />
+      <p class="mh-loading-brand">MathHard</p>
+      <div class="mh-loading-track" aria-hidden="true"><span></span></div>
+      <p class="mh-loading-status" data-loading-status>Se încarcă…</p>
+      <div class="mh-loading-actions" data-loading-actions hidden>
+        <button class="mh-loading-action" data-loading-retry type="button">Reîncearcă</button>
+        <button class="mh-loading-action primary" data-loading-continue type="button">Continuă</button>
       </div>
     </div>
   </div>

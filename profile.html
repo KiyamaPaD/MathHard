@@ -15,9 +15,23 @@
   <link rel="preconnect" href="https://wvbwbmnibibkzctiymmj.supabase.co" crossorigin />
 
   <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/loading-screen.css" />
   <link rel="stylesheet" href="/css/profile.css" />
+  <script defer src="/js/loading-screen.js"></script>
 </head>
 <body class="mh-app profile-v2-body">
+  <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
+    <div class="mh-loading-panel">
+      <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true" />
+      <p class="mh-loading-brand">MathHard</p>
+      <div class="mh-loading-track" aria-hidden="true"><span></span></div>
+      <p class="mh-loading-status" data-loading-status>Se încarcă…</p>
+      <div class="mh-loading-actions" data-loading-actions hidden>
+        <button class="mh-loading-action" data-loading-retry type="button">Reîncearcă</button>
+        <button class="mh-loading-action primary" data-loading-continue type="button">Continuă</button>
+      </div>
+    </div>
+  </div>
   <header class="profile-topbar">
     <div class="bar profile-topbar-inner">
       <a href="/index.html" class="logo profile-logo">

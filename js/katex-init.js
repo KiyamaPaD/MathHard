@@ -17,10 +17,4 @@ const MH_KATEX_OPTS = {
 
     window.addEventListener('load', () => {
     MH_render(document.body);
-    const loader = document.getElementById("math-loader");
-    if (loader) {
-      setTimeout(() => {
-      loader.classList.add("loader-hidden");
-    }, 500); 
-    }
     });
