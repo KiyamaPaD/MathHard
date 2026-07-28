@@ -70,6 +70,9 @@ export function normalizeGamificationPayload(payload = {}) {
         icon: text(item.icon, "✦"),
         category: text(item.category, "progress"),
         criteria: item?.criteria && typeof item.criteria === "object" ? item.criteria : {},
+        rewardXp: Math.max(0, number(item.reward_xp)),
+        rarity: text(item.rarity, "common"),
+        hiddenUntilUnlocked: Boolean(item.hidden_until_unlocked),
         unlocked: Boolean(item.unlocked),
         unlockedAt: text(item.unlocked_at)
       }))
@@ -100,6 +103,7 @@ export function achievementProgress(achievement, summary) {
     passed_exams: summary?.passedExams,
     total_xp: summary?.totalXp,
     perfect_solutions: summary?.perfectSolutions,
+    current_streak: summary?.currentStreak,
     longest_streak: summary?.longestStreak,
     accuracy: summary?.accuracy
   };

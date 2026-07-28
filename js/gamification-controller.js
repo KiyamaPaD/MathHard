@@ -206,11 +206,12 @@ function renderAchievements(data) {
         ${data.achievements.map((achievement) => {
           const progress = achievementProgress(achievement, data.summary);
           return `
-            <article class="mh-game-achievement ${achievement.unlocked ? "is-unlocked" : "is-locked"}">
+            <article class="mh-game-achievement ${achievement.unlocked ? "is-unlocked" : "is-locked"}" data-rarity="${escapeHtml(achievement.rarity)}">
               <div class="mh-game-achievement-icon" aria-hidden="true">${escapeHtml(achievement.icon)}</div>
               <div class="mh-game-achievement-copy">
                 <div><strong>${escapeHtml(achievement.title)}</strong><span>${achievement.unlocked ? t.unlocked : t.locked}</span></div>
                 <p>${escapeHtml(achievement.description)}</p>
+                ${achievement.rewardXp > 0 ? `<small class="mh-game-achievement-reward">+${achievement.rewardXp} XP</small>` : ""}
                 ${achievement.unlocked ? "" : `
                   <div class="mh-game-achievement-progress">
                     <div class="mh-game-progress-track"><i style="width:${progress.percent}%"></i></div>
@@ -405,6 +406,11 @@ export function createGamificationController({ host }) {
 
   document.addEventListener("visibilitychange", () => {
     if (active && document.visibilityState === "visible") void load(true);
+  });
+
+  window.addEventListener("mh:gamification-admin-updated", () => {
+    data = null;
+    if (active) void load(true);
   });
 
   return { activate, deactivate, refresh: () => load(true) };

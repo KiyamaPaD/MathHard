@@ -45,7 +45,10 @@ const moduleJsFiles = [
   "js/gamification-model.js",
   "js/gamification-repository.js",
   "js/gamification-controller.js",
-  "js/admin-studio-controller.js"
+  "js/admin-studio-controller.js",
+  "js/gamification-admin-model.js",
+  "js/gamification-admin-repository.js",
+  "js/gamification-admin-controller.js"
 ];
 
 const classicJsFiles = [
@@ -67,6 +70,7 @@ const requiredFiles = [
   "css/analytics.css",
   "css/gamification.css",
   "css/admin-studio.css",
+  "css/gamification-studio.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -240,6 +244,10 @@ const gamificationRepositorySource = readFileSync(resolve(root, "js/gamification
 const gamificationControllerSource = readFileSync(resolve(root, "js/gamification-controller.js"), "utf8");
 const gamificationCss = readFileSync(resolve(root, "css/gamification.css"), "utf8");
 const adminStudioSource = readFileSync(resolve(root, "js/admin-studio-controller.js"), "utf8");
+const gamificationAdminModelSource = readFileSync(resolve(root, "js/gamification-admin-model.js"), "utf8");
+const gamificationAdminRepositorySource = readFileSync(resolve(root, "js/gamification-admin-repository.js"), "utf8");
+const gamificationAdminControllerSource = readFileSync(resolve(root, "js/gamification-admin-controller.js"), "utf8");
+const gamificationStudioCss = readFileSync(resolve(root, "css/gamification-studio.css"), "utf8");
 const adminStudioCss = readFileSync(resolve(root, "css/admin-studio.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
@@ -825,6 +833,42 @@ if (!adminStudioCss.includes(".mh-admin-studio") || !adminStudioCss.includes(".m
 if (!indexHtml.includes('id="block-title"')) {
   fail("Phase 17A shared lesson/problem title fields are missing from the editor.");
 }
+
+
+// Phase 17B: Admin-managed achievements, manual challenges and automation templates.
+if (!indexHtml.includes('href="css/gamification-studio.css"') ||
+    !indexHtml.includes('data-admin-panel-target="gamification"') ||
+    !indexHtml.includes('id="mhGamificationAdminStudio"')) {
+  fail("Phase 17B Gamification Studio shell is incomplete.");
+}
+if (!appSource.includes('from "./gamification-admin-controller.js"') ||
+    !appSource.includes('panelName === "gamification"')) {
+  fail("app.js must initialize Phase 17B Gamification Studio on demand.");
+}
+if (!gamificationAdminRepositorySource.includes('mh_admin_get_gamification_studio') ||
+    !gamificationAdminRepositorySource.includes('mh_admin_upsert_achievement') ||
+    !gamificationAdminRepositorySource.includes('mh_admin_upsert_challenge') ||
+    !gamificationAdminRepositorySource.includes('mh_admin_generate_challenge')) {
+  fail("Phase 17B repository is missing secure Admin RPCs.");
+}
+if (!gamificationAdminModelSource.includes('normalizeAchievementDraft') ||
+    !gamificationAdminModelSource.includes('normalizeChallengeDraft') ||
+    !gamificationAdminModelSource.includes('normalizeTemplateDraft')) {
+  fail("Phase 17B gamification draft normalization is incomplete.");
+}
+if (!gamificationAdminControllerSource.includes('data-gamification-tab="achievements"') ||
+    !gamificationAdminControllerSource.includes('data-gamification-tab="challenges"') ||
+    !gamificationAdminControllerSource.includes('data-gamification-tab="automation"')) {
+  fail("Phase 17B controller must expose achievements, challenges and automation tabs.");
+}
+if (!gamificationStudioCss.includes('.mh-gamification-admin-layout') ||
+    !gamificationStudioCss.includes('.mh-gamification-admin-editor')) {
+  fail("Phase 17B Gamification Studio CSS is incomplete.");
+}
+if (!gamificationRepositorySource.includes('mh_get_gamification_dashboard_v2')) {
+  fail("Phase 17B user gamification must load reward and rarity metadata through dashboard v2.");
+}
+
 if (failed) {
   process.exitCode = 1;
 } else {

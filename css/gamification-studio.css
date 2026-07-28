@@ -1,0 +1,246 @@
+/* Phase 17B — Gamification Studio */
+
+.mh-gamification-admin-toolbar {
+  max-width: 1380px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mh-gamification-admin-tabs,
+.mh-gamification-admin-actions,
+.mh-gamification-switches,
+.mh-gamification-admin-row-actions,
+.mh-gamification-admin-meta,
+.mh-gamification-admin-row-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mh-gamification-admin-tabs button {
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mh-gamification-admin-tabs button.is-active {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--card));
+}
+
+.mh-gamification-admin-actions input {
+  width: min(280px, 42vw);
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.mh-gamification-admin-feedback {
+  max-width: 1380px;
+  min-height: 24px;
+  margin: 0 auto 8px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.mh-gamification-admin-feedback[data-state="success"] { color: var(--ok, #3ecf8e); }
+.mh-gamification-admin-feedback[data-state="error"] { color: #ef4444; }
+
+.mh-gamification-admin-layout {
+  max-width: 1380px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.mh-gamification-admin-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mh-gamification-admin-row {
+  min-width: 0;
+  padding: 13px 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+.mh-gamification-admin-row-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: color-mix(in srgb, var(--accent) 11%, var(--card));
+  font-weight: 900;
+}
+
+.mh-gamification-admin-row-main {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.mh-gamification-admin-row-title strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mh-gamification-admin-row code {
+  width: fit-content;
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.mh-gamification-admin-meta {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.mh-gamification-admin-meta span,
+.mh-gamification-state,
+.mh-gamification-rarity,
+.mh-gamification-source {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+.mh-gamification-state[data-state="active"] { color: var(--ok, #3ecf8e); }
+.mh-gamification-state[data-state="featured"] { color: #f59e0b; }
+.mh-gamification-state[data-state="inactive"] { color: var(--muted); }
+.mh-gamification-rarity[data-rarity="rare"] { color: #38bdf8; }
+.mh-gamification-rarity[data-rarity="epic"] { color: #c084fc; }
+.mh-gamification-rarity[data-rarity="legendary"] { color: #f59e0b; }
+
+.mh-gamification-admin-editor {
+  position: sticky;
+  top: 0;
+  min-width: 0;
+  max-height: calc(100dvh - 150px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+}
+
+.mh-gamification-editor-empty {
+  min-height: 280px;
+  padding: 24px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.mh-gamification-editor-empty strong { color: var(--text); }
+
+.mh-gamification-form {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.mh-gamification-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mh-gamification-form-header span {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.mh-gamification-form-header h3 { margin: 3px 0 0; }
+
+.mh-gamification-form label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: .76rem;
+  font-weight: 750;
+}
+
+.mh-gamification-form input,
+.mh-gamification-form select,
+.mh-gamification-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.mh-gamification-form textarea { resize: vertical; line-height: 1.5; }
+
+.mh-gamification-form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.mh-gamification-form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.mh-gamification-switches label {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+}
+
+.mh-gamification-switches input { width: auto; }
+
+@media (max-width: 1080px) {
+  .mh-gamification-admin-layout { grid-template-columns: 1fr; }
+  .mh-gamification-admin-editor { position: static; max-height: none; }
+}
+
+@media (max-width: 760px) {
+  .mh-gamification-admin-toolbar { align-items: stretch; flex-direction: column; }
+  .mh-gamification-admin-actions { width: 100%; }
+  .mh-gamification-admin-actions input { width: 100%; flex: 1 1 180px; }
+  .mh-gamification-admin-row { grid-template-columns: 38px minmax(0, 1fr); }
+  .mh-gamification-admin-row-actions { grid-column: 1 / -1; }
+  .mh-gamification-form-grid.two { grid-template-columns: 1fr; }
+}

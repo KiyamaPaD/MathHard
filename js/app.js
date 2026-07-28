@@ -60,6 +60,7 @@ import {
 import { createRoadmapController } from "./roadmap-controller.js";
 import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
 import { createAdminStudioController, suggestDuplicateId } from "./admin-studio-controller.js";
+import { createGamificationAdminController } from "./gamification-admin-controller.js";
 import { invalidateRoadmapCache } from "./roadmap-repository.js";
 import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
 import {
@@ -79,6 +80,7 @@ import {
   let roadmapController = null;
   let roadmapAdminController = null;
   let adminStudioController = null;
+  let gamificationAdminController = null;
   let learningWorkspaceController = null;
 
   try {
@@ -3118,6 +3120,11 @@ import {
     adminDrawer?.classList.remove("open");
   });
 
+  gamificationAdminController = createGamificationAdminController({
+    host: document.getElementById("mhGamificationAdminStudio"),
+    supabase
+  });
+
   adminStudioController = createAdminStudioController({
     root: document.getElementById("mhAdminStudio"),
     getLanguage: () => LANG,
@@ -3133,6 +3140,9 @@ import {
     onLogout: async () => {
       await logoutAdmin();
       adminDrawer?.classList.remove("open");
+    },
+    onPanelChange: (panelName) => {
+      if (panelName === "gamification") void gamificationAdminController?.load();
     }
   });
 
@@ -3157,6 +3167,7 @@ import {
       adminDrawer?.classList.remove("open");
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
+      gamificationAdminController?.setAdmin(false);
     }
   }
 
@@ -3225,6 +3236,7 @@ import {
     setAdminButtonVisibility(isAdmin);
     adminExamRecoveryController?.setAdmin(isAdmin);
     roadmapAdminController?.setAdmin(isAdmin);
+    gamificationAdminController?.setAdmin(isAdmin);
     return isAdmin;
   }
 
@@ -3264,6 +3276,7 @@ import {
       setAdminButtonVisibility(true);
       adminExamRecoveryController?.setAdmin(true);
       roadmapAdminController?.setAdmin(true);
+      gamificationAdminController?.setAdmin(true);
       adminDrawer?.classList.add("open");
       adminStudioController?.showPanel("dashboard");
       mhRenderAdminList();
@@ -3285,6 +3298,7 @@ import {
     setAdminButtonVisibility(false);
     adminExamRecoveryController?.setAdmin(false);
     roadmapAdminController?.setAdmin(false);
+    gamificationAdminController?.setAdmin(false);
     invalidateContentCatalogCache();
     invalidateRoadmapCache();
 

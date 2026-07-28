@@ -146,6 +146,13 @@ const {
 } = await importBrowserModule("js/browser-state.js");
 const { normalizeAppRoute, routeToCatalogTab } = await importBrowserModule("js/app-shell-controller.js");
 const { filterAdminItems, getAdminContentType, suggestDuplicateId } = await importBrowserModule("js/admin-studio-controller.js");
+const {
+  normalizeAchievementDraft,
+  normalizeChallengeDraft,
+  normalizeTemplateDraft,
+  nextDuplicateId,
+  slugifyAdminId
+} = await importBrowserModule("js/gamification-admin-model.js");
 
 assert.equal(normalizeAppRoute("#problems"), "problems");
 assert.equal(normalizeAppRoute("unknown"), "dashboard");
@@ -907,5 +914,48 @@ assert.deepEqual(
 );
 assert.equal(suggestDuplicateId("l-algebra", adminItems.map((item) => item.id)), "l-algebra-copy");
 assert.equal(suggestDuplicateId("l-algebra", ["l-algebra-copy", "l-algebra-copy-2"]), "l-algebra-copy-3");
+
+
+
+// Phase 17B: Admin gamification payload normalization and safe duplicate IDs.
+assert.equal(slugifyAdminId("Precizie maximă"), "precizie-maxima");
+assert.equal(nextDuplicateId("xp-100", ["xp-100-copy", "xp-100-copy-2"]), "xp-100-copy-3");
+const achievementDraft = normalizeAchievementDraft({
+  id: "accuracy-master",
+  title_ro: "Precizie",
+  metric: "accuracy",
+  threshold: "85",
+  min_attempts: "20",
+  reward_xp: "50",
+  rarity: "epic",
+  active: true
+});
+assert.equal(achievementDraft.criteria.metric, "accuracy");
+assert.equal(achievementDraft.criteria.threshold, 85);
+assert.equal(achievementDraft.criteria.min_attempts, 20);
+assert.equal(achievementDraft.reward_xp, 50);
+assert.equal(achievementDraft.rarity, "epic");
+const challengeDraft = normalizeChallengeDraft({
+  id: "algebra-week",
+  metric: "solved_problem",
+  target: "8",
+  reward_xp: "40",
+  starts_on: "2026-07-27",
+  ends_on: "2026-08-02",
+  featured: true
+});
+assert.equal(challengeDraft.target, 8);
+assert.equal(challengeDraft.featured, true);
+const templateDraft = normalizeTemplateDraft({
+  id: "weekly-problems",
+  metric: "solved_problem",
+  target_min: "5",
+  target_max: "9",
+  reward_min: "25",
+  reward_max: "45"
+});
+assert.equal(templateDraft.target_min, 5);
+assert.equal(templateDraft.target_max, 9);
+assert.equal(templateDraft.reward_max, 45);
 
 console.log("MathHard repository tests passed.");

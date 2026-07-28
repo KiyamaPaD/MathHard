@@ -420,3 +420,17 @@
   .mh-game-achievement { grid-template-columns: 1fr; }
   .mh-game-achievement-copy > div { align-items: flex-start; }
 }
+
+/* Phase 17B achievement metadata. */
+.mh-game-achievement-reward {
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.mh-game-achievement[data-rarity="rare"] { border-color: color-mix(in srgb, #38bdf8 38%, var(--border)); }
+.mh-game-achievement[data-rarity="epic"] { border-color: color-mix(in srgb, #c084fc 42%, var(--border)); }
+.mh-game-achievement[data-rarity="legendary"] { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); }

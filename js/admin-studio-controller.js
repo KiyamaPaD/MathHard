@@ -173,7 +173,8 @@ export function createAdminStudioController({
   onDelete = () => {},
   onPreview = () => {},
   onRefresh = () => {},
-  onLogout = () => {}
+  onLogout = () => {},
+  onPanelChange = () => {}
 } = {}) {
   if (!root) throw new Error("createAdminStudioController requires a root element.");
 
@@ -222,6 +223,7 @@ export function createAdminStudioController({
     if (focus) {
       root.querySelector(`[data-admin-panel="${panelName}"]`)?.focus?.({ preventScroll: true });
     }
+    try { onPanelChange(panelName); } catch (error) { console.error("Admin panel change failed:", error); }
   }
 
   function setType(type) {

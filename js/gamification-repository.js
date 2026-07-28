@@ -10,11 +10,15 @@ function backendError(error, fallback) {
 
 export async function loadGamificationDashboard(supabase, { locale = "ro" } = {}) {
   if (!supabase?.rpc) throw new Error("Supabase client is unavailable.");
-  const { data, error } = await supabase.rpc("mh_get_gamification_dashboard", {
+  const args = {
     p_locale: String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro"
-  });
-  if (error) throw backendError(error, "Gamification could not be loaded.");
-  return normalizeGamificationPayload(data);
+  };
+  let response = await supabase.rpc("mh_get_gamification_dashboard_v2", args);
+  if (response.error?.code === "PGRST202" || response.error?.status === 404) {
+    response = await supabase.rpc("mh_get_gamification_dashboard", args);
+  }
+  if (response.error) throw backendError(response.error, "Gamification could not be loaded.");
+  return normalizeGamificationPayload(response.data);
 }
 
 export async function saveDailyGoal(supabase, dailyGoal) {
