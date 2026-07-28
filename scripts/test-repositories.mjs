@@ -164,12 +164,37 @@ const {
   slugifyAdminId
 } = await importBrowserModule("js/gamification-admin-model.js");
 const {
+  makeQuizItem,
+  normalizeAdminLessonQuiz,
+  normalizeQuizAvailability,
+  validateAdminLessonQuiz
+} = await importBrowserModule("js/lesson-quiz-model.js");
+const {
   adminEntityLabel,
   changedFields,
   filterAuditEntries,
   normalizeAuditEntry,
   normalizeVersionEntry
 } = await importBrowserModule("js/admin-history-model.js");
+
+const quizAvailability = normalizeQuizAvailability([
+  { lesson_id: "lesson-a", question_count: 5, pass_threshold: 100 }
+]);
+assert.equal(quizAvailability.has("lesson-a"), true);
+assert.equal(quizAvailability.get("lesson-a").question_count, 5);
+const quizDraft = normalizeAdminLessonQuiz({
+  lesson_id: "lesson-a",
+  is_published: true,
+  items: [makeQuizItem(0, "lesson-a")]
+}, "lesson-a");
+quizDraft.items[0].prompt_ro = "Întrebare";
+quizDraft.items[0].options[0].text_ro = "Corect";
+quizDraft.items[0].options[1].text_ro = "Greșit";
+quizDraft.items[0].options[2].text_ro = "Greșit 2";
+quizDraft.items[0].options[3].text_ro = "Greșit 3";
+assert.deepEqual(validateAdminLessonQuiz(quizDraft), []);
+quizDraft.items[0].options[1].is_correct = true;
+assert.equal(validateAdminLessonQuiz(quizDraft).some((message) => message.includes("exact o variantă")), true);
 
 assert.equal(normalizeAppRoute("#problems"), "problems");
 assert.equal(normalizeAppRoute("unknown"), "dashboard");

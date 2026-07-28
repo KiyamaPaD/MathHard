@@ -12,6 +12,10 @@ const moduleJsFiles = [
   "js/content-repository.js",
   "js/progress-repository.js",
   "js/lesson-status-repository.js",
+  "js/lesson-quiz-model.js",
+  "js/lesson-quiz-repository.js",
+  "js/lesson-quiz-controller.js",
+  "js/lesson-quiz-admin-controller.js",
   "js/runtime-config.js",
   "js/content-model.js",
   "js/answer-engine.js",
@@ -69,6 +73,7 @@ const requiredFiles = [
   "css/learning-workspace.css",
   "css/problem-workspace.css",
   "css/lesson-status.css",
+  "css/lesson-quiz-admin.css",
   "css/quick-nav.css",
   "css/section-layout.css",
   "css/app-shell.css",
@@ -119,7 +124,8 @@ const forbiddenRuntimeReferences = [
   /(?:^|[\/"'])data\/problems\.json(?:$|[?"'])/i,
   /loadRemoteContentCatalog/,
   /bundledCatalog\s*:/,
-  /Șterge override/i
+  /Șterge override/i,
+  /window\.DATA_QUIZZES/
 ];
 
 let failed = false;
@@ -216,6 +222,10 @@ const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-mod
 const examSessionStateSource = readFileSync(resolve(root, "js/exam-session-state.js"), "utf8");
 const progressRepositorySource = readFileSync(resolve(root, "js/progress-repository.js"), "utf8");
 const lessonStatusRepositorySource = readFileSync(resolve(root, "js/lesson-status-repository.js"), "utf8");
+const lessonQuizModelSource = readFileSync(resolve(root, "js/lesson-quiz-model.js"), "utf8");
+const lessonQuizRepositorySource = readFileSync(resolve(root, "js/lesson-quiz-repository.js"), "utf8");
+const lessonQuizControllerSource = readFileSync(resolve(root, "js/lesson-quiz-controller.js"), "utf8");
+const lessonQuizAdminControllerSource = readFileSync(resolve(root, "js/lesson-quiz-admin-controller.js"), "utf8");
 const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recovery.js"), "utf8");
 const secureEvaluationRepositorySource = readFileSync(resolve(root, "js/secure-evaluation-repository.js"), "utf8");
 const secureExamRepositorySource = readFileSync(resolve(root, "js/secure-exam-repository.js"), "utf8");
@@ -230,6 +240,7 @@ const problemWorkspaceRepositorySource = readFileSync(resolve(root, "js/problem-
 const problemWorkspaceModelSource = readFileSync(resolve(root, "js/problem-workspace-model.js"), "utf8");
 const problemWorkspaceCss = readFileSync(resolve(root, "css/problem-workspace.css"), "utf8");
 const lessonStatusCss = readFileSync(resolve(root, "css/lesson-status.css"), "utf8");
+const lessonQuizAdminCss = readFileSync(resolve(root, "css/lesson-quiz-admin.css"), "utf8");
 const roadmapCss = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
 const roadmapStudioCss = readFileSync(resolve(root, "css/roadmap-studio.css"), "utf8");
 const learningWorkspaceCss = readFileSync(resolve(root, "css/learning-workspace.css"), "utf8");
@@ -948,6 +959,31 @@ if (!roadmapModelSource.includes("readSet") ||
 if (!appSource.includes("roadmapController?.refreshProgress(); mhUpdateLessonDrawerButtons();") ||
     appSource.indexOf("setLessonOnlyActionsVisible(true);") > appSource.indexOf("mhUpdateLessonDrawerButtons();", appSource.indexOf("setLessonOnlyActionsVisible(true);"))) {
   fail("Phase 17C.2.4 must reconcile the open lesson verification button after progress changes.");
+}
+
+// Phase 17C.3: secure lesson quizzes and Admin quiz editor.
+if (!indexHtml.includes('href="css/lesson-quiz-admin.css"') ||
+    !indexHtml.includes('id="mhLessonQuizAdmin"') ||
+    !indexHtml.includes('data-lesson-editor-tab="quiz"')) {
+  fail("Phase 17C.3 lesson quiz Admin shell is incomplete.");
+}
+if (!appSource.includes('from "./lesson-quiz-controller.js"') ||
+    !appSource.includes('from "./lesson-quiz-admin-controller.js"') ||
+    !appSource.includes("refreshLessonQuizAvailability") ||
+    !appSource.includes("lessonQuizController.open")) {
+  fail("Phase 17C.3 secure lesson quiz integration is incomplete in app.js.");
+}
+if (!lessonQuizRepositorySource.includes('mh_get_lesson_quiz_availability') ||
+    !lessonQuizRepositorySource.includes('mh_start_lesson_quiz') ||
+    !lessonQuizRepositorySource.includes('mh_submit_lesson_quiz') ||
+    !lessonQuizRepositorySource.includes('mh_admin_save_lesson_quiz')) {
+  fail("Phase 17C.3 lesson quiz repository is missing secure RPCs.");
+}
+if (!lessonQuizControllerSource.includes("submitSecureLessonQuiz") ||
+    !lessonQuizAdminControllerSource.includes("validateAdminLessonQuiz") ||
+    !lessonQuizModelSource.includes("normalizeQuizAvailability") ||
+    !lessonQuizAdminCss.includes(".mh-lesson-quiz-admin-card")) {
+  fail("Phase 17C.3 lesson quiz UI/model is incomplete.");
 }
 
 if (failed) {

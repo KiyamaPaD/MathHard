@@ -15,6 +15,9 @@ import {
   markLessonRead,
   startLessonReading
 } from "./lesson-status-repository.js";
+import { createLessonQuizController } from "./lesson-quiz-controller.js";
+import { createLessonQuizAdminController } from "./lesson-quiz-admin-controller.js";
+import { loadLessonQuizAvailability } from "./lesson-quiz-repository.js";
 import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
 import { logLearningEvent } from "./secure-evaluation-repository.js";
 import {
@@ -90,6 +93,22 @@ import {
   let gamificationAdminController = null;
   let adminHistoryController = null;
   let learningWorkspaceController = null;
+  let lessonQuizAdminController = null;
+  let LESSON_QUIZ_AVAILABILITY = new Map();
+
+  async function refreshLessonQuizAvailability() {
+    if (!MH_AUTH_USER?.id) {
+      LESSON_QUIZ_AVAILABILITY = new Map();
+      return LESSON_QUIZ_AVAILABILITY;
+    }
+    try {
+      LESSON_QUIZ_AVAILABILITY = await loadLessonQuizAvailability(supabase);
+    } catch (error) {
+      console.warn("Lesson quiz availability could not be loaded:", error);
+      LESSON_QUIZ_AVAILABILITY = new Map();
+    }
+    return LESSON_QUIZ_AVAILABILITY;
+  }
 
   try {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
@@ -101,6 +120,7 @@ import {
       DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
       DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
       DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
+      await refreshLessonQuizAvailability();
     } else {
       invalidateContentCatalogCache();
     }
@@ -1985,91 +2005,7 @@ import {
   drawFilterBar();
   };
 
-  /** PROBLEME PENTRU VERIFICAREA LECȚIEI **/
-
-  window.DATA_QUIZZES = window.DATA_QUIZZES || {
-    "v-citirea-nr-nat": [
-      {
-        id: "v-citirea-nr-nat_q1",
-        kind: "simple",
-        prompt_ro: "În numărul 45 327, cifra 5 este pe poziția:",
-        prompt_en: "In the number 45 327, digit 5 is on the:",
-        options: [
-          { text: "unităților", correct: false },
-          { text: "zecilor", correct: false },
-          { text: "miilor", correct: true },
-          { text: "sutelor", correct: false },
-          { text: "zecilor de mii", correct: false }
-        ],
-        explanation_ro: "În 45 327, cifra 5 reprezintă 5 mii.",
-        explanation_en: "In 45 327, digit 5 represents 5 thousands."
-      },
-
-      {
-        id: "v-citirea-nr-nat_q2",
-        kind: "simple",
-        prompt_ro: "Cum se citește corect numărul 70 005?",
-        prompt_en: "How do you correctly read the number 70 005?",
-        options: [
-          { text: "șaptezeci mii cinci", correct: true },
-          { text: "șapte mii cinci", correct: false },
-          { text: "șaptezeci de mii cincizeci", correct: false },
-          { text: "șaptezeci mii zero zero cinci", correct: false },
-          { text: "șaptezeci și cinci", correct: false }
-        ],
-        explanation_ro: "70 005 înseamnă 70 de mii și 5 unități.",
-        explanation_en: "70 005 means 70 thousand and 5 units."
-      },
-
-      {
-        id: "v-citirea-nr-nat_q3",
-        kind: "simple",
-        prompt_ro: "În numărul 902 410, cifra 2 este pe ordinul:",
-        prompt_en: "In the number 902 410, digit 2 is on the:",
-        options: [
-          { text: "sutelor", correct: false },
-          { text: "miilor", correct: true },
-          { text: "zecilor", correct: false },
-          { text: "unităților", correct: false },
-          { text: "zecilor de mii", correct: false }
-        ],
-        explanation_ro: "902 410 = 9 sute de mii, 0 zeci de mii, 2 mii, 4 sute, 1 zece, 0 unități.",
-        explanation_en: "902 410 = 9 hundred-thousands, 0 ten-thousands, 2 thousands, 4 hundreds, 1 ten, 0 units."
-      },
-
-      {
-        id: "v-citirea-nr-nat_q4",
-        kind: "multi",
-        prompt_ro: "Alege toate afirmațiile corecte despre numărul 308 014.",
-        prompt_en: "Choose all correct statements about the number 308 014.",
-        options: [
-          { text: "Are 3 sute de mii.", correct: true },
-          { text: "Are 8 mii.", correct: true },
-          { text: "Are 1 sută.", correct: false },
-          { text: "Are 4 unități.", correct: true },
-          { text: "Se citește „trei sute opt mii paisprezece”.", correct: true }
-        ],
-        explanation_ro: "308 014 = 3 sute de mii, 8 mii, 1 zece și 4 unități.",
-        explanation_en: "308 014 = 3 hundred-thousands, 8 thousands, 1 ten and 4 units."
-      },
-
-      {
-        id: "v-citirea-nr-nat_q5",
-        kind: "recap",
-        prompt_ro: "Alege toate scrierile corecte pentru numărul 406 090.",
-        prompt_en: "Choose all correct forms for the number 406 090.",
-        options: [
-          { text: "4 sute de mii + 6 mii + 9 zeci", correct: true },
-          { text: "400000 + 6000 + 90", correct: true },
-          { text: "4 sute de mii + 6 sute + 9 zeci", correct: false },
-          { text: "406 mii 90", correct: true },
-          { text: "406090 = 4×100000 + 6×1000 + 9×10", correct: true }
-        ],
-        explanation_ro: "406 090 poate fi citit, descompus și rescris în mai multe forme echivalente.",
-        explanation_en: "406 090 can be read, decomposed and rewritten in several equivalent ways."
-      }
-    ]
-  };
+  /* Lesson checks are loaded securely from Supabase (Phase 17C.3). */
 
   function replaceCatalogTarget(target, items, normalizer) {
     target.length = 0;
@@ -2080,6 +2016,7 @@ import {
     DATA.lessons.length = 0;
     DATA.problems.length = 0;
     DATA.exams.length = 0;
+    LESSON_QUIZ_AVAILABILITY = new Map();
     CONTENT_BOOT_ERROR = null;
   }
 
@@ -2099,6 +2036,7 @@ import {
     replaceCatalogTarget(DATA.lessons, catalog.lessons, normalizeLesson);
     replaceCatalogTarget(DATA.problems, catalog.problems, normalizeProblem);
     replaceCatalogTarget(DATA.exams, catalog.exams, normalizeExam);
+    await refreshLessonQuizAvailability();
     CONTENT_BOOT_ERROR = null;
     mhRemoveContentStatusBanner();
 
@@ -2664,12 +2602,34 @@ import {
 
   mhRenderExamItemsDraft();
 
+  function mhSetLessonEditorTab(tabName = "content") {
+    const safeTab = tabName === "quiz" ? "quiz" : "content";
+    document.querySelectorAll("[data-lesson-editor-tab]").forEach((button) => {
+      const active = button.dataset.lessonEditorTab === safeTab;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    document.querySelectorAll("[data-lesson-editor-panel]").forEach((panel) => {
+      panel.hidden = panel.dataset.lessonEditorPanel !== safeTab;
+    });
+  }
+
+  document.querySelectorAll("[data-lesson-editor-tab]").forEach((button) => {
+    button.addEventListener("click", () => mhSetLessonEditorTab(button.dataset.lessonEditorTab));
+  });
+
   function mhSetTypeBlocks(type) {
     const blockCommon = document.getElementById("block-common");
     const blockTitle = document.getElementById("block-title");
     const blockLesson = document.getElementById("block-lesson");
     const blockProblem = document.getElementById("block-problem");
     const blockExam = document.getElementById("block-exam");
+    const lessonTabs = document.getElementById("mhLessonEditorTabs");
+    const quizTabButton = document.querySelector('[data-lesson-editor-tab="quiz"]');
+
+    if (lessonTabs) lessonTabs.hidden = !["lesson", "research", "history"].includes(type);
+    if (quizTabButton) quizTabButton.hidden = type !== "lesson";
+    if (type !== "lesson") mhSetLessonEditorTab("content");
 
     if (blockCommon) {
       blockCommon.style.display = type === "exam" ? "none" : "grid";
@@ -2703,6 +2663,8 @@ import {
 
     mhSetTypeBlocks(type);
     mhSetAdminModeEdit(type, item.id);
+    mhSetLessonEditorTab("content");
+    lessonQuizAdminController?.setContext(type, item.id, true);
 
     const setVal = (id, val) => {
       const el = document.getElementById(id);
@@ -2774,6 +2736,8 @@ import {
   if (mhTypeSelect) {
     mhTypeSelect.addEventListener("change", (e) => {
       mhSetTypeBlocks(e.target.value);
+      mhSetLessonEditorTab("content");
+      lessonQuizAdminController?.setContext(e.target.value, "", false);
       mhSetAdminModeCreate();
     });
 
@@ -2849,6 +2813,8 @@ import {
       mhExamScoringProfile.value = "default_exact_v1";
     }
     mhRenderExamItemsDraft();
+    mhSetLessonEditorTab("content");
+    lessonQuizAdminController?.setContext("lesson", "", false);
 
   }
 
@@ -3142,6 +3108,19 @@ ${details}`);
     await logoutAdmin();
     adminDrawer?.classList.remove("open");
   });
+
+  lessonQuizAdminController = createLessonQuizAdminController({
+    host: document.getElementById("mhLessonQuizAdmin"),
+    supabase,
+    onSaved: async () => {
+      await refreshLessonQuizAvailability();
+      renderCards();
+      buildNestedTree();
+      roadmapController?.refreshProgress();
+      mhUpdateLessonDrawerButtons();
+    }
+  });
+  lessonQuizAdminController.setContext("lesson", "", false);
 
   adminHistoryController = createAdminHistoryController({
     root: document.getElementById("mhAdminHistoryStudio"),
@@ -5472,8 +5451,7 @@ ${details}`);
 
   /* ===== Viewer: Lecții / Tips ===== */
   function hasLessonVerification(lessonId){
-    const bank = window.DATA_QUIZZES?.[String(lessonId || "")];
-    return Array.isArray(bank) && bank.length > 0;
+    return LESSON_QUIZ_AVAILABILITY.has(String(lessonId || ""));
   }
   function fmtTime(s){ const m=Math.floor(s/60), ss=("0"+(s%60)).slice(-2); return `${m}:${ss}`; }
   function stopLessonTimer(){
@@ -5704,536 +5682,50 @@ ${details}`);
     `;
   }
 
-  /* ===== Micro-Quiz pe lecție ===== */
-
-  function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
-
-  /* ===== Lesson-quiz attempts (scoped per authenticated account) ===== */
-  let quizAttempts = {};
-
-  function quizAttemptStorageKey(user = MH_AUTH_USER) {
-    return scopedStorageKey("mh_quiz_attempts_v2", user?.id);
-  }
-
-  function loadQuizAttemptFallback(user = MH_AUTH_USER) {
-    const key = quizAttemptStorageKey(user);
-    quizAttempts = key
-      ? normalizeQuizAttemptCache(safeReadJson(localStorage, key, {}))
-      : {};
-  }
-
-  function saveQuizAttempts(){
-    const key = quizAttemptStorageKey();
-    if (key) safeWriteJson(localStorage, key, normalizeQuizAttemptCache(quizAttempts));
-  }
-
-  safeRemoveStorageKey(localStorage, "mh_quiz_attempts");
-  safeRemoveStorageKey(localStorage, "mh_today_training_v2");
-  loadQuizAttemptFallback();
-  function qKey(lessonId, qid){ return `${lessonId}::${qid}`; }
-  function qGetTries(lessonId, qid){
-    const k=qKey(lessonId,qid);
-    return (quizAttempts[k]?.tries)||[];
-  }
-  function qPushTry(lessonId, qid, rec){
-    const k=qKey(lessonId,qid);
-    if(!quizAttempts[k]) quizAttempts[k]={tries:[]};
-    quizAttempts[k].tries.push(rec);
-    saveQuizAttempts();
-  }
-
-  function normalizeCustomItem(it, isRO){
-    const letters = ['a','b','c','d','e'];
-    const prompt = isRO ? (it.prompt_ro || it.prompt_en || '') : (it.prompt_en || it.prompt_ro || '');
-    let opts = (it.options || []).map(o => ({ text: String(o.text||''), correct: !!o.correct }));
-
-    while (opts.length < 5) opts.push({ text: '—', correct: false });
-    if (opts.length > 5) opts = opts.slice(0,5);
-
-    opts.sort(()=>Math.random()-0.5);
-    const out = opts.map((o,i)=>({ key: letters[i], text:o.text, correct:o.correct }));
-
-    const exp = isRO ? (it.explanation_ro || it.explanation_en || '') : (it.explanation_en || it.explanation_ro || '');
-    const explanationHTML = exp ? `<p>${exp}</p>` : '';
-
-    const qid = it.id || ('auto_'+(prompt||'').replace(/\s+/g,' ').slice(0,80));
-
-    return { qid, prompt, options: out, explanationHTML };
-  }
-
-  function buildLessonQuiz(L){
-    const isRO = (typeof LANG !== "undefined" ? LANG === "ro" : true);
-    const bank = (window.DATA_QUIZZES && window.DATA_QUIZZES[L.id]) || [];
-
-    if (!bank.length){
-      return [{
-        qid: `fallback_${L.id}`,
-        prompt: isRO
-          ? `Nu ai definit încă întrebări pentru lecția „${L.title_ro || L.title_en || L.id}”.`
-          : `No questions defined yet for lesson "${L.title_en || L.title_ro || L.id}".`,
-        options: [
-          { key:'a', text:'OK', correct:true },
-          { key:'b', text:'—', correct:false },
-          { key:'c', text:'—', correct:false },
-          { key:'d', text:'—', correct:false },
-          { key:'e', text:'—', correct:false }
-        ],
-        explanationHTML: isRO
-          ? "<p>Adaugă întrebări în <code>DATA_QUIZZES[lessonId]</code>.</p>"
-          : "<p>Add questions under <code>DATA_QUIZZES[lessonId]</code>.</p>"
-      }];
+  /* ===== Secure lesson quiz (Supabase) ===== */
+  const lessonQuizController = createLessonQuizController({
+    supabase,
+    getLanguage: () => LANG,
+    getContentHost: () => document.getElementById("viewContent"),
+    renderMath: (host) => MH_render(host),
+    onBack: (lesson) => openViewer(lesson),
+    onLearned: (lesson, result) => {
+      const lessonId = String(lesson?.id || result?.lesson_id || "");
+      if (!lessonId) return;
+      const wasLearned = learnedSet.has(lessonId);
+      learnedSet.add(lessonId);
+      readSet.add(lessonId);
+      if (!wasLearned) mhIncrementTodayProgress("lesson");
+      updateCounters();
+      renderCards();
+      buildNestedTree();
+      buildTagPanel();
+      roadmapController?.refreshProgress();
+      mhUpdateLessonDrawerButtons();
+      const title = document.getElementById("viewTitle");
+      if (title) {
+        title.textContent = "🎓 " + (LANG === "ro"
+          ? (lesson?.title_ro || lesson?.title_en || lessonId)
+          : (lesson?.title_en || lesson?.title_ro || lessonId));
+      }
     }
+  });
 
-    const normalized = bank.map((it, idx) => {
-      const qid = it.id || `${L.id}_q${idx + 1}`;
-      const kind = String(it.kind || "simple").trim().toLowerCase();
-
-      let opts = Array.isArray(it.options) ? [...it.options] : [];
-      while (opts.length < 5) opts.push({ text: "—", correct: false });
-      if (opts.length > 5) opts = opts.slice(0, 5);
-
-      const letters = ["a","b","c","d","e"];
-      opts = opts
-        .map((o, i) => ({
-          key: letters[i],
-          text: String(o.text || ""),
-          correct: !!o.correct
-        }));
-
-      const prompt = isRO
-        ? (it.prompt_ro || it.prompt_en || "")
-        : (it.prompt_en || it.prompt_ro || "");
-
-      const explanation = isRO
-        ? (it.explanation_ro || it.explanation_en || "")
-        : (it.explanation_en || it.explanation_ro || "");
-
-      return {
-        qid,
-        kind,
-        prompt,
-        options: opts,
-        explanationHTML: explanation ? `<p>${explanation}</p>` : ""
-      };
-    });
-
-    const simple = normalized.filter(q => q.kind === "simple");
-    const multi  = normalized.filter(q => q.kind === "multi");
-    const recap  = normalized.filter(q => q.kind === "recap");
-
-    const pickRandom = (arr, n) => {
-      return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
-    };
-
-    const result = [
-      ...pickRandom(simple, 3),
-      ...pickRandom(multi, 1),
-      ...pickRandom(recap, 1)
-    ];
-
-    if (result.length < 5) {
-      const used = new Set(result.map(x => x.qid));
-      const rest = normalized.filter(x => !used.has(x.qid));
-      result.push(...pickRandom(rest, 5 - result.length));
-    }
-
-    return result.slice(0, 5);
-  }
-
-  // desenează quiz-ul în viewer (înlocuiește conținutul lecției)
   function openLessonQuiz(L){
     if (!readSet.has(L.id) && !learnedSet.has(L.id)) {
-      alert(LANG === 'ro'
-        ? 'Verificarea se deblochează după ce citești lecția timp de cel puțin un minut și ajungi la final.'
-        : 'The check unlocks after you read the lesson for at least one minute and reach the end.');
+      alert(LANG === "ro"
+        ? "Verificarea se deblochează după ce citești lecția timp de cel puțin un minut și ajungi la final."
+        : "The check unlocks after you read the lesson for at least one minute and reach the end.");
       return;
     }
     if (!hasLessonVerification(L.id)) {
-      alert(LANG === 'ro'
-        ? 'Această lecție nu are încă o verificare publicată.'
-        : 'This lesson does not have a published check yet.');
+      alert(LANG === "ro"
+        ? "Această lecție nu are încă o verificare publicată."
+        : "This lesson does not have a published check yet.");
       return;
     }
-
     stopLessonTimer();
-
-    const isRO = (typeof LANG !== "undefined" ? LANG === "ro" : true);
-    const qs = buildLessonQuiz(L, 3);
-
-    const content = document.getElementById("viewContent");
-    content.innerHTML = "";
-
-    const box = document.createElement("div");
-    box.className = "quizBox";
-    box.innerHTML = `
-      <div class="quizHead">
-        <div class="quizTitle">
-          🧪 ${isRO ? 'Verificare lecție' : 'Lesson check'} — ${(isRO ? (L.title_ro || L.title_en) : (L.title_en || L.title_ro))}
-        </div>
-        <div class="legend">
-          ${isRO
-            ? 'Selectează toate variantele corecte. După verificare vezi scorul, explicațiile și istoricul greșelilor.'
-            : 'Select all correct options. After checking you will see score, explanations and wrong-answer history.'}
-        </div>
-      </div>
-
-      <div class="problem" style="margin-bottom:12px;">
-        <div class="title" style="font-size:1rem;">
-          ${isRO ? '📊 Rezumat quiz' : '📊 Quiz summary'}
-        </div>
-        <div class="legend" id="quizSummaryText">
-          ${isRO ? 'Încă nu ai verificat răspunsurile.' : 'You have not checked the answers yet.'}
-        </div>
-        <div class="progressRow" style="margin-top:10px;">
-          <div class="progressBar"><i id="quizSummaryBar" style="width:0%"></i></div>
-        </div>
-        <div class="mh-lesson-quiz-status" id="quizCompletionStatus" aria-live="polite">
-          ${learnedSet.has(L.id)
-            ? (isRO ? '🎓 Status: Învățată' : '🎓 Status: Learned')
-            : (isRO ? '📖 Status: Citită. Obține toate răspunsurile corecte pentru Învățată.' : '📖 Status: Read. Get every answer correct for Learned.')}
-        </div>
-      </div>
-
-      <div id="quizList"></div>
-
-      <div class="quizActions">
-        <button class="btn" id="quizCheckAll" type="button">✅ ${isRO ? 'Verifică răspunsurile' : 'Check answers'}</button>
-        <button class="btn" id="quizRetryWrong" type="button">🎯 ${isRO ? 'Resetează doar greșitele' : 'Reset only wrong ones'}</button>
-        <button class="btn" id="quizNew" type="button">🔄 ${isRO ? 'Alt set de întrebări' : 'New set'}</button>
-        <button class="btn" id="quizReset" type="button">♻️ ${isRO ? 'Reset tot quiz-ul' : 'Reset whole quiz'}</button>
-        <button class="btn" id="quizBack" type="button">⬅️ ${isRO ? 'Înapoi la lecție' : 'Back to lesson'}</button>
-      </div>
-    `;
-    content.appendChild(box);
-
-    const list = box.querySelector("#quizList");
-    const summaryText = box.querySelector("#quizSummaryText");
-    const summaryBar = box.querySelector("#quizSummaryBar");
-    const completionStatus = box.querySelector("#quizCompletionStatus");
-    const checkAllButton = box.querySelector("#quizCheckAll");
-
-    const fmtStamp = (ts) => {
-      const d = new Date(ts);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      const hh = String(d.getHours()).padStart(2, "0");
-      const mm = String(d.getMinutes()).padStart(2, "0");
-      return `${y}-${m}-${dd} ${hh}:${mm}`;
-    };
-
-    function getQuestionCorrectKeys(Q){
-      return Q.options.filter(o => o.correct).map(o => o.key);
-    }
-
-    function getQuestionChosenKeys(idx){
-      return [...list.querySelectorAll(`input[type="checkbox"][data-q="${idx}"]`)]
-        .filter(x => x.checked)
-        .map(x => x.getAttribute("data-key"));
-    }
-
-    function isQuestionCorrect(Q, idx){
-      const chosen = new Set(getQuestionChosenKeys(idx));
-      const correct = new Set(getQuestionCorrectKeys(Q));
-
-      if (chosen.size !== correct.size) return false;
-      for (const k of correct){
-        if (!chosen.has(k)) return false;
-      }
-      return true;
-    }
-
-    function paintQAttempts(idx){
-      const Q = qs[idx];
-      const tries = qGetTries(L.id, Q.qid);
-      const ul = list.querySelector(`#qList-${idx}`);
-      const cnt = list.querySelector(`#qCnt-${idx}`);
-      if (!ul || !cnt) return;
-
-      cnt.textContent = String(tries.length);
-      ul.innerHTML = "";
-
-      tries.forEach((t, i) => {
-        const item = document.createElement("li");
-        const keys = (t.sel || []).join(", ");
-        item.innerHTML = `❌ <b>#${i + 1}</b> (${fmtStamp(t.ts)}): <code>${esc(keys || "∅")}</code>`;
-        ul.appendChild(item);
-      });
-    }
-
-    function updateQuizSummary(){
-      let correctCount = 0;
-
-      qs.forEach((Q, idx) => {
-        const badge = list.querySelector(`#qBadge-${idx}`);
-        if (badge && badge.dataset.state === "ok") {
-          correctCount++;
-        }
-      });
-
-      const total = qs.length;
-      const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-      if (summaryBar) summaryBar.style.width = pct + "%";
-
-      if (correctCount === 0) {
-        summaryText.innerHTML = isRO
-          ? `Ai <b>0 / ${total}</b> corecte momentan.`
-          : `You currently have <b>0 / ${total}</b> correct.`;
-        return;
-      }
-
-      if (correctCount < total) {
-        summaryText.innerHTML = isRO
-          ? `Ai <b>${correctCount} / ${total}</b> corecte. Mai sunt de reparat <b>${total - correctCount}</b>.`
-          : `You have <b>${correctCount} / ${total}</b> correct. <b>${total - correctCount}</b> still need fixing.`;
-        return;
-      }
-
-      summaryText.innerHTML = isRO
-        ? `🎉 Perfect. Ai <b>${total} / ${total}</b> corecte.`
-        : `🎉 Perfect. You got <b>${total} / ${total}</b> correct.`;
-    }
-
-    function showExplainButton(idx){
-      const expBtn = list.querySelector(`#expBtn-${idx}`);
-      if (expBtn) expBtn.style.display = "inline-block";
-    }
-
-    function hideExplainButtonIfClean(idx){
-      const tries = qGetTries(L.id, qs[idx].qid);
-      const expBtn = list.querySelector(`#expBtn-${idx}`);
-      if (!expBtn) return;
-      expBtn.style.display = tries.length > 0 ? "inline-block" : "none";
-    }
-
-    function setQuestionState(idx, ok, messageHtml = ""){
-      const badge = list.querySelector(`#qBadge-${idx}`);
-      const msgEl = list.querySelector(`#qMsg-${idx}`);
-
-      if (!badge || !msgEl) return;
-
-      badge.style.display = "inline-block";
-      badge.dataset.state = ok ? "ok" : "bad";
-      badge.textContent = ok
-        ? (isRO ? "Corect" : "Correct")
-        : (isRO ? "Greșit" : "Wrong");
-      badge.className = "qBadge " + (ok ? "ok" : "bad");
-
-      msgEl.innerHTML = messageHtml || "";
-    }
-
-    function clearQuestionState(idx){
-      const badge = list.querySelector(`#qBadge-${idx}`);
-      const msgEl = list.querySelector(`#qMsg-${idx}`);
-      const expEl = list.querySelector(`#exp-${idx}`);
-
-      if (badge){
-        badge.style.display = "none";
-        badge.dataset.state = "";
-        badge.className = "qBadge";
-      }
-
-      if (msgEl) msgEl.innerHTML = "";
-      if (expEl) expEl.style.display = "none";
-
-      hideExplainButtonIfClean(idx);
-    }
-
-    function renderQuiz(){
-      list.innerHTML = "";
-
-      qs.forEach((Q, idx) => {
-        const hasWrongHistory = qGetTries(L.id, Q.qid).length > 0;
-
-        const q = document.createElement("div");
-        q.className = "qBlock";
-        q.innerHTML = `
-          <div class="qText"><b>Q${idx + 1}.</b> ${Q.prompt}</div>
-
-          <div class="qOptions">
-            ${Q.options.map(opt => `
-              <label class="qOption">
-                <input type="checkbox" data-q="${idx}" data-key="${opt.key}">
-                <span><b>(${opt.key})</b> <span class="qTxt">${esc(opt.text)}</span></span>
-              </label>
-            `).join("")}
-          </div>
-
-          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
-            <span class="qBadge" id="qBadge-${idx}" data-state="" style="display:none"></span>
-            <button class="explainBtn" id="expBtn-${idx}" style="display:${hasWrongHistory ? 'inline-block' : 'none'}" type="button">
-              📘 ${isRO ? 'Explică' : 'Explain'}
-            </button>
-          </div>
-
-          <div class="legend" id="qMsg-${idx}" style="margin-top:6px;"></div>
-          <div class="explain" id="exp-${idx}" style="display:none">${Q.explanationHTML || ""}</div>
-
-          <details class="collapsible" id="qAtt-${idx}" style="margin-top:8px;">
-            <summary>⛔ ${isRO ? 'Răspunsuri greșite' : 'Wrong answers'} (<span id="qCnt-${idx}">0</span>)</summary>
-            <ul class="attempts" id="qList-${idx}"></ul>
-          </details>
-        `;
-        list.appendChild(q);
-
-        const btn = q.querySelector(`#expBtn-${idx}`);
-        const exd = q.querySelector(`#exp-${idx}`);
-        btn.onclick = () => {
-          exd.style.display = (exd.style.display === "block" ? "none" : "block");
-        };
-
-        paintQAttempts(idx);
-      });
-
-      MH_render(list);
-      updateQuizSummary();
-    }
-
-    function gradeOne(idx){
-      const Q = qs[idx];
-      const chosen = getQuestionChosenKeys(idx);
-      const should = getQuestionCorrectKeys(Q);
-      const ok = isQuestionCorrect(Q, idx);
-
-      if (ok) {
-        setQuestionState(
-          idx,
-          true,
-          isRO
-            ? `✅ Ai bifat exact combinația corectă: <code>${esc(should.join(", "))}</code>`
-            : `✅ You selected the exact correct combination: <code>${esc(should.join(", "))}</code>`
-        );
-        return true;
-      }
-
-      qPushTry(L.id, Q.qid, { sel: chosen, ts: Date.now() });
-      paintQAttempts(idx);
-      showExplainButton(idx);
-
-      const det = list.querySelector(`#qAtt-${idx}`);
-      if (det) det.open = true;
-
-      setQuestionState(
-        idx,
-        false,
-        isRO
-          ? `❌ Ai ales <code>${esc(chosen.join(", ") || "∅")}</code>. Corect era altă combinație.`
-          : `❌ You selected <code>${esc(chosen.join(", ") || "∅")}</code>. The correct combination was different.`
-      );
-
-      return false;
-    }
-
-    async function gradeAll(){
-      let correctCount = 0;
-
-      qs.forEach((Q, idx) => {
-        if (gradeOne(idx)) correctCount++;
-      });
-
-      updateQuizSummary();
-      content.scrollTop = 0;
-
-      if (correctCount === qs.length && qs.length > 0) {
-        const wasLearned = learnedSet.has(L.id);
-        if (checkAllButton) checkAllButton.disabled = true;
-        if (completionStatus) {
-          completionStatus.textContent = isRO
-            ? '☁️ Se salvează statusul Învățată…'
-            : '☁️ Saving Learned status…';
-        }
-
-        const row = await completeLessonQuizSafe(L.id);
-        if (row?.learned) {
-          if (!wasLearned) mhIncrementTodayProgress("lesson");
-          learnedSet.add(L.id);
-          readSet.add(L.id);
-          updateCounters();
-          renderCards();
-          buildNestedTree();
-          buildTagPanel();
-          roadmapController?.refreshProgress();
-          document.getElementById("viewTitle").textContent = "🎓 " + (isRO
-            ? (L.title_ro || L.title_en || L.id)
-            : (L.title_en || L.title_ro || L.id));
-          if (completionStatus) {
-            completionStatus.textContent = isRO
-              ? '🎓 Lecție învățată. Roadmap-ul și contoarele au fost actualizate.'
-              : '🎓 Lesson learned. The roadmap and counters were updated.';
-            completionStatus.classList.add('is-complete');
-          }
-          const statusButton = document.getElementById('understoodBtn');
-          if (statusButton) {
-            statusButton.textContent = isRO ? '🎓 Lecție învățată' : '🎓 Lesson learned';
-            statusButton.classList.add('is-learned');
-          }
-        } else if (completionStatus) {
-          completionStatus.textContent = isRO
-            ? '⚠️ Răspunsurile sunt corecte, dar statusul nu a putut fi salvat. Reîncearcă.'
-            : '⚠️ The answers are correct, but the status could not be saved. Retry.';
-        }
-        if (checkAllButton) checkAllButton.disabled = false;
-      } else if (completionStatus && !learnedSet.has(L.id)) {
-        completionStatus.textContent = isRO
-          ? `📖 Lecție citită. Pentru Învățată ai nevoie de ${qs.length}/${qs.length} corecte.`
-          : `📖 Lesson read. You need ${qs.length}/${qs.length} correct for Learned.`;
-      }
-
-      return correctCount;
-    }
-
-    function resetQuestionInputs(idx){
-      [...list.querySelectorAll(`input[type="checkbox"][data-q="${idx}"]`)].forEach(cb => {
-        cb.checked = false;
-      });
-    }
-
-    function resetOnlyWrong(){
-      qs.forEach((Q, idx) => {
-        const badge = list.querySelector(`#qBadge-${idx}`);
-        const isWrong = badge && badge.dataset.state === "bad";
-
-        if (isWrong) {
-          resetQuestionInputs(idx);
-          clearQuestionState(idx);
-        }
-      });
-
-      updateQuizSummary();
-    }
-
-    function resetQuizUI(){
-      qs.forEach((Q, idx) => {
-        resetQuestionInputs(idx);
-        clearQuestionState(idx);
-      });
-
-      updateQuizSummary();
-    }
-
-    box.querySelector("#quizCheckAll").onclick = () => { void gradeAll(); };
-
-    box.querySelector("#quizRetryWrong").onclick = () => {
-      resetOnlyWrong();
-    };
-
-    box.querySelector("#quizNew").onclick = () => {
-      const fresh = buildLessonQuiz(L, 3);
-      qs.length = 0;
-      fresh.forEach(x => qs.push(x));
-      renderQuiz();
-    };
-
-    box.querySelector("#quizReset").onclick = () => {
-      resetQuizUI();
-    };
-
-    box.querySelector("#quizBack").onclick = () => {
-      openViewer(L);
-    };
-
-    renderQuiz();
-    setTimeout(() => { MH_render(content); }, 0);
+    void lessonQuizController.open(L);
   }
 
   function setLessonOnlyActionsVisible(show) {

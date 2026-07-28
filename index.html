@@ -43,6 +43,7 @@
   <link rel="stylesheet" href="css/learning-workspace.css" />
   <link rel="stylesheet" href="css/problem-workspace.css" />
   <link rel="stylesheet" href="css/lesson-status.css" />
+  <link rel="stylesheet" href="css/lesson-quiz-admin.css" />
   <link rel="stylesheet" href="css/quick-nav.css" />
   <link rel="stylesheet" href="css/section-layout.css" />
   <link rel="stylesheet" href="css/app-shell.css" />
@@ -690,6 +691,11 @@
 </label></div>
 <!-- bloc LECȚIE / CERCETARE / ISTORIE -->
 <div id="block-lesson" style="display:block;">
+<div class="mh-lesson-editor-tabs" id="mhLessonEditorTabs" role="tablist" aria-label="Editor lecție">
+<button class="is-active" data-lesson-editor-tab="content" type="button">Conținut</button>
+<button data-lesson-editor-tab="quiz" type="button">Verificare</button>
+</div>
+<div class="mh-lesson-editor-panel" data-lesson-editor-panel="content">
 <label>
 <span data-i18n="admin_learn_ro_label">Ce înveți (RO):</span>
 <textarea id="mh_learn_ro" name="learn_ro" rows="2"></textarea>
@@ -706,6 +712,10 @@
 <span data-i18n="admin_body_en_label">Conținut EN (opțional):</span>
 <textarea id="mh_body_en" name="body_en" rows="3"></textarea>
 </label>
+</div>
+<div class="mh-lesson-editor-panel" data-lesson-editor-panel="quiz" hidden>
+<div id="mhLessonQuizAdmin"></div>
+</div>
 </div>
 <!-- bloc PROBLEMĂ -->
 <div id="block-problem" style="display:none;">
