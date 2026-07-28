@@ -47,6 +47,7 @@
   <link rel="stylesheet" href="css/app-shell.css" />
   <link rel="stylesheet" href="css/analytics.css" />
   <link rel="stylesheet" href="css/gamification.css" />
+  <link rel="stylesheet" href="css/admin-studio.css" />
   <script defer src="js/katex-init.js"></script>
 </head>
 <body>
@@ -510,388 +511,343 @@
     </div>
   </div>
 
-  <!-- Admin Drawer -->
-  <div class="drawer" id="adminDrawer">
-    <div class="panel">
-      <header class="bar" style="justify-content:space-between">
-        <div style="display:flex;gap:10px;align-items:center">
-          <button class="btn" id="closeAdmin" data-i18n="admin_close" type="button">✖️ Închide</button>
-          <div class="logo" style="font-weight:800" data-i18n="admin_title">🛠 Admin MathHard</div>
-        </div>
-        <div class="counter">🔐 <span id="adminStatus">Supabase</span></div>
-      </header>
-
-      <div class="content viewer" style="gap:12px;display:flex;flex-direction:column">
-        <p class="legend" style="margin-bottom:0" data-i18n-html="admin_intro_text">
-          Conținutul este salvat direct în Supabase. Accesul este permis numai utilizatorilor autentificați care au rolul <code>admin</code> în <code>public.user_roles</code>.
-        </p>
-
-        <!-- FORMULAR PUBLICARE ÎN SUPABASE -->
-        <section id="server-publish" style="width:100%;margin:0;padding:0;">
-          <form id="mhPublish" style="display:flex;flex-direction:column;gap:10px;">
-
-            <label style="display:block;">
-              <span data-i18n="admin_type_label">Tip conținut:</span>
-              <select name="type" id="mh_type" class="select" style="width:100%;max-width:280px;">
-                <option value="lesson" data-i18n="admin_type_lesson">📘 Lecție</option>
-                <option value="problem" data-i18n="admin_type_problem">🧩 Problemă / Olimpiadă</option>
-                <option value="exam" data-i18n="admin_type_exam">📑 Examen / set</option>
-                <option value="research" data-i18n="admin_type_research">🔬 Cercetare</option>
-                <option value="history" data-i18n="admin_type_history">🕰 Istoria matematicii</option>
-              </select>
-            </label>
-
-            <!-- bloc comun -->
-            <div id="block-common" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit, minmax(240px,1fr));">
-              <label>
-                <span data-i18n="admin_id_label">ID / slug (unic):</span>
-                <input
-                  name="id"
-                  id="mh_id"
-                  placeholder="ex: v-numere-nat"
-                  data-i18n-placeholder="admin_id_placeholder"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-              <label>
-                <span data-i18n="admin_grade_label">Nivel / Clasă (V, VI, BAC, FAC, RES...):</span>
-                <input
-                  name="grade"
-                  id="mh_grade"
-                  value="V"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-              <label>
-                <span data-i18n="admin_chapter_label">Capitol / Grupare:</span>
-                <input
-                  name="chapter"
-                  id="mh_chapter"
-                  value="Numere Naturale"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-              <label>
-                <span data-i18n="admin_tags_label">Tag-uri (virgulă):</span>
-                <input
-                  name="tags"
-                  id="mh_tags"
-                  placeholder="V, numere, olimpiadă"
-                  data-i18n-placeholder="admin_tags_placeholder"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-            </div>
-
-            <!-- bloc LECȚIE / CERCETARE / ISTORIE -->
-            <div id="block-lesson" style="display:block;">
-              <label style="display:block;">
-                <span data-i18n="admin_title_ro_label">Titlu RO:</span>
-                <input
-                  name="title_ro"
-                  id="mh_title_ro"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-              <label style="display:block;">
-                <span data-i18n="admin_title_en_label">Titlu EN:</span>
-                <input
-                  name="title_en"
-                  id="mh_title_en"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-              <label style="display:block;">
-                <span data-i18n="admin_learn_ro_label">Ce înveți (RO):</span>
-                <textarea
-                  name="learn_ro"
-                  id="mh_learn_ro"
-                  rows="2"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-              <label style="display:block;">
-                <span data-i18n="admin_why_ro_label">De ce e util (RO):</span>
-                <textarea
-                  name="why_ro"
-                  id="mh_why_ro"
-                  rows="2"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-              <label style="display:block;">
-                <span data-i18n="admin_body_ro_label">Conținut RO (poți folosi KaTeX):</span>
-                <textarea
-                  name="body_ro"
-                  id="mh_body_ro"
-                  rows="6"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-              <label style="display:block;">
-                <span data-i18n="admin_body_en_label">Conținut EN (opțional):</span>
-                <textarea
-                  name="body_en"
-                  id="mh_body_en"
-                  rows="3"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-            </div>
-
-            <!-- bloc PROBLEMĂ -->
-            <div id="block-problem" style="display:none;">
-              <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit, minmax(220px,1fr));">
-                <label>
-                  <span data-i18n="admin_problem_lesson_label">Lecția (lessonId) la care se leagă:</span>
-                  <input
-                    name="lesson_id"
-                    id="mh_lesson_id"
-                    placeholder="ex: v-citirea-nr-nat"
-                    data-i18n-placeholder="admin_problem_lesson_placeholder"
-                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                  />
-                </label>
-                <label>
-                  <span data-i18n="admin_problem_difficulty_label">Dificultate (0–5):</span>
-                  <input
-                    name="difficulty"
-                    id="mh_difficulty"
-                    type="number"
-                    min="0"
-                    max="5"
-                    value="1"
-                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                  />
-                </label>
-                <label>
-                  <span data-i18n="admin_problem_olymp_level_label">Nivel olimpiadă (opțional):</span>
-                  <select name="olymp_level" id="mh_olymp_level" class="select" style="width:100%;">
-                    <option value="" data-i18n="admin_none">—</option>
-                    <option value="locala" data-i18n="olymp_level_local">locală</option>
-                    <option value="judeteana" data-i18n="olymp_level_county">județeană</option>
-                    <option value="regionala" data-i18n="olymp_level_regional_short">regională</option>
-                    <option value="nationala" data-i18n="olymp_level_national">națională</option>
-                    <option value="balcaniada" data-i18n="olymp_level_balkan">balcaniadă</option>
-                    <option value="internationala" data-i18n="olymp_level_international">internațională</option>
-                    <option value="mondiala" data-i18n="olymp_level_world">mondială</option>
-                  </select>
-                </label>
-              </div>
-
-              <label style="display:block;">
-                <span data-i18n="admin_problem_statement_ro">Enunț RO:</span>
-                <textarea
-                  name="statement_ro"
-                  id="mh_statement_ro"
-                  rows="4"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-
-              <label style="display:block;">
-                <span data-i18n="admin_problem_statement_en">Enunț EN:</span>
-                <textarea
-                  name="statement_en"
-                  id="mh_statement_en"
-                  rows="3"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-
-              <label style="display:block;">
-                <span data-i18n="admin_problem_answer">Răspuns (exact, ca în verificator):</span>
-                <input
-                  name="answer"
-                  id="mh_answer"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-
-              <label style="display:block;">
-                <span data-i18n="admin_problem_hint1">Hint 1 (RO):</span>
-                <input
-                  name="hint1_ro"
-                  id="mh_hint1_ro"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-
-              <label style="display:block;">
-                <span data-i18n="admin_problem_hint2">Hint 2 (RO):</span>
-                <input
-                  name="hint2_ro"
-                  id="mh_hint2_ro"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-
-              <details class="collapsible" style="margin-top:10px;">
-                <summary>🧠 Soluții și moduri de explicație (Phase 13B)</summary>
-                <div style="display:grid;gap:9px;margin-top:10px;">
-                  <label style="display:block;">
-                    <span>Soluție academică RO:</span>
-                    <textarea id="mh_solution_ro" rows="5" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"></textarea>
-                  </label>
-                  <label style="display:block;">
-                    <span>Soluție academică EN:</span>
-                    <textarea id="mh_solution_en" rows="4" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"></textarea>
-                  </label>
-                  <label style="display:block;">
-                    <span>Explicație simplă RO:</span>
-                    <textarea id="mh_explanation_simple_ro" rows="4" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"></textarea>
-                  </label>
-                  <label style="display:block;">
-                    <span>Explicație simplă EN:</span>
-                    <textarea id="mh_explanation_simple_en" rows="4" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"></textarea>
-                  </label>
-                  <label style="display:block;">
-                    <span>Boss mode RO:</span>
-                    <textarea id="mh_explanation_boss_ro" rows="4" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"></textarea>
-                  </label>
-                  <label style="display:block;">
-                    <span>Boss mode EN:</span>
-                    <textarea id="mh_explanation_boss_en" rows="4" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"></textarea>
-                  </label>
-                </div>
-              </details>
-            </div>
-
-            <!-- bloc EXAMEN -->
-            <div id="block-exam" style="display:none;">
-              <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit, minmax(220px,1fr));">
-                <label>
-                  <span data-i18n="admin_exam_type_label">Tip examen (EN / BAC / ADM / ALT):</span>
-                  <input
-                    name="exam_type"
-                    id="mh_exam_type"
-                    value="EN"
-                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                  />
-                </label>
-                <label>
-                  <span data-i18n="admin_exam_year_label">An:</span>
-                  <input
-                    name="exam_year"
-                    id="mh_exam_year"
-                    type="number"
-                    value="2025"
-                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                  />
-                </label>
-                <label>
-                  <span data-i18n="admin_exam_hours_label">Timp implicit (ore):</span>
-                  <input
-                    name="exam_hours"
-                    id="mh_exam_hours"
-                    type="number"
-                    value="2"
-                    style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                  />
-                </label>
-              </div>
-
-              <label style="display:block;">
-                <span data-i18n="admin_exam_title_ro_label">Titlu examen RO:</span>
-                <input
-                  name="exam_title_ro"
-                  id="mh_exam_title_ro"
-                  value="Examen nou"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-
-              <label style="display:block;">
-                <span data-i18n="admin_exam_title_en_label">Titlu examen EN:</span>
-                <input
-                  name="exam_title_en"
-                  id="mh_exam_title_en"
-                  value="New exam"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-
-              <label style="display:block;">
-                <span data-i18n="admin_exam_problem_ids">ID-urile problemelor (virgulă):</span>
-                <textarea
-                  name="exam_problems"
-                  id="mh_exam_problems"
-                  rows="3"
-                  placeholder="ex: v-cit-00,v-cit-01,bac25-1"
-                  data-i18n-placeholder="admin_exam_problem_ids_placeholder"
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                ></textarea>
-              </label>
-
-              <div id="mh_exam_items_editor" style="margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-                  <h4 style="margin:0;" data-i18n="admin_exam_items_title">🧩 Itemi examen (open + grile)</h4>
-
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                    <label style="display:flex;flex-direction:column;gap:4px;">
-                      <span data-i18n="admin_exam_scoring_profile">Scoring profile</span>
-                      <select id="mh_exam_scoring_profile" class="select">
-                        <option value="default_exact_v1">default_exact_v1</option>
-                        <option value="utcn_single_v1">utcn_single_v1</option>
-                        <option value="ubb_multi_v1">ubb_multi_v1</option>
-                      </select>
-                    </label>
-
-                    <button class="btn small" type="button" id="mhAddOpenItemBtn" data-i18n="admin_add_open_item">➕ Item open</button>
-                    <button class="btn small" type="button" id="mhAddMcqItemBtn" data-i18n="admin_add_mcq_item">➕ Item grilă</button>
-                  </div>
-                </div>
-
-                <p class="legend" style="margin:10px 0 0;" data-i18n="admin_exam_items_text">
-                  Aici vei putea construi examene moderne: itemi open, grile A-D / A-E / custom, multiple corecte sau niciuna.
-                </p>
-
-                <div id="mhExamItemsList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;"></div>
-              </div>
-
-              <label style="display:block;">
-                <span data-i18n="admin_exam_credit_label">Credit / sursă (HTML):</span>
-                <input
-                  name="exam_credit"
-                  id="mh_exam_credit"
-                  value=""
-                  style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);"
-                />
-              </label>
-            </div>
-
-            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
-              <button class="btn" type="submit" id="mhSubmitBtn" data-i18n="admin_save_supabase">💾 Salvează în Supabase</button>
-              <span id="mhPublishStatus" class="legend" style="margin-left:4px;"></span>
-            </div>
-          </form>
-
-          <div id="mhAdminModeBadge" class="legend" style="margin-top:10px;" data-i18n="admin_mode_create">
+  <!-- Admin Studio -->
+<div class="drawer" id="adminDrawer">
+<div class="panel mh-admin-panel">
+<header class="bar mh-admin-topbar">
+<div class="mh-admin-topbar-title">
+<button class="btn" data-i18n="admin_close" id="closeAdmin" type="button">Închide</button>
+<div>
+<strong>Admin Studio</strong>
+<span>MathHard</span>
+</div>
+</div>
+<div class="mh-admin-status"><span id="adminStatus">Supabase</span></div>
+</header>
+<div class="content viewer mh-admin-viewer">
+<div class="mh-admin-studio" id="mhAdminStudio">
+<aside aria-label="Admin Studio" class="mh-admin-sidebar">
+<nav class="mh-admin-nav">
+<button class="mh-admin-nav-button is-active" data-admin-panel-target="dashboard" type="button">Prezentare</button>
+<button class="mh-admin-nav-button" data-admin-panel-target="content" type="button">Conținut</button>
+<button class="mh-admin-nav-button" data-admin-panel-target="editor" type="button">Editor</button>
+<button class="mh-admin-nav-button" data-admin-panel-target="roadmaps" type="button">Roadmap-uri</button>
+</nav>
+<div class="mh-admin-sidebar-actions">
+<button class="btn small" data-i18n="admin_refresh_list" id="mhRefreshList" type="button">Actualizează catalogul</button>
+<button class="btn small" data-i18n="admin_logout" id="mhLogoutBtn" type="button">Delogare</button>
+</div>
+</aside>
+<main class="mh-admin-main">
+<section class="mh-admin-workspace is-active" data-admin-panel="dashboard" tabindex="-1">
+<div class="mh-admin-page-header">
+<div>
+<span class="mh-admin-eyebrow">Admin Studio</span>
+<h2>Prezentare</h2>
+</div>
+<span class="mh-admin-catalog-status" id="mhAdminCatalogStatus">Catalog</span>
+</div>
+<div class="mh-admin-stat-grid">
+<article><span>Total</span><strong id="mhAdminCountTotal">0</strong></article>
+<article><span>Lecții</span><strong id="mhAdminCountLessons">0</strong></article>
+<article><span>Probleme</span><strong id="mhAdminCountProblems">0</strong></article>
+<article><span>Examene</span><strong id="mhAdminCountExams">0</strong></article>
+<article><span>Research / Istorie</span><strong id="mhAdminCountExtra">0</strong></article>
+</div>
+<div class="mh-admin-dashboard-grid">
+<section class="mh-admin-card">
+<div class="mh-admin-card-header">
+<div><span class="mh-admin-eyebrow">Acțiuni</span><h3>Conținut nou</h3></div>
+</div>
+<div class="mh-admin-quick-actions">
+<button class="btn" data-admin-create-type="lesson" type="button">Lecție</button>
+<button class="btn" data-admin-create-type="problem" type="button">Problemă</button>
+<button class="btn" data-admin-create-type="exam" type="button">Examen</button>
+</div>
+</section>
+<section class="mh-admin-card">
+<div class="mh-admin-card-header">
+<div><span class="mh-admin-eyebrow">Catalog</span><h3>Acces rapid</h3></div>
+</div>
+<div class="mh-admin-quick-actions">
+<button class="btn" data-admin-open-content="lesson" type="button">Lecții</button>
+<button class="btn" data-admin-open-content="problem" type="button">Probleme</button>
+<button class="btn" data-admin-open-content="exam" type="button">Examene</button>
+</div>
+</section>
+</div>
+</section>
+<section class="mh-admin-workspace" data-admin-panel="content" hidden="" tabindex="-1">
+<div class="mh-admin-page-header">
+<div>
+<span class="mh-admin-eyebrow">Supabase</span>
+<h2>Conținut</h2>
+</div>
+<button class="btn" data-admin-context-create="" data-admin-create-type="lesson" type="button">Creează</button>
+</div>
+<div aria-label="Tip conținut" class="mh-admin-type-tabs" role="tablist">
+<button class="is-active" data-admin-content-type="all" type="button">Toate</button>
+<button data-admin-content-type="lesson" type="button">Lecții</button>
+<button data-admin-content-type="problem" type="button">Probleme</button>
+<button data-admin-content-type="exam" type="button">Examene</button>
+<button data-admin-content-type="research" type="button">Cercetare</button>
+<button data-admin-content-type="history" type="button">Istorie</button>
+</div>
+<div class="mh-admin-filter-bar">
+<label class="mh-admin-search-field">
+<span>Caută</span>
+<input autocomplete="off" id="mhAdminSearch" placeholder="Titlu, ID, capitol, tag..." type="search"/>
+</label>
+<label>
+<span>Clasă</span>
+<select id="mhAdminGradeFilter"><option value="all">Toate clasele</option></select>
+</label>
+<label>
+<span>Capitol</span>
+<select id="mhAdminChapterFilter"><option value="all">Toate capitolele</option></select>
+</label>
+<label>
+<span>Dificultate</span>
+<select id="mhAdminDifficultyFilter">
+<option value="all">Toate</option>
+<option value="0">0</option><option value="1">1</option><option value="2">2</option>
+<option value="3">3</option><option value="4">4</option><option value="5">5</option>
+</select>
+</label>
+<label>
+<span>Sortare</span>
+<select id="mhAdminSort">
+<option value="title-asc">Titlu A–Z</option>
+<option value="title-desc">Titlu Z–A</option>
+<option value="id-asc">ID</option>
+<option value="type-asc">Tip</option>
+<option value="difficulty-desc">Dificultate</option>
+<option value="year-desc">An</option>
+</select>
+</label>
+</div>
+<div class="mh-admin-list-header">
+<div class="legend" id="mhAdminListInfo">0 iteme</div>
+</div>
+<div class="mh-admin-content-list" id="mhAdminList"></div>
+</section>
+<section class="mh-admin-workspace" data-admin-panel="editor" hidden="" tabindex="-1">
+<div class="mh-admin-page-header mh-admin-editor-header">
+<div>
+<span class="mh-admin-eyebrow">Editor</span>
+<h2>Conținut</h2>
+<div class="legend" data-i18n="admin_mode_create" id="mhAdminModeBadge" style="margin-top:10px;">
             Mod curent: creare
           </div>
+</div>
+<button class="btn small" data-i18n="admin_reset_form" id="mhResetForm" type="button">Resetează formularul</button>
+</div>
+<section class="mh-admin-editor-card" id="server-publish">
+<form id="mhPublish" style="display:flex;flex-direction:column;gap:10px;">
+<label>
+<span data-i18n="admin_type_label">Tip conținut:</span>
+<select class="select" id="mh_type" name="type">
+<option data-i18n="admin_type_lesson" value="lesson">📘 Lecție</option>
+<option data-i18n="admin_type_problem" value="problem">🧩 Problemă / Olimpiadă</option>
+<option data-i18n="admin_type_exam" value="exam">📑 Examen / set</option>
+<option data-i18n="admin_type_research" value="research">🔬 Cercetare</option>
+<option data-i18n="admin_type_history" value="history">🕰 Istoria matematicii</option>
+</select>
+</label>
+<!-- bloc comun -->
+<div class="mh-admin-form-grid mh-admin-identity-grid" id="block-identity"><label>
+<span data-i18n="admin_id_label">ID / slug (unic):</span>
+<input data-i18n-placeholder="admin_id_placeholder" id="mh_id" name="id" placeholder="ex: v-numere-nat"/>
+</label></div><div class="mh-admin-form-grid" id="block-common">
 
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-            <button class="btn small" type="button" id="mhResetForm" data-i18n="admin_reset_form">♻️ Reset form</button>
-            <button class="btn small" type="button" id="mhRefreshList" data-i18n="admin_refresh_list">🔄 Refresh listă</button>
-            <button class="btn small" type="button" id="mhLogoutBtn" data-i18n="admin_logout">🚪 Logout</button>
-          </div>
-
-          <hr style="border-color:var(--border);opacity:.35;margin:14px 0;" />
-
-          <section id="mhAdminListWrap">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-              <h3 style="margin:0;" data-i18n="admin_supabase_content_title">📚 Conținut din Supabase</h3>
-              <div id="mhAdminListInfo" class="legend" data-i18n="admin_list_count_default">0 iteme</div>
-            </div>
-
-            <div id="mhAdminList" class="grid" style="margin-top:10px;"></div>
-          </section>
-
-          <section id="mhRoadmapAdminStudio" hidden></section>
-        </section>
-      </div>
-    </div>
-  </div>
+<label>
+<span data-i18n="admin_grade_label">Nivel / Clasă (V, VI, BAC, FAC, RES...):</span>
+<input id="mh_grade" name="grade" value="V"/>
+</label>
+<label>
+<span data-i18n="admin_chapter_label">Capitol / Grupare:</span>
+<input id="mh_chapter" name="chapter" value="Numere Naturale"/>
+</label>
+<label>
+<span data-i18n="admin_tags_label">Tag-uri (virgulă):</span>
+<input data-i18n-placeholder="admin_tags_placeholder" id="mh_tags" name="tags" placeholder="V, numere, olimpiadă"/>
+</label>
+</div><div class="mh-admin-form-grid mh-admin-title-grid" id="block-title"><label>
+<span data-i18n="admin_title_ro_label">Titlu RO:</span>
+<input id="mh_title_ro" name="title_ro"/>
+</label><label>
+<span data-i18n="admin_title_en_label">Titlu EN:</span>
+<input id="mh_title_en" name="title_en"/>
+</label></div>
+<!-- bloc LECȚIE / CERCETARE / ISTORIE -->
+<div id="block-lesson" style="display:block;">
+<label>
+<span data-i18n="admin_learn_ro_label">Ce înveți (RO):</span>
+<textarea id="mh_learn_ro" name="learn_ro" rows="2"></textarea>
+</label>
+<label>
+<span data-i18n="admin_why_ro_label">De ce e util (RO):</span>
+<textarea id="mh_why_ro" name="why_ro" rows="2"></textarea>
+</label>
+<label>
+<span data-i18n="admin_body_ro_label">Conținut RO (poți folosi KaTeX):</span>
+<textarea id="mh_body_ro" name="body_ro" rows="6"></textarea>
+</label>
+<label>
+<span data-i18n="admin_body_en_label">Conținut EN (opțional):</span>
+<textarea id="mh_body_en" name="body_en" rows="3"></textarea>
+</label>
+</div>
+<!-- bloc PROBLEMĂ -->
+<div id="block-problem" style="display:none;">
+<div class="mh-admin-form-grid">
+<label>
+<span data-i18n="admin_problem_lesson_label">Lecția (lessonId) la care se leagă:</span>
+<input data-i18n-placeholder="admin_problem_lesson_placeholder" id="mh_lesson_id" name="lesson_id" placeholder="ex: v-citirea-nr-nat"/>
+</label>
+<label>
+<span data-i18n="admin_problem_difficulty_label">Dificultate (0–5):</span>
+<input id="mh_difficulty" max="5" min="0" name="difficulty" type="number" value="1"/>
+</label>
+<label>
+<span data-i18n="admin_problem_olymp_level_label">Nivel olimpiadă (opțional):</span>
+<select class="select" id="mh_olymp_level" name="olymp_level">
+<option data-i18n="admin_none" value="">—</option>
+<option data-i18n="olymp_level_local" value="locala">locală</option>
+<option data-i18n="olymp_level_county" value="judeteana">județeană</option>
+<option data-i18n="olymp_level_regional_short" value="regionala">regională</option>
+<option data-i18n="olymp_level_national" value="nationala">națională</option>
+<option data-i18n="olymp_level_balkan" value="balcaniada">balcaniadă</option>
+<option data-i18n="olymp_level_international" value="internationala">internațională</option>
+<option data-i18n="olymp_level_world" value="mondiala">mondială</option>
+</select>
+</label>
+</div>
+<label>
+<span data-i18n="admin_problem_statement_ro">Enunț RO:</span>
+<textarea id="mh_statement_ro" name="statement_ro" rows="4"></textarea>
+</label>
+<label>
+<span data-i18n="admin_problem_statement_en">Enunț EN:</span>
+<textarea id="mh_statement_en" name="statement_en" rows="3"></textarea>
+</label>
+<label>
+<span data-i18n="admin_problem_answer">Răspuns (exact, ca în verificator):</span>
+<input id="mh_answer" name="answer"/>
+</label>
+<label>
+<span data-i18n="admin_problem_hint1">Hint 1 (RO):</span>
+<input id="mh_hint1_ro" name="hint1_ro"/>
+</label>
+<label>
+<span data-i18n="admin_problem_hint2">Hint 2 (RO):</span>
+<input id="mh_hint2_ro" name="hint2_ro"/>
+</label>
+<details class="collapsible" style="margin-top:10px;">
+<summary>🧠 Soluții și moduri de explicație (Phase 13B)</summary>
+<div class="mh-admin-form-grid">
+<label>
+<span>Soluție academică RO:</span>
+<textarea id="mh_solution_ro" rows="5"></textarea>
+</label>
+<label>
+<span>Soluție academică EN:</span>
+<textarea id="mh_solution_en" rows="4"></textarea>
+</label>
+<label>
+<span>Explicație simplă RO:</span>
+<textarea id="mh_explanation_simple_ro" rows="4"></textarea>
+</label>
+<label>
+<span>Explicație simplă EN:</span>
+<textarea id="mh_explanation_simple_en" rows="4"></textarea>
+</label>
+<label>
+<span>Boss mode RO:</span>
+<textarea id="mh_explanation_boss_ro" rows="4"></textarea>
+</label>
+<label>
+<span>Boss mode EN:</span>
+<textarea id="mh_explanation_boss_en" rows="4"></textarea>
+</label>
+</div>
+</details>
+</div>
+<!-- bloc EXAMEN -->
+<div id="block-exam" style="display:none;">
+<div class="mh-admin-form-grid">
+<label>
+<span data-i18n="admin_exam_type_label">Tip examen (EN / BAC / ADM / ALT):</span>
+<input id="mh_exam_type" name="exam_type" value="EN"/>
+</label>
+<label>
+<span data-i18n="admin_exam_year_label">An:</span>
+<input id="mh_exam_year" name="exam_year" type="number" value="2025"/>
+</label>
+<label>
+<span data-i18n="admin_exam_hours_label">Timp implicit (ore):</span>
+<input id="mh_exam_hours" name="exam_hours" type="number" value="2"/>
+</label>
+</div>
+<label>
+<span data-i18n="admin_exam_title_ro_label">Titlu examen RO:</span>
+<input id="mh_exam_title_ro" name="exam_title_ro" value="Examen nou"/>
+</label>
+<label>
+<span data-i18n="admin_exam_title_en_label">Titlu examen EN:</span>
+<input id="mh_exam_title_en" name="exam_title_en" value="New exam"/>
+</label>
+<label>
+<span data-i18n="admin_exam_problem_ids">ID-urile problemelor (virgulă):</span>
+<textarea data-i18n-placeholder="admin_exam_problem_ids_placeholder" id="mh_exam_problems" name="exam_problems" placeholder="ex: v-cit-00,v-cit-01,bac25-1" rows="3"></textarea>
+</label>
+<div id="mh_exam_items_editor" style="margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+<h4 data-i18n="admin_exam_items_title" style="margin:0;">🧩 Itemi examen (open + grile)</h4>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+<label>
+<span data-i18n="admin_exam_scoring_profile">Scoring profile</span>
+<select class="select" id="mh_exam_scoring_profile">
+<option value="default_exact_v1">default_exact_v1</option>
+<option value="utcn_single_v1">utcn_single_v1</option>
+<option value="ubb_multi_v1">ubb_multi_v1</option>
+</select>
+</label>
+<button class="btn small" data-i18n="admin_add_open_item" id="mhAddOpenItemBtn" type="button">➕ Item open</button>
+<button class="btn small" data-i18n="admin_add_mcq_item" id="mhAddMcqItemBtn" type="button">➕ Item grilă</button>
+</div>
+</div>
+<p class="legend" data-i18n="admin_exam_items_text" style="margin:10px 0 0;">
+                  Aici vei putea construi examene moderne: itemi open, grile A-D / A-E / custom, multiple corecte sau niciuna.
+                </p>
+<div id="mhExamItemsList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;"></div>
+</div>
+<label>
+<span data-i18n="admin_exam_credit_label">Credit / sursă (HTML):</span>
+<input id="mh_exam_credit" name="exam_credit" value=""/>
+</label>
+</div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+<button class="btn" data-i18n="admin_save_supabase" id="mhSubmitBtn" type="submit">Salvează</button>
+<span class="legend" id="mhPublishStatus" style="margin-left:4px;"></span>
+</div>
+</form>
+</section>
+</section>
+<section class="mh-admin-workspace" data-admin-panel="roadmaps" hidden="" tabindex="-1">
+<div class="mh-admin-page-header">
+<div>
+<span class="mh-admin-eyebrow">Curriculum</span>
+<h2>Roadmap-uri</h2>
+</div>
+</div>
+<section id="mhRoadmapAdminStudio"></section>
+</section>
+</main>
+</div>
+</div>
+</div>
+</div>
 
   <!-- Modal -->
   <div class="modal" id="modal">

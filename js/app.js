@@ -59,6 +59,7 @@ import {
 } from "./admin-content-model.js";
 import { createRoadmapController } from "./roadmap-controller.js";
 import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
+import { createAdminStudioController, suggestDuplicateId } from "./admin-studio-controller.js";
 import { invalidateRoadmapCache } from "./roadmap-repository.js";
 import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
 import {
@@ -77,6 +78,7 @@ import {
   let MH_AUTH_USER = null;
   let roadmapController = null;
   let roadmapAdminController = null;
+  let adminStudioController = null;
   let learningWorkspaceController = null;
 
   try {
@@ -2649,9 +2651,19 @@ import {
   mhRenderExamItemsDraft();
 
   function mhSetTypeBlocks(type) {
+    const blockCommon = document.getElementById("block-common");
+    const blockTitle = document.getElementById("block-title");
     const blockLesson = document.getElementById("block-lesson");
     const blockProblem = document.getElementById("block-problem");
     const blockExam = document.getElementById("block-exam");
+
+    if (blockCommon) {
+      blockCommon.style.display = type === "exam" ? "none" : "grid";
+    }
+
+    if (blockTitle) {
+      blockTitle.style.display = type === "exam" ? "none" : "grid";
+    }
 
     if (blockLesson) {
       blockLesson.style.display =
@@ -2770,8 +2782,8 @@ import {
     const idInput = document.getElementById("mh_id");
     const status = document.getElementById("mhPublishStatus");
 
-    if (badge) badge.textContent = "Mod curent: creare";
-    if (submitBtn) submitBtn.textContent = "💾 Salvează în Supabase";
+    if (badge) badge.textContent = "Creare";
+    if (submitBtn) submitBtn.textContent = "Salvează";
     if (idInput) idInput.disabled = false;
     if (status) status.textContent = "";
   }
@@ -2785,8 +2797,8 @@ import {
     const submitBtn = document.getElementById("mhSubmitBtn");
     const idInput = document.getElementById("mh_id");
 
-    if (badge) badge.textContent = `Mod curent: editare (${type}) • ${id}`;
-    if (submitBtn) submitBtn.textContent = "✏️ Update în Supabase";
+    if (badge) badge.textContent = `Editare · ${type} · ${id}`;
+    if (submitBtn) submitBtn.textContent = "Actualizează";
     if (idInput) idInput.disabled = true;
   }
 
@@ -2852,111 +2864,88 @@ import {
   }
 
   function mhRenderAdminList() {
-    const host = document.getElementById("mhAdminList");
-    const info = document.getElementById("mhAdminListInfo");
-    if (!host) return;
+    adminStudioController?.render(
+      mhGetAdminItems(),
+      getContentCatalogDiagnostics()
+    );
+  }
 
-    const items = mhGetAdminItems();
-    const diagnostics = getContentCatalogDiagnostics();
-    const supabaseItems = items.length;
+  function mhCreateAdminItem(type = "lesson") {
+    mhClearAdminForm();
+    const normalizedType = ["lesson", "problem", "exam", "research", "history"].includes(type)
+      ? type
+      : "lesson";
+    const typeSelect = document.getElementById("mh_type");
+    if (typeSelect) typeSelect.value = normalizedType;
+    mhSetTypeBlocks(normalizedType);
+    mhSetAdminModeCreate();
+    const status = document.getElementById("mhPublishStatus");
+    if (status) status.textContent = "";
+    queueMicrotask(() => document.getElementById("mh_id")?.focus());
+  }
 
-    host.innerHTML = "";
-    if (info) {
-      const staleText = diagnostics.staleGroups?.length
-        ? ` • cache folosit: ${diagnostics.staleGroups.join(", ")}`
-        : "";
-      info.textContent =
-        `${items.length} iteme • Supabase: ${supabaseItems}` +
-        ` • stare catalog: ${diagnostics.status || "supabase"}${staleText}`;
+  function mhPrepareDuplicate(item) {
+    if (!item?.id) return;
+    mhFillAdminFormFromItem(item);
+    const duplicateId = suggestDuplicateId(
+      item.id,
+      mhGetAdminItems().map((candidate) => candidate.id)
+    );
+    mhSetAdminModeCreate();
+    const idInput = document.getElementById("mh_id");
+    if (idInput) {
+      idInput.value = duplicateId;
+      idInput.disabled = false;
     }
+    const status = document.getElementById("mhPublishStatus");
+    if (status) status.textContent = `Duplicat pregătit: ${duplicateId}. Salvează pentru a-l crea.`;
+  }
 
-    items.forEach((item) => {
-      const card = document.createElement("div");
-      card.className = "card";
+  function mhPreviewAdminItem(item) {
+    if (!item) return;
+    adminDrawer?.classList.remove("open");
+    const type = item.content_type || item.type || "lesson";
+    if (type === "problem") {
+      openViewer(item, "problem");
+      return;
+    }
+    if (type === "exam") {
+      openExam(item);
+      return;
+    }
+    openViewer(item, "lesson");
+  }
 
-      const title = item.title_ro || item.title_en || item.id || "(fără titlu)";
-      const sourceText = "Supabase";
-      const metaBits = [
-        `Tip: ${item.content_type}`,
-        item.grade ? `Clasă: ${item.grade}` : null,
-        item.chapter ? `Capitol: ${getChapterLabel(item.chapter)}` : null,
-        (item.lesson_id || item.lessonId) ? `lessonId: ${item.lesson_id || item.lessonId}` : null,
-        item.year ? `An: ${item.year}` : null
-      ].filter(Boolean);
+  async function mhDeleteAdminItem(item) {
+    const id = item?.id;
+    const type = item?.content_type || item?.type;
+    if (!id || !type) return;
+    if (!confirm(`Sigur vrei să ștergi definitiv ${type}: ${id} din Supabase?`)) return;
 
-      const deleteText = "🗑 Delete";
-      const deleteTitle = "Șterge definitiv itemul din Supabase.";
+    try {
+      let query;
+      if (type === "lesson" || type === "research" || type === "history") {
+        query = supabase.from("mh_lessons").delete().eq("id", id);
+      } else if (type === "problem") {
+        query = supabase.from("mh_problems").delete().eq("id", id);
+      } else if (type === "exam") {
+        query = supabase.from("mh_exams").delete().eq("id", id);
+      } else {
+        throw new Error("Tip necunoscut pentru delete.");
+      }
 
-      card.innerHTML = `
-        <div class="title">${esc(title)}</div>
-        <div class="legend" style="margin-top:6px;">ID: ${esc(item.id)}</div>
-        <div class="legend" style="margin-top:6px;">${esc(metaBits.join(" • "))}</div>
-        <div class="legend" style="margin-top:6px;">Sursă: ${esc(sourceText)}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button class="btn small" type="button" data-edit-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}">✏️ Edit</button>
-          <button class="btn small" type="button" data-delete-id="${esc(item.id)}" data-content-type="${esc(item.content_type)}" title="${esc(deleteTitle)}">${deleteText}</button>
-        </div>
-      `;
+      const { error } = await query;
+      if (error) throw error;
 
-      host.appendChild(card);
-    });
-
-    host.querySelectorAll("[data-edit-id]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const item = mhGetAdminItems().find(
-          (candidate) => candidate.id === btn.dataset.editId && candidate.content_type === btn.dataset.contentType
-        );
-        if (!item) return;
-
-        mhFillAdminFormFromItem(item);
-        adminDrawer?.querySelector(".viewer")?.scrollTo({ top: 0, behavior: "smooth" });
-      });
-    });
-
-    host.querySelectorAll("[data-delete-id]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const id = btn.dataset.deleteId;
-        const type = btn.dataset.contentType;
-        const item = mhGetAdminItems().find(
-          (candidate) => candidate.id === id && candidate.content_type === type
-        );
-        if (!item) return;
-
-        if (!confirm(`Sigur vrei să ștergi definitiv ${type}: ${id} din Supabase?`)) return;
-
-        try {
-          let query;
-
-          if (type === "lesson" || type === "research" || type === "history") {
-            query = supabase.from("mh_lessons").delete().eq("id", id);
-          } else if (type === "problem") {
-            query = supabase.from("mh_problems").delete().eq("id", id);
-          } else if (type === "exam") {
-            query = supabase.from("mh_exams").delete().eq("id", id);
-          } else {
-            throw new Error("Tip necunoscut pentru delete.");
-          }
-
-          const { error } = await query;
-          if (error) throw error;
-
-          await reloadAllContentFromSupabase(true);
-          mhRenderAdminList();
-
-          const status = document.getElementById("mhPublishStatus");
-          if (status) {
-            status.textContent = `Șters definitiv din Supabase: ${id}`;
-          }
-
-          if (MH_ADMIN_STATE.editId === id) {
-            mhClearAdminForm();
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Delete failed: " + (err.message || err));
-        }
-      });
-    });
+      await reloadAllContentFromSupabase(true);
+      mhRenderAdminList();
+      const status = document.getElementById("mhPublishStatus");
+      if (status) status.textContent = `Șters definitiv din Supabase: ${id}`;
+      if (MH_ADMIN_STATE.editId === id) mhClearAdminForm();
+    } catch (error) {
+      console.error(error);
+      alert("Delete failed: " + (error.message || error));
+    }
   }
 
 
@@ -3103,6 +3092,7 @@ import {
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
       mhClearAdminForm();
+      adminStudioController?.openContent(type);
 
       if (status) status.textContent = "Salvat cu succes.";
     } catch (err) {
@@ -3126,6 +3116,24 @@ import {
   document.getElementById("mhLogoutBtn")?.addEventListener("click", async () => {
     await logoutAdmin();
     adminDrawer?.classList.remove("open");
+  });
+
+  adminStudioController = createAdminStudioController({
+    root: document.getElementById("mhAdminStudio"),
+    getLanguage: () => LANG,
+    onCreate: (type) => mhCreateAdminItem(type),
+    onEdit: (item) => mhFillAdminFormFromItem(item),
+    onDuplicate: (item) => mhPrepareDuplicate(item),
+    onDelete: (item) => mhDeleteAdminItem(item),
+    onPreview: (item) => mhPreviewAdminItem(item),
+    onRefresh: async () => {
+      await reloadAllContentFromSupabase(true);
+      mhRenderAdminList();
+    },
+    onLogout: async () => {
+      await logoutAdmin();
+      adminDrawer?.classList.remove("open");
+    }
   });
 
   mhSetTypeBlocks(document.getElementById("mh_type")?.value || "lesson");
@@ -3257,6 +3265,8 @@ import {
       adminExamRecoveryController?.setAdmin(true);
       roadmapAdminController?.setAdmin(true);
       adminDrawer?.classList.add("open");
+      adminStudioController?.showPanel("dashboard");
+      mhRenderAdminList();
       await roadmapAdminController?.load();
       if (mhPublishStatus) mhPublishStatus.textContent = "";
     } catch (err) {

@@ -44,7 +44,8 @@ const moduleJsFiles = [
   "js/analytics-controller.js",
   "js/gamification-model.js",
   "js/gamification-repository.js",
-  "js/gamification-controller.js"
+  "js/gamification-controller.js",
+  "js/admin-studio-controller.js"
 ];
 
 const classicJsFiles = [
@@ -65,6 +66,7 @@ const requiredFiles = [
   "css/app-shell.css",
   "css/analytics.css",
   "css/gamification.css",
+  "css/admin-studio.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -237,6 +239,8 @@ const gamificationModelSource = readFileSync(resolve(root, "js/gamification-mode
 const gamificationRepositorySource = readFileSync(resolve(root, "js/gamification-repository.js"), "utf8");
 const gamificationControllerSource = readFileSync(resolve(root, "js/gamification-controller.js"), "utf8");
 const gamificationCss = readFileSync(resolve(root, "css/gamification.css"), "utf8");
+const adminStudioSource = readFileSync(resolve(root, "js/admin-studio-controller.js"), "utf8");
+const adminStudioCss = readFileSync(resolve(root, "css/admin-studio.css"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
@@ -379,7 +383,7 @@ if (!/onTerminalProblemChanged:\s*\(\)\s*=>\s*\{[\s\S]{0,260}renderCards\(\)/.te
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
   fail("Editing a lesson must update the Supabase source of truth via upsert.");
 }
-if (!appSource.includes('const sourceText = "Supabase";')) {
+if (!adminStudioSource.includes('source: "Supabase"')) {
   fail("Admin must expose Supabase as the single content source.");
 }
 if (/src=["']\/?js\/data\.js["']/i.test(indexHtml) || /src=["']\/?js\/data\.js["']/i.test(profileHtml)) {
@@ -789,6 +793,38 @@ if (!gamificationCss.includes(".mh-game-level-card") ||
   fail("Phase 16 gamification visual system is incomplete.");
 }
 
+
+
+// Phase 17A: Admin Studio must be a separated, searchable workspace.
+if (!indexHtml.includes('href="css/admin-studio.css"')) {
+  fail("Phase 17A Admin Studio stylesheet is missing from index.html.");
+}
+for (const requiredAdminId of [
+  "mhAdminStudio",
+  "mhAdminSearch",
+  "mhAdminGradeFilter",
+  "mhAdminChapterFilter",
+  "mhAdminDifficultyFilter",
+  "mhAdminSort",
+  "mhAdminList",
+  "mhRoadmapAdminStudio"
+]) {
+  if (!indexHtml.includes(`id="${requiredAdminId}"`)) {
+    fail(`Phase 17A Admin Studio is missing #${requiredAdminId}.`);
+  }
+}
+if (!appSource.includes('from "./admin-studio-controller.js"')) {
+  fail("app.js must import the Phase 17A Admin Studio controller.");
+}
+if (!adminStudioSource.includes("filterAdminItems") || !adminStudioSource.includes("suggestDuplicateId")) {
+  fail("Phase 17A Admin Studio must provide filtering and safe duplicate IDs.");
+}
+if (!adminStudioCss.includes(".mh-admin-studio") || !adminStudioCss.includes(".mh-admin-content-list")) {
+  fail("Phase 17A Admin Studio CSS is incomplete.");
+}
+if (!indexHtml.includes('id="block-title"')) {
+  fail("Phase 17A shared lesson/problem title fields are missing from the editor.");
+}
 if (failed) {
   process.exitCode = 1;
 } else {

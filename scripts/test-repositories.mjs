@@ -145,6 +145,7 @@ const {
   scopedStorageKey
 } = await importBrowserModule("js/browser-state.js");
 const { normalizeAppRoute, routeToCatalogTab } = await importBrowserModule("js/app-shell-controller.js");
+const { filterAdminItems, getAdminContentType, suggestDuplicateId } = await importBrowserModule("js/admin-studio-controller.js");
 
 assert.equal(normalizeAppRoute("#problems"), "problems");
 assert.equal(normalizeAppRoute("unknown"), "dashboard");
@@ -886,5 +887,25 @@ assert.equal(gamificationProgressPercent(3, 5), 60);
 assert.equal(levelRemaining(gamificationPayload.summary), 140);
 assert.equal(achievementProgress(gamificationPayload.achievements[0], gamificationPayload.summary).percent, 24);
 assert.equal(gamificationPayload.leaderboard[0].displayName, "Ada");
+
+
+
+// Phase 17A: Admin Studio filtering and duplicate IDs.
+const adminItems = [
+  { id: "l-algebra", content_type: "lesson", title_ro: "Ecuații", grade: "VIII", chapter: "Algebră", tags: ["ecuații"] },
+  { id: "p-algebra", content_type: "problem", title_ro: "Ecuație cu parametru", grade: "VIII", chapter: "Algebră", difficulty: 4, lesson_id: "l-algebra" },
+  { id: "exam-ubb", content_type: "exam", title_ro: "Admitere UBB", year: 2026, items: [] }
+];
+assert.equal(getAdminContentType(adminItems[0]), "lesson");
+assert.deepEqual(
+  filterAdminItems(adminItems, { type: "problem", query: "parametru", difficulty: "4" }).map((item) => item.id),
+  ["p-algebra"]
+);
+assert.deepEqual(
+  filterAdminItems(adminItems, { query: "algebr", sort: "title-asc" }).map((item) => item.id),
+  ["p-algebra", "l-algebra"]
+);
+assert.equal(suggestDuplicateId("l-algebra", adminItems.map((item) => item.id)), "l-algebra-copy");
+assert.equal(suggestDuplicateId("l-algebra", ["l-algebra-copy", "l-algebra-copy-2"]), "l-algebra-copy-3");
 
 console.log("MathHard repository tests passed.");
