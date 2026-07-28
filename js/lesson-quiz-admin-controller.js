@@ -25,6 +25,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
   let context = { type: "lesson", lessonId: "", existing: false };
   let draft = normalizeAdminLessonQuiz({}, "");
   let loadingEpoch = 0;
+  let saving = false;
 
   function status(message, tone = "") {
     const node = host.querySelector("[data-quiz-admin-status]");
@@ -44,8 +45,10 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
             <p class="legend">Întrebările sunt corectate server-side. Răspunsurile corecte nu ajung în catalogul utilizatorului.</p>
           </div>
           <div class="mh-lesson-quiz-admin-actions">
-            <button class="btn small" data-quiz-admin-add type="button" ${disabled ? "disabled" : ""}>Adaugă întrebare</button>
-            <button class="btn small" data-quiz-admin-reload type="button" ${disabled ? "disabled" : ""}>Reîncarcă</button>
+            ${disabled ? "" : `<span class="mh-lesson-quiz-publication ${draft.is_published ? "is-published" : "is-draft"}" data-quiz-publication-state>${draft.is_published ? "Publicată" : "Draft"}</span>`}
+            <button class="btn small" data-quiz-admin-publish type="button" ${disabled || saving ? "disabled" : ""}>${draft.is_published ? "Retrage" : "Publică"}</button>
+            <button class="btn small" data-quiz-admin-add type="button" ${disabled || saving ? "disabled" : ""}>Adaugă întrebare</button>
+            <button class="btn small" data-quiz-admin-reload type="button" ${disabled || saving ? "disabled" : ""}>Reîncarcă</button>
           </div>
         </header>
         ${disabled ? `
@@ -100,8 +103,8 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
           <footer class="mh-lesson-quiz-admin-footer">
             <span class="legend" data-quiz-admin-status></span>
             <div>
-              <button class="btn" data-quiz-admin-save type="button">Salvează verificarea</button>
-              <button class="btn" data-quiz-admin-delete type="button" ${draft.exists ? "" : "disabled"}>Șterge verificarea</button>
+              <button class="btn" data-quiz-admin-save type="button" ${saving ? "disabled" : ""}>${saving ? "Se salvează…" : "Salvează verificarea"}</button>
+              <button class="btn" data-quiz-admin-delete type="button" ${draft.exists && !saving ? "" : "disabled"}>Șterge verificarea</button>
             </div>
           </footer>`}
       </section>`;
@@ -132,6 +135,56 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
         });
       });
     });
+  }
+
+  function syncPublicationControls() {
+    const checkbox = host.querySelector('[data-quiz-setting="is_published"]');
+    const button = host.querySelector("[data-quiz-admin-publish]");
+    const badge = host.querySelector("[data-quiz-publication-state]");
+    const isPublished = Boolean(checkbox?.checked);
+    if (button) button.textContent = isPublished ? "Retrage" : "Publică";
+    if (badge) {
+      badge.textContent = isPublished ? "Publicată" : "Draft";
+      badge.classList.toggle("is-published", isPublished);
+      badge.classList.toggle("is-draft", !isPublished);
+    }
+  }
+
+  async function persistDraft(publishOverride = null) {
+    if (saving) return;
+    readDraftFromDom();
+    draft.lesson_id = context.lessonId;
+    if (typeof publishOverride === "boolean") {
+      draft.is_published = publishOverride;
+    }
+
+    const errors = validateAdminLessonQuiz(draft);
+    if (errors.length) {
+      status(errors.join(" "), "error");
+      return;
+    }
+
+    saving = true;
+    render();
+    status("Se salvează…");
+    try {
+      const saved = await adminSaveLessonQuiz(supabase, draft);
+      draft = normalizeAdminLessonQuiz(saved, context.lessonId);
+      saving = false;
+      render();
+      status(
+        draft.is_published
+          ? "Verificarea a fost salvată și publicată."
+          : "Verificarea a fost salvată ca draft.",
+        "success"
+      );
+      await onSaved(context.lessonId, draft);
+    } catch (error) {
+      saving = false;
+      render();
+      console.error("Lesson quiz save failed:", error);
+      status(`Eroare: ${error?.message || error}`, "error");
+    }
   }
 
   function bind() {
@@ -171,25 +224,13 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
       draft.items[itemIndex].options.splice(Number(button.dataset.quizOptionDelete), 1);
       render();
     }));
-    host.querySelector("[data-quiz-admin-save]")?.addEventListener("click", async () => {
-      readDraftFromDom();
-      draft.lesson_id = context.lessonId;
-      const errors = validateAdminLessonQuiz(draft);
-      if (errors.length) {
-        status(errors.join(" "), "error");
-        return;
-      }
-      status("Se salvează…");
-      try {
-        const saved = await adminSaveLessonQuiz(supabase, draft);
-        draft = normalizeAdminLessonQuiz(saved, context.lessonId);
-        render();
-        status("Verificare salvată.", "success");
-        onSaved(context.lessonId, draft);
-      } catch (error) {
-        console.error("Lesson quiz save failed:", error);
-        status(`Eroare: ${error?.message || error}`, "error");
-      }
+    host.querySelector('[data-quiz-setting="is_published"]')?.addEventListener("change", syncPublicationControls);
+    host.querySelector("[data-quiz-admin-publish]")?.addEventListener("click", () => {
+      const checkbox = host.querySelector('[data-quiz-setting="is_published"]');
+      void persistDraft(!Boolean(checkbox?.checked));
+    });
+    host.querySelector("[data-quiz-admin-save]")?.addEventListener("click", () => {
+      void persistDraft();
     });
     host.querySelector("[data-quiz-admin-delete]")?.addEventListener("click", async () => {
       if (!confirm("Ștergi verificarea acestei lecții?")) return;

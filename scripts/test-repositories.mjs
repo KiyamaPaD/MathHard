@@ -164,6 +164,7 @@ const {
   slugifyAdminId
 } = await importBrowserModule("js/gamification-admin-model.js");
 const {
+  buildAdminLessonQuizPayload,
   makeQuizItem,
   normalizeAdminLessonQuiz,
   normalizeQuizAvailability,
@@ -193,6 +194,11 @@ quizDraft.items[0].options[1].text_ro = "Greșit";
 quizDraft.items[0].options[2].text_ro = "Greșit 2";
 quizDraft.items[0].options[3].text_ro = "Greșit 3";
 assert.deepEqual(validateAdminLessonQuiz(quizDraft), []);
+const quizPayload = buildAdminLessonQuizPayload(quizDraft, "lesson-a");
+assert.equal(quizPayload.lesson_id, "lesson-a");
+assert.equal(quizPayload.is_published, true);
+assert.equal(quizPayload.items[0].options[0].is_correct, true);
+assert.equal("exists" in quizPayload, false);
 quizDraft.items[0].options[1].is_correct = true;
 assert.equal(validateAdminLessonQuiz(quizDraft).some((message) => message.includes("exact o variantă")), true);
 

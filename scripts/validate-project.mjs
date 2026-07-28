@@ -985,6 +985,14 @@ if (!lessonQuizControllerSource.includes("submitSecureLessonQuiz") ||
     !lessonQuizAdminCss.includes(".mh-lesson-quiz-admin-card")) {
   fail("Phase 17C.3 lesson quiz UI/model is incomplete.");
 }
+if (!lessonQuizRepositorySource.includes("mh_admin_set_lesson_quiz_published") ||
+    !lessonQuizRepositorySource.includes("LESSON_QUIZ_PUBLICATION_MISMATCH") ||
+    !lessonQuizAdminControllerSource.includes("data-quiz-admin-publish") ||
+    !lessonQuizAdminControllerSource.includes("Verificarea a fost salvată și publicată") ||
+    !lessonQuizModelSource.includes("buildAdminLessonQuizPayload") ||
+    !lessonQuizAdminCss.includes(".mh-lesson-quiz-publication")) {
+  fail("Phase 17C.3.1 lesson quiz publication confirmation is incomplete.");
+}
 
 if (failed) {
   process.exitCode = 1;

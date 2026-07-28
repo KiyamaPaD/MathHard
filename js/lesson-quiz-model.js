@@ -82,6 +82,34 @@ export function normalizeAdminLessonQuiz(raw, lessonId = "") {
   };
 }
 
+
+export function buildAdminLessonQuizPayload(raw, lessonId = "") {
+  const quiz = normalizeAdminLessonQuiz(raw, lessonId);
+  return {
+    lesson_id: cleanLessonQuizId(quiz.lesson_id || lessonId),
+    is_published: Boolean(quiz.is_published),
+    question_count: quiz.question_count,
+    pass_threshold: quiz.pass_threshold,
+    randomize_questions: Boolean(quiz.randomize_questions),
+    randomize_options: Boolean(quiz.randomize_options),
+    items: quiz.items.map((item) => ({
+      id: String(item.id || "").trim(),
+      kind: item.kind,
+      prompt_ro: item.prompt_ro,
+      prompt_en: item.prompt_en,
+      explanation_ro: item.explanation_ro,
+      explanation_en: item.explanation_en,
+      is_active: Boolean(item.is_active),
+      options: item.options.map((option) => ({
+        id: String(option.id || "").trim(),
+        text_ro: option.text_ro,
+        text_en: option.text_en,
+        is_correct: Boolean(option.is_correct)
+      }))
+    }))
+  };
+}
+
 export function validateAdminLessonQuiz(quiz) {
   const errors = [];
   const lessonId = String(quiz?.lesson_id || "").trim();

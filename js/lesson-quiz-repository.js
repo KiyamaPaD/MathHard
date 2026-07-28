@@ -1,4 +1,9 @@
-import { cleanLessonQuizId, normalizeAdminLessonQuiz, normalizeQuizAvailability } from "./lesson-quiz-model.js";
+import {
+  buildAdminLessonQuizPayload,
+  cleanLessonQuizId,
+  normalizeAdminLessonQuiz,
+  normalizeQuizAvailability
+} from "./lesson-quiz-model.js";
 
 const MISSING_RPC_CODES = new Set(["PGRST202", "42883"]);
 
@@ -42,14 +47,42 @@ export async function submitSecureLessonQuiz(supabase, attemptId, answers, langu
 }
 
 export async function adminGetLessonQuiz(supabase, lessonId) {
+  const safeLessonId = cleanLessonQuizId(lessonId);
   const data = await rpc(supabase, "mh_admin_get_lesson_quiz", {
-    p_lesson_id: cleanLessonQuizId(lessonId)
+    p_lesson_id: safeLessonId
   });
-  return normalizeAdminLessonQuiz(data, lessonId);
+  return normalizeAdminLessonQuiz(data, safeLessonId);
 }
 
-export async function adminSaveLessonQuiz(supabase, payload) {
-  return rpc(supabase, "mh_admin_save_lesson_quiz", { p_payload: payload });
+export async function adminSetLessonQuizPublished(supabase, lessonId, isPublished) {
+  const safeLessonId = cleanLessonQuizId(lessonId);
+  const data = await rpc(supabase, "mh_admin_set_lesson_quiz_published", {
+    p_lesson_id: safeLessonId,
+    p_is_published: Boolean(isPublished)
+  });
+  return normalizeAdminLessonQuiz(data, safeLessonId);
+}
+
+export async function adminSaveLessonQuiz(supabase, rawPayload) {
+  const payload = buildAdminLessonQuizPayload(rawPayload, rawPayload?.lesson_id);
+
+  await rpc(supabase, "mh_admin_save_lesson_quiz", { p_payload: payload });
+
+  // Publication is persisted through a dedicated RPC. This avoids a stale or
+  // partially reconstructed form payload silently keeping the quiz as draft.
+  await adminSetLessonQuizPublished(supabase, payload.lesson_id, payload.is_published);
+
+  const confirmed = await adminGetLessonQuiz(supabase, payload.lesson_id);
+  if (confirmed.is_published !== payload.is_published) {
+    const error = new Error(
+      payload.is_published
+        ? "Publicarea verificării nu a fost confirmată de Supabase."
+        : "Retragerea verificării nu a fost confirmată de Supabase."
+    );
+    error.code = "LESSON_QUIZ_PUBLICATION_MISMATCH";
+    throw error;
+  }
+  return confirmed;
 }
 
 export async function adminDeleteLessonQuiz(supabase, lessonId) {
