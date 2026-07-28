@@ -6,6 +6,7 @@ import {
   progressPercent
 } from "./analytics-model.js";
 import { loadUserAnalytics } from "./analytics-repository.js";
+import { normalizeUiError, renderUiState } from "./ui-feedback.js";
 
 const RANGE_KEY = "mh_analytics_range_v1";
 const RANGES = [30, 90, 365];
@@ -416,21 +417,29 @@ export function createAnalyticsController({ host } = {}) {
   }
 
   function renderLoading() {
-    state.innerHTML = `<div class="mh-analytics-loading"><i></i><span>${copy().loading}</span></div>`;
+    renderUiState(state, {
+      kind: "loading",
+      title: copy().loading,
+      skeleton: { cards: 7, lines: 3 }
+    });
   }
 
   function renderAuth() {
-    state.innerHTML = `<div class="mh-analytics-empty"><strong>${copy().auth}</strong></div>`;
+    renderUiState(state, {
+      kind: "auth",
+      title: copy().auth
+    });
   }
 
   function renderError(error) {
-    state.innerHTML = `
-      <div class="mh-analytics-error">
-        <strong>${escapeHtml(error?.message || "Analytics error")}</strong>
-        <button class="btn small" type="button" data-analytics-retry>${copy().retry}</button>
-      </div>
-    `;
-    state.querySelector("[data-analytics-retry]")?.addEventListener("click", () => void load(true));
+    const friendly = normalizeUiError(error, { language: locale() });
+    renderUiState(state, {
+      kind: friendly.key === "offline" ? "offline" : "error",
+      title: friendly.title,
+      message: friendly.message,
+      actionLabel: copy().retry,
+      onAction: () => void load(true)
+    });
   }
 
   function renderData() {

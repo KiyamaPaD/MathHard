@@ -1,0 +1,50 @@
+body.mh-onboarding-open { overflow: hidden; }
+.mh-onboarding { position: fixed; inset: 0; z-index: 10040; display: grid; place-items: center; padding: 20px; }
+.mh-onboarding[hidden] { display: none; }
+.mh-onboarding-backdrop { position: absolute; inset: 0; background: rgba(3,7,18,.72); backdrop-filter: blur(10px); }
+.mh-onboarding-dialog {
+  position: relative;
+  width: min(680px, 100%);
+  max-height: min(720px, calc(100vh - 40px));
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 28px 80px rgba(0,0,0,.38);
+}
+.mh-onboarding-dialog > header { padding: 26px 28px 18px; border-bottom: 1px solid var(--border); }
+.mh-onboarding-kicker { display: block; margin-bottom: 8px; color: var(--muted); font-size: .74rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.mh-onboarding-dialog h2 { margin: 0; font-size: clamp(1.45rem, 3vw, 2rem); }
+.mh-onboarding-dialog header p { margin: 8px 0 0; color: var(--muted); line-height: 1.55; }
+.mh-onboarding-content { padding: 22px 28px; }
+.mh-onboarding-content > strong { display: block; margin-bottom: 12px; }
+.mh-onboarding-roadmaps { display: grid; gap: 10px; }
+.mh-onboarding-roadmap {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mh-onboarding-roadmap:hover { border-color: color-mix(in srgb, var(--accent, #7c3aed) 44%, var(--border)); }
+.mh-onboarding-roadmap.is-selected { border-color: var(--accent, #7c3aed); background: color-mix(in srgb, var(--accent, #7c3aed) 10%, transparent); }
+.mh-onboarding-roadmap > span { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: color-mix(in srgb, var(--accent, #7c3aed) 12%, transparent); font-size: 1.15rem; }
+.mh-onboarding-roadmap strong, .mh-onboarding-roadmap small { display: block; }
+.mh-onboarding-roadmap small { margin-top: 4px; color: var(--muted); line-height: 1.4; }
+.mh-onboarding-loading, .mh-onboarding-empty { padding: 20px; border: 1px dashed var(--border); border-radius: 16px; color: var(--muted); }
+.mh-onboarding-empty strong, .mh-onboarding-empty span { display: block; }
+.mh-onboarding-empty span { margin-top: 5px; }
+.mh-onboarding-dialog > footer { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 28px 24px; border-top: 1px solid var(--border); }
+@media (max-width: 600px) {
+  .mh-onboarding { padding: 10px; align-items: end; }
+  .mh-onboarding-dialog { max-height: calc(100vh - 20px); border-radius: 22px 22px 14px 14px; }
+  .mh-onboarding-dialog > header, .mh-onboarding-content, .mh-onboarding-dialog > footer { padding-left: 18px; padding-right: 18px; }
+  .mh-onboarding-dialog > footer { display: grid; grid-template-columns: 1fr 1fr; }
+}

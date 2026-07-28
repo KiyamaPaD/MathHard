@@ -49,6 +49,8 @@ const moduleJsFiles = [
   "js/analytics-model.js",
   "js/analytics-repository.js",
   "js/analytics-controller.js",
+  "js/ui-feedback.js",
+  "js/onboarding-controller.js",
   "js/gamification-model.js",
   "js/gamification-repository.js",
   "js/gamification-controller.js",
@@ -88,6 +90,11 @@ const requiredFiles = [
   "css/admin-history.css",
   "css/profile.css",
   "css/loading-screen.css",
+  "css/ui-feedback.css",
+  "css/onboarding.css",
+  "css/system-page.css",
+  "404.html",
+  "offline.html",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -1075,6 +1082,42 @@ if (!appSource.includes("window.MathHardLoading?.ready()") ||
 }
 if (katexInitSource18A.includes("math-loader") || katexInitSource18A.includes("loader-hidden")) {
   fail("KaTeX initialization must not control the application loading screen.");
+}
+
+
+// Phase 18B: unified UI states, connection feedback and first-user onboarding.
+const uiFeedbackSource18B = readFileSync(resolve(root, "js/ui-feedback.js"), "utf8");
+const onboardingSource18B = readFileSync(resolve(root, "js/onboarding-controller.js"), "utf8");
+const uiFeedbackCss18B = readFileSync(resolve(root, "css/ui-feedback.css"), "utf8");
+const onboardingCss18B = readFileSync(resolve(root, "css/onboarding.css"), "utf8");
+const uiPreferencesSource18B = readFileSync(resolve(root, "js/ui-preferences-repository.js"), "utf8");
+if (!indexHtml.includes('href="/css/ui-feedback.css"') ||
+    !indexHtml.includes('href="/css/onboarding.css"') ||
+    !indexHtml.includes('src="/js/ui-feedback.js"') ||
+    !indexHtml.includes('src="/js/onboarding-controller.js"') ||
+    !profileHtml.includes('href="/css/ui-feedback.css"') ||
+    !profileHtml.includes('src="/js/ui-feedback.js"')) {
+  fail("Phase 18B shared UI states or onboarding are missing from the pages.");
+}
+if (!uiFeedbackSource18B.includes("normalizeUiError") ||
+    !uiFeedbackSource18B.includes("renderUiState") ||
+    !uiFeedbackSource18B.includes("initConnectionFeedback") ||
+    !uiFeedbackCss18B.includes(".mh-ui-skeleton-grid") ||
+    !uiFeedbackCss18B.includes(".mh-connection-banner")) {
+  fail("Phase 18B UI feedback foundation is incomplete.");
+}
+if (!onboardingSource18B.includes("loadRoadmapCatalog") ||
+    !onboardingSource18B.includes("selectRoadmap") ||
+    !onboardingSource18B.includes("mh:onboarding-open") ||
+    !onboardingCss18B.includes(".mh-onboarding-dialog")) {
+  fail("Phase 18B onboarding must select a roadmap and support reopening.");
+}
+if (!uiPreferencesSource18B.includes("onboarding") ||
+    !uiPreferencesSource18B.includes("version: 2")) {
+  fail("Phase 18B onboarding completion must persist through UI preferences.");
+}
+if (!existsSync(resolve(root, "404.html")) || !existsSync(resolve(root, "offline.html"))) {
+  fail("Phase 18B 404 and offline pages are missing.");
 }
 
 if (failed) {

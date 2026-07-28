@@ -10,6 +10,7 @@ import {
   saveDailyGoal,
   saveLeaderboardPreference
 } from "./gamification-repository.js";
+import { normalizeUiError, renderUiState, showToast } from "./ui-feedback.js";
 
 const COPY = {
   ro: {
@@ -284,21 +285,29 @@ export function createGamificationController({ host }) {
   }
 
   function renderLoading() {
-    host.innerHTML = `<div class="mh-game-state"><i></i><span>${copy().loading}</span></div>`;
+    renderUiState(host, {
+      kind: "loading",
+      title: copy().loading,
+      skeleton: { cards: 6, lines: 3 }
+    });
   }
 
   function renderAuth() {
-    host.innerHTML = `<div class="mh-game-state"><strong>${copy().auth}</strong></div>`;
+    renderUiState(host, {
+      kind: "auth",
+      title: copy().auth
+    });
   }
 
   function renderError(error) {
-    host.innerHTML = `
-      <div class="mh-game-state is-error">
-        <strong>${escapeHtml(error?.message || copy().error)}</strong>
-        <button class="btn small" type="button" data-game-retry>${copy().retry}</button>
-      </div>
-    `;
-    host.querySelector("[data-game-retry]")?.addEventListener("click", () => void load(true));
+    const friendly = normalizeUiError(error, { language: locale() });
+    renderUiState(host, {
+      kind: friendly.key === "offline" ? "offline" : "error",
+      title: friendly.title,
+      message: friendly.message,
+      actionLabel: copy().retry,
+      onAction: () => void load(true)
+    });
   }
 
   function bindActions() {
@@ -313,7 +322,9 @@ export function createGamificationController({ host }) {
         await load(true);
         feedback(copy().saved, "success");
       } catch (error) {
-        feedback(error?.message || copy().error, "error");
+        const friendly = normalizeUiError(error, { language: locale() });
+        feedback(friendly.message, "error");
+        showToast(friendly.message, { tone: "error" });
       } finally {
         busy = false;
       }
@@ -329,7 +340,9 @@ export function createGamificationController({ host }) {
         feedback(copy().saved, "success");
       } catch (error) {
         event.target.checked = !event.target.checked;
-        feedback(error?.message || copy().error, "error");
+        const friendly = normalizeUiError(error, { language: locale() });
+        feedback(friendly.message, "error");
+        showToast(friendly.message, { tone: "error" });
       } finally {
         busy = false;
       }
@@ -346,7 +359,9 @@ export function createGamificationController({ host }) {
         feedback(copy().saved, "success");
       } catch (error) {
         event.currentTarget.disabled = false;
-        feedback(error?.message || copy().error, "error");
+        const friendly = normalizeUiError(error, { language: locale() });
+        feedback(friendly.message, "error");
+        showToast(friendly.message, { tone: "error" });
       } finally {
         busy = false;
       }

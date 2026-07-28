@@ -323,6 +323,12 @@ function createController() {
     }
   });
 
+  window.addEventListener("mh:ui-preferences-updated", (event) => {
+    const incoming = normalizeUiPreferences(event.detail?.preferences || {});
+    state = mergeUiPreferences(state, { onboarding: incoming.onboarding });
+    if (activeUserId) writeLocalPreferences(activeUserId, state);
+  });
+
   window.addEventListener("mh:open-section-request", (event) => {
     const sectionId = String(event.detail?.sectionId || "");
     const shell = shells.find((candidate) => candidate.id === sectionId);

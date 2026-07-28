@@ -210,6 +210,7 @@ const {
   scopedStorageKey
 } = await importBrowserModule("js/browser-state.js");
 const { normalizeAppRoute, routeToCatalogTab } = await importBrowserModule("js/app-shell-controller.js");
+const { normalizeUiError } = await importBrowserModule("js/ui-feedback.js");
 const { filterAdminItems, getAdminContentType, suggestDuplicateId } = await importBrowserModule("js/admin-studio-controller.js");
 const {
   normalizeAchievementDraft,
@@ -906,7 +907,7 @@ assert.equal(mergedUiPreferences.sections.roadmap, true);
 assert.equal(mergedUiPreferences.sections.boss, false);
 assert.equal(mergedUiPreferences.sections.catalog, false);
 assert.deepEqual(serializeUiPreferences(DEFAULT_UI_PREFERENCES), {
-  version: 1,
+  version: 2,
   compact_home: false,
   sections: {
     hub: true,
@@ -914,8 +915,17 @@ assert.deepEqual(serializeUiPreferences(DEFAULT_UI_PREFERENCES), {
     boss: true,
     radar: true,
     catalog: true
+  },
+  onboarding: {
+    completed: false,
+    version: 0
   }
 });
+const onboardedPreferences = mergeUiPreferences(DEFAULT_UI_PREFERENCES, {
+  onboarding: { completed: true, version: 1 }
+});
+assert.equal(onboardedPreferences.onboarding.completed, true);
+assert.equal(onboardedPreferences.onboarding.version, 1);
 
 
 
@@ -1148,5 +1158,17 @@ assert.match(loadingScreenSource, /slowThresholdMs = 10000/);
 assert.match(indexSource18A, /id="math-loader"/);
 assert.match(profileSource18A, /id="math-loader"/);
 assert.doesNotMatch(katexInitSource18A, /loader-hidden|math-loader/);
+
+
+// Phase 18B: shared safe errors and onboarding preference persistence.
+assert.equal(normalizeUiError({ code: "42501", message: "Not allowed" }, { language: "ro" }).key, "access");
+assert.equal(normalizeUiError({ code: "23503", message: "foreign key constraint" }, { language: "en" }).key, "conflict");
+assert.equal(normalizeUiError({ code: "PGRST202", message: "Could not find the function" }, { language: "ro" }).key, "missing");
+const onboardingSource18B = await readFile(resolve(root, "js/onboarding-controller.js"), "utf8");
+const uiFeedbackSource18B = await readFile(resolve(root, "js/ui-feedback.js"), "utf8");
+assert.match(onboardingSource18B, /mh:onboarding-open/);
+assert.match(onboardingSource18B, /selectRoadmap/);
+assert.match(uiFeedbackSource18B, /normalizeUiError/);
+assert.match(uiFeedbackSource18B, /initConnectionFeedback/);
 
 console.log("MathHard repository tests passed.");

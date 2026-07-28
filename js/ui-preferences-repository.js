@@ -7,7 +7,7 @@ export const UI_SECTION_KEYS = Object.freeze([
 ]);
 
 export const DEFAULT_UI_PREFERENCES = Object.freeze({
-  version: 1,
+  version: 2,
   compactHome: false,
   sections: Object.freeze({
     hub: true,
@@ -16,16 +16,28 @@ export const DEFAULT_UI_PREFERENCES = Object.freeze({
     radar: true,
     catalog: true,
   }),
+  onboarding: Object.freeze({
+    completed: false,
+    version: 0,
+  }),
 });
 
 function readBoolean(value, fallback) {
   return typeof value === "boolean" ? value : fallback;
 }
 
+function readNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export function normalizeUiPreferences(raw = {}) {
   const source = raw && typeof raw === "object" ? raw : {};
   const rawSections = source.sections && typeof source.sections === "object"
     ? source.sections
+    : {};
+  const rawOnboarding = source.onboarding && typeof source.onboarding === "object"
+    ? source.onboarding
     : {};
 
   const sections = {};
@@ -37,21 +49,26 @@ export function normalizeUiPreferences(raw = {}) {
   }
 
   return {
-    version: 1,
+    version: 2,
     compactHome: readBoolean(
       source.compactHome ?? source.compact_home,
       DEFAULT_UI_PREFERENCES.compactHome
     ),
     sections,
+    onboarding: {
+      completed: readBoolean(rawOnboarding.completed, DEFAULT_UI_PREFERENCES.onboarding.completed),
+      version: Math.max(0, Math.trunc(readNumber(rawOnboarding.version, DEFAULT_UI_PREFERENCES.onboarding.version))),
+    },
   };
 }
 
 export function serializeUiPreferences(preferences) {
   const normalized = normalizeUiPreferences(preferences);
   return {
-    version: 1,
+    version: 2,
     compact_home: normalized.compactHome,
     sections: { ...normalized.sections },
+    onboarding: { ...normalized.onboarding },
   };
 }
 
@@ -61,6 +78,9 @@ export function mergeUiPreferences(base, patch) {
   const patchSections = next.sections && typeof next.sections === "object"
     ? next.sections
     : {};
+  const patchOnboarding = next.onboarding && typeof next.onboarding === "object"
+    ? next.onboarding
+    : {};
 
   return normalizeUiPreferences({
     compactHome: typeof next.compactHome === "boolean"
@@ -69,6 +89,10 @@ export function mergeUiPreferences(base, patch) {
     sections: {
       ...current.sections,
       ...patchSections,
+    },
+    onboarding: {
+      ...current.onboarding,
+      ...patchOnboarding,
     },
   });
 }
