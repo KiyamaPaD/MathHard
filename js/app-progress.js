@@ -1,5 +1,6 @@
 export let solvedSet = new Set();
 export let learnedSet = new Set();
+export let readSet = new Set();
 export let examsPassedSet = new Set();
 export let XP_TOTAL = 0;
 export let XP_DETAILS = {};
@@ -7,6 +8,7 @@ export let XP_DETAILS = {};
 function resetProgressState() {
   solvedSet = new Set();
   learnedSet = new Set();
+  readSet = new Set();
   examsPassedSet = new Set();
   XP_TOTAL = 0;
   XP_DETAILS = {};
@@ -14,7 +16,9 @@ function resetProgressState() {
 
 export function createAppProgressController({
   supabase,
-  markLessonLearned,
+  startLessonReading,
+  markLessonRead,
+  completeLessonQuiz,
   startExamAttempt,
   finishExamAttempt,
   cancelExamAttempt,
@@ -102,20 +106,58 @@ export function createAppProgressController({
     }
   }
 
-  async function markLessonLearnedSafe(lessonId) {
+  async function startLessonReadingSafe(lessonId) {
     if (!progressUser) return null;
 
-    return enqueueProgressMutation(`lesson:${lessonId}`, async () => {
+    return enqueueProgressMutation(`lesson-reading:${lessonId}`, async () => {
       try {
-        const row = await markLessonLearned(supabase, lessonId);
-        if (row?.learned) {
-          learnedSet.add(lessonId);
-          onCountersChanged();
+        const row = await startLessonReading(supabase, lessonId);
+        if (row?.read_completed || row?.learned) {
+          readSet.add(lessonId);
+          onLessonChanged(lessonId, row);
+        }
+        if (row?.learned) learnedSet.add(lessonId);
+        return row;
+      } catch (error) {
+        reconcileMutationError("startLessonReading", error);
+        return null;
+      }
+    });
+  }
+
+  async function markLessonReadSafe(lessonId, sessionId) {
+    if (!progressUser) return null;
+
+    return enqueueProgressMutation(`lesson-read:${lessonId}`, async () => {
+      try {
+        const row = await markLessonRead(supabase, lessonId, sessionId);
+        if (row?.read_completed || row?.learned) {
+          readSet.add(lessonId);
           onLessonChanged(lessonId, row);
         }
         return row;
       } catch (error) {
-        reconcileMutationError("markLessonLearned", error);
+        reconcileMutationError("markLessonRead", error);
+        return null;
+      }
+    });
+  }
+
+  async function completeLessonQuizSafe(lessonId) {
+    if (!progressUser) return null;
+
+    return enqueueProgressMutation(`lesson-quiz:${lessonId}`, async () => {
+      try {
+        const row = await completeLessonQuiz(supabase, lessonId);
+        if (row?.read_completed || row?.learned) readSet.add(lessonId);
+        if (row?.learned) {
+          learnedSet.add(lessonId);
+          onCountersChanged();
+        }
+        onLessonChanged(lessonId, row);
+        return row;
+      } catch (error) {
+        reconcileMutationError("completeLessonQuiz", error);
         return null;
       }
     });
@@ -240,10 +282,13 @@ export function createAppProgressController({
 
       if (!lessonResult.error) {
         const nextLearned = new Set();
+        const nextRead = new Set();
         for (const row of lessonResult.data || []) {
           if (row.learned) nextLearned.add(row.lesson_id);
+          if (row.read_completed || row.learned) nextRead.add(row.lesson_id);
         }
         learnedSet = nextLearned;
+        readSet = nextRead;
       }
 
       if (!problemResult.error) {
@@ -302,11 +347,13 @@ export function createAppProgressController({
   return {
     awardXPForProblem,
     cancelExamAttemptSafe,
+    completeLessonQuizSafe,
     getXPRecord,
     loadAppProgressFromDb,
-    markLessonLearnedSafe,
+    markLessonReadSafe,
     recomputeXPTotal,
     recordExamAttemptStart,
+    startLessonReadingSafe,
     applyProblemProgressResult,
     saveExamAttemptResultSafe,
     updateExamAttemptScore,

@@ -93,6 +93,12 @@ function isContentDone(node, progress) {
   return false;
 }
 
+function isContentRead(node, progress) {
+  return node.node_type === "lesson" && Boolean(
+    progress.readSet?.has(node.content_id) || progress.learnedSet?.has(node.content_id)
+  );
+}
+
 function translated(primary, fallback) {
   return asText(primary || fallback);
 }
@@ -149,6 +155,7 @@ function computeNodeStates(roadmap, progress, catalog, language) {
       node,
       exists,
       done: exists && isContentDone(node, progress),
+      read: exists && isContentRead(node, progress),
       status: exists ? "pending" : "planned",
       unmetPrerequisites: []
     });
@@ -209,6 +216,7 @@ export function buildRoadmapView({
   roadmap,
   catalog,
   learnedSet = new Set(),
+  readSet = new Set(),
   solvedSet = new Set(),
   examsPassedSet = new Set(),
   language = "ro"
@@ -223,7 +231,7 @@ export function buildRoadmapView({
     };
   }
 
-  const progress = { learnedSet, solvedSet, examsPassedSet };
+  const progress = { learnedSet, readSet, solvedSet, examsPassedSet };
   const { states } = computeNodeStates(roadmap, progress, catalog, language);
   const sections = roadmap.sections.map((section) => {
     const nodeStates = roadmap.nodes

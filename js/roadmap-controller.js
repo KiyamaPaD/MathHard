@@ -83,7 +83,9 @@ function renderEmpty(language) {
 function renderNode(state, language) {
   const { node } = state;
   const icon = getRoadmapNodeIcon(node);
-  const statusText = getRoadmapStatusLabel(state.status, language);
+  const statusText = state.read && !state.done
+    ? textFor(language, "Citită", "Read")
+    : getRoadmapStatusLabel(state.status, language);
   const disabled = state.status === "locked" || state.status === "planned" || node.node_type === "milestone";
   const duration = node.estimated_minutes > 0
     ? `<span class="mh-roadmap-node-duration">⏱ ${node.estimated_minutes} min</span>`
@@ -94,7 +96,7 @@ function renderNode(state, language) {
 
   return `
     <button
-      class="mh-roadmap-node is-${escapeHtml(state.status)} ${node.node_type === "milestone" ? "is-milestone" : ""}"
+      class="mh-roadmap-node is-${escapeHtml(state.status)} ${state.read && !state.done ? "is-read" : ""} ${node.node_type === "milestone" ? "is-milestone" : ""}"
       type="button"
       data-roadmap-node-id="${escapeHtml(node.id)}"
       ${disabled ? "disabled" : ""}
@@ -110,7 +112,7 @@ function renderNode(state, language) {
           ${optional}
         </span>
       </span>
-      <span class="mh-roadmap-node-action" aria-hidden="true">${state.status === "done" ? "✓" : state.status === "available" ? "→" : state.status === "planned" ? "…" : "🔒"}</span>
+      <span class="mh-roadmap-node-action" aria-hidden="true">${state.status === "done" ? "✓" : state.read ? "📖" : state.status === "available" ? "→" : state.status === "planned" ? "…" : "🔒"}</span>
     </button>
   `;
 }
@@ -170,6 +172,7 @@ export function createRoadmapController({
       roadmap: currentRoadmap(),
       catalog: getContentCatalog?.() || {},
       learnedSet: progress.learnedSet || new Set(),
+      readSet: progress.readSet || new Set(),
       solvedSet: progress.solvedSet || new Set(),
       examsPassedSet: progress.examsPassedSet || new Set(),
       language: currentLanguage()

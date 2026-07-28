@@ -1,0 +1,95 @@
+/* Phase 17C.2 — lesson reading and learning states */
+
+.lesson-actions {
+  flex-wrap: wrap;
+}
+
+#understoodBtn {
+  cursor: default;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+#understoodBtn.is-read {
+  background: color-mix(in srgb, #2563eb 14%, var(--card));
+  border-color: color-mix(in srgb, #2563eb 42%, var(--border));
+  color: color-mix(in srgb, #2563eb 76%, var(--text));
+}
+
+#understoodBtn.is-learned {
+  background: color-mix(in srgb, #16a34a 16%, var(--card));
+  border-color: color-mix(in srgb, #16a34a 45%, var(--border));
+  color: color-mix(in srgb, #16a34a 78%, var(--text));
+}
+
+#quizBtn[disabled] {
+  opacity: .58;
+  cursor: not-allowed;
+  filter: saturate(.55);
+}
+
+.mh-lesson-status-chip {
+  font-weight: 750;
+}
+
+.mh-lesson-status-chip.is-read {
+  border-color: color-mix(in srgb, #2563eb 42%, var(--border));
+  background: color-mix(in srgb, #2563eb 12%, var(--card));
+}
+
+.mh-lesson-status-chip.is-learned {
+  border-color: color-mix(in srgb, #16a34a 42%, var(--border));
+  background: color-mix(in srgb, #16a34a 12%, var(--card));
+}
+
+.mh-lesson-status-chip.is-new {
+  opacity: .72;
+}
+
+.mh-lesson-quiz-status {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.mh-lesson-quiz-status.is-complete {
+  border-color: color-mix(in srgb, #16a34a 45%, var(--border));
+  background: color-mix(in srgb, #16a34a 13%, var(--card));
+  color: color-mix(in srgb, #16a34a 80%, var(--text));
+}
+
+.mh-roadmap-node.is-read:not(.is-done) {
+  border-color: color-mix(in srgb, #2563eb 40%, var(--border));
+  background: color-mix(in srgb, #2563eb 8%, var(--card));
+}
+
+.mh-roadmap-node.is-read:not(.is-done) .mh-roadmap-node-status {
+  color: color-mix(in srgb, #2563eb 82%, var(--text));
+  font-weight: 750;
+}
+
+@media (max-width: 760px) {
+  .lesson-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  #lessonTimerBox,
+  #quizBtn,
+  #goProblemsBtn,
+  #understoodBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+#understoodBtn.is-read[disabled],
+#understoodBtn.is-learned[disabled] {
+  opacity: 1;
+}
