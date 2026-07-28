@@ -199,6 +199,7 @@ export function createAdminStudioController({
   const chapterSelect = root.querySelector("#mhAdminChapterFilter");
   const difficultySelect = root.querySelector("#mhAdminDifficultyFilter");
   const sortSelect = root.querySelector("#mhAdminSort");
+  const globalSearchInput = root.querySelector("#mhAdminGlobalSearch");
 
   function language() {
     return safeLanguage(getLanguage());
@@ -426,6 +427,17 @@ export function createAdminStudioController({
 
   searchInput?.addEventListener("input", () => {
     state.filters.query = searchInput.value;
+    if (globalSearchInput && globalSearchInput.value !== searchInput.value) {
+      globalSearchInput.value = searchInput.value;
+    }
+    renderList();
+  });
+  globalSearchInput?.addEventListener("input", () => {
+    state.filters.query = globalSearchInput.value;
+    if (searchInput && searchInput.value !== globalSearchInput.value) {
+      searchInput.value = globalSearchInput.value;
+    }
+    if (globalSearchInput.value.trim()) showPanel("content");
     renderList();
   });
   gradeSelect?.addEventListener("change", () => {
@@ -463,6 +475,7 @@ export function createAdminStudioController({
       sort: "title-asc"
     };
     if (searchInput) searchInput.value = "";
+    if (globalSearchInput) globalSearchInput.value = "";
     if (sortSelect) sortSelect.value = "title-asc";
     setType("all");
   }

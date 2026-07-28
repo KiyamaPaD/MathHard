@@ -48,6 +48,7 @@
   <link rel="stylesheet" href="css/analytics.css" />
   <link rel="stylesheet" href="css/gamification.css" />
   <link rel="stylesheet" href="css/admin-studio.css" />
+  <link rel="stylesheet" href="css/admin-history.css" />
   <link rel="stylesheet" href="css/gamification-studio.css" />
   <script defer src="js/katex-init.js"></script>
 </head>
@@ -528,12 +529,17 @@
 <div class="content viewer mh-admin-viewer">
 <div class="mh-admin-studio" id="mhAdminStudio">
 <aside aria-label="Admin Studio" class="mh-admin-sidebar">
+<label class="mh-admin-global-search">
+<span>Caută în Admin</span>
+<input id="mhAdminGlobalSearch" type="search" autocomplete="off" placeholder="Titlu, ID, capitol..."/>
+</label>
 <nav class="mh-admin-nav">
 <button class="mh-admin-nav-button is-active" data-admin-panel-target="dashboard" type="button">Prezentare</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="content" type="button">Conținut</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="editor" type="button">Editor</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="roadmaps" type="button">Roadmap-uri</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="gamification" type="button">Gamification</button>
+<button class="mh-admin-nav-button" data-admin-panel-target="history" type="button">Istoric</button>
 </nav>
 <div class="mh-admin-sidebar-actions">
 <button class="btn small" data-i18n="admin_refresh_list" id="mhRefreshList" type="button">Actualizează catalogul</button>
@@ -853,6 +859,15 @@
 </div>
 </div>
 <section id="mhGamificationAdminStudio"></section>
+</section>
+<section class="mh-admin-workspace" data-admin-panel="history" hidden="" tabindex="-1">
+<div class="mh-admin-page-header">
+<div>
+<span class="mh-admin-eyebrow">Control și recovery</span>
+<h2>Istoric și versiuni</h2>
+</div>
+</div>
+<section id="mhAdminHistoryStudio" hidden></section>
 </section>
 </main>
 </div>

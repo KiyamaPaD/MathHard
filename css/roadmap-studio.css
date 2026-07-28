@@ -182,3 +182,36 @@
     width: 100%;
   }
 }
+
+/* Phase 17C — compact roadmap administration. */
+.mh-roadmap-admin-head {
+  position: sticky;
+  top: -26px;
+  z-index: 4;
+  padding: 12px 0;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.mh-roadmap-admin-section-card > header {
+  padding: 10px 12px;
+}
+
+.mh-roadmap-admin-node-row {
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.mh-roadmap-admin-node-actions .btn,
+.mh-roadmap-admin-node-actions .select,
+.mh-roadmap-admin-section-actions .btn {
+  min-height: 32px;
+  padding: 5px 8px;
+}
+
+.mh-roadmap-admin-form > summary {
+  position: sticky;
+  top: 58px;
+  z-index: 3;
+  background: var(--card);
+}

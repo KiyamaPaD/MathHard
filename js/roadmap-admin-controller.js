@@ -6,7 +6,8 @@ import {
   saveRoadmap,
   saveRoadmapNode,
   saveRoadmapPositions,
-  saveRoadmapSection
+  saveRoadmapSection,
+  validateRoadmapGraph
 } from "./roadmap-repository.js";
 import {
   createRoadmapNodeId,
@@ -301,8 +302,9 @@ export function createRoadmapAdminController({
             <p>Adaugi conținut din catalog, îl muți între etape și îl reordonezi fără ID-uri scrise manual.</p>
           </div>
           <div class="mh-roadmap-admin-head-actions">
-            <button class="btn small" type="button" data-roadmap-admin-refresh ${busy ? "disabled" : ""}>🔄 Refresh</button>
-            <button class="btn small" type="button" data-roadmap-new-roadmap>➕ Roadmap nou</button>
+            <button class="btn small" type="button" data-roadmap-admin-validate ${busy || !roadmap ? "disabled" : ""}>✓ Validează</button>
+            <button class="btn small" type="button" data-roadmap-admin-refresh ${busy ? "disabled" : ""}>Refresh</button>
+            <button class="btn small" type="button" data-roadmap-new-roadmap>＋ Roadmap</button>
           </div>
         </div>
 
@@ -430,26 +432,34 @@ export function createRoadmapAdminController({
 
   async function reorderSections(sectionId, direction) {
     const ordered = normalizeOrderedPositions(moveOrderedItem(selectedSections(), sectionId, direction));
-    await saveRoadmapPositions(supabase, "mh_roadmap_sections", ordered);
+    await saveRoadmapPositions(supabase, "mh_roadmap_sections", ordered, { roadmapId: selectedRoadmapId });
   }
 
   async function reorderNode(nodeId, direction) {
     const node = data.nodes.find((item) => item.id === nodeId);
     if (!node) return;
     const ordered = normalizeOrderedPositions(moveOrderedItem(sectionNodes(node.section_id), nodeId, direction));
-    await saveRoadmapPositions(supabase, "mh_roadmap_nodes", ordered);
+    await saveRoadmapPositions(supabase, "mh_roadmap_nodes", ordered, { roadmapId: selectedRoadmapId });
   }
 
   async function moveNodeToSection(nodeId, sectionId) {
     const node = data.nodes.find((item) => item.id === nodeId);
     if (!node || node.section_id === sectionId) return;
-    const targetNodes = sectionNodes(sectionId);
-    await patchRoadmapEntity(supabase, "mh_roadmap_nodes", nodeId, {
-      section_id: sectionId,
-      position: nextPosition(targetNodes)
-    });
-    const sourceNodes = normalizeOrderedPositions(sectionNodes(node.section_id).filter((item) => item.id !== nodeId));
-    await saveRoadmapPositions(supabase, "mh_roadmap_nodes", sourceNodes);
+
+    const sourceRows = normalizeOrderedPositions(
+      sectionNodes(node.section_id).filter((item) => item.id !== nodeId)
+    ).map((item) => ({ ...item, section_id: node.section_id }));
+    const targetRows = normalizeOrderedPositions([
+      ...sectionNodes(sectionId),
+      { ...node, section_id: sectionId }
+    ]).map((item) => ({ ...item, section_id: sectionId }));
+
+    await saveRoadmapPositions(
+      supabase,
+      "mh_roadmap_nodes",
+      [...sourceRows, ...targetRows],
+      { roadmapId: selectedRoadmapId }
+    );
   }
 
   async function duplicateNode(nodeId) {
@@ -515,8 +525,31 @@ export function createRoadmapAdminController({
       .filter(Boolean);
   }
 
+  async function validateSelectedRoadmap() {
+    if (!selectedRoadmapId || busy) return;
+    busy = true;
+    statusMessage = "Se validează roadmap-ul…";
+    render();
+    try {
+      const result = await validateRoadmapGraph(supabase, selectedRoadmapId);
+      const issues = Array.isArray(result?.issues) ? result.issues : [];
+      statusMessage = result?.valid
+        ? "Roadmap valid. Nu au fost găsite probleme."
+        : `Roadmap invalid: ${issues.map((issue) => issue.message || issue.code).join(" · ")}`;
+    } catch (error) {
+      console.error("Roadmap validation failed:", error);
+      statusMessage = `Validare roadmap: ${error?.message || error}`;
+    } finally {
+      busy = false;
+      render();
+    }
+  }
+
   function bindInteractions() {
     root.querySelector("[data-roadmap-admin-refresh]")?.addEventListener("click", () => void load());
+    root.querySelector("[data-roadmap-admin-validate]")?.addEventListener("click", () => {
+      void validateSelectedRoadmap();
+    });
     root.querySelector("[data-roadmap-admin-select]")?.addEventListener("change", (event) => {
       selectedRoadmapId = String(event.target.value || "");
       quickSectionId = selectedSections()[0]?.id || "";

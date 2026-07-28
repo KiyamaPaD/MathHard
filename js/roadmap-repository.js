@@ -251,22 +251,45 @@ export async function patchRoadmapEntity(supabase, table, id, changes = {}) {
   return data;
 }
 
-export async function saveRoadmapPositions(supabase, table, items = []) {
-  const allowedTables = new Set(["mh_roadmap_sections", "mh_roadmap_nodes"]);
-  if (!allowedTables.has(table)) throw new Error("Invalid roadmap ordering table.");
+export async function saveRoadmapPositions(supabase, table, items = [], { roadmapId = "" } = {}) {
+  const entity = table === "mh_roadmap_sections"
+    ? "sections"
+    : table === "mh_roadmap_nodes"
+      ? "nodes"
+      : "";
+  if (!entity) throw new Error("Invalid roadmap ordering table.");
 
   const rows = (Array.isArray(items) ? items : [])
-    .map((item) => ({ id: String(item?.id || "").trim(), position: Number(item?.position || 0) }))
+    .map((item) => ({
+      id: String(item?.id || "").trim(),
+      position: Number(item?.position || 0),
+      ...(entity === "nodes" && item?.section_id
+        ? { section_id: String(item.section_id).trim() }
+        : {})
+    }))
     .filter((item) => item.id);
 
-  for (const row of rows) {
-    const { error } = await supabase
-      .from(table)
-      .update({ position: row.position })
-      .eq("id", row.id);
-    if (error) throw error;
+  if (!String(roadmapId || "").trim()) {
+    throw new Error("Roadmap id is required for atomic ordering.");
   }
 
+  const { data, error } = await supabase.rpc("mh_admin_save_roadmap_positions", {
+    p_entity: entity,
+    p_roadmap_id: String(roadmapId).trim(),
+    p_items: rows
+  });
+  if (error) throw error;
+
   invalidateRoadmapCache();
-  return rows;
+  return data || rows;
+}
+
+export async function validateRoadmapGraph(supabase, roadmapId) {
+  const cleanId = String(roadmapId || "").trim();
+  if (!cleanId) throw new Error("Roadmap id is required.");
+  const { data, error } = await supabase.rpc("mh_admin_validate_roadmap", {
+    p_roadmap_id: cleanId
+  });
+  if (error) throw error;
+  return data || { valid: false, issues: [] };
 }

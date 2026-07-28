@@ -60,6 +60,8 @@ import {
 import { createRoadmapController } from "./roadmap-controller.js";
 import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
 import { createAdminStudioController, suggestDuplicateId } from "./admin-studio-controller.js";
+import { createAdminHistoryController } from "./admin-history-controller.js";
+import { deleteAdminContentSafely, getAdminContentUsage } from "./admin-history-repository.js";
 import { createGamificationAdminController } from "./gamification-admin-controller.js";
 import { invalidateRoadmapCache } from "./roadmap-repository.js";
 import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
@@ -81,6 +83,7 @@ import {
   let roadmapAdminController = null;
   let adminStudioController = null;
   let gamificationAdminController = null;
+  let adminHistoryController = null;
   let learningWorkspaceController = null;
 
   try {
@@ -2918,31 +2921,41 @@ import {
     openViewer(item, "lesson");
   }
 
+  function mhAdminTableForType(type) {
+    if (["lesson", "research", "history"].includes(type)) return "mh_lessons";
+    if (type === "problem") return "mh_problems";
+    if (type === "exam") return "mh_exams";
+    return "";
+  }
+
   async function mhDeleteAdminItem(item) {
     const id = item?.id;
     const type = item?.content_type || item?.type;
-    if (!id || !type) return;
-    if (!confirm(`Sigur vrei să ștergi definitiv ${type}: ${id} din Supabase?`)) return;
+    const tableName = mhAdminTableForType(type);
+    if (!id || !tableName) return;
 
     try {
-      let query;
-      if (type === "lesson" || type === "research" || type === "history") {
-        query = supabase.from("mh_lessons").delete().eq("id", id);
-      } else if (type === "problem") {
-        query = supabase.from("mh_problems").delete().eq("id", id);
-      } else if (type === "exam") {
-        query = supabase.from("mh_exams").delete().eq("id", id);
-      } else {
-        throw new Error("Tip necunoscut pentru delete.");
+      const usage = await getAdminContentUsage(supabase, tableName, id);
+      const references = Array.isArray(usage?.references) ? usage.references : [];
+      if (Number(usage?.total || 0) > 0) {
+        const details = references
+          .slice(0, 8)
+          .map((entry) => `• ${entry.label || entry.type || "referință"}: ${entry.id || entry.count || ""}`)
+          .join("\n");
+        alert(`Nu poți șterge ${id}. Este folosit în alte zone.
+
+${details}`);
+        return;
       }
 
-      const { error } = await query;
-      if (error) throw error;
+      if (!confirm(`Ștergi definitiv ${type}: ${id}? Operația va rămâne în istoricul Admin și poate fi restaurată.`)) return;
+      await deleteAdminContentSafely(supabase, tableName, id);
 
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
+      adminHistoryController?.invalidate();
       const status = document.getElementById("mhPublishStatus");
-      if (status) status.textContent = `Șters definitiv din Supabase: ${id}`;
+      if (status) status.textContent = `Șters: ${id}`;
       if (MH_ADMIN_STATE.editId === id) mhClearAdminForm();
     } catch (error) {
       console.error(error);
@@ -3096,6 +3109,7 @@ import {
       mhClearAdminForm();
       adminStudioController?.openContent(type);
 
+      adminHistoryController?.invalidate();
       if (status) status.textContent = "Salvat cu succes.";
     } catch (err) {
       console.error(err);
@@ -3118,6 +3132,18 @@ import {
   document.getElementById("mhLogoutBtn")?.addEventListener("click", async () => {
     await logoutAdmin();
     adminDrawer?.classList.remove("open");
+  });
+
+  adminHistoryController = createAdminHistoryController({
+    root: document.getElementById("mhAdminHistoryStudio"),
+    supabase,
+    getLanguage: () => LANG,
+    onRestored: async () => {
+      await reloadAllContentFromSupabase(true);
+      mhRenderAdminList();
+      await roadmapController?.load(true);
+      learningWorkspaceController?.refresh();
+    }
   });
 
   gamificationAdminController = createGamificationAdminController({
@@ -3143,6 +3169,7 @@ import {
     },
     onPanelChange: (panelName) => {
       if (panelName === "gamification") void gamificationAdminController?.load();
+      if (panelName === "history") void adminHistoryController?.load();
     }
   });
 
@@ -3168,6 +3195,7 @@ import {
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
+      adminHistoryController?.setAdmin(false);
     }
   }
 
@@ -3237,6 +3265,7 @@ import {
     adminExamRecoveryController?.setAdmin(isAdmin);
     roadmapAdminController?.setAdmin(isAdmin);
     gamificationAdminController?.setAdmin(isAdmin);
+    adminHistoryController?.setAdmin(isAdmin);
     return isAdmin;
   }
 
@@ -3277,6 +3306,7 @@ import {
       adminExamRecoveryController?.setAdmin(true);
       roadmapAdminController?.setAdmin(true);
       gamificationAdminController?.setAdmin(true);
+      adminHistoryController?.setAdmin(true);
       adminDrawer?.classList.add("open");
       adminStudioController?.showPanel("dashboard");
       mhRenderAdminList();

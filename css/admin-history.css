@@ -1,0 +1,226 @@
+/* Phase 17C — Admin audit, versions and recovery workspace. */
+.mh-admin-global-search {
+  display: grid;
+  gap: 6px;
+}
+
+.mh-admin-global-search span {
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.mh-admin-global-search input,
+.mh-admin-history-toolbar input,
+.mh-admin-history-toolbar select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.mh-admin-history-toolbar {
+  max-width: 1380px;
+  margin: 0 auto 14px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.5fr) minmax(160px, .7fr) minmax(150px, .6fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.mh-admin-history-toolbar label {
+  display: grid;
+  gap: 5px;
+}
+
+.mh-admin-history-toolbar label > span {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.mh-admin-history-layout {
+  max-width: 1380px;
+  min-height: 520px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.mh-admin-history-list,
+.mh-admin-history-detail {
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  overflow: auto;
+}
+
+.mh-admin-history-list {
+  max-height: calc(100dvh - 230px);
+  padding: 8px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.mh-admin-history-row {
+  width: 100%;
+  padding: 11px;
+  display: grid;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mh-admin-history-row:hover,
+.mh-admin-history-row.is-active {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+
+.mh-admin-history-row strong,
+.mh-admin-history-row small,
+.mh-admin-history-row time {
+  overflow-wrap: anywhere;
+}
+
+.mh-admin-history-row small,
+.mh-admin-history-row time,
+.mh-admin-history-detail p,
+.mh-admin-version-row span {
+  color: var(--muted);
+  font-size: .73rem;
+}
+
+.mh-admin-history-operation {
+  width: max-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, .12);
+  color: var(--muted);
+  font-size: .66rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.mh-admin-history-operation.is-insert { color: #22c55e; background: rgba(34, 197, 94, .11); }
+.mh-admin-history-operation.is-update { color: #60a5fa; background: rgba(59, 130, 246, .11); }
+.mh-admin-history-operation.is-delete { color: #f87171; background: rgba(239, 68, 68, .11); }
+
+.mh-admin-history-detail {
+  max-height: calc(100dvh - 230px);
+  padding: 18px;
+}
+
+.mh-admin-history-detail-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mh-admin-history-detail-head h3 {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.mh-admin-diff-list,
+.mh-admin-version-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mh-admin-diff-row {
+  padding: 11px;
+  display: grid;
+  grid-template-columns: minmax(120px, .45fr) repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.mh-admin-diff-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.mh-admin-diff-row span {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mh-admin-diff-row code {
+  max-height: 110px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: .72rem;
+}
+
+.mh-admin-history-subhead,
+.mh-admin-version-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.mh-admin-version-row {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.mh-admin-version-row > div {
+  display: grid;
+  gap: 3px;
+}
+
+.mh-admin-history-empty,
+.mh-admin-history-message {
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mh-admin-history-message {
+  max-width: 1380px;
+  margin: 0 auto 12px;
+  border-style: solid;
+}
+
+.mh-admin-history-message.is-error {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, .35);
+  background: rgba(239, 68, 68, .07);
+}
+
+@media (max-width: 980px) {
+  .mh-admin-history-toolbar { grid-template-columns: 1fr 1fr; }
+  .mh-admin-history-layout { grid-template-columns: 1fr; }
+  .mh-admin-history-list,
+  .mh-admin-history-detail { max-height: none; }
+}
+
+@media (max-width: 620px) {
+  .mh-admin-history-toolbar { grid-template-columns: 1fr; }
+  .mh-admin-diff-row { grid-template-columns: 1fr; }
+}

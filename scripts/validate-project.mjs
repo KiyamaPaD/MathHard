@@ -48,7 +48,10 @@ const moduleJsFiles = [
   "js/admin-studio-controller.js",
   "js/gamification-admin-model.js",
   "js/gamification-admin-repository.js",
-  "js/gamification-admin-controller.js"
+  "js/gamification-admin-controller.js",
+  "js/admin-history-model.js",
+  "js/admin-history-repository.js",
+  "js/admin-history-controller.js"
 ];
 
 const classicJsFiles = [
@@ -71,6 +74,7 @@ const requiredFiles = [
   "css/gamification.css",
   "css/admin-studio.css",
   "css/gamification-studio.css",
+  "css/admin-history.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -247,6 +251,10 @@ const adminStudioSource = readFileSync(resolve(root, "js/admin-studio-controller
 const gamificationAdminModelSource = readFileSync(resolve(root, "js/gamification-admin-model.js"), "utf8");
 const gamificationAdminRepositorySource = readFileSync(resolve(root, "js/gamification-admin-repository.js"), "utf8");
 const gamificationAdminControllerSource = readFileSync(resolve(root, "js/gamification-admin-controller.js"), "utf8");
+const adminHistoryModelSource = readFileSync(resolve(root, "js/admin-history-model.js"), "utf8");
+const adminHistoryRepositorySource = readFileSync(resolve(root, "js/admin-history-repository.js"), "utf8");
+const adminHistoryControllerSource = readFileSync(resolve(root, "js/admin-history-controller.js"), "utf8");
+const adminHistoryCss = readFileSync(resolve(root, "css/admin-history.css"), "utf8");
 const gamificationStudioCss = readFileSync(resolve(root, "css/gamification-studio.css"), "utf8");
 const adminStudioCss = readFileSync(resolve(root, "css/admin-studio.css"), "utf8");
 
@@ -867,6 +875,35 @@ if (!gamificationStudioCss.includes('.mh-gamification-admin-layout') ||
 }
 if (!gamificationRepositorySource.includes('mh_get_gamification_dashboard_v2')) {
   fail("Phase 17B user gamification must load reward and rarity metadata through dashboard v2.");
+}
+
+
+
+// Phase 17C: atomic roadmap ordering, dependency-safe deletes and Admin history.
+if (!indexHtml.includes('href="css/admin-history.css"') ||
+    !indexHtml.includes('data-admin-panel-target="history"') ||
+    !indexHtml.includes('id="mhAdminHistoryStudio"') ||
+    !indexHtml.includes('id="mhAdminGlobalSearch"')) {
+  fail("Phase 17C Admin history or global search shell is incomplete.");
+}
+if (!appSource.includes('from "./admin-history-controller.js"') ||
+    !appSource.includes("getAdminContentUsage") ||
+    !appSource.includes("deleteAdminContentSafely")) {
+  fail("Phase 17C app integration must use version history and dependency-safe deletes.");
+}
+if (!roadmapRepositorySource.includes('mh_admin_save_roadmap_positions') ||
+    !roadmapRepositorySource.includes('mh_admin_validate_roadmap')) {
+  fail("Phase 17C roadmap ordering and validation must be server-side and atomic.");
+}
+if (!adminHistoryRepositorySource.includes('mh_admin_get_audit_log') ||
+    !adminHistoryRepositorySource.includes('mh_admin_restore_version') ||
+    !adminHistoryRepositorySource.includes('mh_admin_get_content_usage')) {
+  fail("Phase 17C Admin history repository is missing secure RPCs.");
+}
+if (!adminHistoryModelSource.includes("changedFields") ||
+    !adminHistoryControllerSource.includes("data-admin-restore-version") ||
+    !adminHistoryCss.includes(".mh-admin-history-layout")) {
+  fail("Phase 17C Admin history UI or diff model is incomplete.");
 }
 
 if (failed) {

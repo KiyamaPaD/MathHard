@@ -153,6 +153,13 @@ const {
   nextDuplicateId,
   slugifyAdminId
 } = await importBrowserModule("js/gamification-admin-model.js");
+const {
+  adminEntityLabel,
+  changedFields,
+  filterAuditEntries,
+  normalizeAuditEntry,
+  normalizeVersionEntry
+} = await importBrowserModule("js/admin-history-model.js");
 
 assert.equal(normalizeAppRoute("#problems"), "problems");
 assert.equal(normalizeAppRoute("unknown"), "dashboard");
@@ -957,5 +964,36 @@ const templateDraft = normalizeTemplateDraft({
 assert.equal(templateDraft.target_min, 5);
 assert.equal(templateDraft.target_max, 9);
 assert.equal(templateDraft.reward_max, 45);
+
+
+// Phase 17C: Admin audit/version models and atomic roadmap repository contract.
+const auditRows = [
+  {
+    id: 1,
+    table_name: "mh_problems",
+    entity_id: "p-1",
+    operation: "update",
+    actor_label: "Cristi",
+    before_data: { title_ro: "Vechi", difficulty: 2 },
+    after_data: { title_ro: "Nou", difficulty: 2 },
+    created_at: "2026-07-28T10:00:00Z"
+  },
+  {
+    id: 2,
+    table_name: "mh_lessons",
+    entity_id: "l-1",
+    operation: "insert",
+    after_data: { title_ro: "Lecție" },
+    created_at: "2026-07-28T11:00:00Z"
+  }
+];
+assert.equal(normalizeAuditEntry(auditRows[0]).entityId, "p-1");
+assert.deepEqual(changedFields(auditRows[0]), ["title_ro"]);
+assert.deepEqual(
+  filterAuditEntries(auditRows, { query: "title", tableName: "mh_problems" }).map((entry) => entry.id),
+  [1]
+);
+assert.equal(adminEntityLabel("mh_exams", "ro"), "Examen");
+assert.equal(normalizeVersionEntry({ id: 3, snapshot: { id: "p-1" } }).snapshot.id, "p-1");
 
 console.log("MathHard repository tests passed.");
