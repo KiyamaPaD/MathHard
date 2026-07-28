@@ -93,6 +93,7 @@ import {
   let adminRuntime = null;
   let adminRuntimePromise = null;
   let adminControllersPromise = null;
+  let adminControllerUserId = "";
   let LESSON_QUIZ_AVAILABILITY = new Map();
   let lessonQuizAvailabilityRequest = null;
   let lessonQuizAvailabilityEpoch = 0;
@@ -2862,7 +2863,7 @@ import {
     if (idInput) idInput.disabled = true;
   }
 
-  function mhClearAdminForm({ saveCurrent = true, restoreDraft = true } = {}) {
+  function mhClearAdminForm({ saveCurrent = true, restoreDraft = true, updateDraftContext = true } = {}) {
     if (saveCurrent) adminDraftController?.saveNow();
     const form = document.getElementById("mhPublish");
     if (form) form.reset();
@@ -2898,10 +2899,12 @@ import {
     mhRenderExamItemsDraft();
     mhSetLessonEditorTab("content");
     lessonQuizAdminController?.setContext("lesson", "", false);
-    adminDraftController?.setContext(
-      { mode: "create", type: "lesson", id: "" },
-      { savePrevious: false, restoreDraft }
-    );
+    if (updateDraftContext) {
+      adminDraftController?.setContext(
+        { mode: "create", type: "lesson", id: "" },
+        { savePrevious: false, restoreDraft }
+      );
+    }
   }
 
   function mhGetAdminItems() {
@@ -3008,7 +3011,8 @@ import {
     if (!id || !tableName) return;
 
     try {
-      const usage = await adminRuntime.getAdminContentUsage(supabase, tableName, id);
+      const runtime = adminRuntime || await loadAdminRuntime();
+      const usage = await runtime.getAdminContentUsage(supabase, tableName, id);
       const references = Array.isArray(usage?.references) ? usage.references : [];
       if (Number(usage?.total || 0) > 0) {
         const details = references
@@ -3022,7 +3026,7 @@ ${details}`);
       }
 
       if (!confirm(`Ștergi definitiv ${type}: ${id}? Operația va rămâne în istoricul Admin și poate fi restaurată.`)) return;
-      await adminRuntime.deleteAdminContentSafely(supabase, tableName, id);
+      await runtime.deleteAdminContentSafely(supabase, tableName, id);
 
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
@@ -3325,7 +3329,6 @@ ${details}`);
       mhSetTypeBlocks(document.getElementById("mh_type")?.value || "lesson");
       mhSetAdminModeCreate();
       mhRenderAdminList();
-      restoreLastAdminEditorContext();
 
       return {
         lessonQuizAdminController,
@@ -3367,10 +3370,17 @@ ${details}`);
     mhCreateAdminItem(last.type || "lesson");
   }
 
-  mhSetTypeBlocks(document.getElementById("mh_type")?.value || "lesson");
-  mhSetAdminModeCreate();
-  mhRenderAdminList();
-  restoreLastAdminEditorContext();
+  function prepareAdminControllersForUser(userId) {
+    const scope = String(userId || "").trim();
+    if (!scope || adminControllerUserId === scope) return;
+
+    // Controllers are reused across auth changes, but their visible form state
+    // must never cross account boundaries in the same browser tab.
+    mhClearAdminForm({ saveCurrent: false, restoreDraft: false });
+    restoreLastAdminEditorContext();
+    mhRenderAdminList();
+    adminControllerUserId = scope;
+  }
 
   let adminVisibilityEpoch = 0;
   let adminExamRecoveryController = null;
@@ -3499,6 +3509,7 @@ ${details}`);
 
       await ensureAdminControllers();
       if (requestEpoch !== adminVisibilityEpoch) return;
+      prepareAdminControllersForUser(activeUser.id);
 
       setAdminButtonVisibility(true);
       adminExamRecoveryController?.setAdmin(true);
@@ -3547,12 +3558,13 @@ ${details}`);
     ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
 
-    adminBtn.addEventListener("pointerenter", () => {
-      void loadAdminRuntime();
-    }, { passive: true });
-    adminBtn.addEventListener("focus", () => {
-      void loadAdminRuntime();
-    });
+    const prefetchAdminRuntime = () => {
+      void loadAdminRuntime().catch((error) => {
+        console.warn("Admin runtime prefetch failed:", error);
+      });
+    };
+    adminBtn.addEventListener("pointerenter", prefetchAdminRuntime, { passive: true });
+    adminBtn.addEventListener("focus", prefetchAdminRuntime);
     adminBtn.addEventListener("click", async () => {
       await openAdminFlow();
     });
@@ -7346,9 +7358,29 @@ function openExam(exam){
     const nextUser = session?.user || null;
     const previousUserId = MH_AUTH_USER?.id || "";
     const nextUserId = nextUser?.id || "";
+
+    // Persist the outgoing admin's draft while getUserId() still resolves to
+    // that account, then clear all in-memory Admin state before switching.
+    if (previousUserId && previousUserId !== nextUserId) {
+      adminDraftController?.saveNow();
+    }
+
     MH_AUTH_USER = nextUser;
 
     if (previousUserId !== nextUserId) {
+      adminControllerUserId = "";
+      adminDrawer?.classList.remove("open");
+      adminExamRecoveryController?.setAdmin(false);
+      roadmapAdminController?.setAdmin(false);
+      gamificationAdminController?.setAdmin(false);
+      adminHistoryController?.setAdmin(false);
+      if (adminDraftController) {
+        mhClearAdminForm({
+          saveCurrent: false,
+          restoreDraft: false,
+          updateDraftContext: false
+        });
+      }
       loadProblemAttemptFallback(nextUser);
       loadQuizAttemptFallback(nextUser);
       if (previousUserId && nextUserId) clearLocalExamArtifactsOnLogout();

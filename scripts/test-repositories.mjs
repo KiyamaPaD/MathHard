@@ -1234,4 +1234,93 @@ assert.match(onboardingSource18B, /writeLocal\(user\.id, completion\)/);
 assert.match(uiFeedbackSource18B, /normalizeUiError/);
 assert.match(uiFeedbackSource18B, /initConnectionFeedback/);
 
+
+// Phase 18C.4: lazy runtime retries and account-scoped Admin memory.
+const runtimeLoaderSource18C4 = await readFile(resolve(root, "js/runtime-loader.js"), "utf8");
+const performanceBootstrapSource18C4 = await readFile(resolve(root, "js/performance-bootstrap.js"), "utf8");
+assert.match(runtimeLoaderSource18C4, /removeFailedLazyScript/);
+assert.match(runtimeLoaderSource18C4, /mhLazyRuntimeState = "failed"/);
+assert.match(performanceBootstrapSource18C4, /let initialized = false/);
+assert.match(performanceBootstrapSource18C4, /data-lazy-route-retry/);
+assert.doesNotMatch(performanceBootstrapSource18C4, /void\s+loadModuleOnce\s*\(/);
+assert.doesNotMatch(appSource17c24, /void\s+loadAdminRuntime\(\)\s*;/);
+assert.match(appSource17c24, /prepareAdminControllersForUser/);
+assert.match(appSource17c24, /updateDraftContext: false/);
+
+const previousDocument = globalThis.document;
+const previousWindow = globalThis.window;
+const fakeScripts = [];
+let runtimeReady = false;
+let appendCount = 0;
+
+class FakeScriptElement {
+  constructor() {
+    this.dataset = {};
+    this.src = "";
+    this.defer = false;
+    this.listeners = new Map();
+  }
+
+  addEventListener(type, listener) {
+    if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+    this.listeners.get(type).add(listener);
+  }
+
+  removeEventListener(type, listener) {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  dispatch(type) {
+    for (const listener of [...(this.listeners.get(type) || [])]) listener({ type, target: this });
+  }
+
+  remove() {
+    const index = fakeScripts.indexOf(this);
+    if (index >= 0) fakeScripts.splice(index, 1);
+  }
+}
+
+globalThis.window = { setTimeout, clearTimeout };
+globalThis.document = {
+  baseURI: "https://mathhard.test/",
+  scripts: fakeScripts,
+  createElement(tagName) {
+    assert.equal(tagName, "script");
+    return new FakeScriptElement();
+  },
+  head: {
+    appendChild(script) {
+      fakeScripts.push(script);
+      appendCount += 1;
+      queueMicrotask(() => {
+        if (appendCount === 1) {
+          script.dispatch("error");
+        } else {
+          runtimeReady = true;
+          script.dispatch("load");
+        }
+      });
+      return script;
+    }
+  }
+};
+
+try {
+  const { loadClassicScriptOnce } = await importBrowserModule("js/runtime-loader.js");
+  await assert.rejects(
+    loadClassicScriptOnce("/retry-runtime.js", { isReady: () => runtimeReady }),
+    /Could not load script/
+  );
+  assert.equal(fakeScripts.length, 0);
+  await loadClassicScriptOnce("/retry-runtime.js", { isReady: () => runtimeReady });
+  assert.equal(appendCount, 2);
+  assert.equal(fakeScripts.length, 1);
+  assert.equal(fakeScripts[0].dataset.mhLazyRuntimeState, "loaded");
+} finally {
+  if (previousDocument === undefined) delete globalThis.document;
+  else globalThis.document = previousDocument;
+  if (previousWindow === undefined) delete globalThis.window;
+  else globalThis.window = previousWindow;
+}
+
 console.log("MathHard repository tests passed.");

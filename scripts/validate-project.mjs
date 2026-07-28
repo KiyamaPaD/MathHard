@@ -100,6 +100,7 @@ const requiredFiles = [
   "offline.html",
   "scripts/test-repositories.mjs",
   "scripts/performance-audit.mjs",
+  "scripts/stability-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -605,6 +606,17 @@ try {
   });
 } catch (error) {
   fail(`Performance audit failed.
+${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
+}
+
+
+try {
+  execFileSync(process.execPath, [resolve(root, "scripts/stability-audit.mjs")], {
+    cwd: root,
+    stdio: "pipe"
+  });
+} catch (error) {
+  fail(`Stability audit failed.
 ${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
 }
 
