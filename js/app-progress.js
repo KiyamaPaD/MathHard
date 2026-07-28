@@ -1,3 +1,28 @@
+
+export function lessonTimerSecondsRemaining(error) {
+  if (!error || String(error.code || "") !== "22023") return 0;
+
+  const message = String(error.message || "").toLowerCase();
+  if (!message.includes("lesson reading timer is still active")) return 0;
+
+  let details = error.details;
+  if (typeof details === "string") {
+    try { details = JSON.parse(details); }
+    catch { details = null; }
+  }
+
+  const seconds = Number(details?.seconds_remaining || 0);
+  if (!Number.isFinite(seconds) || seconds <= 0) return 1;
+  return Math.max(1, Math.min(120, Math.ceil(seconds)));
+}
+
+function waitForLessonTimer(seconds) {
+  const safeSeconds = Math.max(1, Math.min(120, Number(seconds) || 1));
+  return new Promise((resolve) => {
+    setTimeout(resolve, safeSeconds * 1000 + 350);
+  });
+}
+
 export let solvedSet = new Set();
 export let learnedSet = new Set();
 export let readSet = new Set();
@@ -129,17 +154,30 @@ export function createAppProgressController({
     if (!progressUser) return null;
 
     return enqueueProgressMutation(`lesson-read:${lessonId}`, async () => {
-      try {
-        const row = await markLessonRead(supabase, lessonId, sessionId);
-        if (row?.read_completed || row?.learned) {
-          readSet.add(lessonId);
-          onLessonChanged(lessonId, row);
+      // The browser clock can be a few seconds ahead of Supabase. The server is
+      // authoritative, so an expected "timer still active" response is retried
+      // using the exact remaining time returned by PostgreSQL.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const row = await markLessonRead(supabase, lessonId, sessionId);
+          if (row?.read_completed || row?.learned) {
+            readSet.add(lessonId);
+            onLessonChanged(lessonId, row);
+          }
+          return row;
+        } catch (error) {
+          const secondsRemaining = lessonTimerSecondsRemaining(error);
+          if (secondsRemaining > 0 && attempt < 2) {
+            await waitForLessonTimer(secondsRemaining);
+            continue;
+          }
+
+          reconcileMutationError("markLessonRead", error);
+          return null;
         }
-        return row;
-      } catch (error) {
-        reconcileMutationError("markLessonRead", error);
-        return null;
       }
+
+      return null;
     });
   }
 

@@ -925,6 +925,15 @@ if (!appProgressSource.includes("export let readSet") ||
     !appProgressSource.includes("completeLessonQuizSafe")) {
   fail("Phase 17C.2 lesson status state is missing from app-progress.js.");
 }
+if (!appProgressSource.includes("lessonTimerSecondsRemaining") ||
+    !appProgressSource.includes("waitForLessonTimer") ||
+    !appProgressSource.includes("secondsRemaining > 0")) {
+  fail("Phase 17C.2.2 must retry lesson read completion using the server timer.");
+}
+if (!appSource.includes("const serverDurationMs=eligibleAt-startedAt") ||
+    !appSource.includes("Date.now()+serverDurationMs")) {
+  fail("Phase 17C.2.2 must derive the lesson countdown from server duration, not device clock skew.");
+}
 if (!lessonStatusRepositorySource.includes('"mh_start_lesson_reading"') ||
     !lessonStatusRepositorySource.includes('"mh_mark_lesson_read"') ||
     !lessonStatusRepositorySource.includes('"mh_complete_lesson_quiz"')) {

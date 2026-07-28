@@ -5598,8 +5598,11 @@ ${details}`);
       return;
     }
     lessonReadingSessionId=String(row.session_id || '');
-    const eligibleAt=Date.parse(row.eligible_at || '');
-    lessonReadingEligibleAt=Number.isFinite(eligibleAt) ? eligibleAt : Date.now()+60_000;
+    const eligibleAt=Date.parse(row.eligible_at || ''), startedAt=Date.parse(row.started_at || '');
+    const serverDurationMs=eligibleAt-startedAt;
+    // Use server-to-server duration so device clock skew cannot unlock early.
+    lessonReadingEligibleAt=(Number.isFinite(serverDurationMs) && serverDurationMs>=0)
+      ? Date.now()+serverDurationMs : (Number.isFinite(eligibleAt) ? eligibleAt : Date.now()+60_000);
     lessonSecondsLeft=Math.max(0, Math.ceil((lessonReadingEligibleAt-Date.now())/1000));
     if (lessonTimer) clearInterval(lessonTimer);
     lessonTimer=setInterval(()=>{

@@ -100,6 +100,16 @@ const {
 } = await importBrowserModule("js/profile-model.js");
 const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
 const appProgressModule = await importBrowserModule("js/app-progress.js");
+assert.equal(appProgressModule.lessonTimerSecondsRemaining({
+  code: "22023",
+  message: "Lesson reading timer is still active",
+  details: '{"seconds_remaining":5}'
+}), 5);
+assert.equal(appProgressModule.lessonTimerSecondsRemaining({
+  code: "22023",
+  message: "Lesson reading session expired",
+  details: '{"seconds_remaining":5}'
+}), 0);
 const { createAuthUiController } = await importBrowserModule("js/auth-ui-controller.js");
 const {
   DEFAULT_UI_PREFERENCES,
