@@ -164,6 +164,20 @@ function optionHtml(value, label, selected) {
   return `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label)}</option>`;
 }
 
+
+function safeAdminStorageGet(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function safeAdminStorageSet(key, value) {
+  try { localStorage.setItem(key, value); } catch {}
+}
+
+function adminStudioStateKey(userId = "") {
+  const scope = String(userId || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `mh_admin_studio_state_v2:${scope}`;
+}
+
 export function createAdminStudioController({
   root,
   getLanguage = () => "ro",
@@ -174,7 +188,8 @@ export function createAdminStudioController({
   onPreview = () => {},
   onRefresh = () => {},
   onLogout = () => {},
-  onPanelChange = () => {}
+  onPanelChange = () => {},
+  getUserId = () => ""
 } = {}) {
   if (!root) throw new Error("createAdminStudioController requires a root element.");
 
@@ -201,6 +216,27 @@ export function createAdminStudioController({
   const sortSelect = root.querySelector("#mhAdminSort");
   const globalSearchInput = root.querySelector("#mhAdminGlobalSearch");
 
+  function persistenceKey() {
+    return adminStudioStateKey(getUserId?.());
+  }
+
+  function persistState() {
+    safeAdminStorageSet(persistenceKey(), JSON.stringify({
+      version: 2,
+      panel: state.panel,
+      filters: state.filters
+    }));
+  }
+
+  function readPersistedState() {
+    try {
+      const parsed = JSON.parse(safeAdminStorageGet(persistenceKey()) || "null");
+      return parsed && parsed.version === 2 ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
   function language() {
     return safeLanguage(getLanguage());
   }
@@ -224,6 +260,7 @@ export function createAdminStudioController({
     if (focus) {
       root.querySelector(`[data-admin-panel="${panelName}"]`)?.focus?.({ preventScroll: true });
     }
+    persistState();
     try { onPanelChange(panelName); } catch (error) { console.error("Admin panel change failed:", error); }
   }
 
@@ -245,6 +282,7 @@ export function createAdminStudioController({
     });
     updateFilterOptions();
     renderList();
+    persistState();
   }
 
   function updateFilterOptions() {
@@ -431,6 +469,7 @@ export function createAdminStudioController({
       globalSearchInput.value = searchInput.value;
     }
     renderList();
+    persistState();
   });
   globalSearchInput?.addEventListener("input", () => {
     state.filters.query = globalSearchInput.value;
@@ -439,22 +478,27 @@ export function createAdminStudioController({
     }
     if (globalSearchInput.value.trim()) showPanel("content");
     renderList();
+    persistState();
   });
   gradeSelect?.addEventListener("change", () => {
     state.filters.grade = gradeSelect.value;
     renderList();
+    persistState();
   });
   chapterSelect?.addEventListener("change", () => {
     state.filters.chapter = chapterSelect.value;
     renderList();
+    persistState();
   });
   difficultySelect?.addEventListener("change", () => {
     state.filters.difficulty = difficultySelect.value;
     renderList();
+    persistState();
   });
   sortSelect?.addEventListener("change", () => {
     state.filters.sort = sortSelect.value;
     renderList();
+    persistState();
   });
 
   function render(items, diagnostics = {}) {
@@ -463,6 +507,29 @@ export function createAdminStudioController({
     updateFilterOptions();
     renderOverview();
     renderList();
+  }
+
+  function restoreState() {
+    const saved = readPersistedState();
+    if (!saved) {
+      showPanel(state.panel || "dashboard");
+      setType(state.filters.type || "all");
+      return state.panel;
+    }
+
+    const allowedPanels = new Set(["dashboard", "content", "editor", "roadmaps", "gamification", "history"]);
+    state.panel = allowedPanels.has(saved.panel) ? saved.panel : "dashboard";
+    state.filters = {
+      ...state.filters,
+      ...(saved.filters && typeof saved.filters === "object" ? saved.filters : {})
+    };
+
+    if (searchInput) searchInput.value = state.filters.query || "";
+    if (globalSearchInput) globalSearchInput.value = state.filters.query || "";
+    if (sortSelect) sortSelect.value = state.filters.sort || "title-asc";
+    showPanel(state.panel);
+    setType(state.filters.type || "all");
+    return state.panel;
   }
 
   function resetFilters() {
@@ -480,8 +547,7 @@ export function createAdminStudioController({
     setType("all");
   }
 
-  showPanel("dashboard");
-  setType("all");
+  restoreState();
 
   return {
     render,
@@ -495,6 +561,8 @@ export function createAdminStudioController({
       showPanel("editor");
     },
     resetFilters,
+    restoreState,
+    getActivePanel() { return state.panel; },
     getState() {
       return structuredClone(state);
     }

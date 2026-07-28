@@ -68,6 +68,7 @@ import {
 import { createRoadmapController } from "./roadmap-controller.js";
 import { createRoadmapAdminController } from "./roadmap-admin-controller.js";
 import { createAdminStudioController, suggestDuplicateId } from "./admin-studio-controller.js";
+import { createAdminDraftController } from "./admin-draft-controller.js";
 import { createAdminHistoryController } from "./admin-history-controller.js";
 import { deleteAdminContentSafely, getAdminContentUsage } from "./admin-history-repository.js";
 import { createGamificationAdminController } from "./gamification-admin-controller.js";
@@ -90,6 +91,7 @@ import {
   let roadmapController = null;
   let roadmapAdminController = null;
   let adminStudioController = null;
+  let adminDraftController = null;
   let gamificationAdminController = null;
   let adminHistoryController = null;
   let learningWorkspaceController = null;
@@ -2612,6 +2614,7 @@ import {
     document.querySelectorAll("[data-lesson-editor-panel]").forEach((panel) => {
       panel.hidden = panel.dataset.lessonEditorPanel !== safeTab;
     });
+    adminDraftController?.scheduleSave();
   }
 
   document.querySelectorAll("[data-lesson-editor-tab]").forEach((button) => {
@@ -2656,6 +2659,7 @@ import {
   }
 
   function mhFillAdminFormFromItem(item) {
+    adminDraftController?.saveNow();
     const type = item.content_type || item.type || "lesson";
 
     const typeSel = document.getElementById("mh_type");
@@ -2729,16 +2733,26 @@ import {
 
       mhRenderExamItemsDraft();
     }
+
+    adminDraftController?.setContext(
+      { mode: "edit", type, id: item.id },
+      { savePrevious: false, restoreDraft: true }
+    );
   }
 
   const mhTypeSelect = document.getElementById("mh_type");
 
   if (mhTypeSelect) {
     mhTypeSelect.addEventListener("change", (e) => {
+      adminDraftController?.saveNow();
       mhSetTypeBlocks(e.target.value);
       mhSetLessonEditorTab("content");
       lessonQuizAdminController?.setContext(e.target.value, "", false);
       mhSetAdminModeCreate();
+      adminDraftController?.setContext(
+        { mode: "create", type: e.target.value, id: "" },
+        { savePrevious: false, restoreDraft: true }
+      );
     });
 
     mhSetTypeBlocks(mhTypeSelect.value);
@@ -2780,7 +2794,8 @@ import {
     if (idInput) idInput.disabled = true;
   }
 
-  function mhClearAdminForm() {
+  function mhClearAdminForm({ saveCurrent = true, restoreDraft = true } = {}) {
+    if (saveCurrent) adminDraftController?.saveNow();
     const form = document.getElementById("mhPublish");
     if (form) form.reset();
 
@@ -2815,7 +2830,10 @@ import {
     mhRenderExamItemsDraft();
     mhSetLessonEditorTab("content");
     lessonQuizAdminController?.setContext("lesson", "", false);
-
+    adminDraftController?.setContext(
+      { mode: "create", type: "lesson", id: "" },
+      { savePrevious: false, restoreDraft }
+    );
   }
 
   function mhGetAdminItems() {
@@ -2851,7 +2869,8 @@ import {
   }
 
   function mhCreateAdminItem(type = "lesson") {
-    mhClearAdminForm();
+    adminDraftController?.saveNow();
+    mhClearAdminForm({ saveCurrent: false, restoreDraft: false });
     const normalizedType = ["lesson", "problem", "exam", "research", "history"].includes(type)
       ? type
       : "lesson";
@@ -2861,6 +2880,10 @@ import {
     mhSetAdminModeCreate();
     const status = document.getElementById("mhPublishStatus");
     if (status) status.textContent = "";
+    adminDraftController?.setContext(
+      { mode: "create", type: normalizedType, id: "" },
+      { savePrevious: false, restoreDraft: true }
+    );
     queueMicrotask(() => document.getElementById("mh_id")?.focus());
   }
 
@@ -2879,6 +2902,11 @@ import {
     }
     const status = document.getElementById("mhPublishStatus");
     if (status) status.textContent = `Duplicat pregătit: ${duplicateId}. Salvează pentru a-l crea.`;
+    adminDraftController?.setContext(
+      { mode: "create", type: item.content_type || item.type || "lesson", id: "" },
+      { savePrevious: false, restoreDraft: false }
+    );
+    adminDraftController?.saveNow();
   }
 
   function mhPreviewAdminItem(item) {
@@ -2931,7 +2959,10 @@ ${details}`);
       adminHistoryController?.invalidate();
       const status = document.getElementById("mhPublishStatus");
       if (status) status.textContent = `Șters: ${id}`;
-      if (MH_ADMIN_STATE.editId === id) mhClearAdminForm();
+      if (MH_ADMIN_STATE.editId === id) {
+        adminDraftController?.clearCurrent();
+        mhClearAdminForm({ saveCurrent: false, restoreDraft: false });
+      }
     } catch (error) {
       console.error(error);
       alert("Delete failed: " + (error.message || error));
@@ -3081,7 +3112,8 @@ ${details}`);
 
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
-      mhClearAdminForm();
+      adminDraftController?.clearCurrent();
+      mhClearAdminForm({ saveCurrent: false, restoreDraft: true });
       adminStudioController?.openContent(type);
 
       adminHistoryController?.invalidate();
@@ -3096,7 +3128,8 @@ ${details}`);
   document.getElementById("mhPublish")?.addEventListener("submit", mhHandleAdminSubmit);
 
   document.getElementById("mhResetForm")?.addEventListener("click", () => {
-    mhClearAdminForm();
+    adminDraftController?.clearCurrent();
+    mhClearAdminForm({ saveCurrent: false, restoreDraft: false });
   });
 
   document.getElementById("mhRefreshList")?.addEventListener("click", async () => {
@@ -3112,6 +3145,7 @@ ${details}`);
   lessonQuizAdminController = createLessonQuizAdminController({
     host: document.getElementById("mhLessonQuizAdmin"),
     supabase,
+    getUserId: () => MH_AUTH_USER?.id || "",
     onSaved: async () => {
       await refreshLessonQuizAvailability();
       renderCards();
@@ -3158,12 +3192,66 @@ ${details}`);
     onPanelChange: (panelName) => {
       if (panelName === "gamification") void gamificationAdminController?.load();
       if (panelName === "history") void adminHistoryController?.load();
+    },
+    getUserId: () => MH_AUTH_USER?.id || ""
+  });
+
+  adminDraftController = createAdminDraftController({
+    form: document.getElementById("mhPublish"),
+    getUserId: () => MH_AUTH_USER?.id || "",
+    getContext: () => ({
+      mode: MH_ADMIN_STATE.mode,
+      type: MH_ADMIN_STATE.editType || document.getElementById("mh_type")?.value || "lesson",
+      id: MH_ADMIN_STATE.editId || ""
+    }),
+    getExamItems: () => MH_EXAM_ITEMS_DRAFT,
+    setExamItems: (items) => {
+      MH_EXAM_ITEMS_DRAFT = Array.isArray(items)
+        ? items.map((item, index) => mhNormalizeDraftExamItem(item, index))
+        : [];
+      mhRenderExamItemsDraft();
+    },
+    getLessonTab: () => document.querySelector("[data-lesson-editor-tab].is-active")?.dataset.lessonEditorTab || "content",
+    setLessonTab: mhSetLessonEditorTab,
+    onAfterRestore: () => {
+      const type = document.getElementById("mh_type")?.value || "lesson";
+      mhSetTypeBlocks(type);
+      if (type === "lesson" && MH_ADMIN_STATE.editId) {
+        lessonQuizAdminController?.setContext("lesson", MH_ADMIN_STATE.editId, true);
+      }
+      const status = document.getElementById("mhPublishStatus");
+      if (status) status.textContent = "Draft local restaurat.";
     }
   });
+
+  function restoreLastAdminEditorContext() {
+    const last = adminDraftController?.readLastContext();
+    if (!last) {
+      adminDraftController?.setContext(
+        { mode: "create", type: "lesson", id: "" },
+        { savePrevious: false, restoreDraft: true }
+      );
+      return;
+    }
+
+    if (last.mode === "edit" && last.id) {
+      const item = mhGetAdminItems().find((candidate) => {
+        const type = candidate.content_type || candidate.type || "lesson";
+        return candidate.id === last.id && type === last.type;
+      });
+      if (item) {
+        mhFillAdminFormFromItem(item);
+        return;
+      }
+    }
+
+    mhCreateAdminItem(last.type || "lesson");
+  }
 
   mhSetTypeBlocks(document.getElementById("mh_type")?.value || "lesson");
   mhSetAdminModeCreate();
   mhRenderAdminList();
+  restoreLastAdminEditorContext();
 
   let adminVisibilityEpoch = 0;
   let adminExamRecoveryController = null;
@@ -3296,7 +3384,7 @@ ${details}`);
       gamificationAdminController?.setAdmin(true);
       adminHistoryController?.setAdmin(true);
       adminDrawer?.classList.add("open");
-      adminStudioController?.showPanel("dashboard");
+      adminStudioController?.restoreState();
       mhRenderAdminList();
       await roadmapAdminController?.load();
       if (mhPublishStatus) mhPublishStatus.textContent = "";

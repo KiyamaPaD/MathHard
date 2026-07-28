@@ -19,13 +19,60 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-export function createLessonQuizAdminController({ host, supabase, onSaved = () => {} } = {}) {
+export function createLessonQuizAdminController({ host, supabase, onSaved = () => {}, getUserId = () => "" } = {}) {
   if (!host) throw new Error("Lesson quiz admin host is required.");
 
   let context = { type: "lesson", lessonId: "", existing: false };
   let draft = normalizeAdminLessonQuiz({}, "");
   let loadingEpoch = 0;
   let saving = false;
+  let localSaveTimer = null;
+  const LOCAL_DRAFT_VERSION = 1;
+
+  function localDraftKey(lessonId = context.lessonId) {
+    const user = String(getUserId?.() || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const lesson = String(lessonId || "new").replace(/[^a-zA-Z0-9_-]/g, "_");
+    return `mh_lesson_quiz_admin_draft_v1:${user}:${lesson}`;
+  }
+
+  function readLocalDraft(lessonId = context.lessonId) {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(localDraftKey(lessonId)) || "null");
+      if (!parsed || parsed.version !== LOCAL_DRAFT_VERSION) return null;
+      return normalizeAdminLessonQuiz(parsed.draft, lessonId);
+    } catch {
+      return null;
+    }
+  }
+
+  function clearLocalDraft(lessonId = context.lessonId) {
+    try { localStorage.removeItem(localDraftKey(lessonId)); } catch {}
+  }
+
+  function saveLocalDraft(readDom = true) {
+    if (!context.existing || !context.lessonId || saving) return false;
+    if (localSaveTimer) {
+      clearTimeout(localSaveTimer);
+      localSaveTimer = null;
+    }
+    try {
+      if (readDom) readDraftFromDom();
+      draft.lesson_id = context.lessonId;
+      localStorage.setItem(localDraftKey(), JSON.stringify({
+        version: LOCAL_DRAFT_VERSION,
+        saved_at: new Date().toISOString(),
+        draft
+      }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function scheduleLocalDraftSave() {
+    if (localSaveTimer) clearTimeout(localSaveTimer);
+    localSaveTimer = setTimeout(saveLocalDraft, 220);
+  }
 
   function status(message, tone = "") {
     const node = host.querySelector("[data-quiz-admin-status]");
@@ -178,6 +225,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
           : "Verificarea a fost salvată ca draft.",
         "success"
       );
+      clearLocalDraft(context.lessonId);
       await onSaved(context.lessonId, draft);
     } catch (error) {
       saving = false;
@@ -191,30 +239,39 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
     host.querySelector("[data-quiz-admin-add]")?.addEventListener("click", () => {
       readDraftFromDom();
       draft.items.push(makeQuizItem(draft.items.length, context.lessonId));
+      saveLocalDraft(false);
       render();
     });
-    host.querySelector("[data-quiz-admin-reload]")?.addEventListener("click", () => { void load(context.lessonId); });
+    host.querySelector("[data-quiz-admin-reload]")?.addEventListener("click", () => {
+      if (readLocalDraft(context.lessonId) && !confirm("Renunți la modificările locale și reîncarci versiunea din Supabase?")) return;
+      clearLocalDraft(context.lessonId);
+      void load(context.lessonId, { preferLocal: false });
+    });
     host.querySelectorAll("[data-quiz-item-up]").forEach((button) => button.addEventListener("click", () => {
       readDraftFromDom();
       const index = Number(button.dataset.quizItemUp);
       [draft.items[index - 1], draft.items[index]] = [draft.items[index], draft.items[index - 1]];
+      saveLocalDraft(false);
       render();
     }));
     host.querySelectorAll("[data-quiz-item-down]").forEach((button) => button.addEventListener("click", () => {
       readDraftFromDom();
       const index = Number(button.dataset.quizItemDown);
       [draft.items[index + 1], draft.items[index]] = [draft.items[index], draft.items[index + 1]];
+      saveLocalDraft(false);
       render();
     }));
     host.querySelectorAll("[data-quiz-item-delete]").forEach((button) => button.addEventListener("click", () => {
       readDraftFromDom();
       draft.items.splice(Number(button.dataset.quizItemDelete), 1);
+      saveLocalDraft(false);
       render();
     }));
     host.querySelectorAll("[data-quiz-option-add]").forEach((button) => button.addEventListener("click", () => {
       readDraftFromDom();
       const index = Number(button.dataset.quizOptionAdd);
       draft.items[index].options.push(makeQuizOption(draft.items[index].options.length));
+      saveLocalDraft(false);
       render();
     }));
     host.querySelectorAll("[data-quiz-option-delete]").forEach((button) => button.addEventListener("click", () => {
@@ -222,9 +279,10 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
       const itemCard = button.closest("[data-quiz-item-index]");
       const itemIndex = Number(itemCard.dataset.quizItemIndex);
       draft.items[itemIndex].options.splice(Number(button.dataset.quizOptionDelete), 1);
+      saveLocalDraft(false);
       render();
     }));
-    host.querySelector('[data-quiz-setting="is_published"]')?.addEventListener("change", syncPublicationControls);
+    host.querySelector('[data-quiz-setting="is_published"]')?.addEventListener("change", () => { syncPublicationControls(); scheduleLocalDraftSave(); });
     host.querySelector("[data-quiz-admin-publish]")?.addEventListener("click", () => {
       const checkbox = host.querySelector('[data-quiz-setting="is_published"]');
       void persistDraft(!Boolean(checkbox?.checked));
@@ -236,6 +294,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
       if (!confirm("Ștergi verificarea acestei lecții?")) return;
       try {
         await adminDeleteLessonQuiz(supabase, context.lessonId);
+        clearLocalDraft(context.lessonId);
         draft = normalizeAdminLessonQuiz({}, context.lessonId);
         render();
         status("Verificare ștearsă.", "success");
@@ -244,9 +303,13 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
         status(`Eroare: ${error?.message || error}`, "error");
       }
     });
+    host.querySelectorAll("input, textarea, select").forEach((field) => {
+      field.addEventListener("input", scheduleLocalDraftSave);
+      field.addEventListener("change", scheduleLocalDraftSave);
+    });
   }
 
-  async function load(lessonId) {
+  async function load(lessonId, { preferLocal = true } = {}) {
     context = { type: "lesson", lessonId: String(lessonId || ""), existing: Boolean(lessonId) };
     const epoch = ++loadingEpoch;
     draft = normalizeAdminLessonQuiz({}, context.lessonId);
@@ -256,8 +319,10 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
     try {
       const data = await adminGetLessonQuiz(supabase, context.lessonId);
       if (epoch !== loadingEpoch) return;
-      draft = data;
+      const localDraft = preferLocal ? readLocalDraft(context.lessonId) : null;
+      draft = localDraft || data;
       render();
+      if (localDraft) status("Draft local restaurat.", "warning");
     } catch (error) {
       if (epoch !== loadingEpoch) return;
       render();
@@ -266,6 +331,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
   }
 
   function setContext(type, lessonId, existing = false) {
+    saveLocalDraft();
     if (type !== "lesson") {
       context = { type, lessonId: "", existing: false };
       draft = normalizeAdminLessonQuiz({}, "");
@@ -276,6 +342,20 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
     void load(existing ? lessonId : "");
   }
 
+  const saveOnPageHide = () => saveLocalDraft();
+  const saveOnVisibilityChange = () => {
+    if (document.visibilityState === "hidden") saveLocalDraft();
+  };
+  window.addEventListener("pagehide", saveOnPageHide);
+  document.addEventListener("visibilitychange", saveOnVisibilityChange);
+
   render();
-  return { load, setContext, render };
+  return {
+    load,
+    setContext,
+    render,
+    saveLocalDraft,
+    clearLocalDraft,
+    getDraft: () => normalizeAdminLessonQuiz(draft, context.lessonId)
+  };
 }

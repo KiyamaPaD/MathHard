@@ -1115,3 +1115,21 @@ window.addEventListener("storage", (e) => {
     }
   }
 }); 
+// Return to the last MathHard workspace instead of always forcing Home.
+try {
+  const savedWorkspace = String(localStorage.getItem("mh_active_workspace_v1") || "dashboard")
+    .replace(/^#/, "")
+    .trim()
+    .toLowerCase();
+  const allowedWorkspaces = new Set([
+    "dashboard", "roadmap", "lessons", "problems", "exams",
+    "research", "history", "xp", "analytics", "gamification"
+  ]);
+  const route = allowedWorkspaces.has(savedWorkspace) ? savedWorkspace : "dashboard";
+  const backHome = document.getElementById("backHomeBtn");
+  const logo = document.querySelector('a.logo[href="/index.html"]');
+  if (backHome) backHome.href = `/index.html#${route}`;
+  if (logo) logo.href = `/index.html#${route}`;
+} catch {
+  // Navigation falls back to /index.html when storage is unavailable.
+}

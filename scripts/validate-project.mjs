@@ -51,6 +51,7 @@ const moduleJsFiles = [
   "js/gamification-repository.js",
   "js/gamification-controller.js",
   "js/admin-studio-controller.js",
+  "js/admin-draft-controller.js",
   "js/gamification-admin-model.js",
   "js/gamification-admin-repository.js",
   "js/gamification-admin-controller.js",
@@ -226,6 +227,8 @@ const lessonQuizModelSource = readFileSync(resolve(root, "js/lesson-quiz-model.j
 const lessonQuizRepositorySource = readFileSync(resolve(root, "js/lesson-quiz-repository.js"), "utf8");
 const lessonQuizControllerSource = readFileSync(resolve(root, "js/lesson-quiz-controller.js"), "utf8");
 const lessonQuizAdminControllerSource = readFileSync(resolve(root, "js/lesson-quiz-admin-controller.js"), "utf8");
+const adminDraftControllerSource = readFileSync(resolve(root, "js/admin-draft-controller.js"), "utf8");
+const adminStudioControllerSource = readFileSync(resolve(root, "js/admin-studio-controller.js"), "utf8");
 const adminExamRecoverySource = readFileSync(resolve(root, "js/admin-exam-recovery.js"), "utf8");
 const secureEvaluationRepositorySource = readFileSync(resolve(root, "js/secure-evaluation-repository.js"), "utf8");
 const secureExamRepositorySource = readFileSync(resolve(root, "js/secure-exam-repository.js"), "utf8");
@@ -992,6 +995,30 @@ if (!lessonQuizRepositorySource.includes("mh_admin_set_lesson_quiz_published") |
     !lessonQuizModelSource.includes("buildAdminLessonQuizPayload") ||
     !lessonQuizAdminCss.includes(".mh-lesson-quiz-publication")) {
   fail("Phase 17C.3.1 lesson quiz publication confirmation is incomplete.");
+}
+
+// Phase 17C.3.2: persistent workspace and Admin draft recovery.
+if (!appSource.includes('from "./admin-draft-controller.js"') ||
+    !appSource.includes("restoreLastAdminEditorContext") ||
+    !appSource.includes("adminStudioController?.restoreState()")) {
+  fail("Phase 17C.3.2 persistent Admin workspace integration is incomplete.");
+}
+if (!adminDraftControllerSource.includes("mh_admin_content_draft_v1") ||
+    !adminDraftControllerSource.includes("visibilitychange") ||
+    !adminDraftControllerSource.includes("pagehide")) {
+  fail("Phase 17C.3.2 Admin content draft recovery is incomplete.");
+}
+if (!adminStudioControllerSource.includes("mh_admin_studio_state_v2") ||
+    !adminStudioControllerSource.includes("restoreState")) {
+  fail("Phase 17C.3.2 Admin panel/filter persistence is incomplete.");
+}
+if (!lessonQuizAdminControllerSource.includes("mh_lesson_quiz_admin_draft_v1") ||
+    !lessonQuizAdminControllerSource.includes("Draft local restaurat")) {
+  fail("Phase 17C.3.2 lesson quiz draft recovery is incomplete.");
+}
+if (!profileSource.includes("mh_active_workspace_v1") ||
+    !profileSource.includes("backHomeBtn")) {
+  fail("Phase 17C.3.2 profile return route persistence is incomplete.");
 }
 
 if (failed) {

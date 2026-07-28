@@ -112,6 +112,22 @@ assert.equal(appProgressModule.lessonTimerSecondsRemaining({
 }), 0);
 const { createAuthUiController } = await importBrowserModule("js/auth-ui-controller.js");
 const {
+  adminDraftStorageKey,
+  normalizeAdminDraftContext
+} = await importBrowserModule("js/admin-draft-controller.js");
+assert.deepEqual(
+  normalizeAdminDraftContext({ mode: "edit", type: "problem", id: "p-1" }),
+  { mode: "edit", type: "problem", id: "p-1" }
+);
+assert.deepEqual(
+  normalizeAdminDraftContext({ mode: "unknown", type: "unknown", id: "ignored" }),
+  { mode: "create", type: "lesson", id: "" }
+);
+assert.equal(
+  adminDraftStorageKey({ mode: "edit", type: "lesson", id: "v-demo" }, "user-id"),
+  "mh_admin_content_draft_v1:user-id:edit:lesson:v-demo"
+);
+const {
   DEFAULT_UI_PREFERENCES,
   mergeUiPreferences,
   normalizeUiPreferences,
