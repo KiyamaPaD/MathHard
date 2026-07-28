@@ -98,6 +98,45 @@ const {
   formatExamLabel,
   sortLessonsForProfile
 } = await importBrowserModule("js/profile-model.js");
+const {
+  buildProfileExperienceSummary,
+  calculateLevelState,
+  calculateOverallCompletion
+} = await importBrowserModule("js/profile-experience-model.js");
+const profileLevel = calculateLevelState(260);
+assert.deepEqual(profileLevel, {
+  xp: 260,
+  level: 4,
+  startXp: 225,
+  nextXp: 400,
+  remainingXp: 140,
+  progress: 20
+});
+assert.equal(calculateOverallCompletion(
+  { learned: 5, solved: 25, passed: 2 },
+  { lessons: 10, problems: 50, exams: 4 }
+), 50);
+assert.deepEqual(
+  buildProfileExperienceSummary({
+    counts: { learned: 2, solved: 3, passed: 1, xpTotal: 100 },
+    totals: { lessons: 4, problems: 6, exams: 2 }
+  }),
+  {
+    overallCompletion: 50,
+    level: {
+      xp: 100,
+      level: 3,
+      startXp: 100,
+      nextXp: 225,
+      remainingXp: 125,
+      progress: 0
+    },
+    lessonsPercent: 50,
+    problemsPercent: 50,
+    examsPercent: 50
+  }
+);
+
 const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
 const appProgressModule = await importBrowserModule("js/app-progress.js");
 assert.equal(appProgressModule.lessonTimerSecondsRemaining({

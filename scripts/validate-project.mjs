@@ -22,6 +22,8 @@ const moduleJsFiles = [
   "js/mutation-queue.js",
   "js/profile-model.js",
   "js/profile-text.js",
+  "js/profile-experience-model.js",
+  "js/profile-experience-controller.js",
   "js/app-progress.js",
   "js/auth-ui-controller.js",
   "js/admin-content-model.js",
@@ -83,6 +85,7 @@ const requiredFiles = [
   "css/admin-studio.css",
   "css/gamification-studio.css",
   "css/admin-history.css",
+  "css/profile.css",
   "scripts/test-repositories.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
@@ -217,6 +220,9 @@ const answerEngineSource = readFileSync(resolve(root, "js/answer-engine.js"), "u
 const mutationQueueSource = readFileSync(resolve(root, "js/mutation-queue.js"), "utf8");
 const profileModelSource = readFileSync(resolve(root, "js/profile-model.js"), "utf8");
 const profileTextSource = readFileSync(resolve(root, "js/profile-text.js"), "utf8");
+const profileExperienceModelSource = readFileSync(resolve(root, "js/profile-experience-model.js"), "utf8");
+const profileExperienceControllerSource = readFileSync(resolve(root, "js/profile-experience-controller.js"), "utf8");
+const profileCss = readFileSync(resolve(root, "css/profile.css"), "utf8");
 const appProgressSource = readFileSync(resolve(root, "js/app-progress.js"), "utf8");
 const authUiControllerSource = readFileSync(resolve(root, "js/auth-ui-controller.js"), "utf8");
 const adminContentModelSource = readFileSync(resolve(root, "js/admin-content-model.js"), "utf8");
@@ -350,6 +356,29 @@ if (!profileSource.includes('from "./profile-model.js"')) {
 }
 if (!profileSource.includes('from "./profile-text.js"')) {
   fail("profile.js must use the extracted profile-text.js module.");
+}
+if (!profileSource.includes('from "./profile-experience-controller.js"') ||
+    !profileSource.includes("renderProfileExperience")) {
+  fail("Profile v2 must render its overview through the extracted experience controller.");
+}
+if (!profileHtml.includes('data-profile-tab="overview"') ||
+    !profileHtml.includes('data-profile-tab="progress"') ||
+    !profileHtml.includes('data-profile-tab="activity"') ||
+    !profileHtml.includes('data-profile-tab="account"') ||
+    !profileHtml.includes('id="profileCompletionRing"') ||
+    !profileHtml.includes('id="profileContinueBtn"')) {
+  fail("Phase 17D profile tabs, completion spotlight or Continue action are missing.");
+}
+if (!profileExperienceModelSource.includes("calculateOverallCompletion") ||
+    !profileExperienceModelSource.includes("calculateLevelState") ||
+    !profileExperienceControllerSource.includes("mh_profile_active_tab_v2") ||
+    !profileExperienceControllerSource.includes("mh_active_workspace_v1")) {
+  fail("Phase 17D profile summary or persistent navigation model is incomplete.");
+}
+if (!profileCss.includes(".profile-completion-ring") ||
+    !profileCss.includes(".profile-tabs") ||
+    !profileCss.includes(".profile-focus-card")) {
+  fail("Phase 17D profile visual system is incomplete.");
 }
 if (!contentRepositorySource.includes('supabase.rpc("mh_get_content_catalog")')) {
   fail("content-repository.js must load the authenticated catalog through mh_get_content_catalog().");

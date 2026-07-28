@@ -11,6 +11,13 @@ import {
   sortExamsForProfile,
   sortLessonsForProfile
 } from "./profile-model.js";
+import {
+  initializeProfileExperience,
+  renderProfileExperience,
+  renderProfileIdentity,
+  resetProfileExperience,
+  setProfileExperienceLanguage
+} from "./profile-experience-controller.js";
 
 
 const $ = (id) => document.getElementById(id);
@@ -300,22 +307,10 @@ function applyProfileStaticTexts() {
   const backHomeBtn = $("backHomeBtn");
   if (backHomeBtn) backHomeBtn.textContent = t("back_home");
 
-  const kicker = document.querySelector(".profile-kicker");
-  if (kicker) kicker.textContent = t("account_kicker");
-
-  const badges = document.querySelectorAll(".profile-badge");
-  if (badges[0]) badges[0].textContent = t("badge_lessons");
-  if (badges[1]) badges[1].textContent = t("badge_problems");
-  if (badges[2]) badges[2].textContent = t("badge_xp");
-  if (badges[3]) badges[3].textContent = t("badge_exams");
-
-  const authTitle = document.querySelector(".profile-auth-title");
-  if (authTitle) authTitle.textContent = t("auth_title");
-
-  const authLabels = document.querySelectorAll("#authForm .profile-field span");
-  if (authLabels[0]) authLabels[0].textContent = t("email_label");
-  if (authLabels[1]) authLabels[1].textContent = t("password_label");
-  if (authLabels[2]) authLabels[2].textContent = t("display_name_signup_label");
+  document.querySelectorAll("[data-profile-text-key]").forEach((element) => {
+    const key = element.dataset.profileTextKey;
+    if (key) element.textContent = t(key);
+  });
 
   if (authEmail) authEmail.placeholder = "email@example.com";
   if (authPassword) authPassword.placeholder = t("password_placeholder");
@@ -325,67 +320,6 @@ function applyProfileStaticTexts() {
   if (signupBtn) signupBtn.textContent = t("signup_btn");
   if (logoutBtn) logoutBtn.textContent = t("logout_btn");
 
-  const userStatusLabel = document.querySelector(".profile-user-label");
-  if (userStatusLabel) userStatusLabel.textContent = t("status_label");
-
-  const statLabels = document.querySelectorAll(".profile-stat-label");
-  if (statLabels[0]) statLabels[0].textContent = t("solved_label");
-  if (statLabels[1]) statLabels[1].textContent = t("learned_label");
-  if (statLabels[2]) statLabels[2].textContent = t("passed_label");
-  if (statLabels[3]) statLabels[3].textContent = t("xp_total_label");
-
-  const panelTitles = document.querySelectorAll(".profile-panel h2");
-  if (panelTitles[0]) panelTitles[0].textContent = t("account_data_title");
-  if (panelTitles[1]) panelTitles[1].textContent = t("progress_title");
-  if (panelTitles[2]) panelTitles[2].textContent = t("detailed_title");
-  if (panelTitles[3]) panelTitles[3].textContent = t("next_title");
-  if (panelTitles[4]) panelTitles[4].textContent = t("recent_title");
-  if (panelTitles[5]) panelTitles[5].textContent = t("extra_exam_title");
-  if (panelTitles[6]) panelTitles[6].textContent = t("settings_title");
-
-  const infoLabels = document.querySelectorAll(".profile-info-label");
-  if (infoLabels[0]) infoLabels[0].textContent = t("info_display_name");
-  if (infoLabels[1]) infoLabels[1].textContent = t("info_email");
-  if (infoLabels[2]) infoLabels[2].textContent = t("info_confirmed");
-  if (infoLabels[3]) infoLabels[3].textContent = t("info_provider");
-  if (infoLabels[4]) infoLabels[4].textContent = t("info_user_id");
-
-  if (infoLabels[5]) infoLabels[5].textContent = t("avg_xp");
-
-  if (infoLabels[6]) infoLabels[6].textContent = t("detail_solved");
-  if (infoLabels[7]) infoLabels[7].textContent = t("detail_wrong");
-  if (infoLabels[8]) infoLabels[8].textContent = t("detail_unsolved");
-  if (infoLabels[9]) infoLabels[9].textContent = t("detail_lessons_learned");
-  if (infoLabels[10]) infoLabels[10].textContent = t("detail_lessons_unlearned");
-  if (infoLabels[11]) infoLabels[11].textContent = t("detail_exams_passed");
-  if (infoLabels[12]) infoLabels[12].textContent = t("detail_exams_unpassed");
-  if (infoLabels[13]) infoLabels[13].textContent = t("detail_exams_unattempted");
-
-  if (infoLabels[14]) infoLabels[14].textContent = t("next_lesson");
-  if (infoLabels[15]) infoLabels[15].textContent = t("next_chapter");
-  if (infoLabels[16]) infoLabels[16].textContent = t("next_exam");
-
-  if (infoLabels[17]) infoLabels[17].textContent = t("recent_lesson");
-  if (infoLabels[18]) infoLabels[18].textContent = t("recent_problem");
-  if (infoLabels[19]) infoLabels[19].textContent = t("recent_exam");
-
-  if (infoLabels[20]) infoLabels[20].textContent = t("best_exam");
-  if (infoLabels[21]) infoLabels[21].textContent = t("exam_attempts");
-  if (infoLabels[22]) infoLabels[22].textContent = t("last_exam_score");
-
-  const progressHeads = document.querySelectorAll(".profile-progress-head span");
-  if (progressHeads[0]) progressHeads[0].textContent = t("progress_lessons");
-  if (progressHeads[1]) progressHeads[1].textContent = t("progress_problems");
-  if (progressHeads[2]) progressHeads[2].textContent = t("progress_exams");
-
-  const profileMuted = document.querySelector(".profile-muted");
-  if (profileMuted) profileMuted.textContent = t("settings_text");
-
-  const editLabels = document.querySelectorAll(".profile-edit-form .profile-field span");
-  if (editLabels[0]) editLabels[0].textContent = t("edit_display_name");
-  if (editLabels[1]) editLabels[1].textContent = t("edit_avatar_url");
-  if (editLabels[2]) editLabels[2].textContent = t("edit_new_password");
-
   if (editDisplayName) editDisplayName.placeholder = t("edit_display_name_placeholder");
   if (editAvatarUrl) editAvatarUrl.placeholder = t("edit_avatar_url_placeholder");
   if (newPassword) newPassword.placeholder = t("edit_new_password_placeholder");
@@ -394,7 +328,10 @@ function applyProfileStaticTexts() {
   if (resetProfileBtn) resetProfileBtn.textContent = t("reset_profile_btn");
   if (changePasswordBtn) changePasswordBtn.textContent = t("change_password_btn");
   if (deleteAccountBtn) deleteAccountBtn.textContent = t("delete_account_btn");
+
+  setProfileExperienceLanguage(LANG);
 }
+
 
 /* ========= RENDER ========= */
 function clearSensitiveBrowserState() {
@@ -429,8 +366,11 @@ function renderGuest() {
   safeText(profileUserStatus, t("status_guest"));
   renderAvatar("M", "");
 
-  if (authForm) authForm.style.display = "flex";
-  if (profileUserBox) profileUserBox.style.display = "none";
+  if (authForm) authForm.style.display = "grid";
+  if (profileUserBox) {
+    profileUserBox.hidden = true;
+    profileUserBox.style.display = "none";
+  }
 
   if (authText) {
     authText.textContent = t("auth_text_guest");
@@ -440,6 +380,8 @@ function renderGuest() {
   setZeroStats();
   setEmptyAccountInfo();
   setEmptyDetailedSummary();
+  resetProfileExperience();
+  renderProfileIdentity({ userId: "guest" });
   setStatus("");
 }
 
@@ -461,8 +403,12 @@ function renderUser(user, profileRow = null) {
   renderAvatar(displayName, profileRow?.avatar_url || "");
 
   if (authForm) authForm.style.display = "none";
-  if (profileUserBox) profileUserBox.style.display = "block";
+  if (profileUserBox) {
+    profileUserBox.hidden = false;
+    profileUserBox.style.display = "grid";
+  }
 
+  renderProfileIdentity({ userId: user.id });
   fillAccountInfo(user, profileRow);
   fillProfileEditor(user, profileRow);
 
@@ -835,6 +781,22 @@ async function loadProfileStatsFromDb(userId) {
         : "—"
     );
 
+    const nextLessonLabel = stats.nextLesson
+      ? localizedTitle(stats.nextLesson, LANG)
+      : "";
+    const nextExamLabel = stats.recommendedExam
+      ? (stats.retryRecommended
+          ? t("retry_exam", { exam: formatExamLabel(stats.recommendedExam, LANG) })
+          : formatExamLabel(stats.recommendedExam, LANG))
+      : "";
+
+    renderProfileExperience({
+      counts,
+      totals,
+      nextLessonLabel,
+      nextExamLabel
+    });
+
     const partialErrors = [
       lessonError ? "lessons" : null,
       problemError ? "problems" : null,
@@ -1095,6 +1057,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 /* ========= BOOT IMPORTANT ========= */
+initializeProfileExperience({ lang: LANG });
 applyProfileStaticTexts();
 loadCurrentUser().catch((err) => {
   console.error("Initial loadCurrentUser error:", err);
