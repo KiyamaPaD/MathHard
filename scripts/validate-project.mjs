@@ -1113,8 +1113,17 @@ if (!onboardingSource18B.includes("loadRoadmapCatalog") ||
   fail("Phase 18B onboarding must select a roadmap and support reopening.");
 }
 if (!uiPreferencesSource18B.includes("onboarding") ||
-    !uiPreferencesSource18B.includes("version: 2")) {
-  fail("Phase 18B onboarding completion must persist through UI preferences.");
+    !uiPreferencesSource18B.includes("version: 2") ||
+    !onboardingSource18B.includes("localOnboarding.completed") ||
+    !onboardingSource18B.includes("writeLocal(user.id, completion)")) {
+  fail("Phase 18B.1 onboarding completion must survive refresh and older server preference sanitizers.");
+}
+const roadmapStudioCss18B1 = readFileSync(resolve(root, "css/roadmap-studio.css"), "utf8");
+const adminStudioCss18B1 = readFileSync(resolve(root, "css/admin-studio.css"), "utf8");
+if (!roadmapStudioCss18B1.includes("Phase 18B.1 — mobile Admin/Roadmap stacking fix") ||
+    !roadmapStudioCss18B1.includes("position: static") ||
+    !adminStudioCss18B1.includes("mobile Admin shell separated")) {
+  fail("Phase 18B.1 mobile Admin/Roadmap overlap guard is missing.");
 }
 if (!existsSync(resolve(root, "404.html")) || !existsSync(resolve(root, "offline.html"))) {
   fail("Phase 18B 404 and offline pages are missing.");

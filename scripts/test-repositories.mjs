@@ -1168,6 +1168,8 @@ const onboardingSource18B = await readFile(resolve(root, "js/onboarding-controll
 const uiFeedbackSource18B = await readFile(resolve(root, "js/ui-feedback.js"), "utf8");
 assert.match(onboardingSource18B, /mh:onboarding-open/);
 assert.match(onboardingSource18B, /selectRoadmap/);
+assert.match(onboardingSource18B, /localOnboarding\.completed/);
+assert.match(onboardingSource18B, /writeLocal\(user\.id, completion\)/);
 assert.match(uiFeedbackSource18B, /normalizeUiError/);
 assert.match(uiFeedbackSource18B, /initConnectionFeedback/);
 

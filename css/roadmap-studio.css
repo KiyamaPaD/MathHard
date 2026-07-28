@@ -215,3 +215,88 @@
   z-index: 3;
   background: var(--card);
 }
+
+
+/* Phase 18B.1 — mobile Admin/Roadmap stacking fix. */
+@media (max-width: 820px) {
+  .mh-admin-workspace[data-admin-panel="roadmaps"] {
+    overflow-x: hidden;
+    scroll-padding-top: 12px;
+  }
+
+  .mh-admin-workspace[data-admin-panel="roadmaps"] .mh-admin-page-header {
+    margin-bottom: 10px;
+  }
+
+  #mhRoadmapAdminStudio {
+    min-width: 0;
+    padding-top: 8px;
+  }
+
+  .mh-roadmap-admin-head,
+  .mh-roadmap-admin-form > summary {
+    position: static;
+    top: auto;
+    z-index: auto;
+  }
+
+  .mh-roadmap-admin-head {
+    padding: 0 0 10px;
+    align-items: flex-start;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .mh-roadmap-admin-head > div:first-child,
+  .mh-roadmap-admin-selector,
+  .mh-roadmap-admin-selector label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mh-roadmap-admin-head-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mh-roadmap-admin-head-actions .btn,
+  .mh-roadmap-admin-selector .btn,
+  .mh-roadmap-admin-selector select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mh-roadmap-admin-selector {
+    align-items: stretch;
+  }
+
+  .mh-roadmap-admin-section-card > header {
+    align-items: flex-start;
+  }
+
+  .mh-roadmap-admin-section-actions,
+  .mh-roadmap-admin-node-actions {
+    width: 100%;
+  }
+
+  .mh-roadmap-admin-section-actions .btn,
+  .mh-roadmap-admin-node-actions .btn,
+  .mh-roadmap-admin-node-actions .select {
+    flex: 1 1 132px;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .mh-roadmap-admin-head-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-roadmap-admin-section-actions .btn,
+  .mh-roadmap-admin-node-actions .btn,
+  .mh-roadmap-admin-node-actions .select {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}

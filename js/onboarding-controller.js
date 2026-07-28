@@ -9,6 +9,7 @@ import { normalizeUiError, showToast } from "./ui-feedback.js";
 
 const ONBOARDING_VERSION = 1;
 const LOCAL_PREFIX = "mh_onboarding_v1";
+const openingUsers = new Set();
 
 const COPY = Object.freeze({
   ro: {
@@ -100,35 +101,51 @@ function createModal() {
 }
 
 async function completeOnboarding({ user, preferences, roadmapId = "", route = "dashboard" }) {
-  const next = mergeUiPreferences(preferences, {
-    onboarding: { completed: true, version: ONBOARDING_VERSION }
-  });
+  const completion = { completed: true, version: ONBOARDING_VERSION };
+  const next = mergeUiPreferences(preferences, { onboarding: completion });
   if (roadmapId) await selectRoadmap(supabase, roadmapId);
+
+  // Persist the local completion marker first so refresh/tab restore cannot reopen
+  // onboarding while the Supabase preference write is still in flight.
+  writeLocal(user.id, completion);
+
   try {
-    const saved = await saveUiPreferences(supabase, next);
-    writeLocal(user.id, saved.onboarding);
+    const savedRemote = await saveUiPreferences(supabase, next);
+    const saved = mergeUiPreferences(savedRemote, { onboarding: completion });
     window.dispatchEvent(new CustomEvent("mh:ui-preferences-updated", {
       detail: { preferences: saved }
     }));
     location.hash = `#${route}`;
     return saved;
   } catch (error) {
-    writeLocal(user.id, next.onboarding);
     throw error;
   }
 }
 
 async function openForUser(user, { force = false } = {}) {
   if (!user?.id) return;
+  if (openingUsers.has(user.id) && !force) return;
+  openingUsers.add(user.id);
+
   let preferences;
+  const localOnboarding = readLocal(user.id) || {};
   try {
     preferences = await loadUiPreferences(supabase);
   } catch {
-    preferences = mergeUiPreferences({}, { onboarding: readLocal(user.id) || {} });
+    preferences = mergeUiPreferences({}, { onboarding: localOnboarding });
+  }
+
+  // Older versions of mh_save_ui_preferences stripped the onboarding object.
+  // Prefer a newer completed local marker until the server value catches up.
+  if (localOnboarding.completed && Number(localOnboarding.version || 0) >= Number(preferences.onboarding.version || 0)) {
+    preferences = mergeUiPreferences(preferences, { onboarding: localOnboarding });
   }
 
   const completed = preferences.onboarding.completed && preferences.onboarding.version >= ONBOARDING_VERSION;
-  if (completed && !force) return;
+  if (completed && !force) {
+    openingUsers.delete(user.id);
+    return;
+  }
 
   await waitForShell();
   const copy = COPY[language()];
@@ -166,6 +183,7 @@ async function openForUser(user, { force = false } = {}) {
     modal.hidden = true;
     modal.remove();
     document.body.classList.remove("mh-onboarding-open");
+    openingUsers.delete(user.id);
   };
 
   list.addEventListener("click", (event) => {
@@ -216,8 +234,13 @@ async function init() {
   if (data?.session?.user) window.setTimeout(() => void openForUser(data.session.user), 450);
 
   supabase.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) window.setTimeout(() => void openForUser(session.user), 450);
-    else document.getElementById("mhOnboarding")?.remove();
+    if (session?.user) {
+      window.setTimeout(() => void openForUser(session.user), 450);
+    } else {
+      openingUsers.clear();
+      document.getElementById("mhOnboarding")?.remove();
+      document.body.classList.remove("mh-onboarding-open");
+    }
   });
 
   window.addEventListener("mh:onboarding-open", async () => {

@@ -583,3 +583,32 @@
     flex: 1 1 calc(50% - 6px);
   }
 }
+
+
+/* Phase 18B.1 — keep the mobile Admin shell separated from its workspaces. */
+@media (max-width: 820px) {
+  #adminDrawer .mh-admin-topbar {
+    padding-top: max(8px, env(safe-area-inset-top));
+    flex-wrap: nowrap;
+  }
+
+  .mh-admin-studio {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mh-admin-sidebar {
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+  }
+
+  .mh-admin-main,
+  .mh-admin-workspace {
+    min-width: 0;
+  }
+
+  .mh-admin-workspace {
+    overscroll-behavior: contain;
+  }
+}
