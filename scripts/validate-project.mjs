@@ -93,6 +93,7 @@ const requiredFiles = [
   "css/ui-feedback.css",
   "css/onboarding.css",
   "css/system-page.css",
+  "css/mobile-hardening.css",
   "404.html",
   "offline.html",
   "scripts/test-repositories.mjs",
@@ -270,6 +271,7 @@ const sectionLayoutControllerSource = readFileSync(resolve(root, "js/section-lay
 const sectionLayoutCss = readFileSync(resolve(root, "css/section-layout.css"), "utf8");
 const appShellSource = readFileSync(resolve(root, "js/app-shell-controller.js"), "utf8");
 const appShellCss = readFileSync(resolve(root, "css/app-shell.css"), "utf8");
+const mobileHardeningCss = readFileSync(resolve(root, "css/mobile-hardening.css"), "utf8");
 const browserStateSource = readFileSync(resolve(root, "js/browser-state.js"), "utf8");
 const runtimeDiagnosticsSource = readFileSync(resolve(root, "js/runtime-diagnostics.js"), "utf8");
 const analyticsModelSource = readFileSync(resolve(root, "js/analytics-model.js"), "utf8");
@@ -1127,6 +1129,38 @@ if (!roadmapStudioCss18B1.includes("Phase 18B.1 — mobile Admin/Roadmap stackin
 }
 if (!existsSync(resolve(root, "404.html")) || !existsSync(resolve(root, "offline.html"))) {
   fail("Phase 18B 404 and offline pages are missing.");
+}
+
+// Phase 18C: mobile layout hardening and non-sensitive layout diagnostics.
+const mobileCssReference = 'href="/css/mobile-hardening.css"';
+if (!indexHtml.includes(mobileCssReference) || !profileHtml.includes(mobileCssReference)) {
+  fail("Phase 18C mobile hardening stylesheet must be loaded by index.html and profile.html.");
+}
+const indexMobileCssPosition = indexHtml.indexOf(mobileCssReference);
+const profileMobileCssPosition = profileHtml.indexOf(mobileCssReference);
+if (indexMobileCssPosition < indexHtml.indexOf('href="css/gamification-studio.css"') ||
+    profileMobileCssPosition < profileHtml.indexOf('href="/css/profile.css"')) {
+  fail("Phase 18C mobile hardening stylesheet must be loaded after component stylesheets.");
+}
+if (!mobileHardeningCss.includes("Phase 18C — mobile layout hardening") ||
+    !mobileHardeningCss.includes("body.mh-shell-ready > header") ||
+    !mobileHardeningCss.includes(".mh-shell-workspace-kicker") ||
+    !mobileHardeningCss.includes("#adminDrawer .mh-admin-topbar") ||
+    !mobileHardeningCss.includes(".mh-lesson-quiz-option") ||
+    !mobileHardeningCss.includes("@media (max-width: 380px)")) {
+  fail("Phase 18C mobile hardening coverage is incomplete.");
+}
+const layoutDiagnosticsBlock = runtimeDiagnosticsSource.slice(
+  runtimeDiagnosticsSource.indexOf("export function collectLayoutDiagnostics"),
+  runtimeDiagnosticsSource.indexOf("function getPerformanceSnapshot")
+);
+if (!runtimeDiagnosticsSource.includes("collectLayoutDiagnostics") ||
+    !runtimeDiagnosticsSource.includes("overflowingElements") ||
+    !runtimeDiagnosticsSource.includes("getPerformanceSnapshot") ||
+    layoutDiagnosticsBlock.includes("innerText") ||
+    layoutDiagnosticsBlock.includes("textContent") ||
+    layoutDiagnosticsBlock.includes(".value")) {
+  fail("Phase 18C layout diagnostics must report geometry without collecting page text.");
 }
 
 if (failed) {

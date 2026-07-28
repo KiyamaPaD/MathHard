@@ -44,6 +44,12 @@ for (const htmlPath of htmlFiles) {
   if (!html.includes('/js/runtime-diagnostics.js')) {
     fail(`${htmlPath}: runtime diagnostics module is not loaded.`);
   }
+  if (!/<meta\s+name=["']viewport["'][^>]*width=device-width/i.test(html)) {
+    fail(`${htmlPath}: responsive viewport metadata is missing.`);
+  }
+  if (!html.includes('/css/mobile-hardening.css')) {
+    fail(`${htmlPath}: Phase 18C mobile hardening stylesheet is not loaded.`);
+  }
 }
 
 for (const jsPath of jsFiles) {
@@ -60,12 +66,20 @@ for (const jsPath of jsFiles) {
   }
 }
 
+const mobileHardening = read("css/mobile-hardening.css");
+if (!mobileHardening.includes("overflow-x: clip") ||
+    !mobileHardening.includes(".mh-admin-content-title-row strong") ||
+    !mobileHardening.includes(".profile-tabs")) {
+  fail("css/mobile-hardening.css: expected shell, Admin and profile overflow guards are missing.");
+}
+
 const app = read("js/app.js");
 const profile = read("js/profile.js");
 const contentRepository = read("js/content-repository.js");
 const roadmapRepository = read("js/roadmap-repository.js");
 const appProgress = read("js/app-progress.js");
 const secureProblem = read("js/secure-problem-controller.js");
+const runtimeDiagnostics = read("js/runtime-diagnostics.js");
 
 const sensitivePatterns = [
   /globalThis\.supabase\s*=/,
@@ -104,6 +118,19 @@ if (!appProgress.includes("userChanged") || !appProgress.includes("keeping the l
 if (!secureProblem.includes("workspaceSaveChain")) fail("js/secure-problem-controller.js: workspace writes are not serialized.");
 if (!secureProblem.includes("Array.isArray(attempts[problem.id])")) {
   fail("js/secure-problem-controller.js: legacy attempt cache shape is not defended.");
+}
+if (!runtimeDiagnostics.includes("collectLayoutDiagnostics") ||
+    !runtimeDiagnostics.includes("getPerformanceSnapshot")) {
+  fail("js/runtime-diagnostics.js: Phase 18C layout/performance snapshot is missing.");
+}
+const layoutDiagnosticsBlock = runtimeDiagnostics.slice(
+  runtimeDiagnostics.indexOf("export function collectLayoutDiagnostics"),
+  runtimeDiagnostics.indexOf("function getPerformanceSnapshot")
+);
+if (layoutDiagnosticsBlock.includes("innerText") ||
+    layoutDiagnosticsBlock.includes("textContent") ||
+    layoutDiagnosticsBlock.includes(".value")) {
+  fail("js/runtime-diagnostics.js: layout diagnostics must not collect page text.");
 }
 
 const indexHtml = read("index.html");

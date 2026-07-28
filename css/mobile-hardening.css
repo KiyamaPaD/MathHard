@@ -1,0 +1,729 @@
+/* Phase 18C — mobile layout hardening.
+   Loaded last so shared responsive rules can safely correct older components. */
+
+:root {
+  --mh-safe-top: env(safe-area-inset-top, 0px);
+  --mh-safe-right: env(safe-area-inset-right, 0px);
+  --mh-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mh-safe-left: env(safe-area-inset-left, 0px);
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+:where(
+  .mh-app-shell,
+  .mh-shell-main,
+  .mh-shell-workspace-panel,
+  .mh-shell-dashboard-grid,
+  .mh-shell-dashboard-primary,
+  .mh-shell-dashboard-secondary,
+  .mh-section,
+  .mh-collapsible-section-body,
+  .mh-catalog-workspace,
+  #drawer,
+  #drawer .panel,
+  #drawer .content,
+  #adminDrawer,
+  #adminDrawer .panel,
+  #adminDrawer .content,
+  .mh-admin-studio,
+  .mh-admin-main,
+  .mh-admin-workspace,
+  .mh-admin-editor-card,
+  .mh-problem-workspace,
+  .mh-roadmap-workspace,
+  .mh-analytics-workspace,
+  .mh-game-workspace,
+  .profile-page,
+  .profile-hero,
+  .profile-panel
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(img, svg, video, canvas, iframe) {
+  max-width: 100%;
+}
+
+:where(
+  .mh-shell-workspace-title,
+  .mh-shell-workspace-description,
+  .mh-section-head h2,
+  .mh-section-head h3,
+  .section-title,
+  .mh-hub-title,
+  .mh-roadmap-node-title,
+  .mh-roadmap-section-head h3,
+  .mh-roadmap-next-card h3,
+  .mh-problem-hero h2,
+  .mh-problem-card h3,
+  .mh-analytics-card h3,
+  .mh-game-card h3,
+  .mh-admin-page-header h2,
+  .mh-admin-card h3,
+  .mh-admin-content-title-row strong,
+  .mh-admin-history-detail-head h3,
+  .mh-gamification-form-header h3,
+  .profile-name,
+  .profile-panel-heading,
+  .profile-focus-card h2,
+  .about-title,
+  .about-subtitle
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(
+  .mh-admin-eyebrow,
+  .mh-admin-catalog-status,
+  .mh-admin-type-badge,
+  .mh-admin-content-meta span,
+  .mh-admin-content-tags span,
+  .mh-roadmap-schema-badge,
+  .mh-roadmap-admin-pill,
+  .mh-game-kicker,
+  .mh-game-achievement-reward,
+  .profile-kicker,
+  .profile-badge,
+  .hero-mini-label,
+  .logo-slogan
+) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(pre, table, .katex-display, .mh-live-preview-box, .mh-math-toolbar-row) {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+}
+
+:where(pre, table, .katex-display) {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Prevent wide generated content from enlarging a grid or flex track. */
+:where(
+  .mh-shell-workspace-header,
+  .mh-section-head,
+  .mh-roadmap-toolbar,
+  .mh-roadmap-section-head,
+  .mh-roadmap-admin-head,
+  .mh-roadmap-admin-section-card > header,
+  .mh-roadmap-admin-node-row,
+  .mh-learning-workspace-context,
+  .mh-learning-workspace-actions,
+  .mh-problem-hero,
+  .mh-problem-hero-actions,
+  .mh-solution-heading,
+  .mh-analytics-toolbar,
+  .mh-analytics-card-head,
+  .mh-game-toolbar,
+  .mh-game-card-head,
+  .mh-admin-topbar-title,
+  .mh-admin-page-header,
+  .mh-admin-card-header,
+  .mh-admin-content-row,
+  .mh-admin-content-main,
+  .mh-admin-content-title-row,
+  .mh-admin-content-actions,
+  .mh-admin-history-toolbar,
+  .mh-gamification-admin-toolbar,
+  .mh-gamification-admin-actions,
+  .mh-gamification-form-header,
+  .mh-lesson-quiz-admin-header,
+  .mh-lesson-quiz-item > header,
+  .mh-lesson-quiz-admin-footer,
+  .profile-identity-copy,
+  .profile-quick-actions,
+  .profile-info-row
+) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  /* The legacy top bar previously remained sticky above the shell and could
+     cover workspace titles. On phones it now stays in normal document flow. */
+  body.mh-shell-ready > header,
+  body.mh-shell-ready.mh-sidebar-compact > header {
+    position: relative;
+    top: auto;
+    z-index: 20;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  body.mh-shell-ready > header .bar {
+    width: 100%;
+    min-width: 0;
+    min-height: 64px;
+    padding-top: max(10px, var(--mh-safe-top));
+    padding-right: max(12px, var(--mh-safe-right));
+    padding-bottom: 10px;
+    padding-left: max(62px, calc(50px + var(--mh-safe-left)));
+    flex-wrap: nowrap;
+  }
+
+  body.mh-shell-ready > header .header-left,
+  body.mh-shell-ready > header .search,
+  body.mh-shell-ready > header .search input {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.mh-shell-ready > header .header-right {
+    min-width: 0;
+    flex: 0 0 auto;
+  }
+
+  .mh-shell-mobile-toggle {
+    position: absolute;
+    top: max(13px, var(--mh-safe-top));
+    left: max(12px, var(--mh-safe-left));
+  }
+
+  .mh-shell-main {
+    width: 100%;
+    padding-top: 18px;
+    padding-right: max(14px, var(--mh-safe-right));
+    padding-bottom: calc(94px + var(--mh-safe-bottom));
+    padding-left: max(14px, var(--mh-safe-left));
+  }
+
+  .mh-shell-workspace-header {
+    position: static;
+    z-index: auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0 0 18px;
+    align-items: start;
+  }
+
+  .mh-shell-workspace-header > div {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .mh-shell-workspace-title {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    line-height: 1.08;
+  }
+
+  .mh-shell-bottom-nav {
+    right: max(8px, var(--mh-safe-right));
+    bottom: max(8px, var(--mh-safe-bottom));
+    left: max(8px, var(--mh-safe-left));
+    min-width: 0;
+    max-width: calc(100% - max(16px, var(--mh-safe-left)) - max(16px, var(--mh-safe-right)));
+  }
+
+  .mh-shell-bottom-nav button,
+  .mh-shell-bottom-nav a {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .mh-shell-bottom-nav button span:last-child,
+  .mh-shell-bottom-nav a span:last-child {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Shared cards and section headings may wrap instead of escaping the card. */
+  :where(
+    .mh-section-head,
+    .mh-roadmap-toolbar,
+    .mh-roadmap-section-head,
+    .mh-analytics-toolbar,
+    .mh-analytics-card-head,
+    .mh-game-toolbar,
+    .mh-game-card-head,
+    .mh-problem-hero,
+    .mh-solution-heading
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  :where(
+    .mh-section-head > div,
+    .mh-roadmap-section-head > div,
+    .mh-analytics-card-head > div,
+    .mh-game-card-head > div,
+    .mh-problem-hero > div
+  ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mh-section,
+  .mh-hub,
+  .mh-catalog-workspace,
+  .mh-roadmap-section-card,
+  .mh-roadmap-next-card,
+  .mh-problem-card,
+  .mh-analytics-card,
+  .mh-game-card {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  /* Full-screen learning/problem surfaces get one clear top layer. */
+  #drawer.open > .panel,
+  #adminDrawer.open > .panel {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  #drawer.open .panel > header,
+  #adminDrawer.open .mh-admin-topbar {
+    top: 0;
+    min-width: 0;
+    max-width: 100%;
+    padding-top: max(10px, var(--mh-safe-top));
+  }
+
+  #drawer.open .panel > header.bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  #drawer.open .panel > header.bar > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #mhLearningWorkspaceBar {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mh-learning-workspace-breadcrumb {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  .mh-learning-workspace-actions {
+    max-width: 100%;
+    scrollbar-width: thin;
+  }
+
+  .drawer.is-problem-workspace .panel .content.viewer,
+  .drawer.is-learning-workspace .panel .content.viewer {
+    width: 100%;
+    max-width: 100%;
+    padding-right: max(14px, var(--mh-safe-right));
+    padding-left: max(14px, var(--mh-safe-left));
+    overflow-x: clip;
+  }
+
+  .mh-problem-side {
+    position: static;
+    top: auto;
+  }
+
+  /* Admin uses a fixed top row and one scrolling workspace, never nested
+     sticky headings on mobile. */
+  #adminDrawer .mh-admin-topbar {
+    position: relative;
+    top: auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-right: max(10px, var(--mh-safe-right));
+    padding-left: max(10px, var(--mh-safe-left));
+  }
+
+  .mh-admin-topbar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .mh-admin-topbar-title .btn {
+    flex: 0 0 auto;
+  }
+
+  .mh-admin-studio {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .mh-admin-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .mh-admin-nav,
+  .mh-admin-type-tabs,
+  .mh-gamification-admin-tabs {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    padding-bottom: 3px;
+  }
+
+  .mh-admin-nav-button,
+  .mh-admin-type-tabs button,
+  .mh-gamification-admin-tabs button {
+    flex: 0 0 auto;
+    max-width: min(78vw, 280px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .mh-admin-main,
+  .mh-admin-workspace {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .mh-admin-workspace {
+    padding-right: max(12px, var(--mh-safe-right));
+    padding-bottom: calc(44px + var(--mh-safe-bottom));
+    padding-left: max(12px, var(--mh-safe-left));
+    scrollbar-gutter: auto;
+    scroll-padding-top: 12px;
+  }
+
+  .mh-admin-page-header {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    justify-items: start;
+    gap: 10px;
+  }
+
+  .mh-admin-page-header > :where(button, .btn, span) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .mh-admin-filter-bar,
+  .mh-admin-form-grid,
+  .mh-admin-dashboard-grid,
+  .mh-admin-stat-grid,
+  .mh-admin-history-toolbar,
+  .mh-gamification-form-grid,
+  .mh-roadmap-admin-quick-grid,
+  .mh-roadmap-admin-summary-grid {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mh-admin-editor-card,
+  .mh-admin-card,
+  .mh-admin-content-row,
+  .mh-admin-history-layout,
+  .mh-gamification-admin-layout,
+  .mh-roadmap-admin-section-card,
+  .mh-roadmap-admin-node-row,
+  .mh-lesson-quiz-admin-card,
+  .mh-lesson-quiz-item {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .mh-admin-content-title-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .mh-admin-content-title-row strong,
+  .mh-admin-content-main code {
+    width: auto;
+    max-width: 100%;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .mh-admin-content-actions,
+  .mh-admin-quick-actions,
+  .mh-roadmap-admin-head-actions,
+  .mh-roadmap-admin-section-actions,
+  .mh-roadmap-admin-node-actions,
+  .mh-gamification-admin-actions,
+  .mh-admin-sidebar-actions,
+  .mh-lesson-quiz-admin-actions,
+  .mh-lesson-quiz-admin-footer > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  :where(
+    .mh-admin-content-actions,
+    .mh-admin-quick-actions,
+    .mh-roadmap-admin-head-actions,
+    .mh-roadmap-admin-section-actions,
+    .mh-roadmap-admin-node-actions,
+    .mh-gamification-admin-actions,
+    .mh-lesson-quiz-admin-actions,
+    .mh-lesson-quiz-admin-footer > div
+  ) :where(button, .btn, select, .select, input) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .mh-roadmap-admin-head,
+  .mh-roadmap-admin-form > summary,
+  .mh-gamification-admin-editor,
+  .mh-admin-history-detail {
+    position: static;
+    top: auto;
+  }
+
+  .mh-roadmap-admin-head,
+  .mh-roadmap-admin-section-card > header,
+  .mh-roadmap-admin-node-row,
+  .mh-gamification-form-header,
+  .mh-lesson-quiz-admin-header,
+  .mh-lesson-quiz-item > header,
+  .mh-lesson-quiz-admin-footer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .mh-roadmap-admin-node-title-line,
+  .mh-roadmap-node-meta,
+  .mh-admin-content-meta,
+  .mh-admin-content-tags,
+  .profile-badges {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .mh-lesson-quiz-option {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mh-lesson-quiz-option > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mh-lesson-quiz-admin-footer {
+    position: static;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .mh-layout-save-toast,
+  .mh-ui-toast-region {
+    max-width: calc(100% - max(24px, var(--mh-safe-left)) - max(24px, var(--mh-safe-right)));
+  }
+}
+
+@media (max-width: 640px) {
+  .mh-shell-workspace-kicker {
+    display: none;
+  }
+
+  .mh-shell-workspace-header {
+    gap: 12px;
+  }
+
+  .mh-shell-continue {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .mh-section,
+  .mh-hub,
+  .mh-catalog-workspace {
+    border-radius: 14px;
+  }
+
+  .mh-catalog-workspace {
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .mh-admin-stat-grid,
+  .mh-admin-dashboard-grid,
+  .mh-admin-filter-bar,
+  .mh-admin-form-grid,
+  .mh-admin-history-toolbar,
+  .mh-gamification-form-grid.two,
+  .mh-roadmap-admin-summary-grid,
+  .mh-lesson-quiz-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mh-admin-editor-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .mh-admin-content-actions .btn,
+  .mh-admin-quick-actions .btn,
+  .mh-roadmap-admin-head-actions .btn,
+  .mh-roadmap-admin-section-actions .btn,
+  .mh-roadmap-admin-node-actions :where(.btn, .select),
+  .mh-gamification-admin-actions :where(.btn, input),
+  .mh-lesson-quiz-admin-actions .btn,
+  .mh-lesson-quiz-admin-footer .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .mh-lesson-quiz-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .mh-lesson-quiz-correct,
+  .mh-lesson-quiz-option input[data-quiz-option-field="id"],
+  .mh-lesson-quiz-option input[data-quiz-option-field="text_ro"],
+  .mh-lesson-quiz-option input[data-quiz-option-field="text_en"] {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .mh-lesson-quiz-option button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .mh-admin-topbar-title > div {
+    display: none;
+  }
+
+  .mh-admin-topbar-title .btn {
+    max-width: 100%;
+  }
+
+  .mh-admin-catalog-status,
+  .mh-admin-status {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .profile-topbar {
+    position: relative;
+    top: auto;
+  }
+
+  .profile-topbar-inner,
+  .profile-identity-card,
+  .profile-progress-spotlight,
+  .profile-auth-box,
+  .profile-panel,
+  .profile-stat-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .profile-tabs {
+    position: static;
+    top: auto;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+  }
+
+  .profile-tabs button {
+    flex: 0 0 auto;
+    max-width: 80vw;
+    white-space: normal;
+  }
+
+  .profile-quick-actions {
+    width: 100%;
+    margin-left: 0;
+    padding-top: 12px;
+  }
+
+  .profile-quick-actions .btn {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 380px) {
+  body.mh-shell-ready > header .bar {
+    padding-right: 9px;
+    padding-left: max(56px, calc(46px + var(--mh-safe-left)));
+  }
+
+  .mh-shell-main,
+  .mh-admin-workspace,
+  .drawer.is-problem-workspace .panel .content.viewer,
+  .drawer.is-learning-workspace .panel .content.viewer {
+    padding-right: max(10px, var(--mh-safe-right));
+    padding-left: max(10px, var(--mh-safe-left));
+  }
+
+  .mh-shell-bottom-nav button,
+  .mh-shell-bottom-nav a {
+    font-size: .62rem;
+  }
+
+  .mh-shell-workspace-title {
+    font-size: 1.48rem;
+  }
+
+  .mh-admin-editor-card,
+  .mh-admin-card,
+  .mh-roadmap-admin-section-card,
+  .mh-lesson-quiz-item,
+  .mh-problem-card,
+  .mh-analytics-card,
+  .mh-game-card {
+    padding-right: 11px;
+    padding-left: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh-shell-workspace-panel {
+    animation: none;
+  }
+}

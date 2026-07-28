@@ -1,6 +1,6 @@
 const STORAGE_KEY = "mh_runtime_diagnostics_v1";
 const MAX_EVENTS = 120;
-const BUILD_LABEL = "stability-reset-2026-07";
+const BUILD_LABEL = "phase-18c-mobile-hardening";
 
 function getStorage() {
   try {
@@ -84,6 +84,112 @@ export function clearDiagnostics() {
   try { getStorage()?.removeItem(STORAGE_KEY); } catch {}
 }
 
+function elementDescriptor(element) {
+  if (!element || element.nodeType !== 1) return "unknown";
+  const tag = String(element.tagName || "node").toLowerCase();
+  const id = element.id ? `#${redactString(element.id).replace(/[^a-z0-9_-]/gi, "")}` : "";
+  const classes = [...(element.classList || [])]
+    .slice(0, 3)
+    .map((name) => redactString(name).replace(/[^a-z0-9_-]/gi, ""))
+    .filter(Boolean)
+    .map((name) => `.${name}`)
+    .join("");
+  return `${tag}${id}${classes}`.slice(0, 180);
+}
+
+function rounded(value) {
+  return Number.isFinite(value) ? Math.round(value * 10) / 10 : 0;
+}
+
+function isInsideHorizontalScroller(element, viewportWidth) {
+  let current = element?.parentElement || null;
+  while (current && current !== globalThis.document?.body) {
+    const style = globalThis.getComputedStyle?.(current);
+    const rect = current.getBoundingClientRect?.();
+    const scrollable = ["auto", "scroll"].includes(style?.overflowX)
+      && current.scrollWidth > current.clientWidth + 1;
+    const contained = rect && rect.left >= -1 && rect.right <= viewportWidth + 1;
+    if (scrollable && contained) return true;
+    current = current.parentElement;
+  }
+  return false;
+}
+
+export function collectLayoutDiagnostics({ limit = 24 } = {}) {
+  const documentRef = globalThis.document;
+  if (!documentRef?.documentElement || !documentRef.body) {
+    return {
+      viewportWidth: globalThis.innerWidth || 0,
+      pageWidth: 0,
+      overflowCount: 0,
+      overflowingElements: []
+    };
+  }
+
+  const viewportWidth = documentRef.documentElement.clientWidth || globalThis.innerWidth || 0;
+  const pageWidth = Math.max(
+    documentRef.documentElement.scrollWidth || 0,
+    documentRef.body.scrollWidth || 0
+  );
+  const overflowingElements = [];
+  const maxItems = Math.max(1, Math.min(60, Number(limit) || 24));
+
+  for (const element of documentRef.body.querySelectorAll("*")) {
+    if (overflowingElements.length >= maxItems) break;
+    if (element.closest?.("[data-layout-audit-ignore]")) continue;
+
+    const rect = element.getBoundingClientRect?.();
+    if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+    const style = globalThis.getComputedStyle?.(element);
+    if (style?.display === "none" || style?.visibility === "hidden") continue;
+
+    const escapesLeft = rect.left < -1;
+    const escapesRight = rect.right > viewportWidth + 1;
+    if (!escapesLeft && !escapesRight) continue;
+    if (isInsideHorizontalScroller(element, viewportWidth)) continue;
+
+    const overflowX = style?.overflowX || "visible";
+    const intentionallyScrollable = ["auto", "scroll"].includes(overflowX)
+      && element.scrollWidth > element.clientWidth + 1;
+    if (intentionallyScrollable && rect.left >= -1 && rect.right <= viewportWidth + 1) continue;
+
+    overflowingElements.push({
+      element: elementDescriptor(element),
+      left: rounded(rect.left),
+      right: rounded(rect.right),
+      width: rounded(rect.width),
+      clientWidth: element.clientWidth || 0,
+      scrollWidth: element.scrollWidth || 0,
+      position: style?.position || "",
+      overflowX
+    });
+  }
+
+  return {
+    viewportWidth,
+    pageWidth,
+    overflowCount: overflowingElements.length,
+    overflowingElements
+  };
+}
+
+function getPerformanceSnapshot() {
+  const documentRef = globalThis.document;
+  const navigation = globalThis.performance?.getEntriesByType?.("navigation")?.[0];
+  return {
+    domNodes: documentRef?.getElementsByTagName?.("*")?.length || 0,
+    stylesheets: documentRef?.styleSheets?.length || 0,
+    scripts: documentRef?.scripts?.length || 0,
+    navigation: navigation ? {
+      domInteractive: rounded(navigation.domInteractive),
+      domContentLoaded: rounded(navigation.domContentLoadedEventEnd),
+      loadComplete: rounded(navigation.loadEventEnd),
+      transferSize: navigation.transferSize || 0,
+      decodedBodySize: navigation.decodedBodySize || 0
+    } : null
+  };
+}
+
 export function getDiagnosticReport() {
   return {
     build: BUILD_LABEL,
@@ -102,6 +208,8 @@ export function getDiagnosticReport() {
       userAgent: redactString(globalThis.navigator?.userAgent || ""),
       language: globalThis.navigator?.language || ""
     },
+    layout: collectLayoutDiagnostics(),
+    performance: getPerformanceSnapshot(),
     events: readEvents()
   };
 }
@@ -183,6 +291,7 @@ install();
 
 globalThis.MathHardDiagnostics = Object.freeze({
   clear: clearDiagnostics,
+  collectLayout: collectLayoutDiagnostics,
   download: downloadDiagnosticReport,
   getReport: getDiagnosticReport,
   record: recordDiagnostic
