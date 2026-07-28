@@ -1,7 +1,10 @@
-const CACHE_VERSION = 12;
+const CACHE_VERSION = 13;
 const CACHE_PREFIX = `mh_content_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_CACHE_BYTES = 4 * 1024 * 1024;
+const MAX_USER_ID_LENGTH = 160;
+const SENSITIVE_CATALOG_KEY = /^(?:answer|answers|answer_key|correct_answer|expected_answer|is_correct|hint(?:1|2)?(?:_ro|_en)?|solution(?:_ro|_en)?|explanation_(?:simple|boss|academic)(?:_ro|_en)?|access_token|refresh_token|password|secret)$/i;
 
 let memorySnapshot = null;
 let inFlightLoad = null;
@@ -31,6 +34,12 @@ function uniqueCount(items) {
   ).size;
 }
 
+function byteLength(value) {
+  const text = String(value ?? "");
+  if (typeof TextEncoder === "function") return new TextEncoder().encode(text).byteLength;
+  return text.length * 2;
+}
+
 function getStorage() {
   try {
     return globalThis.sessionStorage || null;
@@ -39,8 +48,56 @@ function getStorage() {
   }
 }
 
+function safeUserScope(userId) {
+  const raw = String(userId || "").trim();
+  if (!raw || raw.length > MAX_USER_ID_LENGTH) return "";
+  return encodeURIComponent(raw);
+}
+
 function cacheKeyForUser(userId) {
-  return `${CACHE_PREFIX}:${String(userId || "").trim()}`;
+  const scope = safeUserScope(userId);
+  return scope ? `${CACHE_PREFIX}:${scope}` : "";
+}
+
+function purgeLegacyContentCaches() {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index) || "";
+      if (key.startsWith("mh_content_catalog_v") && !key.startsWith(`${CACHE_PREFIX}:`)) {
+        storage.removeItem(key);
+      }
+    }
+  } catch {
+    // Legacy cache cleanup is best-effort.
+  }
+}
+
+purgeLegacyContentCaches();
+
+function containsSensitiveCatalogData(value, seen = new WeakSet()) {
+  if (!value || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => containsSensitiveCatalogData(entry, seen));
+  }
+
+  for (const [key, entry] of Object.entries(value)) {
+    if (SENSITIVE_CATALOG_KEY.test(key)) return true;
+    if (containsSensitiveCatalogData(entry, seen)) return true;
+  }
+  return false;
+}
+
+function safeDiagnosticErrors(errors) {
+  return asArray(errors).slice(0, 10).map((entry) => ({
+    group: String(entry?.group || "catalog").slice(0, 80),
+    table: String(entry?.table || "mh_get_content_catalog").slice(0, 120),
+    message: "Catalog temporarily unavailable."
+  }));
 }
 
 export class MathHardAuthRequiredError extends Error {
@@ -66,57 +123,94 @@ function makeSnapshot(catalog, {
     createdAt,
     catalog: sanitizeCatalog(catalog),
     status,
-    errors: [...errors]
+    errors: safeDiagnosticErrors(errors)
   };
+}
+
+function removeStoredSnapshot(storage, userId) {
+  const key = cacheKeyForUser(userId);
+  if (!storage || !key) return;
+  try {
+    storage.removeItem(key);
+  } catch {
+    // Cache cleanup is best-effort.
+  }
 }
 
 function readStoredSnapshot(userId, { allowStale = false } = {}) {
   const storage = getStorage();
-  if (!storage || !userId) return null;
+  const storageKey = cacheKeyForUser(userId);
+  if (!storage || !storageKey) return null;
 
   try {
-    const raw = storage.getItem(cacheKeyForUser(userId));
+    const raw = storage.getItem(storageKey);
     if (!raw) return null;
+    if (byteLength(raw) > MAX_CACHE_BYTES) {
+      storage.removeItem(storageKey);
+      return null;
+    }
 
     const parsed = JSON.parse(raw);
     const storedUserId = String(parsed?.userId || "");
     const createdAt = Number(parsed?.createdAt || 0);
     const age = Date.now() - createdAt;
     const maxAge = allowStale ? STALE_CACHE_TTL_MS : CACHE_TTL_MS;
+    const catalog = sanitizeCatalog(parsed?.catalog);
 
-    if (storedUserId !== String(userId) || !createdAt || age > maxAge) {
-      storage.removeItem(cacheKeyForUser(userId));
+    if (
+      storedUserId !== String(userId) ||
+      !createdAt ||
+      !Number.isFinite(age) ||
+      age < 0 ||
+      age > maxAge ||
+      containsSensitiveCatalogData(catalog)
+    ) {
+      storage.removeItem(storageKey);
       return null;
     }
 
-    return makeSnapshot(parsed.catalog, {
+    return makeSnapshot(catalog, {
       userId,
       createdAt,
       status: age <= CACHE_TTL_MS ? "cache-fresh" : "cache-stale",
       errors: asArray(parsed.errors)
     });
-  } catch (error) {
-    console.warn("Content cache could not be read:", error);
+  } catch {
+    removeStoredSnapshot(storage, userId);
+    console.warn("Content cache was discarded because it could not be validated.");
     return null;
   }
 }
 
 function writeStoredSnapshot(snapshot) {
   const storage = getStorage();
-  if (!storage || !snapshot?.userId) return;
+  const storageKey = cacheKeyForUser(snapshot?.userId);
+  if (!storage || !storageKey || !snapshot?.userId) return false;
+
+  // Admin catalog responses may legitimately contain answer keys and solutions.
+  // They may be used in memory for the current session, but must never be
+  // persisted in browser storage where another script or later session can read them.
+  if (containsSensitiveCatalogData(snapshot.catalog)) {
+    removeStoredSnapshot(storage, snapshot.userId);
+    return false;
+  }
 
   try {
-    storage.setItem(
-      cacheKeyForUser(snapshot.userId),
-      JSON.stringify({
-        userId: snapshot.userId,
-        createdAt: snapshot.createdAt,
-        catalog: snapshot.catalog,
-        errors: snapshot.errors
-      })
-    );
-  } catch (error) {
-    console.warn("Content cache could not be written:", error);
+    const serialized = JSON.stringify({
+      userId: snapshot.userId,
+      createdAt: snapshot.createdAt,
+      catalog: snapshot.catalog,
+      errors: safeDiagnosticErrors(snapshot.errors)
+    });
+    if (byteLength(serialized) > MAX_CACHE_BYTES) {
+      removeStoredSnapshot(storage, snapshot.userId);
+      return false;
+    }
+    storage.setItem(storageKey, serialized);
+    return true;
+  } catch {
+    console.warn("Content cache could not be written.");
+    return false;
   }
 }
 
@@ -173,7 +267,7 @@ export function invalidateContentCatalogCache({ allUsers = true, userId = "" } =
 
   try {
     if (!allUsers && userId) {
-      storage.removeItem(cacheKeyForUser(userId));
+      removeStoredSnapshot(storage, userId);
       return;
     }
 
@@ -192,13 +286,13 @@ export function getContentCatalogDiagnostics() {
   const snapshot = memorySnapshot || makeSnapshot(emptyCatalog(), { status: "empty" });
   return {
     totals: catalogTotals(snapshot.catalog),
-    userId: snapshot.userId || "",
+    userId: snapshot.userId ? "[authenticated]" : "",
     createdAt: Number(snapshot.createdAt || 0),
     status: snapshot.status,
     staleGroups: snapshot.status === "degraded"
       ? [...new Set(asArray(snapshot.errors).map((entry) => entry?.group || "catalog"))]
       : [],
-    errors: [...asArray(snapshot.errors)]
+    errors: safeDiagnosticErrors(snapshot.errors)
   };
 }
 
@@ -271,11 +365,7 @@ export async function loadContentCatalog({
           userId,
           createdAt: staleStored.createdAt,
           status: "degraded",
-          errors: [{
-            group: "catalog",
-            table: "mh_get_content_catalog",
-            message: error?.message || String(error)
-          }]
+          errors: [{ group: "catalog", table: "mh_get_content_catalog" }]
         });
         if (requestEpoch === loadEpoch) memorySnapshot = degradedSnapshot;
         return degradedSnapshot.catalog;
