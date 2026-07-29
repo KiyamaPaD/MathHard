@@ -13,6 +13,9 @@ legacy.php/
 node_modules/
 supabase/.temp/
 
+# Local SQL history / backups
+/local-sql/
+
 # OS / generated archives
 .DS_Store
 Thumbs.db
