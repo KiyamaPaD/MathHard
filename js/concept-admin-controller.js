@@ -1,6 +1,7 @@
 import {
   deleteConceptSafely,
   loadConceptCatalog,
+  loadConceptCoverage,
   replaceConceptPrerequisites,
   saveConcept
 } from "./concept-repository.js";
@@ -10,6 +11,7 @@ import {
   conceptTypeLabel,
   filterConcepts,
   normalizeConceptCatalog,
+  normalizeConceptCoverage,
   prerequisitesForConcept
 } from "./concept-model.js";
 
@@ -86,6 +88,9 @@ export function createConceptAdminController({
     busy: false,
     status: "",
     query: "",
+    view: "catalog",
+    coverage: normalizeConceptCoverage({}),
+    coverageError: "",
     catalog: buildConceptIndex(normalizeConceptCatalog({})),
     selectedId: "",
     draft: emptyDraft()
@@ -105,6 +110,84 @@ export function createConceptAdminController({
 
   function dependentCount(conceptId) {
     return state.catalog.edges.filter((edge) => edge.prerequisite_concept_id === conceptId).length;
+  }
+
+  function contentTypeLabel(type) {
+    const english = language() === "en";
+    const labels = {
+      lesson: english ? "Lessons" : "Lecții",
+      problem: english ? "Problems" : "Probleme",
+      exam: english ? "Exams" : "Examene"
+    };
+    return labels[type] || type;
+  }
+
+  function coverageTitle(row) {
+    return language() === "en"
+      ? (row.title_en || row.title_ro || row.id || row.roadmap_id)
+      : (row.title_ro || row.title_en || row.id || row.roadmap_id);
+  }
+
+  function renderCoverage() {
+    const coverage = state.coverage;
+    const summary = coverage.summary;
+    const english = language() === "en";
+    const unmappedContent = coverage.unmapped_content.slice(0, 120);
+    const unmappedConcepts = coverage.unmapped_concepts.slice(0, 120);
+
+    return `
+      <div class="mh-concept-coverage">
+        ${state.coverageError ? `<div class="mh-concept-admin-status">${escapeHtml(state.coverageError)}</div>` : ""}
+        <div class="mh-concept-coverage-metrics">
+          <article><span>${english ? "Concepts" : "Concepte"}</span><strong>${summary.concepts_total}</strong><small>${summary.published_concepts} ${english ? "published" : "publicate"}</small></article>
+          <article><span>${english ? "Mapped" : "Mapate"}</span><strong>${summary.mapped_concepts}</strong><small>${summary.unmapped_concepts} ${english ? "without content" : "fără conținut"}</small></article>
+          <article><span>${english ? "Prerequisites" : "Prerechizite"}</span><strong>${summary.required_edges}</strong><small>${english ? "required edges" : "legături obligatorii"}</small></article>
+        </div>
+
+        <section class="mh-concept-coverage-section">
+          <header><h3>${english ? "Content coverage" : "Acoperirea conținutului"}</h3></header>
+          <div class="mh-concept-coverage-bars">
+            ${coverage.content.map((row) => `
+              <article>
+                <div><strong>${escapeHtml(contentTypeLabel(row.content_type))}</strong><span>${row.mapped}/${row.total} · ${row.coverage_percent}%</span></div>
+                <i><b style="width:${row.coverage_percent}%"></b></i>
+              </article>
+            `).join("") || `<div class="mh-concept-admin-empty">${english ? "No content data." : "Nu există date de acoperire."}</div>`}
+          </div>
+        </section>
+
+        <section class="mh-concept-coverage-section">
+          <header><h3>Roadmaps</h3><small>${coverage.roadmaps.length}</small></header>
+          <div class="mh-concept-coverage-roadmaps">
+            ${coverage.roadmaps.map((row) => `
+              <article>
+                <div><strong>${escapeHtml(coverageTitle(row))}</strong><small>${row.unique_concepts} ${english ? "concepts" : "concepte"}</small></div>
+                <span>${row.mapped_nodes}/${row.total_nodes} · ${row.coverage_percent}%</span>
+              </article>
+            `).join("") || `<div class="mh-concept-admin-empty">${english ? "No roadmaps." : "Nu există roadmap-uri."}</div>`}
+          </div>
+        </section>
+
+        <div class="mh-concept-coverage-columns">
+          <section class="mh-concept-coverage-section">
+            <header><h3>${english ? "Unmapped content" : "Conținut nemapat"}</h3><small>${coverage.unmapped_content.length}</small></header>
+            <div class="mh-concept-coverage-list">
+              ${unmappedContent.map((row) => `
+                <article><span>${escapeHtml(contentTypeLabel(row.content_type))}</span><strong>${escapeHtml(coverageTitle(row))}</strong><code>${escapeHtml(row.id)}</code></article>
+              `).join("") || `<div class="mh-concept-admin-empty">${english ? "Everything is mapped." : "Tot conținutul este mapat."}</div>`}
+            </div>
+          </section>
+          <section class="mh-concept-coverage-section">
+            <header><h3>${english ? "Concepts without content" : "Concepte fără conținut"}</h3><small>${coverage.unmapped_concepts.length}</small></header>
+            <div class="mh-concept-coverage-list">
+              ${unmappedConcepts.map((row) => `
+                <article><span>${escapeHtml(conceptTypeLabel(row.concept_type, language()))}${row.domain ? ` · ${escapeHtml(row.domain)}` : ""}</span><strong>${escapeHtml(coverageTitle(row))}</strong><code>${escapeHtml(row.id)}</code></article>
+              `).join("") || `<div class="mh-concept-admin-empty">${english ? "Every concept is mapped." : "Toate conceptele sunt mapate."}</div>`}
+            </div>
+          </section>
+        </div>
+      </div>
+    `;
   }
 
   function renderList() {
@@ -247,20 +330,26 @@ export function createConceptAdminController({
           <div>
             <span class="mh-admin-eyebrow">Curriculum semantic</span>
             <h3>Concept Layer</h3>
-            <p>Conceptele sunt reutilizate de lecții și probleme. Detaliile rămân ascunse implicit pentru elev.</p>
+            <p>Catalog semantic, prerechizite, acoperire și integrare în roadmap.</p>
           </div>
           <button class="btn small" type="button" data-concept-refresh ${state.busy ? "disabled" : ""}>Refresh</button>
         </div>
-        ${state.status ? `<div class="mh-concept-admin-status">${escapeHtml(state.status)}</div>` : ""}
-        <div class="mh-concept-admin-layout">
-          <aside>
-            <label class="mh-concept-admin-search">Caută
-              <input type="search" data-concept-search value="${escapeHtml(state.query)}" placeholder="titlu, ID, domeniu, tag...">
-            </label>
-            <div class="mh-concept-admin-list">${renderList()}</div>
-          </aside>
-          <main>${renderEditor()}</main>
+        <div class="mh-concept-admin-tabs" role="tablist">
+          <button type="button" data-concept-view="catalog" class="${state.view === "catalog" ? "is-active" : ""}">Catalog</button>
+          <button type="button" data-concept-view="coverage" class="${state.view === "coverage" ? "is-active" : ""}">Acoperire</button>
         </div>
+        ${state.status ? `<div class="mh-concept-admin-status">${escapeHtml(state.status)}</div>` : ""}
+        ${state.view === "coverage" ? renderCoverage() : `
+          <div class="mh-concept-admin-layout">
+            <aside>
+              <label class="mh-concept-admin-search">Caută
+                <input type="search" data-concept-search value="${escapeHtml(state.query)}" placeholder="titlu, ID, domeniu, tag...">
+              </label>
+              <div class="mh-concept-admin-list">${renderList()}</div>
+            </aside>
+            <main>${renderEditor()}</main>
+          </div>
+        `}
       </div>
     `;
   }
@@ -302,15 +391,26 @@ export function createConceptAdminController({
     state.status = "Se încarcă...";
     render();
     try {
-      state.catalog = buildConceptIndex(normalizeConceptCatalog(await loadConceptCatalog({
-        supabase,
-        forceRefresh
-      })));
+      const [catalogResult, coverageResult] = await Promise.allSettled([
+        loadConceptCatalog({ supabase, forceRefresh }),
+        loadConceptCoverage(supabase)
+      ]);
+      if (catalogResult.status === "rejected") throw catalogResult.reason;
+      state.catalog = buildConceptIndex(normalizeConceptCatalog(catalogResult.value));
+      if (coverageResult.status === "fulfilled") {
+        state.coverage = normalizeConceptCoverage(coverageResult.value);
+        state.coverageError = "";
+      } else {
+        state.coverage = normalizeConceptCoverage({});
+        state.coverageError = `Acoperirea nu este disponibilă: ${coverageResult.reason?.message || coverageResult.reason}`;
+      }
       if (state.selectedId && !state.catalog.byId.has(state.selectedId)) state.selectedId = "";
       state.draft = state.selectedId
         ? draftFromConcept(state.catalog, state.catalog.byId.get(state.selectedId))
         : emptyDraft();
-      state.status = `${state.catalog.concepts.length} concepte · ${state.catalog.mappings.length} mapări`;
+      state.status = state.coverageError
+        ? `${state.catalog.concepts.length} concepte · ${state.catalog.mappings.length} mapări`
+        : `${state.catalog.concepts.length} concepte · ${state.catalog.mappings.length} mapări · ${state.coverage.summary.unmapped_concepts} fără conținut`;
     } catch (error) {
       state.status = `Eroare: ${error.message || error}`;
     } finally {
@@ -368,6 +468,13 @@ export function createConceptAdminController({
   }
 
   host.addEventListener("click", (event) => {
+    const viewButton = event.target.closest("[data-concept-view]");
+    if (viewButton) {
+      state.view = viewButton.dataset.conceptView === "coverage" ? "coverage" : "catalog";
+      render();
+      return;
+    }
+
     const selectButton = event.target.closest("[data-concept-select]");
     if (selectButton) {
       state.selectedId = selectButton.dataset.conceptSelect || "";

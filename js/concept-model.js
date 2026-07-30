@@ -227,6 +227,97 @@ export function conceptTypeLabel(type, language = "ro") {
   return english ? item.en : item.ro;
 }
 
+
+export function normalizeConceptCoverage(payload) {
+  const candidate = Array.isArray(payload) && payload.length === 1 ? payload[0] : payload;
+  const source = candidate?.coverage && typeof candidate.coverage === "object"
+    ? candidate.coverage
+    : candidate;
+
+  const summary = source?.summary && typeof source.summary === "object" ? source.summary : {};
+  const normalizeCount = (value) => Math.max(0, asNumber(value));
+  const normalizePercent = (value) => Math.max(0, Math.min(100, asNumber(value)));
+
+  return {
+    summary: {
+      concepts_total: normalizeCount(summary.concepts_total),
+      published_concepts: normalizeCount(summary.published_concepts),
+      mapped_concepts: normalizeCount(summary.mapped_concepts),
+      unmapped_concepts: normalizeCount(summary.unmapped_concepts),
+      required_edges: normalizeCount(summary.required_edges)
+    },
+    content: asArray(source?.content).map((row) => ({
+      content_type: asText(row?.content_type).toLowerCase(),
+      total: normalizeCount(row?.total),
+      mapped: normalizeCount(row?.mapped),
+      unmapped: normalizeCount(row?.unmapped),
+      coverage_percent: normalizePercent(row?.coverage_percent)
+    })).filter((row) => new Set(["lesson", "problem", "exam"]).has(row.content_type)),
+    domains: asArray(source?.domains).map((row) => ({
+      domain: asText(row?.domain),
+      total: normalizeCount(row?.total),
+      published: normalizeCount(row?.published),
+      mapped: normalizeCount(row?.mapped)
+    })),
+    roadmaps: asArray(source?.roadmaps).map((row) => ({
+      roadmap_id: asText(row?.roadmap_id),
+      title_ro: asText(row?.title_ro),
+      title_en: asText(row?.title_en),
+      total_nodes: normalizeCount(row?.total_nodes),
+      mapped_nodes: normalizeCount(row?.mapped_nodes),
+      unique_concepts: normalizeCount(row?.unique_concepts),
+      coverage_percent: normalizePercent(row?.coverage_percent)
+    })).filter((row) => row.roadmap_id),
+    unmapped_content: asArray(source?.unmapped_content).map((row) => ({
+      content_type: asText(row?.content_type).toLowerCase(),
+      id: asText(row?.id),
+      title_ro: asText(row?.title_ro),
+      title_en: asText(row?.title_en)
+    })).filter((row) => row.id),
+    unmapped_concepts: asArray(source?.unmapped_concepts).map((row) => ({
+      id: asText(row?.id),
+      concept_type: safeConceptType(row?.concept_type),
+      domain: asText(row?.domain),
+      title_ro: asText(row?.title_ro),
+      title_en: asText(row?.title_en),
+      published: asBoolean(row?.published, false)
+    })).filter((row) => row.id),
+    generated_at: source?.generated_at || null,
+    schemaVersion: asText(source?.schema_version || "concept-coverage-v1")
+  };
+}
+
+export function conceptsForRoadmapNode(catalog, node) {
+  const type = asText(node?.node_type).toLowerCase();
+  const contentId = asText(node?.content_id);
+  if (!contentId || !new Set(["lesson", "problem", "exam"]).has(type)) return [];
+  return conceptsForContent(catalog, type, contentId);
+}
+
+export function buildRoadmapConceptCoverage(catalog, nodeStates = []) {
+  const states = nodeStates instanceof Map ? [...nodeStates.values()] : asArray(nodeStates);
+  const countable = states.filter((state) => {
+    const type = asText(state?.node?.node_type).toLowerCase();
+    return state?.exists !== false && new Set(["lesson", "problem", "exam"]).has(type);
+  });
+  const conceptIds = new Set();
+  let mappedNodes = 0;
+
+  for (const state of countable) {
+    const concepts = conceptsForRoadmapNode(catalog, state.node);
+    if (concepts.length) mappedNodes += 1;
+    for (const concept of concepts) conceptIds.add(concept.id);
+  }
+
+  const totalNodes = countable.length;
+  return {
+    totalNodes,
+    mappedNodes,
+    uniqueConcepts: conceptIds.size,
+    coveragePercent: totalNodes > 0 ? Math.round((mappedNodes / totalNodes) * 100) : 0
+  };
+}
+
 export function renderContentConceptDetails({
   catalog,
   contentType,

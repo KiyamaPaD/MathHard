@@ -493,3 +493,29 @@
   0%, 100% { box-shadow: none; }
   25%, 70% { box-shadow: 0 0 0 3px rgba(99,102,241,.32), 0 16px 34px -24px rgba(99,102,241,.9); }
 }
+
+/* MathHard Concept Layer — Phase 1B roadmap integration */
+.mh-roadmap-node-concepts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+.mh-roadmap-node-concepts b {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border: 1px solid rgba(99,102,241,.24);
+  border-radius: 999px;
+  background: rgba(99,102,241,.08);
+  font-size: .7rem;
+  font-weight: 800;
+}
+.mh-roadmap-concept-coverage {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .72rem;
+}

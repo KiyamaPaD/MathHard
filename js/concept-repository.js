@@ -162,6 +162,14 @@ export async function loadConceptCatalog({
   return promise;
 }
 
+
+export async function loadConceptCoverage(supabase) {
+  await resolveUser(supabase);
+  const { data, error } = await supabase.rpc("mh_admin_get_concept_coverage");
+  if (error) throw error;
+  return unwrapRpc(data);
+}
+
 export async function saveConcept(supabase, payload) {
   await resolveUser(supabase);
   const { data, error } = await supabase.rpc("mh_admin_save_concept", {

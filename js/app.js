@@ -3367,6 +3367,7 @@ ${details}`);
           onChanged: async () => {
             await refreshConceptCatalog(true);
             renderCards();
+            roadmapController?.render();
             learningWorkspaceController?.refresh();
           }
         });
@@ -4414,6 +4415,7 @@ ${details}`);
     getLanguage: () => LANG,
     getProgress: () => ({ learnedSet, readSet, solvedSet, examsPassedSet }),
     getContentCatalog: () => DATA,
+    getConceptCatalog: () => CONCEPT_CATALOG,
     onOpenContent: openRoadmapContent
   });
 

@@ -4,6 +4,11 @@ import {
   getRoadmapStatusLabel
 } from "./roadmap-model.js";
 import {
+  buildRoadmapConceptCoverage,
+  conceptLabel,
+  conceptsForRoadmapNode
+} from "./concept-model.js";
+import {
   loadRoadmapCatalog,
   selectRoadmap
 } from "./roadmap-repository.js";
@@ -80,7 +85,7 @@ function renderEmpty(language) {
   `;
 }
 
-function renderNode(state, language) {
+function renderNode(state, language, conceptCatalog) {
   const { node } = state;
   const icon = getRoadmapNodeIcon(node);
   const statusText = state.read && !state.done
@@ -93,6 +98,13 @@ function renderNode(state, language) {
   const optional = !node.required
     ? `<span class="mh-roadmap-node-optional">${textFor(language, "opțional", "optional")}</span>`
     : "";
+  const concepts = conceptsForRoadmapNode(conceptCatalog, node);
+  const conceptChips = concepts.length ? `
+    <span class="mh-roadmap-node-concepts" aria-label="${escapeHtml(textFor(language, "Concepte", "Concepts"))}">
+      ${concepts.slice(0, 3).map((concept) => `<b>${escapeHtml(conceptLabel(concept, language))}</b>`).join("")}
+      ${concepts.length > 3 ? `<b>+${concepts.length - 3}</b>` : ""}
+    </span>
+  ` : "";
 
   return `
     <button
@@ -106,6 +118,7 @@ function renderNode(state, language) {
       <span class="mh-roadmap-node-copy">
         <span class="mh-roadmap-node-title">${escapeHtml(node.title)}</span>
         ${node.description ? `<span class="mh-roadmap-node-description">${escapeHtml(node.description)}</span>` : ""}
+        ${conceptChips}
         <span class="mh-roadmap-node-meta">
           <span class="mh-roadmap-node-status">${escapeHtml(statusText)}</span>
           ${duration}
@@ -117,7 +130,7 @@ function renderNode(state, language) {
   `;
 }
 
-function renderSection(section, language) {
+function renderSection(section, language, conceptCatalog) {
   const stats = section.progress;
   return `
     <section class="mh-roadmap-section-card">
@@ -133,7 +146,7 @@ function renderSection(section, language) {
         <i style="width:${Math.max(0, Math.min(100, stats.percent))}%"></i>
       </div>
       <div class="mh-roadmap-node-list">
-        ${section.nodes.map((state) => renderNode(state, language)).join("")}
+        ${section.nodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}
       </div>
     </section>
   `;
@@ -146,6 +159,7 @@ export function createRoadmapController({
   getLanguage,
   getProgress,
   getContentCatalog,
+  getConceptCatalog = () => ({}),
   onOpenContent = () => {}
 }) {
   if (!root) throw new Error("createRoadmapController requires a root element.");
@@ -242,6 +256,8 @@ export function createRoadmapController({
 
     const roadmap = currentRoadmap();
     const view = currentView();
+    const conceptCatalog = getConceptCatalog?.() || {};
+    const conceptCoverage = buildRoadmapConceptCoverage(conceptCatalog, view.nodeStates);
     const selectedTitle = view.title || roadmap.id;
     const next = view.nextNode;
     const options = catalog.roadmaps.map((item) => {
@@ -276,6 +292,7 @@ export function createRoadmapController({
           <div>
             <strong>${view.progress.done}/${view.progress.total}</strong>
             <span>${textFor(language, "pași obligatorii", "required steps")}</span>
+            <small class="mh-roadmap-concept-coverage">${conceptCoverage.uniqueConcepts} ${textFor(language, "concepte", "concepts")} · ${conceptCoverage.coveragePercent}% ${textFor(language, "mapare", "mapped")}</small>
           </div>
         </div>
       </div>
@@ -290,7 +307,7 @@ export function createRoadmapController({
       </div>
 
       <div class="mh-roadmap-sections">
-        ${view.sections.map((section) => renderSection(section, language)).join("")}
+        ${view.sections.map((section) => renderSection(section, language, conceptCatalog)).join("")}
       </div>
     `;
 

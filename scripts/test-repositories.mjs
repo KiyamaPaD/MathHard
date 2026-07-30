@@ -80,15 +80,19 @@ const {
 } = await importBrowserModule("js/content-model.js");
 const {
   buildConceptIndex,
+  buildRoadmapConceptCoverage,
   conceptIdsForContent,
   conceptsForContent,
+  conceptsForRoadmapNode,
   normalizeConceptCatalog,
+  normalizeConceptCoverage,
   prerequisitesForConcept,
   renderContentConceptDetails
 } = await importBrowserModule("js/concept-model.js");
 const {
   invalidateConceptCatalogCache,
   loadConceptCatalog,
+  loadConceptCoverage,
   replaceContentConcepts
 } = await importBrowserModule("js/concept-repository.js");
 const {
@@ -266,6 +270,16 @@ const conceptSupabase = {
   async rpc(name, payload) {
     conceptRpcCalls += 1;
     if (name === "mh_get_concept_catalog") return { data: conceptRpcPayload, error: null };
+    if (name === "mh_admin_get_concept_coverage") {
+      return {
+        data: {
+          summary: { concepts_total: 2, published_concepts: 2, mapped_concepts: 2, unmapped_concepts: 0, required_edges: 1 },
+          content: [{ content_type: "lesson", total: 2, mapped: 1, unmapped: 1, coverage_percent: 50 }],
+          roadmaps: [{ roadmap_id: "r1", title_ro: "Roadmap", total_nodes: 2, mapped_nodes: 1, unique_concepts: 2, coverage_percent: 50 }]
+        },
+        error: null
+      };
+    }
     if (name === "mh_admin_replace_content_concepts") {
       return { data: { ...payload, saved: true }, error: null };
     }
@@ -289,6 +303,11 @@ await replaceContentConcepts(conceptSupabase, {
   conceptIds: ["numbers", "numbers"]
 });
 assert.equal(conceptRpcCalls, 2);
+const normalizedCoverage = normalizeConceptCoverage(await loadConceptCoverage(conceptSupabase));
+assert.equal(normalizedCoverage.summary.concepts_total, 2);
+assert.equal(normalizedCoverage.content[0].coverage_percent, 50);
+assert.equal(normalizedCoverage.roadmaps[0].unique_concepts, 2);
+assert.equal(conceptRpcCalls, 3);
 
 const conceptCatalog = buildConceptIndex(normalizeConceptCatalog({
   concepts: [
@@ -306,6 +325,16 @@ const conceptCatalog = buildConceptIndex(normalizeConceptCatalog({
 assert.deepEqual(conceptIdsForContent(conceptCatalog, "lesson", "lesson-a"), ["compare", "numbers"]);
 assert.equal(conceptsForContent(conceptCatalog, "lesson", "lesson-a")[0].id, "compare");
 assert.equal(prerequisitesForConcept(conceptCatalog, "compare")[0].concept.id, "numbers");
+assert.deepEqual(
+  conceptsForRoadmapNode(conceptCatalog, { node_type: "lesson", content_id: "lesson-a" }).map((item) => item.id),
+  ["compare", "numbers"]
+);
+const conceptCoverage = buildRoadmapConceptCoverage(conceptCatalog, [
+  { exists: true, node: { node_type: "lesson", content_id: "lesson-a" } },
+  { exists: true, node: { node_type: "problem", content_id: "problem-unmapped" } },
+  { exists: true, node: { node_type: "milestone", content_id: "" } }
+]);
+assert.deepEqual(conceptCoverage, { totalNodes: 2, mappedNodes: 1, uniqueConcepts: 2, coveragePercent: 50 });
 const conceptDisclosure = renderContentConceptDetails({
   catalog: conceptCatalog,
   contentType: "lesson",
