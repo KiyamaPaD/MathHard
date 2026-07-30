@@ -39,6 +39,9 @@ export function createRuntimeData() {
     lessons: [],
     problems: [],
     exams: [],
+    concepts: [],
+    conceptEdges: [],
+    contentConcepts: [],
     tips: { ...EXAM_TIPS },
     exam_points: { ...EXAM_POINTS }
   };

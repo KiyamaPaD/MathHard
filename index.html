@@ -45,6 +45,7 @@
   <link rel="stylesheet" href="css/roadmap-studio.css" />
   <link rel="stylesheet" href="css/learning-workspace.css" />
   <link rel="stylesheet" href="css/problem-workspace.css" />
+  <link rel="stylesheet" href="css/concepts.css" />
   <link rel="stylesheet" href="css/lesson-status.css" />
   <link rel="stylesheet" href="css/lesson-quiz-admin.css" />
   <link rel="stylesheet" href="css/quick-nav.css" />
@@ -55,6 +56,7 @@
   <link rel="stylesheet" href="css/admin-studio.css" />
   <link rel="stylesheet" href="css/admin-history.css" />
   <link rel="stylesheet" href="css/gamification-studio.css" />
+  <link rel="stylesheet" href="css/concept-studio.css" />
   <link rel="stylesheet" href="/css/mobile-hardening.css" />
   <script defer src="/js/loading-screen.js"></script>
   <script defer src="js/katex-init.js"></script>
@@ -543,6 +545,7 @@
 <button class="mh-admin-nav-button" data-admin-panel-target="content" type="button">Conținut</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="editor" type="button">Editor</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="roadmaps" type="button">Roadmap-uri</button>
+<button class="mh-admin-nav-button" data-admin-panel-target="concepts" type="button">Concepte</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="gamification" type="button">Gamification</button>
 <button class="mh-admin-nav-button" data-admin-panel-target="history" type="button">Istoric</button>
 </nav>
@@ -684,6 +687,11 @@
 <label>
 <span data-i18n="admin_tags_label">Tag-uri (virgulă):</span>
 <input data-i18n-placeholder="admin_tags_placeholder" id="mh_tags" name="tags" placeholder="V, numere, olimpiadă"/>
+</label>
+<label id="mhConceptMappingField">
+<span>Concepte asociate (ID-uri, virgulă):</span>
+<input id="mh_concept_ids" name="concept_ids" placeholder="ex: numere-naturale, compararea-numerelor"/>
+<small class="legend">Primul concept este principal. Restul sunt suport.</small>
 </label>
 </div><div class="mh-admin-form-grid mh-admin-title-grid" id="block-title"><label>
 <span data-i18n="admin_title_ro_label">Titlu RO:</span>
@@ -864,6 +872,15 @@
 </div>
 </div>
 <section id="mhRoadmapAdminStudio"></section>
+</section>
+<section class="mh-admin-workspace" data-admin-panel="concepts" hidden="" tabindex="-1">
+<div class="mh-admin-page-header">
+<div>
+<span class="mh-admin-eyebrow">Curriculum semantic</span>
+<h2>Concepte</h2>
+</div>
+</div>
+<section id="mhConceptAdminStudio" hidden></section>
 </section>
 <section class="mh-admin-workspace" data-admin-panel="gamification" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">

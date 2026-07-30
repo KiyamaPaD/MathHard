@@ -80,6 +80,7 @@ export function createSecureProblemController({
   renderMath,
   bindMathInputEnhancements,
   attachMathToolbar,
+  renderConceptDetails = () => "",
   escapeHtml
 }) {
   if (!supabase) throw new Error("createSecureProblemController requires Supabase.");
@@ -137,6 +138,7 @@ export function createSecureProblemController({
                   : "The answer and XP are validated in Supabase. After reveal, the solve earns 0 XP."}
               </div>
               <div class="problem-statement">${statement}</div>
+              ${renderConceptDetails(problem.id)}
             </section>
 
             <section class="mh-problem-card mh-answer-card">

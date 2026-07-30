@@ -18,6 +18,17 @@ import {
 import { createLessonQuizController } from "./lesson-quiz-controller.js";
 import { loadLessonQuizAvailability } from "./lesson-quiz-repository.js";
 import { createRuntimeData, WIDGET_ID } from "./runtime-config.js";
+import {
+  invalidateConceptCatalogCache,
+  loadConceptCatalog,
+  replaceContentConcepts
+} from "./concept-repository.js";
+import {
+  buildConceptIndex,
+  conceptIdsForContent,
+  normalizeConceptCatalog,
+  renderContentConceptDetails
+} from "./concept-model.js";
 import { logLearningEvent } from "./secure-evaluation-repository.js";
 import {
   cancelSecureExamAttempt,
@@ -84,6 +95,7 @@ import {
   let MH_AUTH_USER = null;
   let roadmapController = null;
   let roadmapAdminController = null;
+  let conceptAdminController = null;
   let adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
@@ -97,6 +109,7 @@ import {
   let LESSON_QUIZ_AVAILABILITY = new Map();
   let lessonQuizAvailabilityRequest = null;
   let lessonQuizAvailabilityEpoch = 0;
+  let CONCEPT_CATALOG = buildConceptIndex(normalizeConceptCatalog({}));
 
   async function loadAdminRuntime() {
     if (adminRuntime) return adminRuntime;
@@ -109,7 +122,8 @@ import {
       import("./admin-draft-controller.js"),
       import("./admin-history-controller.js"),
       import("./admin-history-repository.js"),
-      import("./gamification-admin-controller.js")
+      import("./gamification-admin-controller.js"),
+      import("./concept-admin-controller.js")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -117,7 +131,8 @@ import {
       adminDraftModule,
       adminHistoryModule,
       adminHistoryRepositoryModule,
-      gamificationAdminModule
+      gamificationAdminModule,
+      conceptAdminModule
     ]) => {
       adminRuntime = {
         ...lessonQuizModule,
@@ -126,7 +141,8 @@ import {
         ...adminDraftModule,
         ...adminHistoryModule,
         ...adminHistoryRepositoryModule,
-        ...gamificationAdminModule
+        ...gamificationAdminModule,
+        ...conceptAdminModule
       };
       return adminRuntime;
     }).catch((error) => {
@@ -174,6 +190,55 @@ import {
     return promise;
   }
 
+  function applyConceptCatalog(payload) {
+    CONCEPT_CATALOG = buildConceptIndex(normalizeConceptCatalog(payload));
+    DATA.concepts.length = 0;
+    DATA.concepts.push(...CONCEPT_CATALOG.concepts);
+    DATA.conceptEdges.length = 0;
+    DATA.conceptEdges.push(...CONCEPT_CATALOG.edges);
+    DATA.contentConcepts.length = 0;
+    DATA.contentConcepts.push(...CONCEPT_CATALOG.mappings);
+    return CONCEPT_CATALOG;
+  }
+
+  async function refreshConceptCatalog(forceRefresh = false) {
+    if (!MH_AUTH_USER?.id) {
+      invalidateConceptCatalogCache();
+      return applyConceptCatalog({});
+    }
+
+    try {
+      const payload = await loadConceptCatalog({
+        supabase,
+        forceRefresh,
+        user: MH_AUTH_USER
+      });
+      return applyConceptCatalog(payload);
+    } catch (error) {
+      console.warn("Concept Layer is not available yet:", error);
+      return applyConceptCatalog({});
+    }
+  }
+
+  function conceptContentType(itemType) {
+    return itemType === "problem" ? "problem" : itemType === "exam" ? "exam" : "lesson";
+  }
+
+  function conceptIdsForItem(item, explicitType = "") {
+    const type = conceptContentType(explicitType || item?.content_type || item?.type || (item?.lessonId ? "problem" : "lesson"));
+    return conceptIdsForContent(CONCEPT_CATALOG, type, item?.id);
+  }
+
+  function conceptDetailsHtml(contentType, contentId) {
+    return renderContentConceptDetails({
+      catalog: CONCEPT_CATALOG,
+      contentType,
+      contentId,
+      language: LANG,
+      escapeHtml: esc
+    });
+  }
+
   try {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
     if (initialAuthError) throw initialAuthError;
@@ -182,7 +247,8 @@ import {
     if (MH_AUTH_USER?.id) {
       const [initialCatalog] = await Promise.all([
         loadContentCatalog({ supabase, user: MH_AUTH_USER }),
-        refreshLessonQuizAvailability()
+        refreshLessonQuizAvailability(),
+        refreshConceptCatalog()
       ]);
       DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
       DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
@@ -2087,6 +2153,10 @@ import {
     DATA.lessons.length = 0;
     DATA.problems.length = 0;
     DATA.exams.length = 0;
+    DATA.concepts.length = 0;
+    DATA.conceptEdges.length = 0;
+    DATA.contentConcepts.length = 0;
+    CONCEPT_CATALOG = buildConceptIndex(normalizeConceptCatalog({}));
     LESSON_QUIZ_AVAILABILITY = new Map();
     CONTENT_BOOT_ERROR = null;
   }
@@ -2107,7 +2177,10 @@ import {
     replaceCatalogTarget(DATA.lessons, catalog.lessons, normalizeLesson);
     replaceCatalogTarget(DATA.problems, catalog.problems, normalizeProblem);
     replaceCatalogTarget(DATA.exams, catalog.exams, normalizeExam);
-    await refreshLessonQuizAvailability();
+    await Promise.all([
+      refreshLessonQuizAvailability(),
+      refreshConceptCatalog(forceRefresh)
+    ]);
     CONTENT_BOOT_ERROR = null;
     mhRemoveContentStatusBanner();
 
@@ -2748,6 +2821,7 @@ import {
     setVal("mh_grade", item.grade);
     setVal("mh_chapter", item.chapter_ro ?? item.chapter_en ?? item.chapter);
     setVal("mh_tags", Array.isArray(item.tags) ? item.tags.join(", ") : "");
+    setVal("mh_concept_ids", conceptIdsForItem(item, type).join(", "));
 
     setVal("mh_title_ro", item.title_ro);
     setVal("mh_title_en", item.title_en);
@@ -3184,13 +3258,39 @@ ${details}`);
       const { error } = await query;
       if (error) throw error;
 
+      let conceptMappingError = null;
+      if (type !== "exam") {
+        const contentType = type === "problem" ? "problem" : "lesson";
+        const conceptIds = mhTagsFromInput(document.getElementById("mh_concept_ids")?.value || "");
+        const hadMappings = conceptIdsForContent(CONCEPT_CATALOG, contentType, payload.id).length > 0;
+        if (conceptIds.length || hadMappings) {
+          try {
+            await replaceContentConcepts(supabase, {
+              contentType,
+              contentId: payload.id,
+              conceptIds
+            });
+          } catch (mappingError) {
+            conceptMappingError = mappingError;
+            console.warn("Content saved, but concept mappings were not updated:", mappingError);
+          }
+        }
+      }
+
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
+      adminHistoryController?.invalidate();
+
+      if (conceptMappingError) {
+        const warning = `Conținutul a fost salvat, dar maparea conceptelor a eșuat: ${conceptMappingError.message || conceptMappingError}`;
+        if (status) status.textContent = warning;
+        alert(warning);
+        return;
+      }
+
       adminDraftController?.clearCurrent();
       mhClearAdminForm({ saveCurrent: false, restoreDraft: true });
       adminStudioController?.openContent(type);
-
-      adminHistoryController?.invalidate();
       if (status) status.textContent = "Salvat cu succes.";
     } catch (err) {
       console.error(err);
@@ -3259,6 +3359,19 @@ ${details}`);
         });
       }
 
+      if (!conceptAdminController) {
+        conceptAdminController = runtime.createConceptAdminController({
+          host: document.getElementById("mhConceptAdminStudio"),
+          supabase,
+          getLanguage: () => LANG,
+          onChanged: async () => {
+            await refreshConceptCatalog(true);
+            renderCards();
+            learningWorkspaceController?.refresh();
+          }
+        });
+      }
+
       if (!adminStudioController) {
         adminStudioController = runtime.createAdminStudioController({
           root: document.getElementById("mhAdminStudio"),
@@ -3278,6 +3391,7 @@ ${details}`);
           },
           onPanelChange: (panelName) => {
             if (panelName === "gamification") void gamificationAdminController?.load();
+            if (panelName === "concepts") void conceptAdminController?.load();
             if (panelName === "history") void adminHistoryController?.load();
           },
           getUserId: () => MH_AUTH_USER?.id || ""
@@ -3336,7 +3450,8 @@ ${details}`);
         gamificationAdminController,
         adminStudioController,
         adminDraftController,
-        roadmapAdminController
+        roadmapAdminController,
+        conceptAdminController
       };
     })().catch((error) => {
       adminControllersPromise = null;
@@ -3400,6 +3515,7 @@ ${details}`);
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
+      conceptAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
     }
   }
@@ -3470,6 +3586,7 @@ ${details}`);
     adminExamRecoveryController?.setAdmin(isAdmin);
     roadmapAdminController?.setAdmin(isAdmin);
     gamificationAdminController?.setAdmin(isAdmin);
+    conceptAdminController?.setAdmin(isAdmin);
     adminHistoryController?.setAdmin(isAdmin);
     return isAdmin;
   }
@@ -3515,6 +3632,7 @@ ${details}`);
       adminExamRecoveryController?.setAdmin(true);
       roadmapAdminController?.setAdmin(true);
       gamificationAdminController?.setAdmin(true);
+      conceptAdminController?.setAdmin(true);
       adminHistoryController?.setAdmin(true);
       adminDrawer?.classList.add("open");
       adminStudioController?.restoreState();
@@ -3538,7 +3656,9 @@ ${details}`);
     adminExamRecoveryController?.setAdmin(false);
     roadmapAdminController?.setAdmin(false);
     gamificationAdminController?.setAdmin(false);
+    conceptAdminController?.setAdmin(false);
     invalidateContentCatalogCache();
+    invalidateConceptCatalogCache();
     invalidateRoadmapCache();
 
     const { error } = await supabase.auth.signOut();
@@ -5889,6 +6009,7 @@ ${details}`);
       ${why ? `<p class="legend"><b>${whyLabel}</b> ${why}</p>` : ""}
 
       ${imgs}
+      ${conceptDetailsHtml("lesson", L.id)}
 
       <hr style="border-color:var(--border);opacity:.5;margin:10px 0">
 
@@ -6298,6 +6419,7 @@ ${details}`);
     renderMath: MH_render,
     bindMathInputEnhancements: mhBindMathInputEnhancements,
     attachMathToolbar: mhAttachMathToolbar,
+    renderConceptDetails: (problemId) => conceptDetailsHtml("problem", problemId),
     escapeHtml: esc
   });
 
@@ -7373,6 +7495,7 @@ function openExam(exam){
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
+      conceptAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
       if (adminDraftController) {
         mhClearAdminForm({
@@ -7389,6 +7512,7 @@ function openExam(exam){
     if (!nextUserId) {
       clearRuntimeCatalog();
       invalidateContentCatalogCache();
+      invalidateConceptCatalogCache();
       invalidateRoadmapCache();
       roadmapController?.clear();
       clearLocalExamArtifactsOnLogout();

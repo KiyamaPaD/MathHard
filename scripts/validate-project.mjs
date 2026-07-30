@@ -10,6 +10,9 @@ const moduleJsFiles = [
   "js/profile.js",
   "js/supabase-client.js",
   "js/content-repository.js",
+  "js/concept-model.js",
+  "js/concept-repository.js",
+  "js/concept-admin-controller.js",
   "js/progress-repository.js",
   "js/lesson-status-repository.js",
   "js/lesson-quiz-model.js",
@@ -80,6 +83,8 @@ const requiredFiles = [
   "css/roadmap-studio.css",
   "css/learning-workspace.css",
   "css/problem-workspace.css",
+  "css/concepts.css",
+  "css/concept-studio.css",
   "css/lesson-status.css",
   "css/lesson-quiz-admin.css",
   "css/quick-nav.css",
@@ -101,6 +106,7 @@ const requiredFiles = [
   "scripts/test-repositories.mjs",
   "scripts/performance-audit.mjs",
   "scripts/stability-audit.mjs",
+  "scripts/concept-layer-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -230,6 +236,11 @@ const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
 const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
 const contentRepositorySource = readFileSync(resolve(root, "js/content-repository.js"), "utf8");
 const contentModelSource = readFileSync(resolve(root, "js/content-model.js"), "utf8");
+const conceptModelSource = readFileSync(resolve(root, "js/concept-model.js"), "utf8");
+const conceptRepositorySource = readFileSync(resolve(root, "js/concept-repository.js"), "utf8");
+const conceptAdminControllerSource = readFileSync(resolve(root, "js/concept-admin-controller.js"), "utf8");
+const conceptsCss = readFileSync(resolve(root, "css/concepts.css"), "utf8");
+const conceptStudioCss = readFileSync(resolve(root, "css/concept-studio.css"), "utf8");
 const answerEngineSource = readFileSync(resolve(root, "js/answer-engine.js"), "utf8");
 const mutationQueueSource = readFileSync(resolve(root, "js/mutation-queue.js"), "utf8");
 const profileModelSource = readFileSync(resolve(root, "js/profile-model.js"), "utf8");
@@ -307,6 +318,26 @@ if (!appSource.includes('from "./content-repository.js"')) {
 }
 if (!appSource.includes("loadContentCatalog")) {
   fail("app.js must load the Supabase catalog through loadContentCatalog().");
+}
+if (!appSource.includes('from "./concept-repository.js"') ||
+    !appSource.includes('from "./concept-model.js"') ||
+    !appSource.includes("refreshConceptCatalog") ||
+    !appSource.includes("renderContentConceptDetails")) {
+  fail("app.js must integrate the canonical Concept Layer without replacing the content catalog.");
+}
+if (!conceptRepositorySource.includes('supabase.rpc("mh_get_concept_catalog")') ||
+    !conceptRepositorySource.includes('supabase.rpc("mh_admin_replace_content_concepts"')) {
+  fail("Concept repository is missing the canonical read or mapping RPC.");
+}
+if (!conceptModelSource.includes("normalizeConceptCatalog") ||
+    !conceptModelSource.includes("renderContentConceptDetails") ||
+    !conceptsCss.includes(".mh-concept-disclosure")) {
+  fail("Concept details must be normalized and hidden behind progressive disclosure.");
+}
+if (!conceptAdminControllerSource.includes("createConceptAdminController") ||
+    !conceptStudioCss.includes(".mh-concept-admin-shell") ||
+    !indexHtml.includes('id="mhConceptAdminStudio"')) {
+  fail("Admin Studio must expose the Concept Layer editor.");
 }
 if (!appSource.includes('from "./progress-repository.js"')) {
   fail("app.js must use progress-repository.js.");

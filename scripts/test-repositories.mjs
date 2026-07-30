@@ -79,6 +79,19 @@ const {
   normalizeProblem
 } = await importBrowserModule("js/content-model.js");
 const {
+  buildConceptIndex,
+  conceptIdsForContent,
+  conceptsForContent,
+  normalizeConceptCatalog,
+  prerequisitesForConcept,
+  renderContentConceptDetails
+} = await importBrowserModule("js/concept-model.js");
+const {
+  invalidateConceptCatalogCache,
+  loadConceptCatalog,
+  replaceContentConcepts
+} = await importBrowserModule("js/concept-repository.js");
+const {
   buildRoadmapView,
   normalizeRoadmapCatalog
 } = await importBrowserModule("js/roadmap-model.js");
@@ -236,6 +249,72 @@ const {
   normalizeAuditEntry,
   normalizeVersionEntry
 } = await importBrowserModule("js/admin-history-model.js");
+
+invalidateConceptCatalogCache();
+let conceptRpcCalls = 0;
+const conceptRpcPayload = {
+  concepts: [{ id: "numbers", title_ro: "Numere", published: true }],
+  edges: [],
+  mappings: []
+};
+const conceptSupabase = {
+  auth: {
+    async getUser() {
+      return { data: { user: { id: "concept-test-user" } }, error: null };
+    }
+  },
+  async rpc(name, payload) {
+    conceptRpcCalls += 1;
+    if (name === "mh_get_concept_catalog") return { data: conceptRpcPayload, error: null };
+    if (name === "mh_admin_replace_content_concepts") {
+      return { data: { ...payload, saved: true }, error: null };
+    }
+    return { data: null, error: new Error(`Unexpected RPC: ${name}`) };
+  }
+};
+const firstConceptLoad = await loadConceptCatalog({
+  supabase: conceptSupabase,
+  user: { id: "concept-test-user" }
+});
+const secondConceptLoad = await loadConceptCatalog({
+  supabase: conceptSupabase,
+  user: { id: "concept-test-user" }
+});
+assert.equal(firstConceptLoad.concepts[0].id, "numbers");
+assert.equal(secondConceptLoad.concepts[0].id, "numbers");
+assert.equal(conceptRpcCalls, 1);
+await replaceContentConcepts(conceptSupabase, {
+  contentType: "lesson",
+  contentId: "lesson-a",
+  conceptIds: ["numbers", "numbers"]
+});
+assert.equal(conceptRpcCalls, 2);
+
+const conceptCatalog = buildConceptIndex(normalizeConceptCatalog({
+  concepts: [
+    { id: "numbers", title_ro: "Numere", concept_type: "concept", published: true, position: 1 },
+    { id: "compare", title_ro: "Comparare", concept_type: "skill", published: true, position: 2 }
+  ],
+  edges: [
+    { prerequisite_concept_id: "numbers", dependent_concept_id: "compare", edge_type: "required" }
+  ],
+  mappings: [
+    { concept_id: "compare", content_type: "lesson", content_id: "lesson-a", relation_type: "primary", position: 0 },
+    { concept_id: "numbers", content_type: "lesson", content_id: "lesson-a", relation_type: "supporting", position: 1 }
+  ]
+}));
+assert.deepEqual(conceptIdsForContent(conceptCatalog, "lesson", "lesson-a"), ["compare", "numbers"]);
+assert.equal(conceptsForContent(conceptCatalog, "lesson", "lesson-a")[0].id, "compare");
+assert.equal(prerequisitesForConcept(conceptCatalog, "compare")[0].concept.id, "numbers");
+const conceptDisclosure = renderContentConceptDetails({
+  catalog: conceptCatalog,
+  contentType: "lesson",
+  contentId: "lesson-a",
+  language: "ro",
+  escapeHtml: (value) => String(value)
+});
+assert.match(conceptDisclosure, /mh-concept-disclosure/);
+assert.match(conceptDisclosure, /Detalii concepte/);
 
 const quizAvailability = normalizeQuizAvailability([
   { lesson_id: "lesson-a", question_count: 5, pass_threshold: 100 }

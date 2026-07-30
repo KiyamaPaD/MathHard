@@ -1,0 +1,98 @@
+.mh-concept-disclosure {
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  overflow: hidden;
+}
+
+.mh-concept-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 750;
+  list-style: none;
+}
+
+.mh-concept-disclosure > summary::-webkit-details-marker { display: none; }
+.mh-concept-disclosure > summary::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 1.1rem;
+  opacity: .7;
+}
+.mh-concept-disclosure[open] > summary::after { content: "−"; }
+.mh-concept-disclosure > summary small {
+  font-weight: 600;
+  opacity: .65;
+}
+
+.mh-concept-detail-list {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.mh-concept-detail-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+
+.mh-concept-detail-card p,
+.mh-concept-detail-text { margin: 8px 0 0; line-height: 1.55; }
+
+.mh-concept-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mh-concept-detail-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mh-concept-detail-head code {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.mh-concept-type {
+  width: fit-content;
+  font-size: .72rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  opacity: .65;
+}
+
+.mh-concept-prerequisites {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: .82rem;
+}
+
+.mh-concept-prerequisites > span { opacity: .65; }
+.mh-concept-prerequisites > b {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .mh-concept-disclosure > summary { align-items: flex-start; }
+  .mh-concept-disclosure > summary small { display: none; }
+  .mh-concept-detail-head { flex-direction: column; }
+}
