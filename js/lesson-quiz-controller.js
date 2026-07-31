@@ -34,7 +34,7 @@ export function createLessonQuizController({
     host.innerHTML = `
       <section class="quizBox mh-secure-lesson-quiz-error" role="alert">
         <h3>${text("Verificarea nu poate fi încărcată", "The lesson check could not be loaded")}</h3>
-        <p>${escapeHtml(error?.message || error || text("Eroare necunoscută.", "Unknown error."))}</p>
+        <p>${text("Încearcă din nou peste câteva momente.", "Try again in a few moments.")}</p>
         <button class="btn" data-lesson-quiz-back type="button">${text("Înapoi la lecție", "Back to lesson")}</button>
       </section>`;
     host.querySelector("[data-lesson-quiz-back]")?.addEventListener("click", () => onBack(activeLesson));
@@ -48,8 +48,8 @@ export function createLessonQuizController({
           <div>
             <div class="quizTitle">${text("Verificare lecție", "Lesson check")}</div>
             <div class="legend">${text(
-              `Prag: ${quiz.pass_threshold || 100}%. Răspunsurile sunt corectate în Supabase.`,
-              `Pass mark: ${quiz.pass_threshold || 100}%. Answers are graded in Supabase.`
+              `Prag de promovare: ${quiz.pass_threshold || 100}%.`,
+              `Pass mark: ${quiz.pass_threshold || 100}%.`
             )}</div>
           </div>
         </header>
@@ -97,7 +97,7 @@ export function createLessonQuizController({
     submitButton?.addEventListener("click", async () => {
       if (!activeQuiz?.attempt_id) return;
       submitButton.disabled = true;
-      if (status) status.textContent = text("Se verifică în Supabase…", "Grading in Supabase…");
+      if (status) status.textContent = text("Se verifică…", "Checking…");
       try {
         const answers = buildLessonQuizAnswers(host, questions);
         const result = await submitSecureLessonQuiz(
@@ -143,8 +143,8 @@ export function createLessonQuizController({
       } catch (error) {
         console.error("Lesson quiz submission failed:", error);
         if (status) status.textContent = text(
-          `Eroare: ${error?.message || error}`,
-          `Error: ${error?.message || error}`
+          "Răspunsurile nu au putut fi trimise. Reîncearcă.",
+          "The answers could not be submitted. Try again."
         );
         submitButton.disabled = false;
       }

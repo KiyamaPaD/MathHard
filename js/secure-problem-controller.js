@@ -18,11 +18,11 @@ import {
 function messageFor(language, key, ok = false) {
   const messages = {
     ro: {
-      correct: "✅ Corect! Bravo.",
+      correct: "✅ Corect.",
       already_solved: "✅ Corect. Problema era deja rezolvată.",
-      wrong: "❌ Nu e încă bine. Încearcă din nou.",
-      unavailable: "Evaluarea securizată nu este disponibilă momentan.",
-      checking: "Se verifică securizat…",
+      wrong: "❌ Răspuns incorect. Încearcă din nou.",
+      unavailable: "Verificarea nu este disponibilă momentan.",
+      checking: "Se verifică…",
       hint_locked: "Hintul nu este încă deblocat.",
       hint_missing: "Această problemă nu are acest hint.",
       reveal_failed: "Răspunsul nu a putut fi afișat."
@@ -31,8 +31,8 @@ function messageFor(language, key, ok = false) {
       correct: "✅ Correct, well done.",
       already_solved: "✅ Correct. This problem was already solved.",
       wrong: "❌ Not correct yet. Try again.",
-      unavailable: "Secure evaluation is temporarily unavailable.",
-      checking: "Checking securely…",
+      unavailable: "Checking is temporarily unavailable.",
+      checking: "Checking…",
       hint_locked: "The hint is not unlocked yet.",
       hint_missing: "This problem does not have this hint.",
       reveal_failed: "The answer could not be revealed."
@@ -120,7 +120,7 @@ export function createSecureProblemController({
             </button>
             ${!isExam ? `
             <div class="problem-xp-box">
-              <div class="legend">${ro ? "⚡ XP validat de server" : "⚡ Server-validated XP"}</div>
+              <div class="legend">${ro ? "⚡ XP obținut" : "⚡ XP earned"}</div>
               <div class="xp-inline-number" id="probXpValue">${record.xp || 0} / 10</div>
               <div class="legend" id="probXpStats">
                 ${ro ? "greșeli" : "mistakes"}: ${record.wrong || 0} • ${ro ? "hinturi" : "hints"}: ${record.hints || 0}
@@ -134,8 +134,8 @@ export function createSecureProblemController({
             <section class="mh-problem-card">
               <div class="legend mh-secure-caption">
                 ${ro
-                  ? "Răspunsul și XP-ul sunt validate în Supabase. După reveal, rezolvarea valorează 0 XP."
-                  : "The answer and XP are validated in Supabase. After reveal, the solve earns 0 XP."}
+                  ? "După afișarea soluției, problema nu mai acordă XP."
+                  : "After revealing the solution, the problem no longer awards XP."}
               </div>
               <div class="problem-statement">${statement}</div>
               ${renderConceptDetails(problem.id)}
@@ -149,15 +149,15 @@ export function createSecureProblemController({
               </div>
               <div class="legend mh-problem-status" id="statusArea"></div>
               <div class="mh-live-preview-wrap">
-                <div class="legend">Preview live</div>
+                <div class="legend">${ro ? "Previzualizare" : "Preview"}</div>
                 <div class="mh-live-preview-box" id="answerPreviewBox"></div>
               </div>
               <div class="mh-math-input-host" id="answerMathToolbar"></div>
 
               <div class="check-confirm" id="checkConfirm">
                 <span>${ro
-                  ? "Trimiți răspunsul pentru validare și înregistrare server-side?"
-                  : "Submit this answer for server-side validation and recording?"}</span>
+                  ? "Trimiți răspunsul?"
+                  : "Submit this answer?"}</span>
                 <div class="check-confirm-buttons">
                   <button class="btn small" id="confirmNo" type="button">${ro ? "Nu" : "No"}</button>
                   <button class="btn small" id="confirmYes" type="button">${ro ? "Da" : "Yes"}</button>
@@ -173,7 +173,7 @@ export function createSecureProblemController({
             <section class="mh-problem-card">
               <details class="collapsible" open>
                 <summary>📜 ${ro ? "Istoricul încercărilor" : "Attempt history"} (<span id="attemptCount">${existingAttempts.length}</span>)</summary>
-                <div id="attemptHistoryStatus" class="legend">${ro ? "Se sincronizează cu Supabase…" : "Syncing with Supabase…"}</div>
+                <div id="attemptHistoryStatus" class="legend">${ro ? "Se încarcă…" : "Loading…"}</div>
                 <ul class="attempts mh-server-attempts" id="attemptsList"></ul>
               </details>
             </section>
@@ -183,14 +183,14 @@ export function createSecureProblemController({
               <div class="hint" id="hintWrap1" style="display:none;">
                 <details>
                   <summary>💡 Hint 1 (${ro ? "după 2 greșeli" : "after 2 mistakes"})</summary>
-                  <p data-hint-content>${ro ? "Deschide pentru a încărca hintul securizat." : "Open to load the secure hint."}</p>
+                  <p data-hint-content>${ro ? "Deschide pentru a vedea hintul." : "Open to view the hint."}</p>
                 </details>
               </div>` : ""}
               ${hasHint2 && !isExam ? `
               <div class="hint" id="hintWrap2" style="display:none;">
                 <details>
                   <summary>💡 Hint 2 (${ro ? "după 4 greșeli" : "after 4 mistakes"})</summary>
-                  <p data-hint-content>${ro ? "Deschide pentru a încărca hintul securizat." : "Open to load the secure hint."}</p>
+                  <p data-hint-content>${ro ? "Deschide pentru a vedea hintul." : "Open to view the hint."}</p>
                 </details>
               </div>` : ""}
             </div>
@@ -200,9 +200,9 @@ export function createSecureProblemController({
               <div class="mh-solution-heading">
                 <h3>🧠 ${ro ? "Explicație și soluție" : "Explanation and solution"}</h3>
                 <div class="mh-explanation-modes" role="group" aria-label="Explanation mode">
-                  <button type="button" data-explanation-mode="academic">🎓 ${ro ? "Academic" : "Academic"}</button>
-                  <button type="button" data-explanation-mode="simple">✨ ${ro ? "Simplu" : "Simple"}</button>
-                  <button type="button" data-explanation-mode="boss">🔥 Boss</button>
+                  <button type="button" data-explanation-mode="academic">🎓 ${ro ? "Completă" : "Detailed"}</button>
+                  <button type="button" data-explanation-mode="simple">✨ ${ro ? "Simplă" : "Simple"}</button>
+                  <button type="button" data-explanation-mode="boss">◈ ${ro ? "Intuitivă" : "Intuitive"}</button>
                 </div>
               </div>
               <div id="solutionLocked" class="legend">
@@ -280,7 +280,7 @@ export function createSecureProblemController({
       });
       attemptCount.textContent = String(rows.length);
       attemptStatus.textContent = rows.length
-        ? (ro ? "Istoric securizat, salvat pe cont." : "Secure history saved to your account.")
+        ? (ro ? "Istoricul încercărilor tale." : "Your attempt history.")
         : (ro ? "Nu există încă încercări." : "No attempts yet.");
     }
 
@@ -367,8 +367,8 @@ export function createSecureProblemController({
         }));
         renderAttempts(fallback);
         if (attemptStatus) attemptStatus.textContent = ro
-          ? "Supabase nu a răspuns; se afișează istoricul local temporar."
-          : "Supabase did not respond; temporary local history is shown.";
+          ? "Istoricul complet nu este disponibil. Sunt afișate încercările din această sesiune."
+          : "The complete history is unavailable. Attempts from this session are shown.";
       }
     }
 

@@ -89,7 +89,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
           <div>
             <span class="mh-admin-eyebrow">Lecție</span>
             <h3>Verificare</h3>
-            <p class="legend">Întrebările sunt corectate server-side. Răspunsurile corecte nu ajung în catalogul utilizatorului.</p>
+            <p class="legend">Răspunsurile corecte nu sunt afișate elevilor.</p>
           </div>
           <div class="mh-lesson-quiz-admin-actions">
             ${disabled ? "" : `<span class="mh-lesson-quiz-publication ${draft.is_published ? "is-published" : "is-draft"}" data-quiz-publication-state>${draft.is_published ? "Publicată" : "Draft"}</span>`}
@@ -101,7 +101,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
         ${disabled ? `
           <div class="mh-admin-empty-state">
             <strong>Salvează lecția înainte.</strong>
-            <span>Verificarea poate fi adăugată după ce lecția există în Supabase.</span>
+            <span>Verificarea poate fi adăugată după ce salvezi lecția.</span>
           </div>` : `
           <div class="mh-lesson-quiz-settings">
             <label><span>Publicată</span><input data-quiz-setting="is_published" type="checkbox" ${draft.is_published ? "checked" : ""}></label>
@@ -243,7 +243,7 @@ export function createLessonQuizAdminController({ host, supabase, onSaved = () =
       render();
     });
     host.querySelector("[data-quiz-admin-reload]")?.addEventListener("click", () => {
-      if (readLocalDraft(context.lessonId) && !confirm("Renunți la modificările locale și reîncarci versiunea din Supabase?")) return;
+      if (readLocalDraft(context.lessonId) && !confirm("Renunți la modificările nesalvate și reîncarci versiunea publicată?")) return;
       clearLocalDraft(context.lessonId);
       void load(context.lessonId, { preferLocal: false });
     });

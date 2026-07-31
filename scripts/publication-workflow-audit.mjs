@@ -71,7 +71,7 @@ for (const token of [
 if (!app.includes("onChanged: async () =>") || !app.includes("onEditContent:")) {
   errors.push("Publication workflow is not connected to catalogue refresh/editor navigation.");
 }
-if (!index.includes("Quality & Publicare")) errors.push("Admin navigation label was not upgraded.");
+if (!index.includes("Verificare și publicare")) errors.push("Admin navigation label was not upgraded.");
 if (!css.includes(".mh-quality-bulk-bar") || !css.includes(".mh-quality-modal-card")) {
   errors.push("Publication workflow styling is incomplete.");
 }

@@ -526,30 +526,30 @@
 <div class="panel mh-admin-panel">
 <header class="bar mh-admin-topbar">
 <div class="mh-admin-topbar-title">
-<button class="btn" data-i18n="admin_close" id="closeAdmin" type="button">Închide</button>
+<button class="btn small" data-i18n="admin_close" id="closeAdmin" type="button">← Înapoi la site</button>
 <div>
-<strong>Admin Studio</strong>
-<span>MathHard</span>
+<strong>Admin</strong>
+<span>Conținut, publicare și progres</span>
 </div>
 </div>
-<div class="mh-admin-status"><span id="adminStatus">Supabase</span></div>
+<div class="mh-admin-status" aria-live="polite"><span class="mh-admin-status-dot" aria-hidden="true"></span><span id="adminStatus">Pregătit</span></div>
 </header>
 <div class="content viewer mh-admin-viewer">
 <div class="mh-admin-studio" id="mhAdminStudio">
 <aside aria-label="Admin Studio" class="mh-admin-sidebar">
 <label class="mh-admin-global-search">
-<span>Caută în Admin</span>
-<input id="mhAdminGlobalSearch" type="search" autocomplete="off" placeholder="Titlu, ID, capitol..."/>
+<span class="sr-only">Caută în Admin</span>
+<input id="mhAdminGlobalSearch" type="search" autocomplete="off" placeholder="Caută titlu, ID sau capitol" aria-label="Caută în Admin"/>
 </label>
 <nav class="mh-admin-nav">
-<button class="mh-admin-nav-button is-active" data-admin-panel-target="dashboard" type="button">Prezentare</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="content" type="button">Conținut</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="editor" type="button">Editor</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="roadmaps" type="button">Roadmap-uri</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="concepts" type="button">Concepte</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="quality" type="button">Quality & Publicare</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="gamification" type="button">Gamification</button>
-<button class="mh-admin-nav-button" data-admin-panel-target="history" type="button">Istoric</button>
+<button class="mh-admin-nav-button is-active" data-admin-panel-target="dashboard" type="button"><span aria-hidden="true">⌂</span><span>Acasă</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="content" type="button"><span aria-hidden="true">▤</span><span>Conținut</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="editor" type="button"><span aria-hidden="true">✎</span><span>Editor</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="roadmaps" type="button"><span aria-hidden="true">◇</span><span>Roadmap-uri</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="concepts" type="button"><span aria-hidden="true">◈</span><span>Concepte</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="quality" type="button"><span aria-hidden="true">✓</span><span>Publicare</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="gamification" type="button"><span aria-hidden="true">✦</span><span>Recompense</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="history" type="button"><span aria-hidden="true">↺</span><span>Istoric</span></button>
 </nav>
 <div class="mh-admin-sidebar-actions">
 <button class="btn small" data-i18n="admin_refresh_list" id="mhRefreshList" type="button">Actualizează catalogul</button>
@@ -560,8 +560,7 @@
 <section class="mh-admin-workspace is-active" data-admin-panel="dashboard" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Admin Studio</span>
-<h2>Prezentare</h2>
+<h2>Panou administrare</h2>
 </div>
 <span class="mh-admin-catalog-status" id="mhAdminCatalogStatus">Catalog</span>
 </div>
@@ -575,7 +574,7 @@
 <div class="mh-admin-dashboard-grid">
 <section class="mh-admin-card">
 <div class="mh-admin-card-header">
-<div><span class="mh-admin-eyebrow">Acțiuni</span><h3>Conținut nou</h3></div>
+<div><h3>Creează</h3></div>
 </div>
 <div class="mh-admin-quick-actions">
 <button class="btn" data-admin-create-type="lesson" type="button">Lecție</button>
@@ -585,7 +584,7 @@
 </section>
 <section class="mh-admin-card">
 <div class="mh-admin-card-header">
-<div><span class="mh-admin-eyebrow">Catalog</span><h3>Acces rapid</h3></div>
+<div><h3>Gestionează</h3></div>
 </div>
 <div class="mh-admin-quick-actions">
 <button class="btn" data-admin-open-content="lesson" type="button">Lecții</button>
@@ -598,7 +597,6 @@
 <section class="mh-admin-workspace" data-admin-panel="content" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Supabase</span>
 <h2>Conținut</h2>
 </div>
 <button class="btn" data-admin-context-create="" data-admin-create-type="lesson" type="button">Creează</button>
@@ -652,16 +650,15 @@
 <section class="mh-admin-workspace" data-admin-panel="editor" hidden="" tabindex="-1">
 <div class="mh-admin-page-header mh-admin-editor-header">
 <div>
-<span class="mh-admin-eyebrow">Editor</span>
-<h2>Conținut</h2>
+<h2>Editor</h2>
 <div class="legend" data-i18n="admin_mode_create" id="mhAdminModeBadge" style="margin-top:10px;">
             Mod curent: creare
           </div>
 </div>
-<button class="btn small" data-i18n="admin_reset_form" id="mhResetForm" type="button">Resetează formularul</button>
+<button class="btn small" data-i18n="admin_reset_form" id="mhResetForm" type="button">Formular nou</button>
 </div>
-<section class="mh-admin-editor-card" id="server-publish">
-<form id="mhPublish" style="display:flex;flex-direction:column;gap:10px;">
+<section class="mh-admin-editor-card" id="content-editor">
+<form id="mhPublish">
 <label>
 <span data-i18n="admin_type_label">Tip conținut:</span>
 <select class="select" id="mh_type" name="type">
@@ -675,7 +672,7 @@
 <!-- bloc comun -->
 <div class="mh-admin-form-grid mh-admin-identity-grid" id="block-identity"><label>
 <span data-i18n="admin_id_label">ID / slug (unic):</span>
-<input data-i18n-placeholder="admin_id_placeholder" id="mh_id" name="id" placeholder="ex: v-numere-nat"/>
+<input data-i18n-placeholder="admin_id_placeholder" id="mh_id" name="id" placeholder="ex: v-numere-nat" pattern="[A-Za-z0-9][A-Za-z0-9_-]{1,199}" maxlength="200" required/>
 </label></div><div class="mh-admin-form-grid" id="block-common">
 
 <label>
@@ -697,10 +694,10 @@
 </label>
 </div><div class="mh-admin-form-grid mh-admin-title-grid" id="block-title"><label>
 <span data-i18n="admin_title_ro_label">Titlu RO:</span>
-<input id="mh_title_ro" name="title_ro"/>
+<input id="mh_title_ro" name="title_ro" maxlength="300"/>
 </label><label>
 <span data-i18n="admin_title_en_label">Titlu EN:</span>
-<input id="mh_title_en" name="title_en"/>
+<input id="mh_title_en" name="title_en" maxlength="300"/>
 </label></div>
 <!-- bloc LECȚIE / CERCETARE / ISTORIE -->
 <div id="block-lesson" style="display:block;">
@@ -709,21 +706,49 @@
 <button data-lesson-editor-tab="quiz" type="button">Verificare</button>
 </div>
 <div class="mh-lesson-editor-panel" data-lesson-editor-panel="content">
+<div class="mh-admin-language-grid">
+<section class="mh-admin-language-card">
+<header><strong>Română</strong><span>Conținut principal</span></header>
 <label>
-<span data-i18n="admin_learn_ro_label">Ce înveți (RO):</span>
+<span data-i18n="admin_learn_ro_label">Ce înveți:</span>
 <textarea id="mh_learn_ro" name="learn_ro" rows="2"></textarea>
 </label>
 <label>
-<span data-i18n="admin_why_ro_label">De ce e util (RO):</span>
+<span data-i18n="admin_why_ro_label">De ce este util:</span>
 <textarea id="mh_why_ro" name="why_ro" rows="2"></textarea>
 </label>
 <label>
-<span data-i18n="admin_body_ro_label">Conținut RO (poți folosi KaTeX):</span>
-<textarea id="mh_body_ro" name="body_ro" rows="6"></textarea>
+<span data-i18n="admin_body_ro_label">Conținut:</span>
+<textarea id="mh_body_ro" name="body_ro" rows="9"></textarea>
 </label>
 <label>
-<span data-i18n="admin_body_en_label">Conținut EN (opțional):</span>
-<textarea id="mh_body_en" name="body_en" rows="3"></textarea>
+<span>Exemple:</span>
+<textarea id="mh_examples_ro" name="examples_ro" rows="4"></textarea>
+</label>
+</section>
+<section class="mh-admin-language-card">
+<header><strong>English</strong><span>Versiune completă</span></header>
+<label>
+<span>What you learn:</span>
+<textarea id="mh_learn_en" name="learn_en" rows="2"></textarea>
+</label>
+<label>
+<span>Why it matters:</span>
+<textarea id="mh_why_en" name="why_en" rows="2"></textarea>
+</label>
+<label>
+<span data-i18n="admin_body_en_label">Content:</span>
+<textarea id="mh_body_en" name="body_en" rows="9"></textarea>
+</label>
+<label>
+<span>Examples:</span>
+<textarea id="mh_examples_en" name="examples_en" rows="4"></textarea>
+</label>
+</section>
+</div>
+<label class="mh-admin-source-field">
+<span>Surse</span>
+<textarea id="mh_sources" name="sources" rows="3" placeholder="Câte o sursă sau adresă pe linie"></textarea>
 </label>
 </div>
 <div class="mh-lesson-editor-panel" data-lesson-editor-panel="quiz" hidden>
@@ -734,7 +759,7 @@
 <div id="block-problem" style="display:none;">
 <div class="mh-admin-form-grid">
 <label>
-<span data-i18n="admin_problem_lesson_label">Lecția (lessonId) la care se leagă:</span>
+<span data-i18n="admin_problem_lesson_label">ID lecție asociată:</span>
 <input data-i18n-placeholder="admin_problem_lesson_placeholder" id="mh_lesson_id" name="lesson_id" placeholder="ex: v-citirea-nr-nat"/>
 </label>
 <label>
@@ -755,28 +780,50 @@
 </select>
 </label>
 </div>
+<div class="mh-admin-language-grid">
+<section class="mh-admin-language-card">
+<header><strong>Română</strong><span>Enunț și hinturi</span></header>
 <label>
-<span data-i18n="admin_problem_statement_ro">Enunț RO:</span>
-<textarea id="mh_statement_ro" name="statement_ro" rows="4"></textarea>
+<span data-i18n="admin_problem_statement_ro">Enunț:</span>
+<textarea id="mh_statement_ro" name="statement_ro" rows="6"></textarea>
 </label>
 <label>
-<span data-i18n="admin_problem_statement_en">Enunț EN:</span>
-<textarea id="mh_statement_en" name="statement_en" rows="3"></textarea>
+<span data-i18n="admin_problem_hint1">Hint 1:</span>
+<textarea id="mh_hint1_ro" name="hint1_ro" rows="2"></textarea>
 </label>
 <label>
-<span data-i18n="admin_problem_answer">Răspuns (exact, ca în verificator):</span>
+<span data-i18n="admin_problem_hint2">Hint 2:</span>
+<textarea id="mh_hint2_ro" name="hint2_ro" rows="2"></textarea>
+</label>
+</section>
+<section class="mh-admin-language-card">
+<header><strong>English</strong><span>Statement and hints</span></header>
+<label>
+<span data-i18n="admin_problem_statement_en">Statement:</span>
+<textarea id="mh_statement_en" name="statement_en" rows="6"></textarea>
+</label>
+<label>
+<span>Hint 1:</span>
+<textarea id="mh_hint1_en" name="hint1_en" rows="2"></textarea>
+</label>
+<label>
+<span>Hint 2:</span>
+<textarea id="mh_hint2_en" name="hint2_en" rows="2"></textarea>
+</label>
+</section>
+</div>
+<div class="mh-admin-form-grid">
+<label>
+<span data-i18n="admin_problem_answer">Răspuns canonic:</span>
 <input id="mh_answer" name="answer"/>
 </label>
 <label>
-<span data-i18n="admin_problem_hint1">Hint 1 (RO):</span>
-<input id="mh_hint1_ro" name="hint1_ro"/>
+<span>Sursă</span>
+<input id="mh_source" name="source" placeholder="Manual, concurs, autor sau adresă"/>
 </label>
-<label>
-<span data-i18n="admin_problem_hint2">Hint 2 (RO):</span>
-<input id="mh_hint2_ro" name="hint2_ro"/>
-</label>
+</div>
 <details class="collapsible" style="margin-top:10px;">
-<summary>🧠 Soluții și moduri de explicație (Phase 13B)</summary>
+<summary>🧠 Soluții și explicații</summary>
 <div class="mh-admin-form-grid">
 <label>
 <span>Soluție academică RO:</span>
@@ -795,11 +842,11 @@
 <textarea id="mh_explanation_simple_en" rows="4"></textarea>
 </label>
 <label>
-<span>Boss mode RO:</span>
+<span>Explicație intuitivă RO:</span>
 <textarea id="mh_explanation_boss_ro" rows="4"></textarea>
 </label>
 <label>
-<span>Boss mode EN:</span>
+<span>Explicație intuitivă EN:</span>
 <textarea id="mh_explanation_boss_en" rows="4"></textarea>
 </label>
 </div>
@@ -835,33 +882,33 @@
 </label>
 <div id="mh_exam_items_editor" style="margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-<h4 data-i18n="admin_exam_items_title" style="margin:0;">🧩 Itemi examen (open + grile)</h4>
+<h4 data-i18n="admin_exam_items_title" style="margin:0;">Itemi examen</h4>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
 <label>
-<span data-i18n="admin_exam_scoring_profile">Scoring profile</span>
+<span data-i18n="admin_exam_scoring_profile">Regulă de punctare</span>
 <select class="select" id="mh_exam_scoring_profile">
-<option value="default_exact_v1">default_exact_v1</option>
-<option value="utcn_single_v1">utcn_single_v1</option>
-<option value="ubb_multi_v1">ubb_multi_v1</option>
+<option value="default_exact_v1">Punctaj exact</option>
+<option value="utcn_single_v1">Grilă cu un răspuns</option>
+<option value="ubb_multi_v1">Grilă UBB cu răspunsuri multiple</option>
 </select>
 </label>
-<button class="btn small" data-i18n="admin_add_open_item" id="mhAddOpenItemBtn" type="button">➕ Item open</button>
-<button class="btn small" data-i18n="admin_add_mcq_item" id="mhAddMcqItemBtn" type="button">➕ Item grilă</button>
+<button class="btn small" data-i18n="admin_add_open_item" id="mhAddOpenItemBtn" type="button">＋ Răspuns liber</button>
+<button class="btn small" data-i18n="admin_add_mcq_item" id="mhAddMcqItemBtn" type="button">＋ Grilă</button>
 </div>
 </div>
 <p class="legend" data-i18n="admin_exam_items_text" style="margin:10px 0 0;">
-                  Aici vei putea construi examene moderne: itemi open, grile A-D / A-E / custom, multiple corecte sau niciuna.
+                  Adaugă itemi cu răspuns liber sau grile, apoi stabilește punctajul fiecăruia.
                 </p>
 <div id="mhExamItemsList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;"></div>
 </div>
 <label>
-<span data-i18n="admin_exam_credit_label">Credit / sursă (HTML):</span>
+<span data-i18n="admin_exam_credit_label">Credit / sursă:</span>
 <input id="mh_exam_credit" name="exam_credit" value=""/>
 </label>
 </div>
-<div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+<div class="mh-admin-savebar">
+<span class="legend" id="mhPublishStatus" role="status" aria-live="polite"></span>
 <button class="btn" data-i18n="admin_save_supabase" id="mhSubmitBtn" type="submit">Salvează</button>
-<span class="legend" id="mhPublishStatus" style="margin-left:4px;"></span>
 </div>
 </form>
 </section>
@@ -869,7 +916,6 @@
 <section class="mh-admin-workspace" data-admin-panel="roadmaps" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Curriculum</span>
 <h2>Roadmap-uri</h2>
 </div>
 </div>
@@ -878,7 +924,7 @@
 <section class="mh-admin-workspace" data-admin-panel="concepts" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Curriculum semantic</span>
+<span class="mh-admin-eyebrow">Curriculum</span>
 <h2>Concepte</h2>
 </div>
 </div>
@@ -887,8 +933,8 @@
 <section class="mh-admin-workspace" data-admin-panel="quality" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Control editorial</span>
-<h2>Quality & Publicare</h2>
+<span class="mh-admin-eyebrow">Editorial</span>
+<h2>Verificare și publicare</h2>
 </div>
 </div>
 <section id="mhContentQualityAdminStudio" hidden></section>
@@ -896,8 +942,8 @@
 <section class="mh-admin-workspace" data-admin-panel="gamification" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Recompense</span>
-<h2>Gamification Studio</h2>
+<span class="mh-admin-eyebrow">Progres</span>
+<h2>Recompense</h2>
 </div>
 </div>
 <section id="mhGamificationAdminStudio"></section>
@@ -905,7 +951,7 @@
 <section class="mh-admin-workspace" data-admin-panel="history" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">
 <div>
-<span class="mh-admin-eyebrow">Control și recovery</span>
+<span class="mh-admin-eyebrow">Administrare</span>
 <h2>Istoric și versiuni</h2>
 </div>
 </div>
@@ -977,102 +1023,63 @@
             <section class="lesson-section" id="about-what">
               <h3 data-i18n="about_what_title">1. Ce este MathHard?</h3>
               <p data-i18n-html="about_what_p1">
-                MathHard este un loc unde înveți matematică
-                <b>pas cu pas</b>. Nu trebuie să fii „geniu”. Ideea este:
+                MathHard organizează matematica într-un traseu clar: <b>lecții</b>,
+                <b>verificări</b>, <b>probleme</b> și <b>examene</b>.
               </p>
-              <ul>
-                <li data-i18n-html="about_what_li_1">📘 mai întâi citești o <b>lecție scurtă și clară</b>,</li>
-                <li data-i18n-html="about_what_li_2">🧩 apoi rezolvi câteva <b>probleme</b>,</li>
-                <li data-i18n-html="about_what_li_3">⚡ primești <b>XP</b> (puncte de experiență),</li>
-                <li data-i18n="about_what_li_4">🔁 și tot așa, până ajungi la examene, olimpiadă sau chiar cercetare.</li>
-              </ul>
               <p data-i18n-html="about_what_p2">
-                Gândește-te la fiecare lecție ca la un <b>nivel de joc</b>, iar la
-                probleme ca la <b>mini-misiuni</b> care îți dau XP.
+                Progresul, XP-ul și recomandările arată ce ai parcurs și ce merită exersat în continuare.
               </p>
             </section>
 
             <section class="lesson-section" id="about-how">
-              <h3 data-i18n="about_how_title">2. Cum folosești site-ul (versiune pentru „copilași” 🙂)</h3>
+              <h3 data-i18n="about_how_title">2. Cum folosești MathHard</h3>
               <ol>
-                <li data-i18n-html="about_how_li_1">🔎 <b>Cauți</b> sus ce te interesează (clasă, „fracții”, „ecuații”…).</li>
-                <li data-i18n-html="about_how_li_2">📘 Apeși pe o <b>lecție</b> din stânga (meniul cu capitole).</li>
-                <li data-i18n="about_how_li_3">📜 Se deschide o pagină în dreapta. Citești până jos de tot.</li>
-                <li data-i18n-html="about_how_li_4">⏳ Aștepți <b>1 minut</b> (timerul), ca să nu „sarci” lecția.</li>
-                <li data-i18n="about_how_li_5">✅ Butonul „Am înțeles” se deblochează și lecția se bifează.</li>
-                <li data-i18n-html="about_how_li_6">🧩 Apoi mergi la tab-ul „Probleme” și rezolvi ce e legat de lecția aia.</li>
+                <li data-i18n-html="about_how_li_1">🔎 <b>Cauți</b> subiectul de care ai nevoie.</li>
+                <li data-i18n-html="about_how_li_2">📘 Deschizi o <b>lecție</b>.</li>
+                <li data-i18n="about_how_li_3">📜 Citești lecția până la final.</li>
+                <li data-i18n-html="about_how_li_4">⏳ După cel puțin <b>1 minut</b>, marchezi lectura ca finalizată.</li>
+                <li data-i18n="about_how_li_5">🧪 Treci verificarea lecției.</li>
+                <li data-i18n-html="about_how_li_6">🧩 Continui cu problemele asociate.</li>
               </ol>
               <p data-i18n-html="about_how_p">
-                Sus, în header, vezi mereu câte <b>probleme</b>, <b>lecții</b> și
-                <b>examene</b> ai făcut, plus <b>XP total</b>.
+                În partea de sus vezi progresul, examenele promovate și XP-ul acumulat.
               </p>
             </section>
 
             <section class="lesson-section" id="about-tabs">
-              <h3 data-i18n="about_tabs_title">3. Ce înseamnă tab-urile de sus?</h3>
+              <h3 data-i18n="about_tabs_title">3. Secțiunile principale</h3>
               <ul>
-                <li data-i18n-html="about_tabs_li_1">
-                  📘 <b>Lecții</b> — toată teoria, de la clasele mici până la facultate și cercetare.
-                </li>
-                <li data-i18n-html="about_tabs_li_2">
-                  🧩 <b>Probleme</b> — exerciții, probleme de școală, olimpiadă, antrenament.
-                </li>
-                <li data-i18n-html="about_tabs_li_3">
-                  ⚡ <b>XP Total</b> — vezi ce XP ai strâns din probleme și cum ai evoluat.
-                </li>
-                <li data-i18n-html="about_tabs_li_4">
-                  📑 <b>Examene</b> — colecții de probleme de la EN, BAC și admitere, puse ca „mini-examene”.
-                </li>
-                <li data-i18n-html="about_tabs_li_5">
-                  🔬 <b>CERCETARE</b> — lecții unde apar idei de cercetare (ex: Conjectura lui Collatz),
-                  explicate cât se poate de simplu.
-                </li>
-                <li data-i18n-html="about_tabs_li_6">
-                  🕰 <b>Istoria</b> — povești scurte despre oameni și idei faine din matematică.
-                </li>
+                <li data-i18n-html="about_tabs_li_1">📘 <b>Lecții</b> — teorie structurată.</li>
+                <li data-i18n-html="about_tabs_li_2">🧩 <b>Probleme</b> — exerciții și antrenament.</li>
+                <li data-i18n-html="about_tabs_li_3">⚡ <b>XP Total</b> — progresul obținut din probleme.</li>
+                <li data-i18n-html="about_tabs_li_4">📑 <b>Examene</b> — EN, BAC și admitere.</li>
+                <li data-i18n-html="about_tabs_li_5">🔬 <b>Cercetare</b> — idei matematice avansate.</li>
+                <li data-i18n-html="about_tabs_li_6">🕰 <b>Istorie</b> — oameni și idei din matematică.</li>
               </ul>
-              <p data-i18n-html="about_tabs_p">
-                Pe scurt: tab-urile sunt ca niște <b>rafturi de bibliotecă</b>.
-                Alegi raftul, apoi cartea (lecția / setul de probleme).
-              </p>
             </section>
 
             <section class="lesson-section" id="about-who">
               <h3 data-i18n="about_who_title">4. Pentru cine este MathHard?</h3>
               <ul>
-                <li data-i18n="about_who_li_1">🎒 elevi de gimnaziu care vor explicații liniștite, nu „panică de test”.</li>
-                <li data-i18n-html="about_who_li_2">🎓 liceeni care se pregătesc de <b>EN</b> sau <b>BAC</b>.</li>
-                <li data-i18n-html="about_who_li_3">🏅 copii și adolescenți pasionați de <b>olimpiadă</b>.</li>
-                <li data-i18n-html="about_who_li_4">🏛 studenți la început de drum, care vor un mic <b>„hub de recapitulare”</b>.</li>
-                <li data-i18n="about_who_li_5">👨‍🏫 profesori / părinți care caută idei de explicat mai simplu.</li>
+                <li data-i18n="about_who_li_1">🎒 elevi de gimnaziu;</li>
+                <li data-i18n-html="about_who_li_2">🎓 liceeni care se pregătesc pentru <b>EN</b> sau <b>BAC</b>;</li>
+                <li data-i18n-html="about_who_li_3">🏅 elevi pasionați de <b>olimpiadă</b>;</li>
+                <li data-i18n-html="about_who_li_4">🏛 studenți care vor material de recapitulare;</li>
+                <li data-i18n="about_who_li_5">👨‍🏫 profesori și părinți.</li>
               </ul>
-              <p data-i18n-html="about_who_p">
-                Dacă îți place să <b>înțelegi cu adevărat</b>, nu doar să memorezi,
-                atunci ești exact unde trebuie.
-              </p>
             </section>
 
             <section class="lesson-section" id="about-me">
               <h3 data-i18n="about_me_title">5. Cine a făcut MathHard?</h3>
               <p data-i18n-html="about_me_p1">
-                Mă cheamă <b>Gabor Cristian-Daniel</b>, am <b>17 ani</b> și sunt licean la
-                <b>Colegiul Tehnic INFOEL din Bistrița</b>. Sunt genul de elev care se entuziasmează
-                când dă peste o problemă „tare” de matematică.
+                MathHard este construit de <b>Gabor Cristian-Daniel</b>, elev la
+                <b>Colegiul INFOEL din Bistrița</b>.
               </p>
               <p data-i18n-html="about_me_p2">
-                Nu am vrut să-mi notez fiecare lecție mai puțin cunoscută – de la <b>olimpiade</b>,
-                <b>cercetare</b> sau chestii de <b>facultate</b> – prin caiete sau foi care se pierd.
-                Mi s-a părut mult mai tare să le strâng pe toate într-un singur loc și, în același timp,
-                să arăt lumii cât de faină e matematica.
+                Proiectul adună într-un singur loc lecții, probleme, pregătire pentru examene și idei matematice mai avansate.
               </p>
-              <ul>
-                <li data-i18n="about_me_li_1">lecții scurte, clare și ușor de recitit când ai nevoie,</li>
-                <li data-i18n="about_me_li_2">probleme alese, nu doar din „clasicul” de manual,</li>
-                <li data-i18n="about_me_li_3">idei care duc un pic mai departe decât ce se face la clasă.</li>
-              </ul>
               <p style="margin-top:6px;" data-i18n="about_me_p3">
-                MathHard e locul unde îmi organizez tot ce descopăr și împart mai departe
-                ce mi se pare interesant, ca să vezi și tu că matematica poate fi chiar cool.
+                Conținutul urmărește explicații clare, probleme atent alese și legături între concepte.
               </p>
             </section>
           </div>

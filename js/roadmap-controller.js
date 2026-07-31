@@ -244,7 +244,7 @@ export function createRoadmapController({
     }
 
     if (error) {
-      root.innerHTML = renderError(language, error?.message || String(error));
+      root.innerHTML = renderError(language, textFor(language, "Încearcă din nou peste câteva momente.", "Try again in a few moments."));
       bindInteractions();
       return;
     }
@@ -273,7 +273,6 @@ export function createRoadmapController({
           <span>${textFor(language, "Ținta ta", "Your target")}</span>
           <select class="select" data-roadmap-select="1">${options}</select>
         </label>
-        <div class="mh-roadmap-schema-badge">${escapeHtml(catalog.schemaVersion || "phase-12")}</div>
       </div>
 
       <div class="mh-roadmap-overview">

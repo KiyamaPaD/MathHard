@@ -143,8 +143,8 @@ export function createAdminExamRecoveryController({
 
     const confirmed = globalThis.confirm?.(
       text(
-        "Deblochezi forțat examenul activ? Se șterg timerul și răspunsurile locale. MathHard va încerca și anularea tentativei din Supabase.",
-        "Force-unlock the active exam? The local timer and answers will be cleared. MathHard will also try to cancel the Supabase attempt."
+        "Deblochezi forțat examenul activ? Se șterg timerul și răspunsurile locale. MathHard va încerca și anularea tentativei active.",
+        "Force-unlock the active exam? The local timer and answers will be cleared. MathHard will also try to cancel the active attempt."
       )
     );
     if (!confirmed) return;
@@ -195,8 +195,8 @@ export function createAdminExamRecoveryController({
     if (backendErrors.length > 0) {
       globalThis.alert?.(
         text(
-          "Blocarea locală a fost eliminată. Unele tentative vechi nu au putut fi ajustate în Supabase; verifică statisticile examenelor.",
-          "The local lock was removed. Some old attempts could not be adjusted in Supabase; check the exam statistics."
+          "Blocarea locală a fost eliminată. Unele tentative vechi nu au putut fi ajustate; verifică statisticile examenelor.",
+          "The local lock was removed. Some old attempts could not be adjusted; check the exam statistics."
         )
       );
     }

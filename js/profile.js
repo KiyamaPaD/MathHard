@@ -64,8 +64,6 @@ const logoutBtn = $("logoutBtn");
 const profileInfoName = $("profileInfoName");
 const profileInfoEmail = $("profileInfoEmail");
 const profileInfoConfirmed = $("profileInfoConfirmed");
-const profileInfoProvider = $("profileInfoProvider");
-const profileInfoId = $("profileInfoId");
 
 /* ========= PROGRESS SUMMARY ========= */
 const profileLessonsProgressText = $("profileLessonsProgressText");
@@ -231,8 +229,6 @@ function setEmptyAccountInfo() {
   safeText(profileInfoName, "—");
   safeText(profileInfoEmail, "—");
   safeText(profileInfoConfirmed, "—");
-  safeText(profileInfoProvider, "—");
-  safeText(profileInfoId, "—");
 
   setProgress(profileLessonsProgressBar, profileLessonsProgressText, 0, 0);
   setProgress(profileProblemsProgressBar, profileProblemsProgressText, 0, 0);
@@ -273,8 +269,6 @@ function fillAccountInfo(user, profileRow = null) {
   safeText(profileInfoName, displayName);
   safeText(profileInfoEmail, user.email || "—");
   safeText(profileInfoConfirmed, user.email_confirmed_at ? t("yes") : t("no"));
-  safeText(profileInfoProvider, user.app_metadata?.provider || "email");
-  safeText(profileInfoId, user.id || "—");
 }
 
 function formatDateTime(value) {

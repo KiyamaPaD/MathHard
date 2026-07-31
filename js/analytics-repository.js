@@ -6,7 +6,7 @@ export async function loadUserAnalytics(supabase, {
   days = 90,
   locale = "ro"
 } = {}) {
-  if (!supabase?.rpc) throw new Error("Supabase client is unavailable.");
+  if (!supabase?.rpc) throw new Error("Statisticile nu sunt disponibile momentan.");
 
   const safeDays = clampAnalyticsRange(days);
   const safeLocale = String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
@@ -30,7 +30,7 @@ export async function loadUserAnalytics(supabase, {
     const error = analyticsResult.error;
     const missingRpc = error.code === "PGRST202" || error.status === 404;
     if (missingRpc) {
-      throw new Error("Analytics backend is not installed. Run the Phase 15A SQL migration.");
+      throw new Error("Statisticile nu sunt disponibile momentan.");
     }
     throw error;
   }

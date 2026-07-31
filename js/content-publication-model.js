@@ -43,7 +43,7 @@ export function publicationStateLabel(publication, language = "ro") {
   const english = String(language || "ro").toLowerCase().startsWith("en");
   if (publication?.published) {
     return publication?.publication_mode === "legacy"
-      ? (english ? "Published · legacy" : "Publicat · legacy")
+      ? (english ? "Published · previous" : "Publicat · anterior")
       : (english ? "Published · verified" : "Publicat · verificat");
   }
   return english ? "Unpublished" : "Nepublicat";
@@ -52,8 +52,8 @@ export function publicationStateLabel(publication, language = "ro") {
 export function publicationModeLabel(mode, language = "ro") {
   const english = String(language || "ro").toLowerCase().startsWith("en");
   return safeMode(mode) === "legacy"
-    ? (english ? "Legacy compatibility" : "Compatibilitate legacy")
-    : (english ? "Verified workflow" : "Workflow verificat");
+    ? (english ? "Published before review" : "Publicat înainte de review")
+    : (english ? "Reviewed and published" : "Verificat și publicat");
 }
 
 export function normalizeEditorialPreview(value = {}) {

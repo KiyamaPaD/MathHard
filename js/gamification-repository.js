@@ -3,13 +3,13 @@ import { normalizeGamificationPayload, clampDailyGoal } from "./gamification-mod
 function backendError(error, fallback) {
   const missingRpc = error?.code === "PGRST202" || error?.status === 404;
   if (missingRpc) {
-    return new Error("Gamification backend is not installed. Run the Phase 16 SQL migration.");
+    return new Error("Recompensele nu sunt disponibile momentan.");
   }
   return new Error(error?.message || fallback);
 }
 
 export async function loadGamificationDashboard(supabase, { locale = "ro" } = {}) {
-  if (!supabase?.rpc) throw new Error("Supabase client is unavailable.");
+  if (!supabase?.rpc) throw new Error("Recompensele nu sunt disponibile momentan.");
   const args = {
     p_locale: String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro"
   };

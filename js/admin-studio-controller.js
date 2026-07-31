@@ -34,10 +34,10 @@ const UI_TEXT = {
     difficulty: "Dificultate",
     year: "An",
     lessonId: "Lecție",
-    source: "Supabase",
-    catalogReady: "Catalog sincronizat",
-    catalogCache: "Catalog din cache",
-    catalogUnknown: "Stare necunoscută"
+    source: "Catalog",
+    catalogReady: "Catalog disponibil",
+    catalogCache: "Ultima versiune disponibilă",
+    catalogUnknown: "Se încarcă"
   },
   en: {
     item: "item",
@@ -55,10 +55,10 @@ const UI_TEXT = {
     difficulty: "Difficulty",
     year: "Year",
     lessonId: "Lesson",
-    source: "Supabase",
-    catalogReady: "Catalog synced",
-    catalogCache: "Catalog cache in use",
-    catalogUnknown: "Unknown status"
+    source: "Catalog",
+    catalogReady: "Catalogue ready",
+    catalogCache: "Latest available version",
+    catalogUnknown: "Loading"
   }
 };
 

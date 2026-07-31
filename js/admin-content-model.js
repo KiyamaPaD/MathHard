@@ -73,6 +73,16 @@ export function tagsFromInput(value) {
     .filter(Boolean);
 }
 
+
+export function linesFromInput(value) {
+  return [...new Set(
+    String(value || "")
+      .split(/[,\n\r]+/)
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+  )];
+}
+
 export function problemsArrayFromInput(value) {
   return String(value || "")
     .split(",")

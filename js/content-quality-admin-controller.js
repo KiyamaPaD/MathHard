@@ -152,7 +152,7 @@ export function createContentQualityAdminController({
     const rows = [
       [text("Publicate", "Published"), summary.published, "published"],
       [text("Gata de publicare", "Ready to publish"), summary.ready_to_publish, "ready"],
-      [text("Legacy publicate", "Legacy published"), summary.legacy_published, "legacy"],
+      [text("Publicate anterior", "Previously published"), summary.legacy_published, "legacy"],
       [text("În review", "In review"), summary.in_review, "review"],
       [text("Necesită modificări", "Changes requested"), summary.changes_requested, "changes"],
       [text("Blocate", "Blocked"), summary.blocked, "blocked"]
@@ -244,7 +244,7 @@ export function createContentQualityAdminController({
           ${publicationAction}
         </div>
 
-        ${item.publication_mode === "legacy" && item.published ? `<div class="mh-quality-legacy-note">${text("Acest material a rămas public prin backfill-ul de compatibilitate. După prima editare va trebui verificat și republicat.", "This content remains public through the compatibility backfill. After its first edit it must be reviewed and republished.")}</div>` : ""}
+        ${item.publication_mode === "legacy" && item.published ? `<div class="mh-quality-legacy-note">${text("Acest material era publicat înaintea sistemului de review. După editare trebuie verificat și republicat.", "This content was published before the review system. After editing, it must be reviewed and republished.")}</div>` : ""}
 
         <section class="mh-quality-auto-checks">
           <div class="mh-quality-section-head"><h4>${text("Verificări automate", "Automated checks")}</h4><strong>${Math.round(item.completeness_score)}%</strong></div>
@@ -266,7 +266,7 @@ export function createContentQualityAdminController({
         ${historyHtml()}
 
         <footer>
-          <div><span>${text("Ultimul review", "Last review")}: ${escapeHtml(formatDate(item.reviewed_at, language()))}</span><span>review v${Number(item.review_version || 1)} · publish v${Number(item.publication_version || 0)}</span></div>
+          <div><span>${text("Ultimul review", "Last review")}: ${escapeHtml(formatDate(item.reviewed_at, language()))}</span><span>Review #${Number(item.review_version || 1)} · Publicare #${Number(item.publication_version || 0)}</span></div>
           <div><button class="btn small" type="button" data-quality-reset>${text("Resetează review", "Reset review")}</button><button class="btn" type="submit"${state.busy ? " disabled" : ""}>${text("Salvează review", "Save review")}</button></div>
         </footer>
       </form>
@@ -314,10 +314,10 @@ export function createContentQualityAdminController({
     host.innerHTML = `
       <div class="mh-quality-shell">
         <div class="mh-quality-toolbar">
-          <div><span class="mh-admin-eyebrow">Publication Pipeline</span><h3>${text("Review și publicare", "Review and publishing")}</h3><p>${text("Conținutul nou rămâne ascuns până este verificat și publicat.", "New content stays hidden until it is verified and published.")}</p></div>
+          <div><span class="mh-admin-eyebrow">${text("Editorial", "Editorial")}</span><h3>${text("Verificare și publicare", "Review and publishing")}</h3><p>${text("Publică doar materialele complete și verificate.", "Publish only complete, reviewed content.")}</p></div>
           <button class="btn small" type="button" data-quality-refresh${state.busy ? " disabled" : ""}>Refresh</button>
         </div>
-        ${!state.publicationAvailable ? `<div class="mh-quality-warning">${text("SQL 051/052 nu este încă disponibil. Review-ul funcționează, dar publicarea este dezactivată.", "SQL 051/052 is not available yet. Review works, but publishing is disabled.")}</div>` : ""}
+        ${!state.publicationAvailable ? `<div class="mh-quality-warning">${text("Publicarea nu este disponibilă momentan. Verificarea editorială rămâne activă.", "Publishing is temporarily unavailable. Editorial review remains available.")}</div>` : ""}
         <div class="mh-quality-summary">${summaryHtml()}</div>
         ${bulkHtml()}
         ${state.statusMessage ? `<div class="mh-quality-status">${escapeHtml(state.statusMessage)}</div>` : ""}
@@ -329,7 +329,7 @@ export function createContentQualityAdminController({
               <label>${text("Caută", "Search")}<input type="search" data-quality-query value="${escapeHtml(state.filters.query)}" placeholder="ID, titlu..."></label>
               <label>${text("Tip", "Type")}<select data-quality-type><option value="all">${text("Toate", "All")}</option><option value="lesson"${state.filters.contentType === "lesson" ? " selected" : ""}>${text("Lecții", "Lessons")}</option><option value="problem"${state.filters.contentType === "problem" ? " selected" : ""}>${text("Probleme", "Problems")}</option><option value="exam"${state.filters.contentType === "exam" ? " selected" : ""}>${text("Examene", "Exams")}</option></select></label>
               <label>Status<select data-quality-status><option value="all">${text("Toate", "All")}</option>${["draft", "in_review", "changes_requested", "verified", "archived"].map((status) => `<option value="${status}"${state.filters.status === status ? " selected" : ""}>${escapeHtml(qualityStatusLabel(status, language()))}</option>`).join("")}</select></label>
-              <label>${text("Publicare", "Publication")}<select data-quality-publication><option value="all">${text("Toate", "All")}</option><option value="published"${state.filters.publication === "published" ? " selected" : ""}>${text("Publicate", "Published")}</option><option value="unpublished"${state.filters.publication === "unpublished" ? " selected" : ""}>${text("Nepublicate", "Unpublished")}</option><option value="legacy"${state.filters.publication === "legacy" ? " selected" : ""}>Legacy</option><option value="verified"${state.filters.publication === "verified" ? " selected" : ""}>${text("Workflow verificat", "Verified workflow")}</option></select></label>
+              <label>${text("Publicare", "Publication")}<select data-quality-publication><option value="all">${text("Toate", "All")}</option><option value="published"${state.filters.publication === "published" ? " selected" : ""}>${text("Publicate", "Published")}</option><option value="unpublished"${state.filters.publication === "unpublished" ? " selected" : ""}>${text("Nepublicate", "Unpublished")}</option><option value="legacy"${state.filters.publication === "legacy" ? " selected" : ""}>${text("Publicare anterioară", "Previous publication")}</option><option value="verified"${state.filters.publication === "verified" ? " selected" : ""}>${text("Publicare verificată", "Verified publication")}</option></select></label>
             </div>
             <div class="mh-quality-list">${itemListHtml()}</div>
           </aside>
@@ -358,7 +358,7 @@ export function createContentQualityAdminController({
       if (state.selectedKey && !selectedItem()) state.selectedKey = "";
       if (!state.selectedKey && state.dashboard.items.length) state.selectedKey = itemKey(state.dashboard.items[0]);
       state.selectedKeys = new Set([...state.selectedKeys].filter((key) => state.dashboard.items.some((item) => itemKey(item) === key)));
-      state.statusMessage = text("Catalog editorial sincronizat.", "Editorial catalogue synced.");
+      state.statusMessage = text("Catalog editorial actualizat.", "Editorial catalogue updated.");
       await loadHistoryForSelected();
       return state.dashboard;
     } catch (error) {

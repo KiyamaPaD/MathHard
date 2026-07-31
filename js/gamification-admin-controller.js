@@ -344,10 +344,10 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     setFeedback("Se încarcă...", "loading");
     try {
       applyPayload(await loadGamificationStudio(supabase));
-      setFeedback("Gamification Studio este sincronizat.", "success");
+      setFeedback("Recompense actualizate.", "success");
     } catch (error) {
       console.error("Gamification Studio load failed:", error);
-      setFeedback(`Eroare: ${error.message || error}`, "error");
+      setFeedback("Datele nu au putut fi încărcate. Reîncearcă.", "error");
     } finally {
       state.loading = false;
     }
@@ -370,7 +370,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       setFeedback("Salvat.", "success");
     } catch (error) {
       console.error("Gamification Studio save failed:", error);
-      setFeedback(`Eroare: ${error.message || error}`, "error");
+      setFeedback("Datele nu au putut fi încărcate. Reîncearcă.", "error");
     }
   }
 
@@ -408,7 +408,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         window.dispatchEvent(new CustomEvent("mh:gamification-admin-updated"));
         setFeedback("Challenge generat și setat ca activ.", "success");
       } catch (error) {
-        setFeedback(`Eroare: ${error.message || error}`, "error");
+        setFeedback("Datele nu au putut fi încărcate. Reîncearcă.", "error");
       }
       return;
     }
@@ -426,7 +426,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         window.dispatchEvent(new CustomEvent("mh:gamification-admin-updated"));
         setFeedback("Șters.", "success");
       } catch (error) {
-        setFeedback(`Eroare: ${error.message || error}`, "error");
+        setFeedback("Datele nu au putut fi încărcate. Reîncearcă.", "error");
       }
     }
   });

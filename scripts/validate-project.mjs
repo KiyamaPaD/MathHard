@@ -122,6 +122,7 @@ const requiredFiles = [
   "scripts/concept-retention-audit.mjs",
   "scripts/content-quality-audit.mjs",
   "scripts/publication-workflow-audit.mjs",
+  "scripts/frontend-experience-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -513,8 +514,8 @@ if (!/onTerminalProblemChanged:\s*\(\)\s*=>\s*\{[\s\S]{0,260}renderCards\(\)/.te
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
   fail("Editing a lesson must update the Supabase source of truth via upsert.");
 }
-if (!adminStudioSource.includes('source: "Supabase"')) {
-  fail("Admin must expose Supabase as the single content source.");
+if (!adminStudioSource.includes('source: "Catalog"')) {
+  fail("Admin must expose the canonical catalogue as the single content source.");
 }
 if (/src=["']\/?js\/data\.js["']/i.test(indexHtml) || /src=["']\/?js\/data\.js["']/i.test(profileHtml)) {
   fail("Production pages must not load the removed data.js asset.");

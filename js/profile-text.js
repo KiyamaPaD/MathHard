@@ -15,7 +15,7 @@ export const PROFILE_TEXT = {
     badge_exams: "Examene",
 
     auth_title: "Cont",
-    auth_text_guest: "Autentifică-te pentru sincronizarea progresului.",
+    auth_text_guest: "Autentifică-te pentru a-ți păstra progresul.",
     auth_text_connected: "Cont conectat.",
 
     email_label: "Email",
@@ -42,8 +42,6 @@ export const PROFILE_TEXT = {
     info_display_name: "Nume afișat",
     info_email: "Email",
     info_confirmed: "Email confirmat",
-    info_provider: "Provider",
-    info_user_id: "User ID",
 
     progress_title: "Rezumat progres",
     progress_lessons: "Lecții învățate",
@@ -134,9 +132,9 @@ export const PROFILE_TEXT = {
     logout_error: "Eroare logout: {error}",
 
     auth_success: "Autentificat cu succes.",
-    progress_load_error: "Logat, dar progresul nu a putut fi încărcat: {error}",
-    auth_refresh_error: "Eroare la refresh auth: {error}",
-    initial_load_error: "Eroare la încărcarea profilului: {error}",
+    progress_load_error: "Progresul nu a putut fi încărcat momentan.",
+    auth_refresh_error: "Sesiunea nu a putut fi actualizată.",
+    initial_load_error: "Profilul nu a putut fi încărcat momentan.",
 
     all_lessons_done: "Ai terminat toate lecțiile 🎉",
     nothing_left: "Nimic restant",
@@ -163,7 +161,7 @@ export const PROFILE_TEXT = {
     badge_exams: "Exams",
 
     auth_title: "Account",
-    auth_text_guest: "Sign in to sync your progress.",
+    auth_text_guest: "Sign in to keep your progress.",
     auth_text_connected: "Account connected.",
 
     email_label: "Email",
@@ -190,8 +188,6 @@ export const PROFILE_TEXT = {
     info_display_name: "Display name",
     info_email: "Email",
     info_confirmed: "Email confirmed",
-    info_provider: "Provider",
-    info_user_id: "User ID",
 
     progress_title: "Progress summary",
     progress_lessons: "Lessons learned",
@@ -282,9 +278,9 @@ export const PROFILE_TEXT = {
     logout_error: "Logout error: {error}",
 
     auth_success: "Authenticated successfully.",
-    progress_load_error: "Logged in, but progress could not be loaded: {error}",
-    auth_refresh_error: "Auth refresh error: {error}",
-    initial_load_error: "Profile loading error: {error}",
+    progress_load_error: "Progress could not be loaded right now.",
+    auth_refresh_error: "The session could not be refreshed.",
+    initial_load_error: "The profile could not be loaded right now.",
 
     all_lessons_done: "You finished all lessons 🎉",
     nothing_left: "Nothing left",

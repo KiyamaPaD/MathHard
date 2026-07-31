@@ -1698,7 +1698,7 @@ const normalizedPublication = normalizePublication({
 assert.equal(normalizedPublication.published, true);
 assert.equal(normalizedPublication.publication_version, 4);
 assert.equal(publicationStateLabel(normalizedPublication, "ro"), "Publicat · verificat");
-assert.equal(publicationModeLabel("legacy", "en"), "Legacy compatibility");
+assert.equal(publicationModeLabel("legacy", "en"), "Published before review");
 assert.deepEqual(publicationBatchItems([
   { content_type: "lesson", content_id: "l1", review_version: 3 },
   { content_type: "", content_id: "invalid" }

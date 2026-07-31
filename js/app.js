@@ -71,6 +71,7 @@ import {
   clampOptionCount as mhClampOptionCount,
   ensureDraftMcqShape as mhEnsureDraftMcqShape,
   normalizeDraftExamItem as mhNormalizeDraftExamItem,
+  linesFromInput as mhLinesFromInput,
   problemsArrayFromInput as mhProblemsArrayFromInput,
   tagsFromInput as mhTagsFromInput,
   validateExamPayload as mhValidateExamPayload
@@ -340,14 +341,8 @@ import {
           what: {
             title: "1. Ce este MathHard?",
             body: `
-              <p>MathHard este un loc unde înveți matematică <b>pas cu pas</b>. Nu trebuie să fii „geniu”. Ideea este:</p>
-              <ul>
-                <li>📘 mai întâi citești o <b>lecție scurtă și clară</b>,</li>
-                <li>🧩 apoi rezolvi câteva <b>probleme</b>,</li>
-                <li>⚡ primești <b>XP</b> (puncte de experiență),</li>
-                <li>🔁 și tot așa, până ajungi la examene, olimpiadă sau chiar cercetare.</li>
-              </ul>
-              <p>Gândește-te la fiecare lecție ca la un <b>nivel de joc</b>, iar la probleme ca la <b>mini-misiuni</b> care îți dau XP.</p>
+              <p>MathHard organizează matematica într-un traseu clar: <b>lecții</b>, <b>verificări</b>, <b>probleme</b> și <b>examene</b>.</p>
+              <p>Progresul, XP-ul și recomandările te ajută să vezi ce ai parcurs și ce merită exersat în continuare.</p>
             `
           },
           how: {
@@ -356,10 +351,10 @@ import {
               <ol>
                 <li>🔎 <b>Cauți</b> sus ce te interesează (clasă, „fracții”, „ecuații”…).</li>
                 <li>📘 Apeși pe o <b>lecție</b> din stânga.</li>
-                <li>📜 Se deschide lecția și citești până jos.</li>
-                <li>⏳ Aștepți <b>1 minut</b> ca să nu sari lecția instant.</li>
-                <li>✅ Butonul „Am înțeles” se deblochează și lecția se bifează.</li>
-                <li>🧩 Apoi mergi la tab-ul „Probleme” și exersezi.</li>
+                <li>📜 Citești lecția până la final.</li>
+                <li>⏳ După cel puțin <b>1 minut</b>, marchezi lectura ca finalizată.</li>
+                <li>🧪 Treci verificarea lecției pentru ca aceasta să fie marcată ca învățată.</li>
+                <li>🧩 Continui cu problemele asociate.</li>
               </ol>
               <p>Sus, în header, vezi mereu câte <b>probleme</b>, <b>lecții</b> și <b>examene</b> ai făcut, plus <b>XP total</b>.</p>
             `
@@ -375,7 +370,7 @@ import {
                 <li>🔬 <b>CERCETARE</b> — idei mai avansate explicate simplu.</li>
                 <li>🕰 <b>Istoria</b> — povești despre oameni și idei faine din matematică.</li>
               </ul>
-              <p>Pe scurt: tab-urile sunt ca niște <b>rafturi de bibliotecă</b>. Alegi raftul, apoi conținutul.</p>
+
             `
           },
           who: {
@@ -388,20 +383,15 @@ import {
                 <li>🏛 studenți la început de drum care vor recapitulare;</li>
                 <li>👨‍🏫 profesori / părinți care caută explicații mai simple.</li>
               </ul>
-              <p>Dacă îți place să <b>înțelegi cu adevărat</b>, nu doar să memorezi, atunci ești exact unde trebuie.</p>
+
             `
           },
           me: {
             title: "5. Cine a făcut MathHard?",
             body: `
               <p>Mă cheamă <b>Gabor Cristian-Daniel</b> și sunt licean la <b>Colegiul Tehnic INFOEL din Bistrița</b>.</p>
-              <p>Nu am vrut să-mi notez lecțiile, ideile de olimpiadă, research sau facultate prin caiete și foi pierdute. Mi s-a părut mult mai tare să le strâng într-un singur loc și, în același timp, să arăt lumii cât de faină poate fi matematica.</p>
-              <ul>
-                <li>lecții scurte, clare și ușor de recitit,</li>
-                <li>probleme alese, nu doar exerciții clasice,</li>
-                <li>idei care merg mai departe decât ce se face la clasă.</li>
-              </ul>
-              <p>MathHard este locul unde îmi organizez tot ce descopăr și dau mai departe ceea ce mi se pare interesant.</p>
+              <p>Am construit MathHard pentru a organiza într-un singur loc lecții, probleme, pregătire pentru examene și idei matematice mai avansate.</p>
+              <p>Conținutul urmărește explicații clare, probleme atent alese și legături între concepte.</p>
             `
           }
         }
@@ -413,7 +403,7 @@ import {
           <h4>Contoare</h4>
           <ul>
             <li>✅ <b>Probleme rezolvate</b> — crește la primul răspuns corect.</li>
-            <li>📘 <b>Lecții învățate</b> — după derulare + timer + „Am înțeles”.</li>
+            <li>📘 <b>Lecții învățate</b> — după citirea completă și promovarea verificării.</li>
             <li>🏆 <b>Examene promovate</b> — scor ≥ ${PASS_THRESHOLD}p.</li>
             <li>⚡ <b>XP total</b> — vine doar din <b>probleme normale</b>, nu din examene.</li>
           </ul>
@@ -485,14 +475,8 @@ import {
           what: {
             title: "1. What is MathHard?",
             body: `
-              <p>MathHard is a place where you learn math <b>step by step</b>. You do not need to be a genius. The idea is:</p>
-              <ul>
-                <li>📘 first you read a <b>short and clear lesson</b>,</li>
-                <li>🧩 then you solve a few <b>problems</b>,</li>
-                <li>⚡ you earn <b>XP</b> (experience points),</li>
-                <li>🔁 and you keep going until exams, olympiads, or even research topics.</li>
-              </ul>
-              <p>Think of each lesson as a <b>game level</b>, and each problem as a <b>mini mission</b> that gives XP.</p>
+              <p>MathHard organizes mathematics into a clear path: <b>lessons</b>, <b>checks</b>, <b>problems</b>, and <b>exams</b>.</p>
+              <p>Progress, XP, and recommendations show what you completed and what to practice next.</p>
             `
           },
           how: {
@@ -501,10 +485,10 @@ import {
               <ol>
                 <li>🔎 <b>Search</b> at the top for what you need.</li>
                 <li>📘 Open a <b>lesson</b> from the left side.</li>
-                <li>📜 Read the lesson down to the bottom.</li>
-                <li>⏳ Wait <b>1 minute</b> so lessons cannot be skipped instantly.</li>
-                <li>✅ The “I understood” button unlocks and the lesson is marked.</li>
-                <li>🧩 Then go to the Problems tab and practice.</li>
+                <li>📜 Read the lesson to the end.</li>
+                <li>⏳ After at least <b>1 minute</b>, mark the reading as complete.</li>
+                <li>🧪 Pass the lesson check so the lesson is marked as learned.</li>
+                <li>🧩 Continue with the related problems.</li>
               </ol>
               <p>At the top, you always see how many <b>problems</b>, <b>lessons</b>, <b>exams</b>, and how much <b>XP</b> you have.</p>
             `
@@ -520,7 +504,7 @@ import {
                 <li>🔬 <b>RESEARCH</b> — more advanced ideas explained simply.</li>
                 <li>🕰 <b>History</b> — stories about people and ideas in mathematics.</li>
               </ul>
-              <p>In short: the tabs are like <b>bookshelves</b>. You choose the shelf, then the content.</p>
+
             `
           },
           who: {
@@ -533,20 +517,15 @@ import {
                 <li>🏛 beginners at university who want review material;</li>
                 <li>👨‍🏫 teachers / parents looking for simpler explanations.</li>
               </ul>
-              <p>If you like to <b>truly understand</b>, not just memorize, you are in the right place.</p>
+
             `
           },
           me: {
             title: "5. Who built MathHard?",
             body: `
               <p>My name is <b>Gabor Cristian-Daniel</b> and I am a high school student at <b>Colegiul Tehnic INFOEL in Bistrița</b>.</p>
-              <p>I did not want to keep olympiad ideas, research notes, and university-level lessons in random notebooks and papers. It felt much better to gather everything in one place and also show people how cool math can be.</p>
-              <ul>
-                <li>short, clear lessons that are easy to revisit,</li>
-                <li>selected problems, not just classic textbook exercises,</li>
-                <li>ideas that go a bit beyond normal class material.</li>
-              </ul>
-              <p>MathHard is the place where I organize what I discover and share what I find interesting.</p>
+              <p>I built MathHard to organize lessons, problems, exam preparation, and more advanced mathematical ideas in one place.</p>
+              <p>The content focuses on clear explanations, carefully selected problems, and connections between concepts.</p>
             `
           }
         }
@@ -558,7 +537,7 @@ import {
           <h4>Counters</h4>
           <ul>
             <li>✅ <b>Problems solved</b> — increases at the first correct answer.</li>
-            <li>📘 <b>Lessons learned</b> — after scroll + timer + “I understood”.</li>
+            <li>📘 <b>Lessons learned</b> — after completing the reading and passing the lesson check.</li>
             <li>🏆 <b>Exams passed</b> — score ≥ ${PASS_THRESHOLD}p.</li>
             <li>⚡ <b>Total XP</b> — comes only from <b>regular problems</b>, not exams.</li>
           </ul>
@@ -2244,8 +2223,8 @@ import {
           console.error("Catalog retry failed:", error);
           mhShowContentStatusBanner({
             message: LANG === "ro"
-              ? "Catalogul Supabase nu a putut fi încărcat. Verifică conexiunea și încearcă din nou."
-              : "The Supabase catalog could not be loaded. Check your connection and retry.",
+              ? "Conținutul nu a putut fi încărcat. Verifică conexiunea și încearcă din nou."
+              : "Content could not be loaded. Check your connection and retry.",
             isError: true,
             retry: true
           });
@@ -2263,8 +2242,8 @@ import {
 
     mhShowContentStatusBanner({
       message: LANG === "ro"
-        ? `Supabase răspunde parțial. Folosesc ultimul cache pentru: ${diagnostics.staleGroups.join(", ")}.`
-        : `Supabase is partially unavailable. Using the latest cache for: ${diagnostics.staleGroups.join(", ")}.`,
+        ? `Unele secțiuni folosesc ultima versiune disponibilă: ${diagnostics.staleGroups.join(", ")}.`
+        : `Some sections are using the latest available version: ${diagnostics.staleGroups.join(", ")}.`,
       retry: true
     });
   }
@@ -2303,7 +2282,7 @@ import {
     if (!MH_EXAM_ITEMS_DRAFT.length) {
       mhExamItemsList.innerHTML = `
         <div class="legend" style="padding:10px;border:1px dashed var(--border);border-radius:12px;">
-          Niciun item încă. Apasă pe „Item open” sau „Item grilă”.
+          Niciun item încă. Adaugă un răspuns liber sau o grilă.
         </div>
       `;
       return;
@@ -2319,7 +2298,7 @@ import {
           style="border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;background:rgba(255,255,255,.02);"
         >
           <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
-            <strong>Item ${index + 1} — ${item.type === "mcq" ? "grilă" : "open"}</strong>
+            <strong>Item ${index + 1} — ${item.type === "mcq" ? "grilă" : "răspuns liber"}</strong>
 
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn small" type="button" data-mh-move-up="${index}" ${index === 0 ? "disabled" : ""}>⬆️ Sus</button>
@@ -2342,8 +2321,8 @@ import {
             <label>
               <div class="legend">Tip</div>
               <select data-mh-item-index="${index}" data-mh-type-select="1">
-                <option value="open" ${item.type === "open" ? "selected" : ""}>open</option>
-                <option value="mcq" ${item.type === "mcq" ? "selected" : ""}>mcq</option>
+                <option value="open" ${item.type === "open" ? "selected" : ""}>Răspuns liber</option>
+                <option value="mcq" ${item.type === "mcq" ? "selected" : ""}>Grilă</option>
               </select>
             </label>
 
@@ -2365,12 +2344,12 @@ import {
                 <select data-mh-item-index="${index}" data-mh-option-mode="1">
                   <option value="A-D" ${item.option_mode === "A-D" ? "selected" : ""}>A-D</option>
                   <option value="A-E" ${item.option_mode === "A-E" ? "selected" : ""}>A-E</option>
-                  <option value="custom" ${item.option_mode === "custom" ? "selected" : ""}>custom</option>
+                  <option value="custom" ${item.option_mode === "custom" ? "selected" : ""}>Personalizat</option>
                 </select>
               </label>
 
               <label ${isCustomMode ? "" : 'style="opacity:.55;"'}>
-                <div class="legend">Nr. opțiuni custom</div>
+                <div class="legend">Număr de variante</div>
                 <input
                   type="number"
                   min="2"
@@ -2409,19 +2388,19 @@ import {
 
           <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;">
             <label>
-              <div class="legend">Prompt RO</div>
+              <div class="legend">Enunț RO</div>
               <textarea rows="4" data-mh-item-index="${index}" data-mh-textarea-key="prompt_ro">${esc(item.prompt_ro || "")}</textarea>
             </label>
 
             <label>
-              <div class="legend">Prompt EN</div>
+              <div class="legend">Enunț EN</div>
               <textarea rows="4" data-mh-item-index="${index}" data-mh-textarea-key="prompt_en">${esc(item.prompt_en || "")}</textarea>
             </label>
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;">
             <label>
-              <div class="legend">Image URL</div>
+              <div class="legend">Adresă imagine</div>
               <input
                 type="text"
                 value="${esc(item.image_url || "")}"
@@ -2431,7 +2410,7 @@ import {
             </label>
 
             <label>
-              <div class="legend">Image alt</div>
+              <div class="legend">Descriere imagine</div>
               <input
                 type="text"
                 value="${esc(item.image_alt || "")}"
@@ -2441,7 +2420,7 @@ import {
             </label>
 
             <label>
-              <div class="legend">Caption RO</div>
+              <div class="legend">Legendă RO</div>
               <input
                 type="text"
                 value="${esc(item.image_caption_ro || "")}"
@@ -2451,7 +2430,7 @@ import {
             </label>
 
             <label>
-              <div class="legend">Caption EN</div>
+              <div class="legend">Legendă EN</div>
               <input
                 type="text"
                 value="${esc(item.image_caption_en || "")}"
@@ -2463,7 +2442,7 @@ import {
 
           ${!isMcq ? `
             <label style="display:block;margin-bottom:6px;">
-              <div class="legend">Răspuns corect (open)</div>
+              <div class="legend">Răspuns corect</div>
               <input
                 type="text"
                 value="${esc(item.answer || "")}"
@@ -2480,7 +2459,7 @@ import {
                   data-mh-item-index="${index}"
                   data-mh-bool-key="allow_multiple"
                 >
-                <span>Permite mai multe corecte</span>
+                <span>Mai multe răspunsuri corecte</span>
               </label>
 
               <label style="display:flex;align-items:center;gap:8px;">
@@ -2490,7 +2469,7 @@ import {
                   data-mh-item-index="${index}"
                   data-mh-bool-key="allow_none"
                 >
-                <span>Permite niciuna corectă</span>
+                <span>Poate să nu existe răspuns corect</span>
               </label>
             </div>
 
@@ -2499,7 +2478,7 @@ import {
                 <div style="border:1px solid var(--border);border-radius:10px;padding:10px;">
                   <div style="display:grid;grid-template-columns:90px 1fr 1fr 130px;gap:8px;align-items:end;">
                     <label>
-                      <div class="legend">Label</div>
+                      <div class="legend">Variantă</div>
                       <input
                         type="text"
                         value="${esc(opt.label || "")}"
@@ -2830,9 +2809,14 @@ import {
     setVal("mh_title_ro", item.title_ro);
     setVal("mh_title_en", item.title_en);
     setVal("mh_learn_ro", item.learn_ro);
+    setVal("mh_learn_en", item.learn_en);
     setVal("mh_why_ro", item.why_ro);
+    setVal("mh_why_en", item.why_en);
     setVal("mh_body_ro", item.body_ro);
     setVal("mh_body_en", item.body_en);
+    setVal("mh_examples_ro", item.examples_ro);
+    setVal("mh_examples_en", item.examples_en);
+    setVal("mh_sources", Array.isArray(item.sources) ? item.sources.join("\n") : item.source || "");
 
     setVal("mh_lesson_id", item.lesson_id ?? item.lessonId);
     setVal("mh_difficulty", item.difficulty ?? 1);
@@ -2841,7 +2825,10 @@ import {
     setVal("mh_statement_en", item.statement_en);
     setVal("mh_answer", item.answer);
     setVal("mh_hint1_ro", item.hint1_ro);
+    setVal("mh_hint1_en", item.hint1_en);
     setVal("mh_hint2_ro", item.hint2_ro);
+    setVal("mh_hint2_en", item.hint2_en);
+    setVal("mh_source", item.source);
     setVal("mh_solution_ro", item.solution_ro);
     setVal("mh_solution_en", item.solution_en);
     setVal("mh_explanation_simple_ro", item.explanation_simple_ro);
@@ -2866,7 +2853,7 @@ import {
 
     const status = document.getElementById("mhPublishStatus");
     if (status) {
-      status.textContent = `Editezi: ${item.id} (Supabase).`;
+      status.textContent = `Editezi: ${item.id}`;
     }
 
     if (type === "exam") {
@@ -3118,7 +3105,7 @@ ${details}`);
       }
     } catch (error) {
       console.error(error);
-      alert("Delete failed: " + (error.message || error));
+      alert("Ștergerea a eșuat: " + (error.message || error));
     }
   }
 
@@ -3144,10 +3131,15 @@ ${details}`);
       title_en: document.getElementById("mh_title_en").value.trim(),
 
       learn_ro: document.getElementById("mh_learn_ro").value.trim(),
+      learn_en: document.getElementById("mh_learn_en").value.trim(),
       why_ro: document.getElementById("mh_why_ro").value.trim(),
+      why_en: document.getElementById("mh_why_en").value.trim(),
 
       body_ro: document.getElementById("mh_body_ro").value.trim(),
-      body_en: document.getElementById("mh_body_en").value.trim()
+      body_en: document.getElementById("mh_body_en").value.trim(),
+      examples_ro: document.getElementById("mh_examples_ro").value.trim(),
+      examples_en: document.getElementById("mh_examples_en").value.trim(),
+      sources: mhLinesFromInput(document.getElementById("mh_sources").value)
 
     };
   }
@@ -3168,7 +3160,9 @@ ${details}`);
       answer: document.getElementById("mh_answer").value.trim(),
 
       hint1_ro: document.getElementById("mh_hint1_ro").value.trim(),
+      hint1_en: document.getElementById("mh_hint1_en").value.trim(),
       hint2_ro: document.getElementById("mh_hint2_ro").value.trim(),
+      hint2_en: document.getElementById("mh_hint2_en").value.trim(),
       solution_ro: document.getElementById("mh_solution_ro").value.trim(),
       solution_en: document.getElementById("mh_solution_en").value.trim(),
       explanation_simple_ro: document.getElementById("mh_explanation_simple_ro").value.trim(),
@@ -3176,7 +3170,7 @@ ${details}`);
       explanation_boss_ro: document.getElementById("mh_explanation_boss_ro").value.trim(),
       explanation_boss_en: document.getElementById("mh_explanation_boss_en").value.trim(),
 
-      source: ""
+      source: document.getElementById("mh_source").value.trim()
     };
   }
 
@@ -3220,6 +3214,7 @@ ${details}`);
         payload = mhBuildLessonPayload(type);
 
         if (!payload.id) throw new Error("Lipsește ID-ul.");
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{1,199}$/.test(payload.id)) throw new Error("ID-ul trebuie să înceapă cu o literă sau cifră și să conțină doar litere, cifre, _ sau -.");
         if (!payload.title_ro && !payload.title_en) throw new Error("Lipsește titlul.");
 
         if (MH_ADMIN_STATE.mode === "edit") {
@@ -3233,8 +3228,9 @@ ${details}`);
         payload = mhBuildProblemPayload();
 
         if (!payload.id) throw new Error("Lipsește ID-ul.");
-        if (!payload.lesson_id) throw new Error("Lipsește lesson_id.");
-        if (!payload.answer) throw new Error("Lipsește answer.");
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{1,199}$/.test(payload.id)) throw new Error("ID-ul trebuie să înceapă cu o literă sau cifră și să conțină doar litere, cifre, _ sau -.");
+        if (!payload.lesson_id) throw new Error("Lipsește ID-ul lecției asociate.");
+        if (!payload.answer) throw new Error("Lipsește răspunsul canonic.");
 
         if (MH_ADMIN_STATE.mode === "edit") {
           query = supabase.from("mh_problems").upsert(payload, { onConflict: "id" });
@@ -3301,7 +3297,7 @@ ${details}`);
     } catch (err) {
       console.error(err);
       if (status) status.textContent = "Eroare: " + (err.message || err);
-      alert("Save failed: " + (err.message || err));
+      alert("Salvarea a eșuat: " + (err.message || err));
     }
   }
 
@@ -3540,16 +3536,31 @@ ${details}`);
   let adminVisibilityEpoch = 0;
   let adminExamRecoveryController = null;
 
+  function updateAdminConnectionLabel(label = "") {
+    const status = document.getElementById("adminStatus");
+    if (status && label) status.textContent = label;
+  }
+
+  function setAdminVerificationPending() {
+    if (!adminBtn) return;
+    adminBtn.dataset.accessState = "checking";
+    adminBtn.setAttribute("aria-busy", "true");
+    updateAdminConnectionLabel(LANG === "ro" ? "Se verifică" : "Checking");
+  }
+
   function setAdminButtonVisibility(isVisible, { closeSurfaces = true } = {}) {
     if (!adminBtn) return;
 
     const visible = Boolean(isVisible);
+    adminBtn.dataset.accessState = visible ? "granted" : "denied";
+    adminBtn.removeAttribute("aria-busy");
     adminBtn.hidden = !visible;
     adminBtn.setAttribute("aria-hidden", visible ? "false" : "true");
     adminBtn.style.display = visible ? "inline-flex" : "none";
     adminBtn.disabled = !visible;
+    if (visible) updateAdminConnectionLabel(LANG === "ro" ? "Pregătit" : "Ready");
 
-    // Fail closed: if access disappears, the admin drawer closes immediately.
+    // Access loss is definitive only after the session and role checks finish.
     if (!visible && closeSurfaces) {
       adminDrawer?.classList.remove("open");
       adminExamRecoveryController?.setAdmin(false);
@@ -3569,16 +3580,15 @@ ${details}`);
 
       if (error) {
         const isMissingSession = error.name === "AuthSessionMissingError";
-        if (!isMissingSession) {
-          console.warn("Could not verify active user:", error);
-        }
-        return null;
+        if (isMissingSession) return null;
+        console.warn("Could not verify active user:", error);
+        return undefined;
       }
 
       return data?.user || null;
     } catch (err) {
       console.warn("getVerifiedActiveUser crashed:", err);
-      return null;
+      return undefined;
     }
   }
 
@@ -3594,13 +3604,20 @@ ${details}`);
 
       if (error) {
         console.error("Could not read admin role:", error);
-        return false;
+        return undefined;
       }
 
       return data?.role === "admin";
     } catch (err) {
       console.error("isCurrentUserAdmin crashed:", err);
-      return false;
+      return undefined;
+    }
+  }
+
+  function restoreAdminAfterTemporaryCheckFailure(wasGranted) {
+    setAdminButtonVisibility(wasGranted, { closeSurfaces: false });
+    if (wasGranted) {
+      updateAdminConnectionLabel(LANG === "ro" ? "Conexiune instabilă" : "Connection issue");
     }
   }
 
@@ -3611,19 +3628,32 @@ ${details}`);
     // this result, preventing a slow stale admin check from re-showing the
     // button after logout.
     const requestEpoch = ++adminVisibilityEpoch;
+    const wasGranted = adminBtn.dataset.accessState === "granted"
+      || Boolean(adminDrawer?.classList.contains("open"));
 
-    // Hide the entry point while verifying, but do not destroy an open editor
-    // during harmless token refreshes / tab visibility changes.
-    setAdminButtonVisibility(false, { closeSurfaces: false });
+    // A visibility change or token refresh must not close an active Admin workspace.
+    // Keep the last verified state until the new check finishes.
+    setAdminVerificationPending();
 
     const activeUser = await getVerifiedActiveUser();
     if (requestEpoch !== adminVisibilityEpoch) return false;
-    if (!activeUser?.id) return false;
+    if (activeUser === undefined) {
+      restoreAdminAfterTemporaryCheckFailure(wasGranted);
+      return wasGranted;
+    }
+    if (!activeUser?.id) {
+      setAdminButtonVisibility(false, { closeSurfaces: true });
+      return false;
+    }
 
     const isAdmin = await isCurrentUserAdmin(activeUser);
     if (requestEpoch !== adminVisibilityEpoch) return false;
+    if (isAdmin === undefined) {
+      restoreAdminAfterTemporaryCheckFailure(wasGranted);
+      return wasGranted;
+    }
 
-    setAdminButtonVisibility(isAdmin);
+    setAdminButtonVisibility(isAdmin, { closeSurfaces: !isAdmin });
     adminExamRecoveryController?.setAdmin(isAdmin);
     roadmapAdminController?.setAdmin(isAdmin);
     gamificationAdminController?.setAdmin(isAdmin);
@@ -3639,12 +3669,19 @@ ${details}`);
     try {
       // Re-check auth and role on every click. Button visibility alone is never
       // treated as authorization.
-      setAdminButtonVisibility(false);
+      setAdminVerificationPending();
       const activeUser = await getVerifiedActiveUser();
 
       if (requestEpoch !== adminVisibilityEpoch) return;
 
+      if (activeUser === undefined) {
+        restoreAdminAfterTemporaryCheckFailure(adminBtn?.dataset.accessState === "granted");
+        alert(LANG === "ro" ? "Conexiunea nu a putut fi verificată. Încearcă din nou." : "The connection could not be verified. Try again.");
+        return;
+      }
+
       if (!activeUser) {
+        setAdminButtonVisibility(false, { closeSurfaces: true });
         alert(
           LANG === "ro"
             ? "Trebuie să fii autentificat pentru a accesa panoul admin. Intră mai întâi în pagina de profil."
@@ -3657,7 +3694,14 @@ ${details}`);
       const isAdmin = await isCurrentUserAdmin(activeUser);
       if (requestEpoch !== adminVisibilityEpoch) return;
 
+      if (isAdmin === undefined) {
+        restoreAdminAfterTemporaryCheckFailure(adminBtn?.dataset.accessState === "granted");
+        alert(LANG === "ro" ? "Rolul contului nu a putut fi verificat. Încearcă din nou." : "The account role could not be verified. Try again.");
+        return;
+      }
+
       if (!isAdmin) {
+        setAdminButtonVisibility(false, { closeSurfaces: true });
         alert(
           LANG === "ro"
             ? "Contul autentificat nu are rolul admin."
@@ -3708,7 +3752,7 @@ ${details}`);
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Logout error:", error);
-      alert("Logout failed: " + error.message);
+      alert("Delogarea a eșuat: " + error.message);
       // The session may still be valid when sign-out fails.
       refreshAdminButtonVisibility();
       return;
@@ -5662,10 +5706,10 @@ ${details}`);
             : (catalogEmpty ? "Catalog unavailable" : "No results")}</div>
           <div class="legend" style="margin-top:8px;">${LANG === "ro"
             ? (catalogEmpty
-              ? "Conținutul se încarcă exclusiv din Supabase. Reîncearcă după ce verifici conexiunea."
+              ? "Conținutul nu a putut fi încărcat. Verifică conexiunea și reîncearcă."
               : "Schimbă filtrele sau termenul de căutare.")
             : (catalogEmpty
-              ? "Content is loaded exclusively from Supabase. Retry after checking the connection."
+              ? "Content could not be loaded. Check your connection and retry."
               : "Change the filters or search term.")}</div>
         </div>`;
       document.getElementById("loadMore").style.visibility = "hidden";
@@ -6812,7 +6856,7 @@ function openExam(exam){
     });
 
     if (!items.length) {
-      list.innerHTML = `<div class="problem"><span class="bad">${LANG === "ro" ? "Snapshotul securizat nu conține itemi." : "The secure snapshot contains no items."}</span></div>`;
+      list.innerHTML = `<div class="problem"><span class="bad">${LANG === "ro" ? "Examenul nu conține itemi." : "The exam has no items."}</span></div>`;
     }
 
     MH_render(list);
@@ -6829,7 +6873,7 @@ function openExam(exam){
       const total = mhFormatExamScoreValue(runtimeExam.secure_result.total_points);
       document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • 🏁 ${score}/${total}`;
     } else {
-      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • ☁️ ${answered}/${totalItems}`;
+      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • ${answered}/${totalItems}`;
     }
   }
 
@@ -6889,7 +6933,7 @@ function openExam(exam){
     actionRunning = true;
     submitBtn.disabled = true;
     startBtn.disabled = true;
-    setStatus(LANG === "ro" ? "Se salvează ultimele răspunsuri și se corectează pe server…" : "Saving final answers and grading on the server…");
+    setStatus(LANG === "ro" ? "Se salvează ultimele răspunsuri și se calculează rezultatul…" : "Saving final answers and calculating the result…");
 
     try {
       // Always flush the latest local values, including automatic timeout.
@@ -7036,7 +7080,7 @@ function openExam(exam){
       const payload = await getActiveSecureExamAttempt(supabase, exam.id, LANG);
       if (payload?.attempt_id && payload?.status === "active") {
         applySecureAttempt(payload);
-        setStatus(LANG === "ro" ? "☁️ Tentativă securizată reluată din Supabase." : "☁️ Secure attempt resumed from Supabase.", "ok");
+        setStatus(LANG === "ro" ? "Tentativă reluată." : "Attempt resumed.", "ok");
         activateAttemptUi();
         return;
       }
@@ -7061,7 +7105,7 @@ function openExam(exam){
     actionRunning = true;
     startBtn.disabled = true;
     hoursSel.disabled = true;
-    setStatus(LANG === "ro" ? "Se creează snapshotul securizat…" : "Creating the secure snapshot…");
+    setStatus(LANG === "ro" ? "Se pregătește examenul…" : "Preparing the exam…");
 
     try {
       clearExamItemResults(exam.id);
@@ -7072,11 +7116,11 @@ function openExam(exam){
         LANG
       );
       if (!applySecureAttempt(payload)) throw new Error("Invalid secure exam payload.");
-      setStatus(LANG === "ro" ? "🔐 Examen pornit. Răspunsurile se salvează în Supabase." : "🔐 Exam started. Answers are saved in Supabase.", "ok");
+      setStatus(LANG === "ro" ? "Examen pornit. Răspunsurile se salvează automat." : "Exam started. Answers are saved automatically.", "ok");
       activateAttemptUi();
     } catch (error) {
       console.error("Secure exam start failed:", error);
-      setStatus(error?.message || (LANG === "ro" ? "Examenul nu a putut fi pornit." : "The exam could not be started."), "bad");
+      setStatus(LANG === "ro" ? "Examenul nu a putut fi pornit. Reîncearcă." : "The exam could not be started. Try again.", "bad");
       startBtn.disabled = false;
       hoursSel.disabled = false;
     } finally {
@@ -7600,8 +7644,8 @@ function openExam(exam){
       CONTENT_BOOT_ERROR = error;
       mhShowContentStatusBanner({
         message: LANG === "ro"
-          ? "Catalogul securizat nu a putut fi încărcat. Verifică sesiunea și conexiunea, apoi reîncearcă."
-          : "The secured catalog could not be loaded. Check your session and connection, then retry.",
+          ? "Conținutul nu a putut fi încărcat. Verifică autentificarea și conexiunea, apoi reîncearcă."
+          : "Content could not be loaded. Check your sign-in and connection, then retry.",
         isError: true,
         retry: true
       });
@@ -7612,7 +7656,7 @@ function openExam(exam){
     supabase,
     hideAdminButton: () => {
       ++adminVisibilityEpoch;
-      setAdminButtonVisibility(false, { closeSurfaces: false });
+      setAdminVerificationPending();
     },
     loadProgress: loadAppProgressFromDb,
     refreshAdminButton: refreshAdminButtonVisibility,
@@ -7651,8 +7695,8 @@ function openExam(exam){
   if (CONTENT_BOOT_ERROR) {
     mhShowContentStatusBanner({
       message: LANG === "ro"
-        ? "Catalogul Supabase nu a putut fi încărcat. Lecțiile, problemele și examenele sunt temporar indisponibile."
-        : "The Supabase catalog could not be loaded. Lessons, problems and exams are temporarily unavailable.",
+        ? "Conținutul nu a putut fi încărcat. Lecțiile, problemele și examenele sunt temporar indisponibile."
+        : "Content could not be loaded. Lessons, problems and exams are temporarily unavailable.",
       isError: true,
       retry: true
     });

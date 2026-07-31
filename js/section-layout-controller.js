@@ -25,7 +25,7 @@ const SECTION_CONFIG = Object.freeze([
   {
     key: "boss",
     id: "mhBoss",
-    titles: { ro: "Antrenament rapid", en: "Antrenament rapid" },
+    titles: { ro: "Antrenament rapid", en: "Quick practice" },
   },
   {
     key: "radar",
@@ -47,13 +47,13 @@ const TEXT = Object.freeze({
     open: "Deschide",
     close: "Închide",
     saved: "Aspectul paginii a fost salvat în cont.",
-    localOnly: "Aspectul este păstrat local; sincronizarea Supabase va fi reîncercată.",
+    localOnly: "Aspectul a fost păstrat pe acest dispozitiv.",
   },
   en: {
     open: "Open",
     close: "Close",
     saved: "Page layout saved to your account.",
-    localOnly: "Layout is stored locally; Supabase sync will be retried.",
+    localOnly: "Layout saved on this device.",
   },
 });
 

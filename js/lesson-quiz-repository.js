@@ -76,8 +76,8 @@ export async function adminSaveLessonQuiz(supabase, rawPayload) {
   if (confirmed.is_published !== payload.is_published) {
     const error = new Error(
       payload.is_published
-        ? "Publicarea verificării nu a fost confirmată de Supabase."
-        : "Retragerea verificării nu a fost confirmată de Supabase."
+        ? "Publicarea verificării nu a putut fi confirmată."
+        : "Retragerea verificării nu a putut fi confirmată."
     );
     error.code = "LESSON_QUIZ_PUBLICATION_MISMATCH";
     throw error;
