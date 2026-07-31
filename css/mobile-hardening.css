@@ -727,3 +727,100 @@ body {
     animation: none;
   }
 }
+
+/* Phase 3B.1 — Help/About modal switching and viewport containment. */
+body.mh-modal-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.modal {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding:
+    max(16px, var(--mh-safe-top))
+    max(16px, var(--mh-safe-right))
+    max(16px, var(--mh-safe-bottom))
+    max(16px, var(--mh-safe-left));
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.modal.open {
+  display: grid;
+  place-items: center;
+}
+
+.modal .box,
+.modal .about-box {
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: calc(100dvh - max(32px, var(--mh-safe-top) + var(--mh-safe-bottom)));
+  margin: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#aboutModal .about-box {
+  width: min(900px, 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#aboutModal .about-header,
+#aboutModal .about-footer {
+  flex: 0 0 auto;
+}
+
+#aboutModal .about-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+#aboutModal .about-story {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .modal {
+    padding:
+      max(10px, var(--mh-safe-top))
+      max(8px, var(--mh-safe-right))
+      max(8px, var(--mh-safe-bottom))
+      max(8px, var(--mh-safe-left));
+  }
+
+  .modal.open {
+    place-items: end center;
+  }
+
+  .modal .box,
+  .modal .about-box {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - max(18px, var(--mh-safe-top) + var(--mh-safe-bottom)));
+    border-radius: 18px 18px 10px 10px;
+  }
+
+  #aboutModal .about-box {
+    padding: 14px 12px max(14px, var(--mh-safe-bottom));
+  }
+
+  #aboutModal .about-body {
+    padding-right: 0;
+  }
+
+  #aboutModal .story-content {
+    gap: 12px;
+  }
+
+  #aboutModal .lesson-section {
+    padding: 14px;
+  }
+}

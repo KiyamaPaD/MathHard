@@ -7182,18 +7182,71 @@ function openExam(exam){
     }
   }
 
-  /* ===== Modal legendă ===== */
-  const modal=document.getElementById("modal");
-  document.getElementById("infoBtn").onclick = () => {
-    const ui = MAIN_UI_TEXT[LANG] || MAIN_UI_TEXT.ro;
+  /* ===== Help / About modal coordination ===== */
+  const modal = document.getElementById("modal");
+  const aboutModal = document.getElementById("aboutModal");
+  const utilityModals = [modal, aboutModal].filter(Boolean);
+  let utilityModalReturnFocus = null;
 
+  function syncUtilityModalState() {
+    const hasOpenModal = utilityModals.some((item) => item.classList.contains("open"));
+    document.body.classList.toggle("mh-modal-open", hasOpenModal);
+  }
+
+  function closeUtilityModal(target, { restoreFocus = true } = {}) {
+    if (!target) return;
+    target.classList.remove("open");
+    target.setAttribute("aria-hidden", "true");
+    syncUtilityModalState();
+
+    if (restoreFocus && !utilityModals.some((item) => item.classList.contains("open"))) {
+      const returnTarget = utilityModalReturnFocus;
+      utilityModalReturnFocus = null;
+      if (returnTarget instanceof HTMLElement && document.contains(returnTarget)) {
+        returnTarget.focus({ preventScroll: true });
+      }
+    }
+  }
+
+  function closeUtilityModals(except = null) {
+    utilityModals.forEach((item) => {
+      if (item !== except) closeUtilityModal(item, { restoreFocus: false });
+    });
+  }
+
+  function openUtilityModal(target, trigger = document.activeElement) {
+    if (!target) return;
+    closeUtilityModals(target);
+    utilityModalReturnFocus = trigger instanceof HTMLElement ? trigger : null;
+    target.classList.add("open");
+    target.setAttribute("aria-hidden", "false");
+    syncUtilityModalState();
+
+    const box = target.querySelector(".box");
+    if (box) box.scrollTop = 0;
+    requestAnimationFrame(() => {
+      const focusTarget = target.querySelector("[data-modal-close], button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])") || box;
+      focusTarget?.focus({ preventScroll: true });
+    });
+  }
+
+  document.getElementById("infoBtn").onclick = (event) => {
+    const ui = MAIN_UI_TEXT[LANG] || MAIN_UI_TEXT.ro;
     document.getElementById("modalTitle").textContent = ui.info_modal.title;
     document.getElementById("modalBody").innerHTML = ui.info_modal.body;
-    modal.classList.add("open");
+    openUtilityModal(modal, event.currentTarget);
   };
 
-  document.getElementById("closeModal").onclick=()=> modal.classList.remove("open");
-  modal.addEventListener("click",(e)=>{ if(e.target.id==="modal") modal.classList.remove("open"); });
+  document.getElementById("closeModal").onclick = () => closeUtilityModal(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeUtilityModal(modal);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const openModal = [...utilityModals].reverse().find((item) => item.classList.contains("open"));
+    if (openModal) closeUtilityModal(openModal);
+  });
 
   /* ===== Progress modals ===== */
   function progressModalList(items, emptyRo, emptyEn) {
@@ -7211,7 +7264,7 @@ function openExam(exam){
       });
     document.getElementById("modalTitle").textContent = LANG === "ro" ? "Probleme rezolvate" : "Solved problems";
     document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai rezolvat încă probleme.", "You have not solved any problems yet.");
-    modal.classList.add("open");
+    openUtilityModal(modal);
   };
 
   document.getElementById("openRead").onclick = () => {
@@ -7224,7 +7277,7 @@ function openExam(exam){
       });
     document.getElementById("modalTitle").textContent = LANG === "ro" ? "Lecții citite" : "Lessons read";
     document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai citit încă lecții.", "You have not read any lessons yet.");
-    modal.classList.add("open");
+    openUtilityModal(modal);
   };
 
   document.getElementById("openLearned").onclick = () => {
@@ -7236,7 +7289,7 @@ function openExam(exam){
       });
     document.getElementById("modalTitle").textContent = LANG === "ro" ? "Lecții învățate" : "Lessons learned";
     document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai încă lecții învățate.", "You have not learned any lessons yet.");
-    modal.classList.add("open");
+    openUtilityModal(modal);
   };
 
   document.getElementById("openPassed").onclick = () => {
@@ -7248,7 +7301,7 @@ function openExam(exam){
       });
     document.getElementById("modalTitle").textContent = LANG === "ro" ? "Examene promovate" : "Passed exams";
     document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai promovat încă examene.", "You have not passed any exams yet.");
-    modal.classList.add("open");
+    openUtilityModal(modal);
   };
 
   // ===== PARTICULE PE FUNDAL =====
@@ -7322,44 +7375,7 @@ function openExam(exam){
 
   document.addEventListener("DOMContentLoaded", initParticles);
 
-  /* ===== ABOUT ME  ===== */
-  (function(){
-  const aboutBtn   = document.getElementById("aboutBtn");
-  const aboutModal = document.getElementById("aboutModal");
-  const aboutClose = document.getElementById("aboutCloseBtn");
-
-  if (!aboutBtn || !aboutModal) return;
-
-  aboutBtn.addEventListener("click", () => {
-    aboutModal.classList.add("open");
-  });
-
-  if (aboutClose) {
-    aboutClose.addEventListener("click", () => {
-      aboutModal.classList.remove("open");
-    });
-  }
-
-  aboutModal.addEventListener("click", (e) => {
-    if (e.target === aboutModal) {
-      aboutModal.classList.remove("open");
-    }
-  });
-
-  const bullets = aboutModal.querySelectorAll(".story-bullet");
-  bullets.forEach(b => {
-    b.addEventListener("click", () => {
-      bullets.forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      const targetSel = b.getAttribute("data-target");
-      if (!targetSel) return;
-      const sec = aboutModal.querySelector(targetSel);
-      if (sec) {
-        sec.scrollIntoView({ behavior:"smooth", block:"start" });
-      }
-    });
-  });
-  })();
+    /* About modal behavior is initialized once during the main app boot. */
 
     /* ===== MH ROADMAP + BOSS + RADAR LOGIC + VAI DE CAPUL MEU ===== */
 
@@ -7714,13 +7730,12 @@ function openExam(exam){
 
     const modalBox = aboutModal.querySelector(".about-box") || aboutModal.querySelector(".box");
 
-    function openAbout(){
-      aboutModal.classList.add("open");
-    
+    function openAbout(event){
+      openUtilityModal(aboutModal, event?.currentTarget || aboutBtn);
       if (modalBox) modalBox.scrollTop = 0;
     }
     function closeAbout(){
-      aboutModal.classList.remove("open");
+      closeUtilityModal(aboutModal);
     }
 
     aboutBtn.addEventListener("click", openAbout);
