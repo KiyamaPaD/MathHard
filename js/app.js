@@ -96,6 +96,7 @@ import {
   let roadmapController = null;
   let roadmapAdminController = null;
   let conceptAdminController = null;
+  let contentQualityAdminController = null;
   let adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
@@ -123,7 +124,8 @@ import {
       import("./admin-history-controller.js"),
       import("./admin-history-repository.js"),
       import("./gamification-admin-controller.js"),
-      import("./concept-admin-controller.js")
+      import("./concept-admin-controller.js"),
+      import("./content-quality-admin-controller.js")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -132,7 +134,8 @@ import {
       adminHistoryModule,
       adminHistoryRepositoryModule,
       gamificationAdminModule,
-      conceptAdminModule
+      conceptAdminModule,
+      contentQualityAdminModule
     ]) => {
       adminRuntime = {
         ...lessonQuizModule,
@@ -142,7 +145,8 @@ import {
         ...adminHistoryModule,
         ...adminHistoryRepositoryModule,
         ...gamificationAdminModule,
-        ...conceptAdminModule
+        ...conceptAdminModule,
+        ...contentQualityAdminModule
       };
       return adminRuntime;
     }).catch((error) => {
@@ -3105,6 +3109,7 @@ ${details}`);
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
       adminHistoryController?.invalidate();
+      contentQualityAdminController?.invalidate();
       const status = document.getElementById("mhPublishStatus");
       if (status) status.textContent = `Șters: ${id}`;
       if (MH_ADMIN_STATE.editId === id) {
@@ -3280,6 +3285,7 @@ ${details}`);
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
       adminHistoryController?.invalidate();
+      contentQualityAdminController?.invalidate();
 
       if (conceptMappingError) {
         const warning = `Conținutul a fost salvat, dar maparea conceptelor a eșuat: ${conceptMappingError.message || conceptMappingError}`;
@@ -3373,6 +3379,14 @@ ${details}`);
         });
       }
 
+      if (!contentQualityAdminController) {
+        contentQualityAdminController = runtime.createContentQualityAdminController({
+          host: document.getElementById("mhContentQualityAdminStudio"),
+          supabase,
+          getLanguage: () => LANG
+        });
+      }
+
       if (!adminStudioController) {
         adminStudioController = runtime.createAdminStudioController({
           root: document.getElementById("mhAdminStudio"),
@@ -3393,6 +3407,7 @@ ${details}`);
           onPanelChange: (panelName) => {
             if (panelName === "gamification") void gamificationAdminController?.load();
             if (panelName === "concepts") void conceptAdminController?.load();
+            if (panelName === "quality") void contentQualityAdminController?.load();
             if (panelName === "history") void adminHistoryController?.load();
           },
           getUserId: () => MH_AUTH_USER?.id || ""
@@ -3452,7 +3467,8 @@ ${details}`);
         adminStudioController,
         adminDraftController,
         roadmapAdminController,
-        conceptAdminController
+        conceptAdminController,
+        contentQualityAdminController
       };
     })().catch((error) => {
       adminControllersPromise = null;
@@ -3517,6 +3533,7 @@ ${details}`);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
       conceptAdminController?.setAdmin(false);
+      contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
     }
   }
@@ -3588,6 +3605,7 @@ ${details}`);
     roadmapAdminController?.setAdmin(isAdmin);
     gamificationAdminController?.setAdmin(isAdmin);
     conceptAdminController?.setAdmin(isAdmin);
+    contentQualityAdminController?.setAdmin(isAdmin);
     adminHistoryController?.setAdmin(isAdmin);
     return isAdmin;
   }
@@ -3634,6 +3652,7 @@ ${details}`);
       roadmapAdminController?.setAdmin(true);
       gamificationAdminController?.setAdmin(true);
       conceptAdminController?.setAdmin(true);
+      contentQualityAdminController?.setAdmin(true);
       adminHistoryController?.setAdmin(true);
       adminDrawer?.classList.add("open");
       adminStudioController?.restoreState();
@@ -3658,6 +3677,7 @@ ${details}`);
     roadmapAdminController?.setAdmin(false);
     gamificationAdminController?.setAdmin(false);
     conceptAdminController?.setAdmin(false);
+    contentQualityAdminController?.setAdmin(false);
     invalidateContentCatalogCache();
     invalidateConceptCatalogCache();
     invalidateRoadmapCache();
@@ -7498,6 +7518,7 @@ function openExam(exam){
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
       conceptAdminController?.setAdmin(false);
+      contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
       if (adminDraftController) {
         mhClearAdminForm({

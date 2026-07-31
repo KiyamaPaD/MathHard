@@ -223,6 +223,19 @@ const {
   retentionConceptTitle
 } = await importBrowserModule("js/concept-retention-model.js");
 const {
+  contentQualityPayload,
+  filterQualityItems,
+  normalizeContentQualityDashboard,
+  qualityChecklist,
+  qualityIssueLabel,
+  qualityStatusLabel
+} = await importBrowserModule("js/content-quality-model.js");
+const {
+  loadContentQualityDashboard,
+  resetContentQualityReview,
+  saveContentQualityReview
+} = await importBrowserModule("js/content-quality-repository.js");
+const {
   achievementProgress,
   clampDailyGoal,
   levelRemaining,
@@ -1572,5 +1585,85 @@ try {
   if (previousWindow === undefined) delete globalThis.window;
   else globalThis.window = previousWindow;
 }
+
+
+
+const normalizedQuality = normalizeContentQualityDashboard({
+  summary: { total: 2, verified: 1, blocked: 1 },
+  items: [
+    {
+      content_type: "lesson",
+      content_id: "lesson-ready",
+      title_ro: "Lecție gata",
+      status: "verified",
+      bilingual_checked: true,
+      math_checked: true,
+      source_checked: true,
+      automated_checks: { title_ro: true, title_en: true, core_ro: true, core_en: true, source_present: true },
+      automated_ready: true,
+      eligible_for_publish: true,
+      completeness_score: 100
+    },
+    {
+      content_type: "problem",
+      content_id: "problem-blocked",
+      title_ro: "Problemă blocată",
+      status: "draft",
+      blocking_issues: ["missing_solution_en"],
+      automated_checks: { title_ro: true, title_en: true, core_ro: true, core_en: true, source_present: true, answer_present: true, solution_ro: true, solution_en: false },
+      completeness_score: 87.5
+    }
+  ]
+});
+assert.equal(normalizedQuality.summary.total, 2);
+assert.equal(normalizedQuality.items[0].eligible_for_publish, true);
+assert.equal(filterQualityItems(normalizedQuality.items, { status: "draft" }).length, 1);
+assert.equal(filterQualityItems(normalizedQuality.items, { query: "blocată" })[0].content_id, "problem-blocked");
+assert.equal(qualityChecklist(normalizedQuality.items[1], "ro").some((entry) => !entry.passed), true);
+assert.equal(qualityIssueLabel("missing_solution_en", "ro"), "Lipsește soluția în engleză.");
+assert.equal(qualityStatusLabel("in_review", "en"), "In review");
+assert.deepEqual(contentQualityPayload(normalizedQuality.items[1], {
+  status: "in_review",
+  bilingual_checked: true,
+  math_checked: false,
+  source_checked: true,
+  reviewer_notes: "Verifică demonstrația.",
+  source_urls: ["https://example.test/source", ""]
+}), {
+  status: "in_review",
+  bilingual_checked: true,
+  math_checked: false,
+  source_checked: true,
+  reviewer_notes: "Verifică demonstrația.",
+  source_urls: ["https://example.test/source"]
+});
+
+let qualityRpcCalls = [];
+const qualitySupabase = {
+  auth: { async getUser() { return { data: { user: { id: "quality-admin" } }, error: null }; } },
+  async rpc(name, payload) {
+    qualityRpcCalls.push([name, payload]);
+    if (name === "mh_admin_get_content_quality_dashboard") return { data: normalizedQuality, error: null };
+    if (name === "mh_admin_save_content_quality") return { data: { saved: true }, error: null };
+    if (name === "mh_admin_reset_content_quality") return { data: { reset: true }, error: null };
+    return { data: null, error: new Error(`Unexpected quality RPC: ${name}`) };
+  }
+};
+assert.equal((await loadContentQualityDashboard(qualitySupabase)).summary.total, 2);
+await saveContentQualityReview(qualitySupabase, {
+  contentType: "lesson",
+  contentId: "lesson-ready",
+  payload: { status: "verified" }
+});
+await resetContentQualityReview(qualitySupabase, {
+  contentType: "lesson",
+  contentId: "lesson-ready"
+});
+assert.deepEqual(qualityRpcCalls.map(([name]) => name), [
+  "mh_admin_get_content_quality_dashboard",
+  "mh_admin_save_content_quality",
+  "mh_admin_reset_content_quality"
+]);
+
 
 console.log("MathHard repository tests passed.");

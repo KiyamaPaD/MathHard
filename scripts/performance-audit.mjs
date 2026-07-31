@@ -96,7 +96,8 @@ for (const modulePath of [
   "./admin-draft-controller.js",
   "./admin-history-controller.js",
   "./gamification-admin-controller.js",
-  "./concept-admin-controller.js"
+  "./concept-admin-controller.js",
+  "./content-quality-admin-controller.js"
 ]) {
   if (!appSource.includes(`import(\"${modulePath}\")`)) {
     fail(`Admin module must be dynamically imported: ${modulePath}`);

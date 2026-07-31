@@ -517,7 +517,7 @@ export function createAdminStudioController({
       return state.panel;
     }
 
-    const allowedPanels = new Set(["dashboard", "content", "editor", "roadmaps", "gamification", "history"]);
+    const allowedPanels = new Set(["dashboard", "content", "editor", "roadmaps", "concepts", "quality", "gamification", "history"]);
     state.panel = allowedPanels.has(saved.panel) ? saved.panel : "dashboard";
     state.filters = {
       ...state.filters,
