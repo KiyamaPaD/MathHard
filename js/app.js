@@ -58,6 +58,9 @@ import {
   learnedSet,
   readSet,
   solvedSet,
+  attemptedProblemSet,
+  openedProblemSet,
+  progressTaxonomy,
   XP_DETAILS,
   XP_TOTAL
 } from "./app-progress.js";
@@ -304,94 +307,82 @@ import {
         admin_btn: "Admin",
         modal_close: "Închide",
         stats_titles: [
-          "Probleme rezolvate / Problems solved",
-          "Lecții învățate / Lessons learned",
-          "Examene promovate / Exams passed",
-          "XP total (doar probleme normale)"
+          "Probleme rezolvate",
+          "Lecții citite",
+          "Lecții învățate",
+          "Examene promovate",
+          "XP acumulat"
         ]
       },
 
       progress_cards: {
         solved_title: "✅ Probleme rezolvate",
-        solved_sub: "Apasă pentru listă",
-        learned_title: "📘 Lecții învățate",
-        learned_sub: "Apasă pentru listă",
+        solved_sub: "Deschide lista",
+        read_title: "📖 Lecții citite",
+        read_sub: "Deschide lista",
+        learned_title: "🎓 Lecții învățate",
+        learned_sub: "Deschide lista",
         passed_title: "🏆 Examene promovate",
-        passed_sub: "Apasă pentru listă"
+        passed_sub: "Deschide lista"
       },
 
       about: {
-        title: "👋 Despre MathHard & autor",
-        subtitle: `Platformă pentru lecții, probleme, examene și progres.`,
+        title: "Despre MathHard",
+        subtitle: "Lecții, probleme și trasee de studiu într-un singur loc.",
         pills: [
-          "📘 Lecții de la clasa a V-a până la facultate",
-          "🧩 Probleme cu verificare instant",
-          "⚡ XP — puncte de experiență, nu note",
-          "📑 EN / BAC / Admitere",
-          "🏅 Olimpiadă & 🔬 Cercetare"
+          "Lecții structurate",
+          "Probleme cu feedback",
+          "Examene și simulări",
+          "Progres detaliat",
+          "Planuri de pregătire"
         ],
         bullets: [
-          "Ce este MathHard?",
-          "Cum folosești site-ul",
-          "Ce înseamnă tab-urile de sus",
-          "Pentru cine e făcut",
-          "Cine a făcut MathHard?"
+          "Ce este",
+          "Cum îl folosești",
+          "Cum se măsoară progresul",
+          "Conținut",
+          "Proiect"
         ],
         sections: {
           what: {
-            title: "1. Ce este MathHard?",
+            title: "Ce este",
             body: `
-              <p>MathHard organizează matematica într-un traseu clar: <b>lecții</b>, <b>verificări</b>, <b>probleme</b> și <b>examene</b>.</p>
-              <p>Progresul, XP-ul și recomandările te ajută să vezi ce ai parcurs și ce merită exersat în continuare.</p>
+              <p>MathHard este o platformă de studiu pentru matematică. Conținutul este organizat pe lecții, probleme, examene și planuri de pregătire.</p>
             `
           },
           how: {
-            title: "2. Cum folosești site-ul",
+            title: "Cum îl folosești",
             body: `
               <ol>
-                <li>🔎 <b>Cauți</b> sus ce te interesează (clasă, „fracții”, „ecuații”…).</li>
-                <li>📘 Apeși pe o <b>lecție</b> din stânga.</li>
-                <li>📜 Citești lecția până la final.</li>
-                <li>⏳ După cel puțin <b>1 minut</b>, marchezi lectura ca finalizată.</li>
-                <li>🧪 Treci verificarea lecției pentru ca aceasta să fie marcată ca învățată.</li>
-                <li>🧩 Continui cu problemele asociate.</li>
+                <li>Alege o lecție sau un pas din planul tău.</li>
+                <li>Parcurge teoria și verificarea lecției.</li>
+                <li>Rezolvă problemele asociate.</li>
+                <li>Folosește Analytics pentru următorul obiectiv.</li>
               </ol>
-              <p>Sus, în header, vezi mereu câte <b>probleme</b>, <b>lecții</b> și <b>examene</b> ai făcut, plus <b>XP total</b>.</p>
             `
           },
           tabs: {
-            title: "3. Ce înseamnă tab-urile de sus?",
+            title: "Cum se măsoară progresul",
             body: `
               <ul>
-                <li>📘 <b>Lecții</b> — teoria, de la școală până la facultate și research.</li>
-                <li>🧩 <b>Probleme</b> — exerciții, antrenament, probleme de școală și olimpiadă.</li>
-                <li>⚡ <b>XP Total</b> — vezi experiența strânsă din probleme.</li>
-                <li>📑 <b>Examene</b> — seturi EN, BAC și admitere, puse ca mini-examene.</li>
-                <li>🔬 <b>CERCETARE</b> — idei mai avansate explicate simplu.</li>
-                <li>🕰 <b>Istoria</b> — povești despre oameni și idei faine din matematică.</li>
+                <li><b>Lecție citită</b> — ai parcurs teoria.</li>
+                <li><b>Lecție învățată</b> — ai trecut și verificarea.</li>
+                <li><b>Problemă deschisă</b> — ai văzut cerința.</li>
+                <li><b>Problemă încercată</b> — ai trimis un răspuns.</li>
+                <li><b>Problemă rezolvată</b> — ai răspuns corect.</li>
               </ul>
-
             `
           },
           who: {
-            title: "4. Pentru cine este MathHard?",
+            title: "Conținut",
             body: `
-              <ul>
-                <li>🎒 elevi de gimnaziu care vor explicații liniștite și clare;</li>
-                <li>🎓 liceeni care se pregătesc de <b>EN</b> sau <b>BAC</b>;</li>
-                <li>🏅 copii și adolescenți pasionați de <b>olimpiadă</b>;</li>
-                <li>🏛 studenți la început de drum care vor recapitulare;</li>
-                <li>👨‍🏫 profesori / părinți care caută explicații mai simple.</li>
-              </ul>
-
+              <p>Platforma este extinsă treptat pentru gimnaziu, liceu, examene, admitere, olimpiadă și matematică universitară.</p>
             `
           },
           me: {
-            title: "5. Cine a făcut MathHard?",
+            title: "Proiect",
             body: `
-              <p>Mă cheamă <b>Gabor Cristian-Daniel</b> și sunt licean la <b>Colegiul Tehnic INFOEL din Bistrița</b>.</p>
-              <p>Am construit MathHard pentru a organiza într-un singur loc lecții, probleme, pregătire pentru examene și idei matematice mai avansate.</p>
-              <p>Conținutul urmărește explicații clare, probleme atent alese și legături între concepte.</p>
+              <p>MathHard este un proiect educațional independent, construit pentru studiu clar, consecvent și măsurabil.</p>
             `
           }
         }
@@ -400,32 +391,19 @@ import {
       info_modal: {
         title: "Ajutor",
         body: `
-          <h4>Contoare</h4>
+          <h4>Lecții</h4>
+          <p>O lecție devine <b>Citită</b> după parcurgere și <b>Învățată</b> după verificare.</p>
+
+          <h4>Probleme</h4>
           <ul>
-            <li>✅ <b>Probleme rezolvate</b> — crește la primul răspuns corect.</li>
-            <li>📘 <b>Lecții învățate</b> — după citirea completă și promovarea verificării.</li>
-            <li>🏆 <b>Examene promovate</b> — scor ≥ ${PASS_THRESHOLD}p.</li>
-            <li>⚡ <b>XP total</b> — vine doar din <b>probleme normale</b>, nu din examene.</li>
+            <li><b>Nedeschisă</b> — nu ai intrat încă.</li>
+            <li><b>Deschisă</b> — ai văzut cerința.</li>
+            <li><b>Încercată</b> — ai trimis cel puțin un răspuns.</li>
+            <li><b>Rezolvată</b> — ai răspuns corect.</li>
           </ul>
 
           <h4>XP</h4>
-          <ul>
-            <li>pornești de la <b>10 XP</b> pe problemă;</li>
-            <li>fiecare răspuns greșit scade <b>1 XP</b>;</li>
-            <li>fiecare hint folosit scade <b>1 XP</b>;</li>
-            <li>XP-ul rămâne între <b>0 și 10</b>;</li>
-            <li>primești XP doar la <b>prima</b> rezolvare corectă.</li>
-          </ul>
-
-          <h4>Dificultăți (0–5)</h4>
-          <ul>
-            <li><b>0</b> — verificare teorie;</li>
-            <li><b>1</b> — ușor;</li>
-            <li><b>2</b> — intermediar;</li>
-            <li><b>3</b> — mediu;</li>
-            <li><b>4</b> — dificil;</li>
-            <li><b>5</b> — nivel olimpiadă.</li>
-          </ul>
+          <p>O problemă acordă până la <b>10 XP</b>. Răspunsurile greșite și hinturile reduc punctajul disponibil.</p>
         `
       }
     },
@@ -433,99 +411,87 @@ import {
     en: {
       header: {
         info_btn: "Help",
-        about_btn: "Despre",
+        about_btn: "About",
         profile_btn: "Profile",
         admin_btn: "Admin",
         modal_close: "Close",
         stats_titles: [
           "Problems solved",
+          "Lessons read",
           "Lessons learned",
           "Exams passed",
-          "Total XP (regular problems only)"
+          "XP earned"
         ]
       },
 
       progress_cards: {
         solved_title: "✅ Problems solved",
-        solved_sub: "Tap to view the list",
-        learned_title: "📘 Lessons learned",
-        learned_sub: "Tap to view the list",
+        solved_sub: "Open list",
+        read_title: "📖 Lessons read",
+        read_sub: "Open list",
+        learned_title: "🎓 Lessons learned",
+        learned_sub: "Open list",
         passed_title: "🏆 Exams passed",
-        passed_sub: "Tap to view the list"
+        passed_sub: "Open list"
       },
 
       about: {
-        title: "👋 About MathHard & the author",
-        subtitle: `A platform for lessons, problems, exams and progress.`,
+        title: "About MathHard",
+        subtitle: "Lessons, problems, and study paths in one place.",
         pills: [
-          "📘 Lessons from grade 5 to university",
-          "🧩 Problems with instant checking",
-          "⚡ XP — experience points, not grades",
-          "📑 EN / BAC / Admissions",
-          "🏅 Olympiad & 🔬 Research"
+          "Structured lessons",
+          "Problems with feedback",
+          "Exams and simulations",
+          "Detailed progress",
+          "Study plans"
         ],
         bullets: [
-          "What is MathHard?",
-          "How to use the site",
-          "What the top tabs mean",
-          "Who it is for",
-          "Who built MathHard?"
+          "What it is",
+          "How to use it",
+          "Progress",
+          "Content",
+          "Project"
         ],
         sections: {
           what: {
-            title: "1. What is MathHard?",
+            title: "What it is",
             body: `
-              <p>MathHard organizes mathematics into a clear path: <b>lessons</b>, <b>checks</b>, <b>problems</b>, and <b>exams</b>.</p>
-              <p>Progress, XP, and recommendations show what you completed and what to practice next.</p>
+              <p>MathHard is a mathematics study platform organized around lessons, problems, exams, and preparation plans.</p>
             `
           },
           how: {
-            title: "2. How to use the site",
+            title: "How to use it",
             body: `
               <ol>
-                <li>🔎 <b>Search</b> at the top for what you need.</li>
-                <li>📘 Open a <b>lesson</b> from the left side.</li>
-                <li>📜 Read the lesson to the end.</li>
-                <li>⏳ After at least <b>1 minute</b>, mark the reading as complete.</li>
-                <li>🧪 Pass the lesson check so the lesson is marked as learned.</li>
-                <li>🧩 Continue with the related problems.</li>
+                <li>Choose a lesson or a step from your plan.</li>
+                <li>Complete the theory and lesson check.</li>
+                <li>Solve the related problems.</li>
+                <li>Use Analytics to choose the next objective.</li>
               </ol>
-              <p>At the top, you always see how many <b>problems</b>, <b>lessons</b>, <b>exams</b>, and how much <b>XP</b> you have.</p>
             `
           },
           tabs: {
-            title: "3. What do the top tabs mean?",
+            title: "Progress",
             body: `
               <ul>
-                <li>📘 <b>Lessons</b> — theory from school to university and research.</li>
-                <li>🧩 <b>Problems</b> — exercises, training, school and olympiad problems.</li>
-                <li>⚡ <b>Total XP</b> — your total experience from problems.</li>
-                <li>📑 <b>Exams</b> — EN, BAC, and admission sets shown as mini-exams.</li>
-                <li>🔬 <b>RESEARCH</b> — more advanced ideas explained simply.</li>
-                <li>🕰 <b>History</b> — stories about people and ideas in mathematics.</li>
+                <li><b>Lesson read</b> — you completed the theory.</li>
+                <li><b>Lesson learned</b> — you also passed the check.</li>
+                <li><b>Problem opened</b> — you viewed the prompt.</li>
+                <li><b>Problem attempted</b> — you submitted an answer.</li>
+                <li><b>Problem solved</b> — you answered correctly.</li>
               </ul>
-
             `
           },
           who: {
-            title: "4. Who is MathHard for?",
+            title: "Content",
             body: `
-              <ul>
-                <li>🎒 middle school students who want calm and clear explanations;</li>
-                <li>🎓 high school students preparing for <b>EN</b> or <b>BAC</b>;</li>
-                <li>🏅 students passionate about <b>olympiads</b>;</li>
-                <li>🏛 beginners at university who want review material;</li>
-                <li>👨‍🏫 teachers / parents looking for simpler explanations.</li>
-              </ul>
-
+              <p>The platform is gradually expanded for middle school, high school, exams, admissions, olympiads, and university mathematics.</p>
             `
           },
           me: {
-            title: "5. Who built MathHard?",
+            title: "Project",
             body: `
-              <p>My name is <b>Gabor Cristian-Daniel</b> and I am a high school student at <b>Colegiul Tehnic INFOEL in Bistrița</b>.</p>
-              <p>I built MathHard to organize lessons, problems, exam preparation, and more advanced mathematical ideas in one place.</p>
-              <p>The content focuses on clear explanations, carefully selected problems, and connections between concepts.</p>
+              <p>MathHard is an independent educational project built for clear, consistent, and measurable study.</p>
             `
           }
         }
@@ -534,37 +500,23 @@ import {
       info_modal: {
         title: "Help",
         body: `
-          <h4>Counters</h4>
+          <h4>Lessons</h4>
+          <p>A lesson becomes <b>Read</b> after completion and <b>Learned</b> after passing its check.</p>
+
+          <h4>Problems</h4>
           <ul>
-            <li>✅ <b>Problems solved</b> — increases at the first correct answer.</li>
-            <li>📘 <b>Lessons learned</b> — after completing the reading and passing the lesson check.</li>
-            <li>🏆 <b>Exams passed</b> — score ≥ ${PASS_THRESHOLD}p.</li>
-            <li>⚡ <b>Total XP</b> — comes only from <b>regular problems</b>, not exams.</li>
+            <li><b>Not opened</b> — you have not viewed it yet.</li>
+            <li><b>Opened</b> — you viewed the prompt.</li>
+            <li><b>Attempted</b> — you submitted at least one answer.</li>
+            <li><b>Solved</b> — you answered correctly.</li>
           </ul>
 
           <h4>XP</h4>
-          <ul>
-            <li>you start from <b>10 XP</b> per problem;</li>
-            <li>each wrong answer removes <b>1 XP</b>;</li>
-            <li>each hint removes <b>1 XP</b>;</li>
-            <li>XP stays between <b>0 and 10</b>;</li>
-            <li>you earn XP only on the <b>first</b> correct solve.</li>
-          </ul>
-
-          <h4>Difficulties (0–5)</h4>
-          <ul>
-            <li><b>0</b> — theory check;</li>
-            <li><b>1</b> — easy;</li>
-            <li><b>2</b> — intermediate;</li>
-            <li><b>3</b> — medium;</li>
-            <li><b>4</b> — hard;</li>
-            <li><b>5</b> — olympiad level.</li>
-          </ul>
+          <p>A problem awards up to <b>10 XP</b>. Wrong answers and hints reduce the available score.</p>
         `
       }
     }
   };
-
 
 
   function applyMainStaticTexts(){
@@ -591,10 +543,13 @@ import {
     if (topCounters[1]) topCounters[1].title = ui.header.stats_titles[1];
     if (topCounters[2]) topCounters[2].title = ui.header.stats_titles[2];
     if (topCounters[3]) topCounters[3].title = ui.header.stats_titles[3];
+    if (topCounters[4]) topCounters[4].title = ui.header.stats_titles[4];
 
     // ===== progress cards =====
     const solvedTitle = document.querySelector("#openSolved .title");
     const solvedSub = document.querySelector("#openSolved .legend");
+    const readTitle = document.querySelector("#openRead .title");
+    const readSub = document.querySelector("#openRead .legend");
     const learnedTitle = document.querySelector("#openLearned .title");
     const learnedSub = document.querySelector("#openLearned .legend");
     const passedTitle = document.querySelector("#openPassed .title");
@@ -602,6 +557,8 @@ import {
 
     if (solvedTitle) solvedTitle.textContent = ui.progress_cards.solved_title;
     if (solvedSub) solvedSub.textContent = ui.progress_cards.solved_sub;
+    if (readTitle) readTitle.textContent = ui.progress_cards.read_title;
+    if (readSub) readSub.textContent = ui.progress_cards.read_sub;
     if (learnedTitle) learnedTitle.textContent = ui.progress_cards.learned_title;
     if (learnedSub) learnedSub.textContent = ui.progress_cards.learned_sub;
     if (passedTitle) passedTitle.textContent = ui.progress_cards.passed_title;
@@ -1515,12 +1472,17 @@ import {
     const learnedToday = Number(dayState.learnedToday || 0);
     const solvedToday = Number(dayState.solvedToday || 0);
 
+    const regularProblemTotal = DATA.problems.filter((problem) => !isExamProblem(problem)).length;
+    const attemptedCount = attemptedProblemSet.size;
+    const openedCount = openedProblemSet.size;
+    const unopenedCount = Math.max(0, regularProblemTotal - solvedSet.size - attemptedCount - openedCount);
+
     if (LANG === "ro"){
-      lessonsSpan.textContent  = `📘 ${learnedToday} lecții azi`;
-      problemsSpan.textContent = `🧩 ${solvedToday} probleme azi`;
+      lessonsSpan.textContent  = `📖 ${readSet.size} citite · 🎓 ${learnedSet.size} învățate`;
+      problemsSpan.textContent = `✅ ${solvedSet.size} rezolvate · ✍ ${attemptedCount} încercate · 👁 ${openedCount} deschise · ○ ${unopenedCount} nedeschise`;
     } else {
-      lessonsSpan.textContent  = `📘 ${learnedToday} lessons today`;
-      problemsSpan.textContent = `🧩 ${solvedToday} problems today`;
+      lessonsSpan.textContent  = `📖 ${readSet.size} read · 🎓 ${learnedSet.size} learned`;
+      problemsSpan.textContent = `✅ ${solvedSet.size} solved · ✍ ${attemptedCount} attempted · 👁 ${openedCount} opened · ○ ${unopenedCount} not opened`;
     }
 
     const stepsDone = Math.min(1, learnedToday) + Math.min(5, solvedToday);
@@ -1627,26 +1589,29 @@ import {
       header_btn_profile: "Profil",
       header_btn_admin: "Admin",
 
-      header_counter_solved_title: "Probleme rezolvate / Problems solved",
-      header_counter_learned_title: "Lecții învățate / Lessons learned",
+      header_counter_solved_title: "Probleme rezolvate",
+      header_counter_read_title: "Lecții citite",
+      header_counter_learned_title: "Lecții învățate",
       header_counter_exams_title: "Examene promovate / Exams passed",
-      header_counter_xp_title: "XP total (doar probleme normale)",
+      header_counter_xp_title: "XP acumulat din probleme",
 
-      tip_text: "💡 Pentru a bifa o lecție: derulează până jos <b>și</b> așteaptă să se termine timerul de 1 minut.",
+      tip_text: "Pentru statusul Citită, parcurge lecția până la final și așteaptă un minut.",
 
       progress_card_solved_title: "✅ Probleme rezolvate",
-      progress_card_solved_sub: "Apasă pentru listă",
-      progress_card_learned_title: "📘 Lecții învățate",
-      progress_card_learned_sub: "Apasă pentru listă",
+      progress_card_solved_sub: "Vezi lista",
+      progress_card_read_title: "📖 Lecții citite",
+      progress_card_read_sub: "Vezi lista",
+      progress_card_learned_title: "🎓 Lecții învățate",
+      progress_card_learned_sub: "Vezi lista",
       progress_card_passed_title: "🏆 Examene promovate",
-      progress_card_passed_sub: "Apasă pentru listă",
+      progress_card_passed_sub: "Vezi lista",
     },
 
     en: {
       header_logo_slogan: "Learn. Practice. Succeed.",
       header_search_placeholder: "Search…",
       header_btn_info: "Help",
-      header_btn_about: "Despre",
+      header_btn_about: "About",
       header_btn_focus_off: "🎯 Focus",
       header_btn_focus_on: "🎯 Focus ON",
       header_btn_theme_dark: "🌙 Dark",
@@ -1655,18 +1620,21 @@ import {
       header_btn_admin: "Admin",
 
       header_counter_solved_title: "Problems solved",
+      header_counter_read_title: "Lessons read",
       header_counter_learned_title: "Lessons learned",
       header_counter_exams_title: "Exams passed",
-      header_counter_xp_title: "Total XP (regular problems only)",
+      header_counter_xp_title: "XP earned from problems",
 
-      tip_text: "💡 To mark a lesson as learned: scroll to the bottom <b>and</b> wait for the 1-minute timer.",
+      tip_text: "To earn Read status, finish the lesson and spend at least one minute on it.",
 
       progress_card_solved_title: "✅ Problems solved",
-      progress_card_solved_sub: "Tap to open list",
-      progress_card_learned_title: "📘 Lessons learned",
-      progress_card_learned_sub: "Tap to open list",
+      progress_card_solved_sub: "View list",
+      progress_card_read_title: "📖 Lessons read",
+      progress_card_read_sub: "View list",
+      progress_card_learned_title: "🎓 Lessons learned",
+      progress_card_learned_sub: "View list",
       progress_card_passed_title: "🏆 Exams passed",
-      progress_card_passed_sub: "Tap to open list",
+      progress_card_passed_sub: "View list",
     }
   };
 
@@ -4394,6 +4362,8 @@ ${details}`);
 
   function updateCounters(){
       document.getElementById("solvedCount").textContent = solvedSet.size;
+      const readCounter = document.getElementById("readCount");
+      if (readCounter) readCounter.textContent = readSet.size;
       document.getElementById("learnedCount").textContent = learnedSet.size;
       document.getElementById("examsCount").textContent = examsPassedSet.size;
       updateHubNumbers();
@@ -4445,6 +4415,8 @@ ${details}`);
     getXPRecord,
     loadAppProgressFromDb,
     markLessonReadSafe,
+    markProblemAttempted,
+    markProblemOpened,
     recomputeXPTotal,
     recordExamAttemptStart,
     startLessonReadingSafe,
@@ -4714,7 +4686,7 @@ ${details}`);
     const tabMap = {
       lessons: LANG === "ro" ? "📘 Lecții" : "📘 Lessons",
       problems: LANG === "ro" ? "🧩 Probleme" : "🧩 Problems",
-      xp: LANG === "ro" ? "⚡ XP Total" : "⚡ Total XP",
+      xp: LANG === "ro" ? "📊 Progres probleme" : "📊 Problem progress",
       exams: LANG === "ro" ? "📑 Examene" : "📑 Exams",
       research: LANG === "ro" ? "🔬 CERCETARE" : "🔬 RESEARCH",
       history: LANG === "ro" ? "🕰 Istoria" : "🕰 History"
@@ -4843,6 +4815,11 @@ ${details}`);
       solvedCounter.title = ui.header_counter_solved_title;
     }
 
+    const readCounter = document.getElementById("readCount")?.closest(".counter");
+    if (readCounter) {
+      readCounter.title = ui.header_counter_read_title;
+    }
+
     const learnedCounter = document.getElementById("learnedCount")?.closest(".counter");
     if (learnedCounter) {
       learnedCounter.title = ui.header_counter_learned_title;
@@ -4864,6 +4841,14 @@ ${details}`);
       const sub = openSolved.querySelector(".legend");
       if (title) title.textContent = ui.progress_card_solved_title;
       if (sub) sub.textContent = ui.progress_card_solved_sub;
+    }
+
+    const openRead = document.getElementById("openRead");
+    if (openRead) {
+      const title = openRead.querySelector(".title");
+      const sub = openRead.querySelector(".legend");
+      if (title) title.textContent = ui.progress_card_read_title;
+      if (sub) sub.textContent = ui.progress_card_read_sub;
     }
 
     const openLearned = document.getElementById("openLearned");
@@ -5403,6 +5388,32 @@ ${details}`);
 
     return `<div class="meta">${chips}</div>`;
   }
+  function problemLifecycleStatus(problemId){
+    if (solvedSet.has(problemId)) return "solved";
+    if (attemptedProblemSet.has(problemId)) return "attempted";
+    if (openedProblemSet.has(problemId)) return "opened";
+    return "unopened";
+  }
+
+  function problemStatusChip(problemId){
+    const status = problemLifecycleStatus(problemId);
+    const labels = LANG === "ro"
+      ? {
+          solved: ["✅", "Rezolvată"],
+          attempted: ["✍", "Încercată"],
+          opened: ["👁", "Deschisă"],
+          unopened: ["○", "Nedeschisă"]
+        }
+      : {
+          solved: ["✅", "Solved"],
+          attempted: ["✍", "Attempted"],
+          opened: ["👁", "Opened"],
+          unopened: ["○", "Not opened"]
+        };
+    const [icon, label] = labels[status];
+    return `<span class="tag mh-problem-status-chip is-${status}">${icon} ${label}</span>`;
+  }
+
   function problemMeta(P){
     const L=DATA.lessons.find(x=>x.id===P.lessonId);
     const warn=(P.difficulty===5 && !isOlympiadSource(P.source||""))?`<span class="tag warn">⚠️ 5★ fără sursă</span>`:"";
@@ -5456,148 +5467,139 @@ ${details}`);
     if (progressRow) progressRow.style.display = "none";
     if (pagWrap) pagWrap.style.display = "none";
 
-    const solvedCount = solvedSet.size;
-    const entries = Object.entries(XP_DETAILS || {});
-    const problemById = new Map(DATA.problems.map(p => [p.id, p]));
+    const problemById = new Map(DATA.problems.map((problem) => [problem.id, problem]));
+    const regularProblems = DATA.problems.filter((problem) => !isExamProblem(problem));
+    const groups = {
+      solved: [],
+      attempted: [],
+      opened: [],
+      unopened: []
+    };
 
-    // === ÎMPĂRȚIRE PE CATEGORII ===
-    const solved = [];
-    const inProgress = [];  
-    const triedWrong = [];  
-
-    entries.forEach(([pid, rec]) => {
-      const P = problemById.get(pid);
-      if (!P) return;
-
-      if (rec.solved) {
-        solved.push([pid, rec]);
-      } else if ((rec.wrong || 0) > 0) {
-        triedWrong.push([pid, rec]);
-      } else {
-        inProgress.push([pid, rec]);
-      }
+    regularProblems.forEach((problem) => {
+      const status = problemLifecycleStatus(problem.id);
+      const record = XP_DETAILS[problem.id] || {
+        xp: 0,
+        wrong: 0,
+        hints: 0,
+        solved: status === "solved"
+      };
+      groups[status].push([problem.id, record]);
     });
 
+    groups.solved.sort(([, left], [, right]) => Number(right.xp || 0) - Number(left.xp || 0));
+    for (const status of ["attempted", "opened", "unopened"]) {
+      groups[status].sort(([leftId], [rightId]) => {
+        const left = problemById.get(leftId);
+        const right = problemById.get(rightId);
+        return String((left && (left.title_ro || left.title_en)) || leftId)
+          .localeCompare(String((right && (right.title_ro || right.title_en)) || rightId), LANG === "ro" ? "ro" : "en");
+      });
+    }
 
-    const byXPDesc = ([,a],[,b]) => (b.xp || 0) - (a.xp || 0);
-    solved.sort(byXPDesc);
-    inProgress.sort(byXPDesc);
-    triedWrong.sort(byXPDesc);
-
-    // === CARD DE REZUMAT SUS ===
     const summary = document.createElement("div");
-    summary.className = "xp-summary-card";
+    summary.className = "xp-summary-card mh-problem-progress-summary";
     summary.innerHTML = `
       <div class="xp-summary-top">
         <div>
-          <div class="legend">${LANG==="ro"
-            ? "XP total (doar probleme normale)"
-            : "Total XP (regular problems only)"}</div>
+          <div class="legend">${LANG === "ro" ? "XP acumulat" : "XP earned"}</div>
           <div class="xp-total-number">${XP_TOTAL}</div>
         </div>
-        <div class="xp-summary-meta">
-          <span>✅ ${LANG==="ro" ? "Probleme rezolvate" : "Problems solved"}: <b>${solvedCount}</b></span>
-          <span>⚡ ${LANG==="ro" ? "Probleme cu XP înregistrat" : "Problems with XP record"}: <b>${entries.length}</b></span>
+        <div class="mh-problem-lifecycle-summary" aria-label="${LANG === "ro" ? "Statusuri probleme" : "Problem statuses"}">
+          <span class="is-solved">✅ ${LANG === "ro" ? "Rezolvate" : "Solved"}: <b>${groups.solved.length}</b></span>
+          <span class="is-attempted">✍ ${LANG === "ro" ? "Încercate" : "Attempted"}: <b>${groups.attempted.length}</b></span>
+          <span class="is-opened">👁 ${LANG === "ro" ? "Deschise" : "Opened"}: <b>${groups.opened.length}</b></span>
+          <span class="is-unopened">○ ${LANG === "ro" ? "Nedeschise" : "Not opened"}: <b>${groups.unopened.length}</b></span>
         </div>
       </div>
     `;
     box.appendChild(summary);
 
-    if (!entries.length){
-      const p = document.createElement("p");
-      p.className = "legend";
-      p.style.marginTop = "12px";
-      p.innerHTML = LANG === "ro"
-        ? "Încă nu ai XP. Rezolvă câteva probleme (din tab-ul „Probleme”, nu examene) și vei vedea aici detalii pe fiecare problemă."
-        : "You don’t have XP yet. Solve some regular problems (not exam problems) and you’ll see per-problem details here.";
-      box.appendChild(p);
+    if (!regularProblems.length) {
+      const empty = document.createElement("p");
+      empty.className = "legend";
+      empty.textContent = LANG === "ro"
+        ? "Nu există încă probleme publicate."
+        : "There are no published problems yet.";
+      box.appendChild(empty);
       return;
     }
 
     const list = document.createElement("div");
     list.className = "xp-list";
 
-    function renderXPSection(titleRo, titleEn, emoji, arr, defaultOpen){
-      if (!arr.length) return;
+    const statusCopy = LANG === "ro"
+      ? {
+          solved: { title: "Rezolvate", icon: "✅", label: "Rezolvată" },
+          attempted: { title: "Încercate", icon: "✍", label: "Încercată" },
+          opened: { title: "Deschise", icon: "👁", label: "Deschisă" },
+          unopened: { title: "Nedeschise", icon: "○", label: "Nedeschisă" }
+        }
+      : {
+          solved: { title: "Solved", icon: "✅", label: "Solved" },
+          attempted: { title: "Attempted", icon: "✍", label: "Attempted" },
+          opened: { title: "Opened", icon: "👁", label: "Opened" },
+          unopened: { title: "Not opened", icon: "○", label: "Not opened" }
+        };
 
+    function renderSection(status, defaultOpen = false) {
+      const rows = groups[status];
+      if (!rows.length) return;
+      const copy = statusCopy[status];
       const section = document.createElement("details");
-      section.className = "xp-section";
-      section.open = !!defaultOpen;
+      section.className = `xp-section mh-problem-lifecycle-section is-${status}`;
+      section.open = defaultOpen;
 
       const summaryEl = document.createElement("summary");
       summaryEl.className = "xp-section-summary";
-      summaryEl.innerHTML = `
-        <span>${emoji} ${LANG==="ro" ? titleRo : titleEn}</span>
-        <span class="legend">${arr.length}</span>
-      `;
+      summaryEl.innerHTML = `<span>${copy.icon} ${copy.title}</span><span class="legend">${rows.length}</span>`;
       section.appendChild(summaryEl);
 
       const body = document.createElement("div");
       body.className = "xp-section-body";
 
-      arr.forEach(([pid, rec]) => {
-        const P = problemById.get(pid);
-        if (!P) return;
-        const L = DATA.lessons.find(x => x.id === P.lessonId) || {};
+      rows.forEach(([problemId, record]) => {
+        const problem = problemById.get(problemId);
+        if (!problem) return;
+        const lesson = DATA.lessons.find((item) => item.id === problem.lessonId) || {};
+        const title = LANG === "ro"
+          ? (problem.title_ro || problem.title_en || problemId)
+          : (problem.title_en || problem.title_ro || problemId);
+        const lessonTitle = LANG === "ro"
+          ? (lesson.title_ro || lesson.title_en || lesson.chapter || "")
+          : (lesson.title_en || lesson.title_ro || lesson.chapter || "");
 
-        const title = LANG==="ro"
-          ? (P.title_ro || P.title_en || pid)
-          : (P.title_en || P.title_ro || pid);
-
-        const lessonTitle = LANG==="ro"
-          ? (L.title_ro || L.title_en || L.chapter || "")
-          : (L.title_en || L.title_ro || L.chapter || "");
-
-        let statusLabel, statusEmoji;
-        if (rec.solved) {
-          statusEmoji = "✅";
-          statusLabel = LANG==="ro" ? "Rezolvată" : "Solved";
-        } else if ((rec.wrong || 0) > 0) {
-          statusEmoji = "❌";
-          statusLabel = LANG==="ro"
-            ? "Probleme nerezolvate (greșite)"
-            : "Unsolved (still wrong)";
-        } else {
-          statusEmoji = "⏳";
-          statusLabel = LANG==="ro"
-            ? "Probleme în curs"
-            : "In progress";
-        }
-
-        const card = document.createElement("div");
-        card.className = "xp-item";
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "xp-item mh-problem-lifecycle-item";
         card.innerHTML = `
           <div class="xp-item-head">
             <div>
-              <div class="xp-item-title">🧩 ${esc(title)}</div>
-              <div class="legend">
-                📘 ${esc(lessonTitle)}${L.grade ? " • 🎓 " + esc(L.grade) : ""}
-              </div>
+              <div class="xp-item-title">${esc(title)}</div>
+              <div class="legend">${esc(lessonTitle)}${lesson.grade ? ` • ${LANG === "ro" ? "Clasa" : "Grade"} ${esc(lesson.grade)}` : ""}</div>
             </div>
             <div class="xp-item-score">
-              <span class="xp-badge">${rec.xp || 0} / 10 XP</span>
-              <span class="xp-status">${statusEmoji} ${statusLabel}</span>
+              ${status === "solved" ? `<span class="xp-badge">${Number(record.xp || 0)} / 10 XP</span>` : ""}
+              <span class="xp-status mh-problem-status-chip is-${status}">${copy.icon} ${copy.label}</span>
             </div>
           </div>
-          <div class="xp-item-meta">
-            <span>❌ ${LANG==="ro" ? "Greșeli" : "Mistakes"}: <b>${rec.wrong || 0}</b></span>
-            <span>💡 ${LANG==="ro" ? "Hinturi" : "Hints"}: <b>${rec.hints || 0}</b></span>
-            <span>⚡ ${LANG==="ro" ? "XP problemă" : "Problem XP"}: <b>${rec.xp || 0}</b></span>
-          </div>
+          ${status === "solved" || status === "attempted" ? `
+            <div class="xp-item-meta">
+              <span>${LANG === "ro" ? "Răspunsuri greșite" : "Wrong answers"}: <b>${Number(record.wrong || 0)}</b></span>
+              <span>${LANG === "ro" ? "Hinturi" : "Hints"}: <b>${Number(record.hints || 0)}</b></span>
+            </div>
+          ` : ""}
         `;
-
-        // click pe problemă în XP 
-        card.onclick = () => {
+        card.addEventListener("click", () => {
           TAB = "problems";
-          filter.byLessonId = P.lessonId;
+          filter.byLessonId = problem.lessonId;
           filter.chip = null;
           filter.q = "";
           page = 1;
           renderCards();
           drawFilterBar();
-          openViewer(P);
-        };
-
+          openViewer(problem);
+        });
         body.appendChild(card);
       });
 
@@ -5605,31 +5607,10 @@ ${details}`);
       list.appendChild(section);
     }
 
-  
-    renderXPSection(
-      "Probleme rezolvate",
-      "Solved problems",
-      "✅",
-      solved,
-      true       
-    );
-
-    renderXPSection(
-      "Probleme în curs",
-      "Problems in progress",
-      "⏳",
-      inProgress,
-      false
-    );
-
-    renderXPSection(
-      "Probleme nerezolvate",
-      "Unsolved (still wrong)",
-      "❌",
-      triedWrong,
-      false
-    );
-
+    renderSection("solved", true);
+    renderSection("attempted", groups.solved.length === 0);
+    renderSection("opened");
+    renderSection("unopened");
     box.appendChild(list);
   }
 
@@ -5749,15 +5730,7 @@ ${details}`);
         ? (item.title_ro || item.title_en || "Problemă")
         : (item.title_en || item.title_ro || "Problem");
 
-      const solved = solvedSet.has(item.id);
-      const rec = getXPRecord(item.id); 
-      const hasWrong = (rec.wrong || 0) > 0 && !rec.solved;
-
-      const statusChip = solved
-        ? `<span class="tag">✅ ${LANG==="ro" ? "Rezolvată" : "Solved"}</span>`
-        : hasWrong
-          ? `<span class="tag">❌ ${LANG==="ro" ? "Încercată, dar greșită" : "Tried, still wrong"}</span>`
-          : `<span class="tag">⏳ ${LANG==="ro" ? "În curs" : "In progress"}</span>`;
+      const statusChip = problemStatusChip(item.id);
 
       div.innerHTML = `
         <div class="title">🧩 ${esc(title)}</div>
@@ -6498,6 +6471,8 @@ ${details}`);
     getProblems: () => DATA.problems,
     getSolvedIds: () => solvedSet,
     onOpenProblem: (candidate) => openViewer(candidate, "problem"),
+    onProblemOpened: markProblemOpened,
+    onProblemAttempted: markProblemAttempted,
     isExamProblem,
     getXPRecord,
     isProblemSolved: (problemId) => solvedSet.has(problemId),
@@ -6818,11 +6793,11 @@ function openExam(exam){
   function renderHiddenUntilStart(){
     list.innerHTML = `
       <div class="problem">
-        <div class="title">🔒 ${LANG === "ro" ? "Examen pregătit" : "Exam ready"}</div>
+        <div class="title">${LANG === "ro" ? "Totul este pregătit" : "Ready when you are"}</div>
         <div class="legend" style="margin-top:8px;">
           ${LANG === "ro"
-            ? "Itemii și cheile de corectare nu sunt trimiși în browser înainte de Start."
-            : "Items and grading keys are not sent to the browser before Start."}
+            ? "Alege durata și apasă Start când ești gata."
+            : "Choose the duration and press Start when you are ready."}
         </div>
       </div>
     `;
@@ -7221,33 +7196,58 @@ function openExam(exam){
   modal.addEventListener("click",(e)=>{ if(e.target.id==="modal") modal.classList.remove("open"); });
 
   /* ===== Progress modals ===== */
-  document.getElementById("openSolved").onclick=()=>{
-    const ids=[...solvedSet];
-    const items=DATA.problems.filter(p=>ids.includes(p.id))
-      .map(p=>`<li>🧩 ${(LANG==='ro'?p.title_ro:p.title_en)} — <i>${esc(p.source||'')}</i></li>`)
-      .join('') || "<li>(gol)</li>";
-    document.getElementById("modalTitle").textContent="✅ Probleme rezolvate";
-    document.getElementById("modalBody").innerHTML=`<ul>${items}</ul>`;
+  function progressModalList(items, emptyRo, emptyEn) {
+    return items.length
+      ? `<ul>${items.join("")}</ul>`
+      : `<p class="legend">${LANG === "ro" ? emptyRo : emptyEn}</p>`;
+  }
+
+  document.getElementById("openSolved").onclick = () => {
+    const items = DATA.problems
+      .filter((problem) => solvedSet.has(problem.id))
+      .map((problem) => {
+        const title = LANG === "ro" ? (problem.title_ro || problem.title_en) : (problem.title_en || problem.title_ro);
+        return `<li>✅ ${esc(title || problem.id)}</li>`;
+      });
+    document.getElementById("modalTitle").textContent = LANG === "ro" ? "Probleme rezolvate" : "Solved problems";
+    document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai rezolvat încă probleme.", "You have not solved any problems yet.");
     modal.classList.add("open");
   };
 
-  document.getElementById("openLearned").onclick=()=>{
-    const ids=[...learnedSet];
-    const items=DATA.lessons.filter(l=>ids.includes(l.id))
-      .map(l=>`<li>📘 ${(LANG==='ro'?l.title_ro:l.title_en)} — <i>${esc(l.grade||'')}</i></li>`)
-      .join('') || "<li>(gol)</li>";
-    document.getElementById("modalTitle").textContent="📘 Lecții învățate";
-    document.getElementById("modalBody").innerHTML=`<ul>${items}</ul>`;
+  document.getElementById("openRead").onclick = () => {
+    const items = DATA.lessons
+      .filter((lesson) => readSet.has(lesson.id) || learnedSet.has(lesson.id))
+      .map((lesson) => {
+        const title = LANG === "ro" ? (lesson.title_ro || lesson.title_en) : (lesson.title_en || lesson.title_ro);
+        const learned = learnedSet.has(lesson.id);
+        return `<li>${learned ? "🎓" : "📖"} ${esc(title || lesson.id)}${lesson.grade ? ` — ${LANG === "ro" ? "Clasa" : "Grade"} ${esc(lesson.grade)}` : ""}</li>`;
+      });
+    document.getElementById("modalTitle").textContent = LANG === "ro" ? "Lecții citite" : "Lessons read";
+    document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai citit încă lecții.", "You have not read any lessons yet.");
     modal.classList.add("open");
   };
 
-  document.getElementById("openPassed").onclick=()=>{
-    const ids=[...examsPassedSet];
-    const items=EXAMS.filter(ex=>ids.includes(ex.id))
-      .map(ex=>`<li>🏆 ${(LANG==='ro'?ex.title_ro:ex.title_en)} — <i>${ex.year} • ${ex.type}</i></li>`)
-      .join('') || "<li>(gol)</li>";
-    document.getElementById("modalTitle").textContent="🏆 Examene promovate";
-    document.getElementById("modalBody").innerHTML=`<ul>${items}</ul>`;
+  document.getElementById("openLearned").onclick = () => {
+    const items = DATA.lessons
+      .filter((lesson) => learnedSet.has(lesson.id))
+      .map((lesson) => {
+        const title = LANG === "ro" ? (lesson.title_ro || lesson.title_en) : (lesson.title_en || lesson.title_ro);
+        return `<li>🎓 ${esc(title || lesson.id)}${lesson.grade ? ` — ${LANG === "ro" ? "Clasa" : "Grade"} ${esc(lesson.grade)}` : ""}</li>`;
+      });
+    document.getElementById("modalTitle").textContent = LANG === "ro" ? "Lecții învățate" : "Lessons learned";
+    document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai încă lecții învățate.", "You have not learned any lessons yet.");
+    modal.classList.add("open");
+  };
+
+  document.getElementById("openPassed").onclick = () => {
+    const items = EXAMS
+      .filter((exam) => examsPassedSet.has(exam.id))
+      .map((exam) => {
+        const title = LANG === "ro" ? (exam.title_ro || exam.title_en) : (exam.title_en || exam.title_ro);
+        return `<li>🏆 ${esc(title || exam.id)}${exam.year ? ` — ${esc(exam.year)}` : ""}</li>`;
+      });
+    document.getElementById("modalTitle").textContent = LANG === "ro" ? "Examene promovate" : "Passed exams";
+    document.getElementById("modalBody").innerHTML = progressModalList(items, "Nu ai promovat încă examene.", "You have not passed any exams yet.");
     modal.classList.add("open");
   };
 

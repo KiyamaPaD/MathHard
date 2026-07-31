@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -8,8 +8,12 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 async function importBrowserModule(relativePath) {
   const absolutePath = resolve(root, relativePath);
   const source = await readFile(absolutePath, "utf8");
+  const resolvedSource = source.replace(
+    /(from\s+["'])(\.[^"']+)(["'])/g,
+    (_match, prefix, specifier, suffix) => `${prefix}${pathToFileURL(resolve(dirname(absolutePath), specifier)).href}${suffix}`
+  );
   const encoded = Buffer.from(
-    `${source}\n//# sourceURL=${pathToFileURL(absolutePath).href}`,
+    `${resolvedSource}\n//# sourceURL=${pathToFileURL(absolutePath).href}`,
     "utf8"
   ).toString("base64");
   return import(`data:text/javascript;base64,${encoded}`);
@@ -116,6 +120,12 @@ const {
   sortLessonsForProfile
 } = await importBrowserModule("js/profile-model.js");
 const {
+  buildProgressInsights,
+  normalizeProgressTaxonomy,
+  problemStatusForId
+} = await importBrowserModule("js/progress-taxonomy-model.js");
+const { loadProgressTaxonomy } = await importBrowserModule("js/progress-taxonomy-repository.js");
+const {
   buildProfileExperienceSummary,
   calculateLevelState,
   calculateOverallCompletion
@@ -153,6 +163,50 @@ assert.deepEqual(
     examsPercent: 50
   }
 );
+
+const taxonomyFixture = normalizeProgressTaxonomy({
+  lessons: {
+    total: 10,
+    read: 7,
+    learned: 4,
+    read_only: 3,
+    unread: 3,
+    read_ids: ["l1", "l2", "l3", "l4", "l5", "l6", "l7"],
+    learned_ids: ["l1", "l2", "l3", "l4"]
+  },
+  problems: {
+    total: 12,
+    solved: 3,
+    attempted: 2,
+    opened: 1,
+    unopened: 6,
+    solved_ids: ["p1", "p2", "p3"],
+    attempted_ids: ["p4", "p5"],
+    opened_ids: ["p6"],
+    unopened_ids: ["p7", "p8", "p9", "p10", "p11", "p12"]
+  }
+});
+assert.equal(taxonomyFixture.lessons.readRate, 70);
+assert.equal(taxonomyFixture.lessons.learnedRate, 40);
+assert.equal(taxonomyFixture.problems.engagedRate, 50);
+assert.equal(problemStatusForId("p1", taxonomyFixture), "solved");
+assert.equal(problemStatusForId("p4", taxonomyFixture), "attempted");
+assert.equal(problemStatusForId("p6", taxonomyFixture), "opened");
+assert.equal(problemStatusForId("missing", taxonomyFixture), "unopened");
+assert.deepEqual(buildProgressInsights(taxonomyFixture), {
+  lessons: { readOnlyShare: 30, learnedFromReadShare: 57, unreadShare: 30 },
+  problems: { conversionFromAttempt: 60, openedWithoutAttemptShare: 8, untouchedShare: 50 }
+});
+
+const taxonomyRpcCalls = [];
+const taxonomySupabase = {
+  async rpc(name) {
+    taxonomyRpcCalls.push(name);
+    return { data: taxonomyFixture, error: null };
+  }
+};
+assert.equal((await loadProgressTaxonomy(taxonomySupabase)).problems.unopened, 6);
+assert.deepEqual(taxonomyRpcCalls, ["mh_get_progress_taxonomy"]);
 
 const { SmartAnswer } = await importBrowserModule("js/answer-engine.js");
 const appProgressModule = await importBrowserModule("js/app-progress.js");

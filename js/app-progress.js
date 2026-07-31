@@ -1,3 +1,5 @@
+import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
+
 
 export function lessonTimerSecondsRemaining(error) {
   if (!error || String(error.code || "") !== "22023") return 0;
@@ -27,6 +29,9 @@ export let solvedSet = new Set();
 export let learnedSet = new Set();
 export let readSet = new Set();
 export let examsPassedSet = new Set();
+export let attemptedProblemSet = new Set();
+export let openedProblemSet = new Set();
+export let progressTaxonomy = null;
 export let XP_TOTAL = 0;
 export let XP_DETAILS = {};
 
@@ -35,6 +40,9 @@ function resetProgressState() {
   learnedSet = new Set();
   readSet = new Set();
   examsPassedSet = new Set();
+  attemptedProblemSet = new Set();
+  openedProblemSet = new Set();
+  progressTaxonomy = null;
   XP_TOTAL = 0;
   XP_DETAILS = {};
 }
@@ -120,8 +128,17 @@ export function createAppProgressController({
 
     XP_DETAILS[problemId] = merged.record;
 
-    if (merged.solved) solvedSet.add(problemId);
-    else if (merged.terminalEvent) solvedSet.delete(problemId);
+    if (merged.solved) {
+      solvedSet.add(problemId);
+      attemptedProblemSet.delete(problemId);
+      openedProblemSet.delete(problemId);
+    } else if (merged.terminalEvent) {
+      solvedSet.delete(problemId);
+      if (eventName === "wrong") {
+        attemptedProblemSet.add(problemId);
+        openedProblemSet.delete(problemId);
+      }
+    }
 
     recomputeXPTotal();
     onCountersChanged();
@@ -291,7 +308,7 @@ export function createAppProgressController({
       }
 
       const userId = resolvedUser.id;
-      const [lessonResult, problemResult, examResult] = await Promise.all([
+      const [lessonResult, problemResult, examResult, taxonomyResult] = await Promise.all([
         supabase
           .from("user_lesson_progress")
           .select("*")
@@ -303,7 +320,11 @@ export function createAppProgressController({
         supabase
           .from("user_exam_progress")
           .select("*")
-          .eq("user_id", userId)
+          .eq("user_id", userId),
+        loadProgressTaxonomy(supabase).catch((error) => {
+          console.warn("Could not load progress taxonomy; using table progress only:", error);
+          return null;
+        })
       ]);
 
       if (currentEpoch !== loadEpoch) return;
@@ -331,6 +352,8 @@ export function createAppProgressController({
 
       if (!problemResult.error) {
         const nextSolved = new Set();
+        const nextAttempted = new Set();
+        const nextOpened = new Set();
         const nextDetails = {};
 
         for (const row of problemResult.data || []) {
@@ -347,11 +370,26 @@ export function createAppProgressController({
           };
 
           if (row.solved) nextSolved.add(row.problem_id);
+          else if (wrongAttempts > 0) nextAttempted.add(row.problem_id);
+          else nextOpened.add(row.problem_id);
         }
 
         solvedSet = nextSolved;
+        attemptedProblemSet = nextAttempted;
+        openedProblemSet = nextOpened;
         XP_DETAILS = nextDetails;
         recomputeXPTotal();
+      }
+
+      if (taxonomyResult?.available) {
+        progressTaxonomy = taxonomyResult;
+        solvedSet = new Set(taxonomyResult.problems.solvedIds);
+        attemptedProblemSet = new Set(taxonomyResult.problems.attemptedIds);
+        openedProblemSet = new Set(taxonomyResult.problems.openedIds);
+        readSet = new Set(taxonomyResult.lessons.readIds);
+        learnedSet = new Set(taxonomyResult.lessons.learnedIds);
+      } else {
+        progressTaxonomy = null;
       }
 
       if (!examResult.error) {
@@ -381,6 +419,22 @@ export function createAppProgressController({
     }
   }
 
+  function markProblemOpened(problemId) {
+    const id = String(problemId || "").trim();
+    if (!id || solvedSet.has(id) || attemptedProblemSet.has(id)) return;
+    openedProblemSet.add(id);
+    onCountersChanged();
+    onTerminalProblemChanged(id, { status: "opened", terminalEvent: false });
+  }
+
+  function markProblemAttempted(problemId) {
+    const id = String(problemId || "").trim();
+    if (!id || solvedSet.has(id)) return;
+    openedProblemSet.delete(id);
+    attemptedProblemSet.add(id);
+    onCountersChanged();
+    onTerminalProblemChanged(id, { status: "attempted", terminalEvent: false });
+  }
 
   return {
     awardXPForProblem,
@@ -388,6 +442,8 @@ export function createAppProgressController({
     completeLessonQuizSafe,
     getXPRecord,
     loadAppProgressFromDb,
+    markProblemAttempted,
+    markProblemOpened,
     markLessonReadSafe,
     recomputeXPTotal,
     recordExamAttemptStart,

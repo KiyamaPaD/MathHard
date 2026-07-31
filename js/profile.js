@@ -11,6 +11,7 @@ import {
   sortExamsForProfile,
   sortLessonsForProfile
 } from "./profile-model.js";
+import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
 import {
   initializeProfileExperience,
   renderProfileExperience,
@@ -38,6 +39,7 @@ function t(key, vars = {}) {
 
 /* ========= HEADER / AUTH ========= */
 const profileSolved = $("profileSolved");
+const profileRead = $("profileRead");
 const profileLearned = $("profileLearned");
 const profilePassed = $("profilePassed");
 const profileXP = $("profileXP");
@@ -66,10 +68,12 @@ const profileInfoEmail = $("profileInfoEmail");
 const profileInfoConfirmed = $("profileInfoConfirmed");
 
 /* ========= PROGRESS SUMMARY ========= */
+const profileLessonsReadProgressText = $("profileLessonsReadProgressText");
 const profileLessonsProgressText = $("profileLessonsProgressText");
 const profileProblemsProgressText = $("profileProblemsProgressText");
 const profileExamsProgressText = $("profileExamsProgressText");
 
+const profileLessonsReadProgressBar = $("profileLessonsReadProgressBar");
 const profileLessonsProgressBar = $("profileLessonsProgressBar");
 const profileProblemsProgressBar = $("profileProblemsProgressBar");
 const profileExamsProgressBar = $("profileExamsProgressBar");
@@ -88,11 +92,13 @@ const changePasswordBtn = $("changePasswordBtn");
 
 /* ========= DETAILED SUMMARY ========= */
 const detailProblemsSolved = $("detailProblemsSolved");
-const detailProblemsWrong = $("detailProblemsWrong");
-const detailProblemsUnseen = $("detailProblemsUnseen");
+const detailProblemsAttempted = $("detailProblemsAttempted");
+const detailProblemsOpened = $("detailProblemsOpened");
+const detailProblemsUnopened = $("detailProblemsUnopened");
 
 const detailLessonsLearned = $("detailLessonsLearned");
-const detailLessonsUnlearned = $("detailLessonsUnlearned");
+const detailLessonsReadOnly = $("detailLessonsReadOnly");
+const detailLessonsUnread = $("detailLessonsUnread");
 
 const detailExamsPassed = $("detailExamsPassed");
 const detailExamsUnpassed = $("detailExamsUnpassed");
@@ -195,6 +201,7 @@ function setProgress(elBar, elText, value, total) {
 
 function setZeroStats() {
   safeText(profileSolved, "0");
+  safeText(profileRead, "0");
   safeText(profileLearned, "0");
   safeText(profilePassed, "0");
   safeText(profileXP, "0");
@@ -203,11 +210,13 @@ function setZeroStats() {
 
 function setEmptyDetailedSummary() {
   safeText(detailProblemsSolved, "0");
-  safeText(detailProblemsWrong, "0");
-  safeText(detailProblemsUnseen, "0");
+  safeText(detailProblemsAttempted, "0");
+  safeText(detailProblemsOpened, "0");
+  safeText(detailProblemsUnopened, "0");
 
   safeText(detailLessonsLearned, "0");
-  safeText(detailLessonsUnlearned, "0");
+  safeText(detailLessonsReadOnly, "0");
+  safeText(detailLessonsUnread, "0");
 
   safeText(detailExamsPassed, "0");
   safeText(detailExamsUnpassed, "0");
@@ -230,6 +239,7 @@ function setEmptyAccountInfo() {
   safeText(profileInfoEmail, "—");
   safeText(profileInfoConfirmed, "—");
 
+  setProgress(profileLessonsReadProgressBar, profileLessonsReadProgressText, 0, 0);
   setProgress(profileLessonsProgressBar, profileLessonsProgressText, 0, 0);
   setProgress(profileProblemsProgressBar, profileProblemsProgressText, 0, 0);
   setProgress(profileExamsProgressBar, profileExamsProgressText, 0, 0);
@@ -677,7 +687,8 @@ async function loadProfileStatsFromDb(userId) {
       { data: lessonRows, error: lessonError },
       { data: problemRows, error: problemError },
       { data: examRows, error: examError },
-      catalog
+      catalog,
+      taxonomy
     ] = await Promise.all([
       supabase
         .from("user_lesson_progress")
@@ -691,7 +702,11 @@ async function loadProfileStatsFromDb(userId) {
         .from("user_exam_progress")
         .select("*")
         .eq("user_id", userId),
-      loadMergedCatalog()
+      loadMergedCatalog(),
+      loadProgressTaxonomy(supabase).catch((error) => {
+        console.warn("Could not load detailed progress taxonomy for profile:", error);
+        return null;
+      })
     ]);
 
     if (lessonError) console.warn("Could not load lesson progress for profile:", lessonError);
@@ -703,26 +718,31 @@ async function loadProfileStatsFromDb(userId) {
       problemRows: problemError ? [] : (problemRows || []),
       examRows: examError ? [] : (examRows || []),
       catalog,
+      taxonomy: taxonomy?.available ? taxonomy : null,
       lang: LANG
     });
 
     const { counts, totals, recent, exams } = stats;
 
     safeText(profileSolved, String(counts.solved));
+    safeText(profileRead, String(counts.read));
     safeText(profileLearned, String(counts.learned));
     safeText(profilePassed, String(counts.passed));
     safeText(profileXP, String(counts.xpTotal));
     safeText(profileAvgXpText, String(counts.avgXp));
 
+    setProgress(profileLessonsReadProgressBar, profileLessonsReadProgressText, counts.read, totals.lessons);
     setProgress(profileLessonsProgressBar, profileLessonsProgressText, counts.learned, totals.lessons);
     setProgress(profileProblemsProgressBar, profileProblemsProgressText, counts.solved, totals.problems);
     setProgress(profileExamsProgressBar, profileExamsProgressText, counts.passed, totals.exams);
 
     safeText(detailProblemsSolved, String(counts.solved));
-    safeText(detailProblemsWrong, String(counts.wrong));
-    safeText(detailProblemsUnseen, String(counts.unresolved));
+    safeText(detailProblemsAttempted, String(counts.attempted));
+    safeText(detailProblemsOpened, String(counts.opened));
+    safeText(detailProblemsUnopened, String(counts.unopened));
     safeText(detailLessonsLearned, String(counts.learned));
-    safeText(detailLessonsUnlearned, String(counts.unlearned));
+    safeText(detailLessonsReadOnly, String(counts.readOnly));
+    safeText(detailLessonsUnread, String(counts.unread));
     safeText(detailExamsPassed, String(counts.passed));
     safeText(detailExamsUnpassed, String(counts.failed));
     safeText(detailExamsUnattempted, String(counts.unattempted));
@@ -803,12 +823,15 @@ async function loadProfileStatsFromDb(userId) {
     }
 
     if (lessonError) {
+      safeText(profileRead, "—");
       safeText(profileLearned, "—");
       safeText(detailLessonsLearned, "—");
-      safeText(detailLessonsUnlearned, "—");
+      safeText(detailLessonsReadOnly, "—");
+      safeText(detailLessonsUnread, "—");
       safeText(nextLessonText, "—");
       safeText(nextChapterText, "—");
       safeText(profileRecentLesson, "—");
+      markProgressUnavailable(profileLessonsReadProgressBar, profileLessonsReadProgressText);
       markProgressUnavailable(profileLessonsProgressBar, profileLessonsProgressText);
     }
 
@@ -817,8 +840,9 @@ async function loadProfileStatsFromDb(userId) {
       safeText(profileXP, "—");
       safeText(profileAvgXpText, "—");
       safeText(detailProblemsSolved, "—");
-      safeText(detailProblemsWrong, "—");
-      safeText(detailProblemsUnseen, "—");
+      safeText(detailProblemsAttempted, "—");
+      safeText(detailProblemsOpened, "—");
+      safeText(detailProblemsUnopened, "—");
       safeText(profileRecentProblem, "—");
       markProgressUnavailable(profileProblemsProgressBar, profileProblemsProgressText);
     }
@@ -841,6 +865,7 @@ async function loadProfileStatsFromDb(userId) {
     console.error("Eroare la încărcarea progresului:", err);
     setZeroStats();
     setEmptyDetailedSummary();
+    setProgress(profileLessonsReadProgressBar, profileLessonsReadProgressText, 0, 0);
     setProgress(profileLessonsProgressBar, profileLessonsProgressText, 0, 0);
     setProgress(profileProblemsProgressBar, profileProblemsProgressText, 0, 0);
     setProgress(profileExamsProgressBar, profileExamsProgressText, 0, 0);

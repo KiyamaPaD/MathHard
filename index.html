@@ -120,10 +120,17 @@
           </div>
           <div
             class="counter"
+            title="Lecții citite / Lessons read"
+            data-i18n-title="counter_read_title"
+          >
+            📖 <span id="readCount">0</span>
+          </div>
+          <div
+            class="counter"
             title="Lecții învățate / Lessons learned"
             data-i18n-title="counter_learned_title"
           >
-            📘 <span id="learnedCount">0</span>
+            🎓 <span id="learnedCount">0</span>
           </div>
           <div
             class="counter"
@@ -134,7 +141,7 @@
           </div>
           <div
             class="counter"
-            title="XP total (doar probleme normale)"
+            title="XP acumulat din probleme"
             data-i18n-title="counter_xp_title"
           >
             ⚡ <span id="xpTotalHeader">0</span>
@@ -142,8 +149,8 @@
         </div>
 
         <div class="header-actions">
-          <button class="btn small" id="infoBtn" data-i18n="btn_info" type="button">ℹ️ Dificultăți &amp; Contoare</button>
-          <button class="btn small" id="aboutBtn" data-i18n="btn_about" type="button">👤 About me</button>
+          <button class="btn small" id="infoBtn" data-i18n="btn_info" type="button">Ghid</button>
+          <button class="btn small" id="aboutBtn" data-i18n="btn_about" type="button">Despre</button>
           <button class="btn small" id="langBtn" type="button">🌐 RO/EN</button>
           <button class="btn small" id="focusBtn" data-i18n="btn_focus" type="button">🎯 Focus Mode</button>
           <button class="btn small" id="themeBtn" data-i18n="btn_theme" type="button">🌙 Dark</button>
@@ -406,7 +413,7 @@
 
           <div class="tab active" data-tab="lessons" data-i18n="tab_lessons">📘 Lecții</div>
           <div class="tab" data-tab="problems" data-i18n="tab_problems">🧩 Probleme</div>
-          <div class="tab" data-tab="xp" data-i18n="tab_xp">⚡ XP Total</div>
+          <div class="tab" data-tab="xp" data-i18n="tab_xp">📊 Progres probleme</div>
           <div class="tab" data-tab="exams" data-i18n="tab_exams">📑 Examene</div>
           <div class="tab" data-tab="research" data-i18n="tab_research">🔬 CERCETARE</div>
           <div class="tab" data-tab="history" data-i18n="tab_history">🕰 Istoria</div>
@@ -451,8 +458,12 @@
           <div class="title" data-i18n="progress_solved_title">✅ Probleme rezolvate</div>
           <div class="legend" data-i18n="progress_click_for_list">Apasă pentru listă</div>
         </div>
+        <div class="card" id="openRead">
+          <div class="title" data-i18n="progress_read_title">📖 Lecții citite</div>
+          <div class="legend" data-i18n="progress_click_for_list">Apasă pentru listă</div>
+        </div>
         <div class="card" id="openLearned">
-          <div class="title" data-i18n="progress_learned_title">📘 Lecții învățate</div>
+          <div class="title" data-i18n="progress_learned_title">🎓 Lecții învățate</div>
           <div class="legend" data-i18n="progress_click_for_list">Apasă pentru listă</div>
         </div>
         <div class="card" id="openPassed">
@@ -980,19 +991,19 @@
       <div class="about-header">
         <div>
           <div class="about-title" data-i18n="about_title">
-            👋 Despre MathHard & autor
+            Despre MathHard
           </div>
 
           <div class="about-subtitle" data-i18n-html="about_subtitle">
-            Platformă pentru <b>lecții</b>, <b>probleme</b>, <b>examene</b> și progres.
+            Lecții, probleme și trasee de studiu într-un singur loc.
           </div>
 
           <div class="about-pill-row">
-            <span class="about-pill" data-i18n="about_pill_1">📘 Lecții de la clasa a V-a până la facultate</span>
-            <span class="about-pill" data-i18n="about_pill_2">🧩 Probleme cu verificare instant</span>
-            <span class="about-pill" data-i18n="about_pill_3">⚡ XP — puncte de experiență, nu note</span>
-            <span class="about-pill" data-i18n="about_pill_4">📑 EN / BAC / Admitere</span>
-            <span class="about-pill" data-i18n="about_pill_5">🏅 Olimpiadă & 🔬 Cercetare</span>
+            <span class="about-pill" data-i18n="about_pill_1">Lecții structurate</span>
+            <span class="about-pill" data-i18n="about_pill_2">Probleme cu feedback</span>
+            <span class="about-pill" data-i18n="about_pill_3">Examene și simulări</span>
+            <span class="about-pill" data-i18n="about_pill_4">Progres detaliat</span>
+            <span class="about-pill" data-i18n="about_pill_5">Planuri de pregătire</span>
           </div>
         </div>
       </div>
@@ -1002,84 +1013,61 @@
           <!-- Timeline în stânga -->
           <div class="story-timeline">
             <div class="story-bullet active" data-target="#about-what" data-i18n="about_timeline_1">
-              Ce este MathHard?
+              Ce este
             </div>
             <div class="story-bullet" data-target="#about-how" data-i18n="about_timeline_2">
-              Cum folosești site-ul
+              Cum îl folosești
             </div>
             <div class="story-bullet" data-target="#about-tabs" data-i18n="about_timeline_3">
-              Ce înseamnă tab-urile de sus
+              Cum se măsoară progresul
             </div>
             <div class="story-bullet" data-target="#about-who" data-i18n="about_timeline_4">
-              Pentru cine e făcut
+              Conținut
             </div>
             <div class="story-bullet" data-target="#about-me" data-i18n="about_timeline_5">
-              Cine a făcut MathHard?
+              Proiect
             </div>
           </div>
 
           <!-- Conținut în dreapta -->
           <div class="story-content">
             <section class="lesson-section" id="about-what">
-              <h3 data-i18n="about_what_title">1. Ce este MathHard?</h3>
+              <h3 data-i18n="about_what_title">Ce este</h3>
               <p data-i18n-html="about_what_p1">
-                MathHard organizează matematica într-un traseu clar: <b>lecții</b>,
-                <b>verificări</b>, <b>probleme</b> și <b>examene</b>.
-              </p>
-              <p data-i18n-html="about_what_p2">
-                Progresul, XP-ul și recomandările arată ce ai parcurs și ce merită exersat în continuare.
+                MathHard este o platformă de studiu pentru matematică. Conținutul este organizat pe lecții, probleme, examene și planuri de pregătire.
               </p>
             </section>
 
             <section class="lesson-section" id="about-how">
-              <h3 data-i18n="about_how_title">2. Cum folosești MathHard</h3>
+              <h3 data-i18n="about_how_title">Cum îl folosești</h3>
               <ol>
-                <li data-i18n-html="about_how_li_1">🔎 <b>Cauți</b> subiectul de care ai nevoie.</li>
-                <li data-i18n-html="about_how_li_2">📘 Deschizi o <b>lecție</b>.</li>
-                <li data-i18n="about_how_li_3">📜 Citești lecția până la final.</li>
-                <li data-i18n-html="about_how_li_4">⏳ După cel puțin <b>1 minut</b>, marchezi lectura ca finalizată.</li>
-                <li data-i18n="about_how_li_5">🧪 Treci verificarea lecției.</li>
-                <li data-i18n-html="about_how_li_6">🧩 Continui cu problemele asociate.</li>
+                <li data-i18n-html="about_how_li_1">Alege o lecție sau un pas din planul tău.</li>
+                <li data-i18n-html="about_how_li_2">Parcurge teoria și verificarea lecției.</li>
+                <li data-i18n="about_how_li_3">Rezolvă problemele asociate.</li>
+                <li data-i18n-html="about_how_li_4">Folosește Analytics pentru următorul obiectiv.</li>
               </ol>
-              <p data-i18n-html="about_how_p">
-                În partea de sus vezi progresul, examenele promovate și XP-ul acumulat.
-              </p>
             </section>
 
             <section class="lesson-section" id="about-tabs">
-              <h3 data-i18n="about_tabs_title">3. Secțiunile principale</h3>
+              <h3 data-i18n="about_tabs_title">Cum se măsoară progresul</h3>
               <ul>
-                <li data-i18n-html="about_tabs_li_1">📘 <b>Lecții</b> — teorie structurată.</li>
-                <li data-i18n-html="about_tabs_li_2">🧩 <b>Probleme</b> — exerciții și antrenament.</li>
-                <li data-i18n-html="about_tabs_li_3">⚡ <b>XP Total</b> — progresul obținut din probleme.</li>
-                <li data-i18n-html="about_tabs_li_4">📑 <b>Examene</b> — EN, BAC și admitere.</li>
-                <li data-i18n-html="about_tabs_li_5">🔬 <b>Cercetare</b> — idei matematice avansate.</li>
-                <li data-i18n-html="about_tabs_li_6">🕰 <b>Istorie</b> — oameni și idei din matematică.</li>
+                <li data-i18n-html="about_tabs_li_1"><b>Lecție citită</b> — ai parcurs teoria.</li>
+                <li data-i18n-html="about_tabs_li_2"><b>Lecție învățată</b> — ai trecut și verificarea.</li>
+                <li data-i18n-html="about_tabs_li_3"><b>Problemă deschisă</b> — ai văzut cerința.</li>
+                <li data-i18n-html="about_tabs_li_4"><b>Problemă încercată</b> — ai trimis un răspuns.</li>
+                <li data-i18n-html="about_tabs_li_5"><b>Problemă rezolvată</b> — ai răspuns corect.</li>
               </ul>
             </section>
 
             <section class="lesson-section" id="about-who">
-              <h3 data-i18n="about_who_title">4. Pentru cine este MathHard?</h3>
-              <ul>
-                <li data-i18n="about_who_li_1">🎒 elevi de gimnaziu;</li>
-                <li data-i18n-html="about_who_li_2">🎓 liceeni care se pregătesc pentru <b>EN</b> sau <b>BAC</b>;</li>
-                <li data-i18n-html="about_who_li_3">🏅 elevi pasionați de <b>olimpiadă</b>;</li>
-                <li data-i18n-html="about_who_li_4">🏛 studenți care vor material de recapitulare;</li>
-                <li data-i18n="about_who_li_5">👨‍🏫 profesori și părinți.</li>
-              </ul>
+              <h3 data-i18n="about_who_title">Conținut</h3>
+              <p data-i18n="about_who_li_1">Platforma este extinsă treptat pentru gimnaziu, liceu, examene, admitere, olimpiadă și matematică universitară.</p>
             </section>
 
             <section class="lesson-section" id="about-me">
-              <h3 data-i18n="about_me_title">5. Cine a făcut MathHard?</h3>
+              <h3 data-i18n="about_me_title">Proiect</h3>
               <p data-i18n-html="about_me_p1">
-                MathHard este construit de <b>Gabor Cristian-Daniel</b>, elev la
-                <b>Colegiul INFOEL din Bistrița</b>.
-              </p>
-              <p data-i18n-html="about_me_p2">
-                Proiectul adună într-un singur loc lecții, probleme, pregătire pentru examene și idei matematice mai avansate.
-              </p>
-              <p style="margin-top:6px;" data-i18n="about_me_p3">
-                Conținutul urmărește explicații clare, probleme atent alese și legături între concepte.
+                MathHard este un proiect educațional independent, construit pentru studiu clar, consecvent și măsurabil.
               </p>
             </section>
           </div>

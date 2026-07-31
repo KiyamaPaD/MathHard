@@ -1,6 +1,7 @@
 import { clampAnalyticsRange, normalizeAnalyticsPayload } from "./analytics-model.js";
 import { loadConceptMastery } from "./concept-mastery-repository.js";
 import { loadConceptRetention } from "./concept-retention-repository.js";
+import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
 
 export async function loadUserAnalytics(supabase, {
   days = 90,
@@ -11,7 +12,7 @@ export async function loadUserAnalytics(supabase, {
   const safeDays = clampAnalyticsRange(days);
   const safeLocale = String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
 
-  const [analyticsResult, conceptMastery, conceptRetention] = await Promise.all([
+  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy] = await Promise.all([
     supabase.rpc("mh_get_user_analytics", {
       p_days: safeDays,
       p_locale: safeLocale
@@ -23,7 +24,8 @@ export async function loadUserAnalytics(supabase, {
     loadConceptRetention(supabase, {
       limit: 8,
       locale: safeLocale
-    })
+    }),
+    loadProgressTaxonomy(supabase)
   ]);
 
   if (analyticsResult.error) {
@@ -38,6 +40,7 @@ export async function loadUserAnalytics(supabase, {
   return {
     ...normalizeAnalyticsPayload(analyticsResult.data || {}),
     conceptMastery,
-    conceptRetention
+    conceptRetention,
+    progressTaxonomy
   };
 }

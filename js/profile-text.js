@@ -34,6 +34,7 @@ export const PROFILE_TEXT = {
     status_logged_in: "Logat",
 
     solved_label: "Probleme rezolvate",
+    read_label: "Lecții citite",
     learned_label: "Lecții învățate",
     passed_label: "Examene promovate",
     xp_total_label: "XP total",
@@ -44,6 +45,7 @@ export const PROFILE_TEXT = {
     info_confirmed: "Email confirmat",
 
     progress_title: "Rezumat progres",
+    progress_lessons_read: "Lecții citite",
     progress_lessons: "Lecții învățate",
     progress_problems: "Probleme rezolvate",
     progress_exams: "Examene promovate",
@@ -51,10 +53,12 @@ export const PROFILE_TEXT = {
 
     detailed_title: "Statistici detaliate",
     detail_solved: "Probleme rezolvate",
-    detail_wrong: "Probleme greșite",
-    detail_unsolved: "Probleme nerezolvate",
+    detail_attempted: "Probleme încercate",
+    detail_opened: "Probleme deschise",
+    detail_unopened: "Probleme nedeschise",
     detail_lessons_learned: "Lecții învățate",
-    detail_lessons_unlearned: "Lecții neînvățate",
+    detail_lessons_read_only: "Citite, de verificat",
+    detail_lessons_unread: "Lecții necitite",
     detail_exams_passed: "Examene promovate",
     detail_exams_unpassed: "Examene încercate, dar nepromovate",
     detail_exams_unattempted: "Examene neîncercate",
@@ -180,6 +184,7 @@ export const PROFILE_TEXT = {
     status_logged_in: "Logged in",
 
     solved_label: "Problems solved",
+    read_label: "Lessons read",
     learned_label: "Lessons learned",
     passed_label: "Exams passed",
     xp_total_label: "Total XP",
@@ -190,6 +195,7 @@ export const PROFILE_TEXT = {
     info_confirmed: "Email confirmed",
 
     progress_title: "Progress summary",
+    progress_lessons_read: "Lessons read",
     progress_lessons: "Lessons learned",
     progress_problems: "Problems solved",
     progress_exams: "Exams passed",
@@ -197,10 +203,12 @@ export const PROFILE_TEXT = {
 
     detailed_title: "Detailed stats",
     detail_solved: "Problems solved",
-    detail_wrong: "Wrong problems",
-    detail_unsolved: "Unsolved problems",
+    detail_attempted: "Problems attempted",
+    detail_opened: "Problems opened",
+    detail_unopened: "Problems not opened",
     detail_lessons_learned: "Lessons learned",
-    detail_lessons_unlearned: "Lessons not learned",
+    detail_lessons_read_only: "Read, check pending",
+    detail_lessons_unread: "Unread lessons",
     detail_exams_passed: "Exams passed",
     detail_exams_unpassed: "Exams attempted but not passed",
     detail_exams_unattempted: "Exams not attempted",

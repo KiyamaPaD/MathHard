@@ -147,6 +147,11 @@
         </article>
 
         <article class="profile-stat-card">
+          <div class="profile-stat-label" data-profile-text-key="read_label">Lecții citite</div>
+          <div class="profile-stat-value" id="profileRead">0</div>
+        </article>
+
+        <article class="profile-stat-card">
           <div class="profile-stat-label" data-profile-text-key="learned_label">Lecții învățate</div>
           <div class="profile-stat-value" id="profileLearned">0</div>
         </article>
@@ -192,6 +197,11 @@
         </div>
 
         <div class="profile-progress-block">
+          <div class="profile-progress-head"><span data-profile-text-key="progress_lessons_read">Lecții citite</span><strong id="profileLessonsReadProgressText">0 / 0</strong></div>
+          <div class="profile-progress-bar"><div class="profile-progress-fill is-read" id="profileLessonsReadProgressBar"></div></div>
+        </div>
+
+        <div class="profile-progress-block">
           <div class="profile-progress-head"><span data-profile-text-key="progress_lessons">Lecții învățate</span><strong id="profileLessonsProgressText">0 / 0</strong></div>
           <div class="profile-progress-bar"><div class="profile-progress-fill" id="profileLessonsProgressBar"></div></div>
         </div>
@@ -221,14 +231,16 @@
           <div class="profile-metric-group">
             <h3>Probleme</h3>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_solved">Rezolvate</span><strong id="detailProblemsSolved">0</strong></div>
-            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_wrong">Încercate</span><strong id="detailProblemsWrong">0</strong></div>
-            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_unsolved">Nerezolvate</span><strong id="detailProblemsUnseen">0</strong></div>
+            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_attempted">Încercate</span><strong id="detailProblemsAttempted">0</strong></div>
+            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_opened">Deschise</span><strong id="detailProblemsOpened">0</strong></div>
+            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_unopened">Nedeschise</span><strong id="detailProblemsUnopened">0</strong></div>
           </div>
 
           <div class="profile-metric-group">
             <h3>Lecții</h3>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_learned">Învățate</span><strong id="detailLessonsLearned">0</strong></div>
-            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_unlearned">Rămase</span><strong id="detailLessonsUnlearned">0</strong></div>
+            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_read_only">Citite, de verificat</span><strong id="detailLessonsReadOnly">0</strong></div>
+            <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_unread">Necitite</span><strong id="detailLessonsUnread">0</strong></div>
           </div>
 
           <div class="profile-metric-group">

@@ -94,24 +94,31 @@ export function createLearningWorkspaceController({
     const typeLabel = type === "lesson"
       ? (lang === "ro" ? "Lecție" : "Lesson")
       : (lang === "ro" ? "Problemă" : "Problem");
+    const catalog = getCatalog?.() || {};
+    const lessonId = asText(item?.lessonId || item?.lesson_id);
+    const relatedLesson = type === "problem"
+      ? (catalog.lessons || []).find((lesson) => asText(lesson?.id) === lessonId)
+      : null;
     const context = type === "lesson"
-      ? [item?.grade, item?.chapter].filter(Boolean).join(" • ")
-      : [item?.lessonId || item?.lesson_id, item?.difficulty != null ? `${lang === "ro" ? "dificultate" : "difficulty"} ${item.difficulty}` : ""].filter(Boolean).join(" • ");
+      ? [item?.grade ? `${lang === "ro" ? "Clasa" : "Grade"} ${item.grade}` : "", item?.chapter].filter(Boolean).join(" • ")
+      : [translated(relatedLesson, lang), relatedLesson?.grade ? `${lang === "ro" ? "Clasa" : "Grade"} ${relatedLesson.grade}` : ""].filter(Boolean).join(" • ");
 
-    breadcrumb.textContent = [typeLabel, context, translated(item, lang)].filter(Boolean).join("  ›  ");
+    breadcrumb.textContent = [typeLabel, context || translated(item, lang)].filter(Boolean).join("  ·  ");
     position.textContent = index >= 0
       ? `${index + 1} / ${sequence.length}`
       : "";
 
     previousButton.disabled = !previous;
     previousButton.title = previous ? translated(previous, lang) : "";
-    previousButton.textContent = lang === "ro" ? "← Anterior" : "← Previous";
+    previousButton.textContent = lang === "ro" ? "← Înapoi" : "← Back";
     nextButton.disabled = !next;
     nextButton.title = next ? translated(next, lang) : "";
-    nextButton.textContent = lang === "ro" ? "Următor →" : "Next →";
+    nextButton.textContent = lang === "ro" ? "Înainte →" : "Next →";
     roadmapButton.hidden = !match;
-    roadmapButton.textContent = lang === "ro" ? "🗺️ Vezi în roadmap" : "🗺️ View in roadmap";
-    closeButton.textContent = lang === "ro" ? "✖ Închide" : "✖ Close";
+    roadmapButton.textContent = "🗺️ Roadmap";
+    closeButton.textContent = "✕";
+    closeButton.title = lang === "ro" ? "Închide" : "Close";
+    closeButton.setAttribute("aria-label", closeButton.title);
   }
 
   previousButton?.addEventListener("click", () => {

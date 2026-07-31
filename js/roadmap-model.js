@@ -25,14 +25,21 @@ export function normalizeRoadmapCatalog(payload) {
     ? candidate.catalog
     : candidate;
 
-  const roadmaps = sortByPosition(source?.roadmaps).map((roadmap) => ({
-    id: asText(roadmap?.id),
+  const roadmaps = sortByPosition(source?.roadmaps).map((roadmap) => {
+    const roadmapId = asText(roadmap?.id);
+    const isUbbPreparation = roadmapId === "ubb-admitere";
+    return {
+    id: roadmapId,
     slug: asText(roadmap?.slug || roadmap?.id),
     icon: asText(roadmap?.icon || "🗺️"),
-    title_ro: asText(roadmap?.title_ro),
-    title_en: asText(roadmap?.title_en),
-    description_ro: asText(roadmap?.description_ro),
-    description_en: asText(roadmap?.description_en),
+    title_ro: isUbbPreparation ? "Pregătire UBB — Matematică" : asText(roadmap?.title_ro),
+    title_en: isUbbPreparation ? "UBB Mathematics Preparation" : asText(roadmap?.title_en),
+    description_ro: isUbbPreparation
+      ? "Parcurge materia în ordine, de la bază la simulări. Fiecare pas arată ce ai finalizat și ce urmează."
+      : asText(roadmap?.description_ro),
+    description_en: isUbbPreparation
+      ? "Follow the curriculum from foundations to full simulations. Every step shows what you completed and what comes next."
+      : asText(roadmap?.description_en),
     target_type: asText(roadmap?.target_type || "custom"),
     published: roadmap?.published !== false,
     position: asNumber(roadmap?.position),
@@ -68,7 +75,8 @@ export function normalizeRoadmapCatalog(payload) {
       dependent_node_id: asText(edge?.dependent_node_id),
       edge_type: asText(edge?.edge_type || "required").toLowerCase()
     }))
-  })).filter((roadmap) => roadmap.id);
+  };
+  }).filter((roadmap) => roadmap.id);
 
   return {
     roadmaps,

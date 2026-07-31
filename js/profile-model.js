@@ -84,6 +84,7 @@ export function buildProfileStats({
   problemRows = [],
   examRows = [],
   catalog = { lessons: [], problems: [], exams: [] },
+  taxonomy = null,
   lang = "ro"
 } = {}) {
   const lessons = sortLessonsForProfile(catalog.lessons, lang);
@@ -94,31 +95,49 @@ export function buildProfileStats({
   const exams = sortExamsForProfile(catalog.exams, lang);
 
   const learnedRows = lessonRows.filter((row) => row.learned);
+  const readRows = lessonRows.filter((row) => row.read_completed || row.learned);
+  const readOnlyRows = readRows.filter((row) => !row.learned);
   const solvedRows = problemRows.filter((row) => row.solved);
-  const wrongRows = problemRows.filter(
+  const attemptedRows = problemRows.filter(
     (row) => !row.solved && Number(row.wrong_attempts ?? row.attempts ?? 0) > 0
+  );
+  const openedRows = problemRows.filter(
+    (row) => !row.solved && Number(row.wrong_attempts ?? row.attempts ?? 0) <= 0
   );
   const passedRows = examRows.filter((row) => row.passed);
   const failedRows = examRows.filter((row) => !row.passed);
 
-  const learned = learnedRows.length;
-  const solved = solvedRows.length;
-  const wrong = wrongRows.length;
-  const passed = passedRows.length;
-  const failed = failedRows.length;
-
   const totals = {
-    lessons: lessons.length,
-    problems: problems.length,
+    lessons: Number(taxonomy?.lessons?.total ?? lessons.length),
+    problems: Number(taxonomy?.problems?.total ?? problems.length),
     exams: exams.length
   };
+
+  const learned = Number(taxonomy?.lessons?.learned ?? learnedRows.length);
+  const read = Math.max(learned, Number(taxonomy?.lessons?.read ?? readRows.length));
+  const readOnly = Number(taxonomy?.lessons?.readOnly ?? Math.max(0, read - learned));
+  const unread = Number(taxonomy?.lessons?.unread ?? Math.max(0, totals.lessons - read));
+
+  const solved = Number(taxonomy?.problems?.solved ?? solvedRows.length);
+  const attempted = Number(taxonomy?.problems?.attempted ?? attemptedRows.length);
+  const opened = Number(taxonomy?.problems?.opened ?? openedRows.length);
+  const unopened = Number(
+    taxonomy?.problems?.unopened ?? Math.max(0, totals.problems - solved - attempted - opened)
+  );
+
+  const passed = passedRows.length;
+  const failed = failedRows.length;
 
   const xpTotal = solvedRows.reduce(
     (sum, row) => sum + Number(row.xp_earned || 0),
     0
   );
 
-  const learnedIds = new Set(learnedRows.map((row) => row.lesson_id).filter(Boolean));
+  const learnedIds = new Set(
+    taxonomy?.lessons?.learnedIds?.length
+      ? taxonomy.lessons.learnedIds
+      : learnedRows.map((row) => row.lesson_id).filter(Boolean)
+  );
   const attemptedExamIds = new Set(examRows.map((row) => row.exam_id).filter(Boolean));
 
   const nextLesson = lessons.find((lesson) => !learnedIds.has(lesson.id)) || null;
@@ -146,10 +165,17 @@ export function buildProfileStats({
   return {
     catalog: { lessons, problems, exams },
     counts: {
+      read,
       learned,
+      readOnly,
+      unread,
       solved,
-      wrong,
-      unresolved: Math.max(0, totals.problems - solved - wrong),
+      attempted,
+      opened,
+      unopened,
+      // Compatibility aliases for older profile widgets.
+      wrong: attempted,
+      unresolved: opened + unopened,
       passed,
       failed,
       unlearned: Math.max(0, totals.lessons - learned),

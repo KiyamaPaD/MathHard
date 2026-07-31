@@ -15,6 +15,7 @@ import {
   retentionConceptTitle
 } from "./concept-retention-model.js";
 import { normalizeUiError, renderUiState } from "./ui-feedback.js";
+import { buildProgressInsights } from "./progress-taxonomy-model.js";
 
 const RANGE_KEY = "mh_analytics_range_v1";
 const RANGES = [30, 90, 365];
@@ -36,7 +37,21 @@ const COPY = {
     days: "zile",
     overview: "Progres general",
     lessons: "Lecții",
+    lessonsRead: "Lecții citite",
+    lessonsLearned: "Lecții învățate",
+    lessonsReadOnly: "Citite, de verificat",
+    lessonsUnread: "Necitite",
     problems: "Probleme",
+    problemsSolved: "Rezolvate",
+    problemsAttempted: "Încercate",
+    problemsOpened: "Deschise",
+    problemsUnopened: "Nedeschise",
+    progressBreakdown: "Starea progresului",
+    lessonBreakdownHint: "Lectură și învățare sunt urmărite separat",
+    problemBreakdownHint: "De la prima deschidere până la rezolvare",
+    lessonConversion: "din lecțiile citite sunt și învățate",
+    problemConversion: "din problemele la care ai răspuns sunt rezolvate",
+    noTaxonomy: "Statusurile detaliate nu sunt disponibile momentan.",
     exams: "Examene",
     activity: "Evoluție",
     activityHint: "Activitate și XP în perioada selectată",
@@ -109,7 +124,8 @@ const COPY = {
     reveals: "soluții afișate",
     event: {
       lesson_opened: "Lecție deschisă",
-      lesson_completed: "Lecție finalizată",
+      lesson_read: "Lecție citită",
+      lesson_completed: "Lecție învățată",
       problem_opened: "Problemă deschisă",
       answer_wrong: "Răspuns greșit",
       answer_correct: "Răspuns corect",
@@ -138,7 +154,21 @@ const COPY = {
     days: "days",
     overview: "Overall progress",
     lessons: "Lessons",
+    lessonsRead: "Lessons read",
+    lessonsLearned: "Lessons learned",
+    lessonsReadOnly: "Read, check pending",
+    lessonsUnread: "Unread",
     problems: "Problems",
+    problemsSolved: "Solved",
+    problemsAttempted: "Attempted",
+    problemsOpened: "Opened",
+    problemsUnopened: "Not opened",
+    progressBreakdown: "Progress status",
+    lessonBreakdownHint: "Reading and learning are tracked separately",
+    problemBreakdownHint: "From first open to a correct solution",
+    lessonConversion: "of read lessons are also learned",
+    problemConversion: "of answered problems are solved",
+    noTaxonomy: "Detailed statuses are temporarily unavailable.",
     exams: "Exams",
     activity: "Progress trend",
     activityHint: "Activity and XP in the selected range",
@@ -211,7 +241,8 @@ const COPY = {
     reveals: "revealed solutions",
     event: {
       lesson_opened: "Lesson opened",
-      lesson_completed: "Lesson completed",
+      lesson_read: "Lesson read",
+      lesson_completed: "Lesson learned",
       problem_opened: "Problem opened",
       answer_wrong: "Wrong answer",
       answer_correct: "Correct answer",
@@ -526,6 +557,61 @@ function renderConceptRetention(payload) {
   `;
 }
 
+function renderTaxonomyMetric(label, value, total, className = "") {
+  const percent = total > 0 ? Math.round((Number(value || 0) / Number(total)) * 100) : 0;
+  return `
+    <div class="mh-analytics-status-row ${escapeHtml(className)}">
+      <div><span>${escapeHtml(label)}</span><strong>${formatNumber(value)}</strong></div>
+      <div class="mh-analytics-status-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${Math.max(0, Math.min(100, percent))}%"></i></div>
+    </div>
+  `;
+}
+
+function renderProgressTaxonomy(taxonomy) {
+  const t = copy();
+  if (!taxonomy?.available) {
+    return `
+      <section class="mh-analytics-card mh-analytics-span-2">
+        <div class="mh-analytics-card-head"><div><h3>${t.progressBreakdown}</h3></div></div>
+        <p class="mh-analytics-muted">${t.noTaxonomy}</p>
+      </section>
+    `;
+  }
+
+  const lessons = taxonomy.lessons || {};
+  const problems = taxonomy.problems || {};
+  const insights = buildProgressInsights(taxonomy);
+
+  return `
+    <section class="mh-analytics-card mh-analytics-span-2 mh-analytics-progress-taxonomy">
+      <div class="mh-analytics-card-head"><div><h3>${t.progressBreakdown}</h3></div></div>
+      <div class="mh-analytics-taxonomy-grid">
+        <article>
+          <div class="mh-analytics-taxonomy-head">
+            <div><h4>${t.lessons}</h4><p>${t.lessonBreakdownHint}</p></div>
+            <strong>${formatNumber(insights.lessons.learnedFromReadShare)}%</strong>
+          </div>
+          <div class="mh-analytics-taxonomy-insight">${formatNumber(insights.lessons.learnedFromReadShare)}% ${t.lessonConversion}</div>
+          ${renderTaxonomyMetric(t.lessonsLearned, lessons.learned, lessons.total, "is-learned")}
+          ${renderTaxonomyMetric(t.lessonsReadOnly, lessons.readOnly, lessons.total, "is-read")}
+          ${renderTaxonomyMetric(t.lessonsUnread, lessons.unread, lessons.total, "is-unread")}
+        </article>
+        <article>
+          <div class="mh-analytics-taxonomy-head">
+            <div><h4>${t.problems}</h4><p>${t.problemBreakdownHint}</p></div>
+            <strong>${formatNumber(insights.problems.conversionFromAttempt)}%</strong>
+          </div>
+          <div class="mh-analytics-taxonomy-insight">${formatNumber(insights.problems.conversionFromAttempt)}% ${t.problemConversion}</div>
+          ${renderTaxonomyMetric(t.problemsSolved, problems.solved, problems.total, "is-solved")}
+          ${renderTaxonomyMetric(t.problemsAttempted, problems.attempted, problems.total, "is-attempted")}
+          ${renderTaxonomyMetric(t.problemsOpened, problems.opened, problems.total, "is-opened")}
+          ${renderTaxonomyMetric(t.problemsUnopened, problems.unopened, problems.total, "is-unopened")}
+        </article>
+      </div>
+    </section>
+  `;
+}
+
 function renderInsightList(title, rows, emptyText, kind) {
   return `
     <section class="mh-analytics-card">
@@ -604,8 +690,9 @@ function renderDashboard(data) {
       <section class="mh-analytics-card">
         <div class="mh-analytics-card-head"><div><h3>${t.overview}</h3></div></div>
         <div class="mh-analytics-progress-list">
-          ${renderProgressRow(t.lessons, summary.learnedLessons, summary.totalLessons)}
-          ${renderProgressRow(t.problems, summary.solvedProblems, summary.totalProblems)}
+          ${renderProgressRow(t.lessonsRead, data.progressTaxonomy?.lessons?.read ?? summary.learnedLessons, data.progressTaxonomy?.lessons?.total ?? summary.totalLessons)}
+          ${renderProgressRow(t.lessonsLearned, data.progressTaxonomy?.lessons?.learned ?? summary.learnedLessons, data.progressTaxonomy?.lessons?.total ?? summary.totalLessons)}
+          ${renderProgressRow(t.problemsSolved, data.progressTaxonomy?.problems?.solved ?? summary.solvedProblems, data.progressTaxonomy?.problems?.total ?? summary.totalProblems)}
           ${renderProgressRow(t.exams, summary.passedExams, summary.totalExams)}
         </div>
       </section>
@@ -614,6 +701,7 @@ function renderDashboard(data) {
         <div class="mh-analytics-donut" style="--value:${Math.max(0, Math.min(100, summary.accuracy))}"><strong>${formatNumber(summary.accuracy, 1)}%</strong></div>
         <p>${summary.correctAnswers} ✓ · ${summary.wrongAnswers} ✕</p>
       </section>
+      ${renderProgressTaxonomy(data.progressTaxonomy)}
       ${renderTrend(data.dailyActivity)}
       ${renderHeatmap(data.heatmap)}
       ${renderChapterList(data.chapters)}

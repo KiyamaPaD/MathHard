@@ -93,3 +93,77 @@
 #understoodBtn.is-learned[disabled] {
   opacity: 1;
 }
+
+/* Phase 03B — problem lifecycle statuses. */
+.mh-problem-status-chip {
+  font-weight: 800;
+}
+
+.mh-problem-status-chip.is-solved {
+  border-color: color-mix(in srgb, var(--ok) 62%, var(--border));
+  color: color-mix(in srgb, var(--ok) 82%, white 18%);
+}
+
+.mh-problem-status-chip.is-attempted {
+  border-color: rgba(245, 158, 11, .55);
+  color: #fbbf24;
+}
+
+.mh-problem-status-chip.is-opened {
+  border-color: rgba(56, 189, 248, .5);
+  color: #7dd3fc;
+}
+
+.mh-problem-status-chip.is-unopened {
+  opacity: .78;
+}
+
+/* Phase 3B — problem lifecycle overview. */
+.mh-problem-lifecycle-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.mh-problem-lifecycle-summary span {
+  white-space: nowrap;
+}
+
+.mh-problem-lifecycle-item {
+  width: 100%;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-problem-lifecycle-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.mh-problem-lifecycle-section.is-attempted > summary {
+  border-left: 3px solid #f59e0b;
+}
+
+.mh-problem-lifecycle-section.is-opened > summary {
+  border-left: 3px solid #38bdf8;
+}
+
+.mh-problem-lifecycle-section.is-unopened > summary {
+  border-left: 3px solid var(--border);
+}
+
+@media (max-width: 620px) {
+  .mh-problem-lifecycle-summary {
+    justify-content: flex-start;
+  }
+
+  .mh-problem-lifecycle-item .xp-item-head {
+    align-items: flex-start;
+  }
+}

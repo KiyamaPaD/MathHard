@@ -70,6 +70,8 @@ export function createSecureProblemController({
   getProblems = () => [],
   getSolvedIds = () => new Set(),
   onOpenProblem,
+  onProblemOpened = () => {},
+  onProblemAttempted = () => {},
   isExamProblem,
   getXPRecord,
   isProblemSolved,
@@ -119,11 +121,14 @@ export function createSecureProblemController({
               ☆ ${ro ? "Salvează" : "Bookmark"}
             </button>
             ${!isExam ? `
-            <div class="problem-xp-box">
-              <div class="legend">${ro ? "⚡ XP obținut" : "⚡ XP earned"}</div>
-              <div class="xp-inline-number" id="probXpValue">${record.xp || 0} / 10</div>
-              <div class="legend" id="probXpStats">
-                ${ro ? "greșeli" : "mistakes"}: ${record.wrong || 0} • ${ro ? "hinturi" : "hints"}: ${record.hints || 0}
+            <div class="mh-problem-progress-box" aria-label="${ro ? "Progres problemă" : "Problem progress"}">
+              <div class="mh-problem-progress-top">
+                <span class="legend">${ro ? "Progres problemă" : "Problem progress"}</span>
+                <strong id="probXpValue">${record.xp || 0} / 10 XP</strong>
+              </div>
+              <div class="mh-problem-progress-meta" id="probXpStats">
+                <span>${ro ? "Greșeli" : "Mistakes"}: ${record.wrong || 0}</span>
+                <span>${ro ? "Hinturi" : "Hints"}: ${record.hints || 0}</span>
               </div>
             </div>` : ""}
           </div>
@@ -134,8 +139,8 @@ export function createSecureProblemController({
             <section class="mh-problem-card">
               <div class="legend mh-secure-caption">
                 ${ro
-                  ? "După afișarea soluției, problema nu mai acordă XP."
-                  : "After revealing the solution, the problem no longer awards XP."}
+                  ? "Rezolvă fără soluție pentru a păstra XP-ul disponibil."
+                  : "Solve it without revealing the solution to keep the available XP."}
               </div>
               <div class="problem-statement">${statement}</div>
               ${renderConceptDetails(problem.id)}
@@ -206,7 +211,7 @@ export function createSecureProblemController({
                 </div>
               </div>
               <div id="solutionLocked" class="legend">
-                ${ro ? "Soluția se deblochează după rezolvare sau după reveal." : "The solution unlocks after solving or revealing the answer."}
+                ${ro ? "Soluția devine disponibilă după rezolvare sau la cerere." : "The solution becomes available after solving or on request."}
               </div>
               <div id="solutionContent" class="mh-solution-content" hidden></div>
               <div class="reveal">
@@ -227,7 +232,7 @@ export function createSecureProblemController({
               <textarea id="problemNote" rows="10" maxlength="10000" placeholder="${ro
                 ? "Scrie ideea principală, greșeala făcută sau metoda de reținut…"
                 : "Write the key idea, your mistake or the method to remember…"}"></textarea>
-              <div class="legend" id="problemNoteStatus">${ro ? "Salvare automată per cont" : "Autosaved per account"}</div>
+              <div class="legend" id="problemNoteStatus">${ro ? "Notița se salvează automat." : "Your note is saved automatically."}</div>
             </section>
           </aside>
         </div>
@@ -235,6 +240,7 @@ export function createSecureProblemController({
     `;
 
     renderMath(host);
+    if (!isExam) onProblemOpened(problem.id);
     void logLearningEvent(supabase, "problem_opened", "problem", problem.id, { language })
       .catch((error) => console.warn("problem_opened event failed:", error));
 
@@ -306,8 +312,10 @@ export function createSecureProblemController({
       const current = getXPRecord(problem.id);
       const value = host.querySelector("#probXpValue");
       const stats = host.querySelector("#probXpStats");
-      if (value) value.textContent = `${current.xp || 0} / 10`;
-      if (stats) stats.textContent = `${ro ? "greșeli" : "mistakes"}: ${current.wrong || 0} • ${ro ? "hinturi" : "hints"}: ${current.hints || 0}`;
+      if (value) value.textContent = `${current.xp || 0} / 10 XP`;
+      if (stats) {
+        stats.innerHTML = `<span>${ro ? "Greșeli" : "Mistakes"}: ${current.wrong || 0}</span><span>${ro ? "Hinturi" : "Hints"}: ${current.hints || 0}</span>`;
+      }
     }
 
     function renderWorkspace({ syncNote = true } = {}) {
@@ -452,6 +460,7 @@ export function createSecureProblemController({
       }
 
       submitting = true;
+      if (!isExam) onProblemAttempted(problem.id);
       checkButton.disabled = true;
       input.disabled = true;
       statusArea.textContent = messageFor(language, "checking");

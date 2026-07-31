@@ -762,3 +762,12 @@
     transition:none;
   }
 }
+
+/* Phase 03B — separate lesson reading/learning and problem lifecycle. */
+.profile-stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.profile-progress-fill.is-read {
+  background: linear-gradient(90deg, #38bdf8, #22c55e);
+}

@@ -701,3 +701,110 @@
     text-align: center;
   }
 }
+
+/* Phase 03B — separate lesson reading/learning and problem lifecycle. */
+.mh-analytics-taxonomy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.mh-analytics-taxonomy-grid > article {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 92%, var(--accent) 8%);
+}
+
+.mh-analytics-taxonomy-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.mh-analytics-taxonomy-head h4,
+.mh-analytics-taxonomy-head p {
+  margin: 0;
+}
+
+.mh-analytics-taxonomy-head p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.mh-analytics-taxonomy-head > strong {
+  font-size: 1.3rem;
+}
+
+.mh-analytics-taxonomy-insight {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.mh-analytics-status-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.mh-analytics-status-row > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .84rem;
+}
+
+.mh-analytics-status-row > div:first-child span {
+  color: var(--muted);
+}
+
+.mh-analytics-status-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+.mh-analytics-status-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.mh-analytics-status-row.is-learned .mh-analytics-status-track i,
+.mh-analytics-status-row.is-solved .mh-analytics-status-track i {
+  background: var(--ok);
+}
+
+.mh-analytics-status-row.is-attempted .mh-analytics-status-track i {
+  background: #f59e0b;
+}
+
+.mh-analytics-status-row.is-read .mh-analytics-status-track i,
+.mh-analytics-status-row.is-opened .mh-analytics-status-track i {
+  background: #38bdf8;
+}
+
+.mh-analytics-status-row.is-unread .mh-analytics-status-track i,
+.mh-analytics-status-row.is-unopened .mh-analytics-status-track i {
+  background: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
+@media (max-width: 760px) {
+  .mh-analytics-taxonomy-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mh-analytics-taxonomy-grid > article {
+    padding: 14px;
+  }
+}
