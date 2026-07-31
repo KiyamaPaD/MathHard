@@ -1,4 +1,4 @@
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 const CACHE_PREFIX = `mh_concept_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHE_BYTES = 1024 * 1024;

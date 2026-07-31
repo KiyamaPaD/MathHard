@@ -1,3 +1,24 @@
+const VALID_PUBLICATION_STATES = new Set(["published", "unpublished"]);
+const VALID_PUBLICATION_MODES = new Set(["legacy", "verified"]);
+
+function normalizePublication(value = {}, fallback = {}) {
+  const published = asBoolean(value?.published ?? fallback?.published);
+  const stateCandidate = String(value?.state ?? fallback?.publication_state ?? "").trim().toLowerCase();
+  const modeCandidate = String(value?.publication_mode ?? fallback?.publication_mode ?? "verified").trim().toLowerCase();
+  return {
+    state: VALID_PUBLICATION_STATES.has(stateCandidate) ? stateCandidate : (published ? "published" : "unpublished"),
+    published,
+    publication_mode: VALID_PUBLICATION_MODES.has(modeCandidate) ? modeCandidate : "verified",
+    publication_version: asInteger(value?.publication_version ?? fallback?.publication_version),
+    verified_review_version: value?.verified_review_version == null ? null : asInteger(value.verified_review_version),
+    reason: String(value?.reason || ""),
+    published_by: value?.published_by || null,
+    published_at: value?.published_at || fallback?.published_at || null,
+    unpublished_at: value?.unpublished_at || null,
+    updated_at: value?.updated_at || null
+  };
+}
+
 const VALID_STATUSES = new Set([
   "draft",
   "in_review",
@@ -35,11 +56,15 @@ export function emptyContentQualityDashboard() {
       archived: 0,
       automated_ready: 0,
       eligible_for_publish: 0,
-      blocked: 0
+      blocked: 0,
+      published: 0,
+      unpublished: 0,
+      legacy_published: 0,
+      ready_to_publish: 0
     },
     items: [],
     generated_at: null,
-    schema_version: "content-quality-v1"
+    schema_version: "editorial-workflow-v1"
   };
 }
 
@@ -53,6 +78,8 @@ export function normalizeQualityItem(value) {
   const blockingIssues = asArray(value?.blocking_issues)
     .map((entry) => String(entry || "").trim())
     .filter(Boolean);
+
+  const publication = normalizePublication(value?.publication, value);
 
   return {
     content_type: String(value?.content_type || "lesson").trim().toLowerCase(),
@@ -73,7 +100,14 @@ export function normalizeQualityItem(value) {
     automated_ready: asBoolean(value?.automated_ready),
     eligible_for_publish: asBoolean(value?.eligible_for_publish),
     blocking_issues: blockingIssues,
-    completeness_score: Math.max(0, Math.min(100, Number(value?.completeness_score || 0)))
+    completeness_score: Math.max(0, Math.min(100, Number(value?.completeness_score || 0))),
+    can_publish: asBoolean(value?.can_publish ?? value?.eligible_for_publish),
+    publication,
+    publication_state: publication.state,
+    published: publication.published,
+    publication_mode: publication.publication_mode,
+    publication_version: publication.publication_version,
+    published_at: publication.published_at
   };
 }
 
@@ -92,7 +126,11 @@ export function normalizeContentQualityDashboard(value) {
       archived: asInteger(summary.archived),
       automated_ready: asInteger(summary.automated_ready),
       eligible_for_publish: asInteger(summary.eligible_for_publish),
-      blocked: asInteger(summary.blocked)
+      blocked: asInteger(summary.blocked),
+      published: asInteger(summary.published),
+      unpublished: asInteger(summary.unpublished),
+      legacy_published: asInteger(summary.legacy_published),
+      ready_to_publish: asInteger(summary.ready_to_publish)
     },
     items,
     generated_at: value?.generated_at || fallback.generated_at,
@@ -138,15 +176,23 @@ export function qualityItemTitle(item, language = "ro") {
 export function filterQualityItems(items, {
   query = "",
   status = "all",
-  contentType = "all"
+  contentType = "all",
+  publication = "all"
 } = {}) {
   const normalizedQuery = String(query || "").trim().toLocaleLowerCase("ro");
   const normalizedStatus = String(status || "all").trim().toLowerCase();
   const normalizedType = String(contentType || "all").trim().toLowerCase();
+  const normalizedPublication = String(publication || "all").trim().toLowerCase();
 
   return asArray(items).filter((item) => {
     if (normalizedStatus !== "all" && item.status !== normalizedStatus) return false;
     if (normalizedType !== "all" && item.content_type !== normalizedType) return false;
+    if (normalizedPublication !== "all") {
+      if (["published", "unpublished"].includes(normalizedPublication)
+        && item.publication_state !== normalizedPublication) return false;
+      if (["legacy", "verified"].includes(normalizedPublication)
+        && item.publication_mode !== normalizedPublication) return false;
+    }
     if (!normalizedQuery) return true;
     const haystack = [
       item.content_id,

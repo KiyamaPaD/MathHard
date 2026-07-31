@@ -96,6 +96,7 @@ for (const fullPath of allFiles) {
   }
 
   for (const match of source.matchAll(/\.rpc\(\s*["']([^"']+)["']/g)) rpcNames.add(match[1]);
+  for (const match of source.matchAll(/\brpc\(\s*[^,\n]+,\s*["']([^"']+)["']/g)) rpcNames.add(match[1]);
   for (const match of source.matchAll(/\.from\(\s*["']([^"']+)["']/g)) tableNames.add(match[1]);
 }
 

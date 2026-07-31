@@ -236,6 +236,23 @@ const {
   saveContentQualityReview
 } = await importBrowserModule("js/content-quality-repository.js");
 const {
+  normalizeEditorialPreview,
+  normalizePublication,
+  publicationBatchItems,
+  publicationModeLabel,
+  publicationStateLabel
+} = await importBrowserModule("js/content-publication-model.js");
+const {
+  bulkSetPublication,
+  bulkSubmitForReview,
+  duplicateContent,
+  loadEditorialDashboard,
+  loadEditorialPreview,
+  loadPublicationHistory,
+  publishContent,
+  unpublishContent
+} = await import(`${pathToFileURL(resolve(root, "js/content-publication-repository.js")).href}?test=${Date.now()}`);
+const {
   achievementProgress,
   clampDailyGoal,
   levelRemaining,
@@ -1589,7 +1606,7 @@ try {
 
 
 const normalizedQuality = normalizeContentQualityDashboard({
-  summary: { total: 2, verified: 1, blocked: 1 },
+  summary: { total: 2, verified: 1, blocked: 1, published: 1, unpublished: 1, legacy_published: 1, ready_to_publish: 0 },
   items: [
     {
       content_type: "lesson",
@@ -1602,7 +1619,8 @@ const normalizedQuality = normalizeContentQualityDashboard({
       automated_checks: { title_ro: true, title_en: true, core_ro: true, core_en: true, source_present: true },
       automated_ready: true,
       eligible_for_publish: true,
-      completeness_score: 100
+      completeness_score: 100,
+      publication: { state: "published", published: true, publication_mode: "legacy", publication_version: 1 }
     },
     {
       content_type: "problem",
@@ -1611,12 +1629,16 @@ const normalizedQuality = normalizeContentQualityDashboard({
       status: "draft",
       blocking_issues: ["missing_solution_en"],
       automated_checks: { title_ro: true, title_en: true, core_ro: true, core_en: true, source_present: true, answer_present: true, solution_ro: true, solution_en: false },
-      completeness_score: 87.5
+      completeness_score: 87.5,
+      publication: { state: "unpublished", published: false, publication_mode: "verified", publication_version: 0 }
     }
   ]
 });
 assert.equal(normalizedQuality.summary.total, 2);
 assert.equal(normalizedQuality.items[0].eligible_for_publish, true);
+assert.equal(normalizedQuality.summary.published, 1);
+assert.equal(normalizedQuality.items[0].publication_mode, "legacy");
+assert.equal(filterQualityItems(normalizedQuality.items, { publication: "published" }).length, 1);
 assert.equal(filterQualityItems(normalizedQuality.items, { status: "draft" }).length, 1);
 assert.equal(filterQualityItems(normalizedQuality.items, { query: "blocată" })[0].content_id, "problem-blocked");
 assert.equal(qualityChecklist(normalizedQuality.items[1], "ro").some((entry) => !entry.passed), true);
@@ -1663,6 +1685,63 @@ assert.deepEqual(qualityRpcCalls.map(([name]) => name), [
   "mh_admin_get_content_quality_dashboard",
   "mh_admin_save_content_quality",
   "mh_admin_reset_content_quality"
+]);
+
+
+const normalizedPublication = normalizePublication({
+  state: "published",
+  published: true,
+  publication_mode: "verified",
+  publication_version: 4,
+  verified_review_version: 7
+});
+assert.equal(normalizedPublication.published, true);
+assert.equal(normalizedPublication.publication_version, 4);
+assert.equal(publicationStateLabel(normalizedPublication, "ro"), "Publicat · verificat");
+assert.equal(publicationModeLabel("legacy", "en"), "Legacy compatibility");
+assert.deepEqual(publicationBatchItems([
+  { content_type: "lesson", content_id: "l1", review_version: 3 },
+  { content_type: "", content_id: "invalid" }
+]), [{ content_type: "lesson", content_id: "l1", review_version: 3 }]);
+assert.equal(normalizeEditorialPreview({ content_type: "lesson", content_id: "l1", student_visible: true }).student_visible, true);
+
+let publicationRpcCalls = [];
+const editorialPayload = {
+  ...normalizedQuality,
+  schema_version: "editorial-workflow-v1"
+};
+const publicationSupabase = {
+  auth: { async getUser() { return { data: { user: { id: "publication-admin" } }, error: null }; } },
+  async rpc(name, payload) {
+    publicationRpcCalls.push([name, payload]);
+    if (name === "mh_admin_get_editorial_dashboard") return { data: editorialPayload, error: null };
+    if (name === "mh_admin_publish_content") return { data: { published: true }, error: null };
+    if (name === "mh_admin_unpublish_content") return { data: { published: false }, error: null };
+    if (name === "mh_admin_bulk_set_publication") return { data: { updated: 1 }, error: null };
+    if (name === "mh_admin_bulk_submit_for_review") return { data: { submitted: 1 }, error: null };
+    if (name === "mh_admin_duplicate_content") return { data: { duplicated: true, new_id: "lesson-ready-copy" }, error: null };
+    if (name === "mh_admin_preview_content") return { data: { content_type: "lesson", content_id: "lesson-ready", student_visible: true, content: {} }, error: null };
+    if (name === "mh_admin_get_publication_history") return { data: { entries: [] }, error: null };
+    return { data: null, error: new Error(`Unexpected publication RPC: ${name}`) };
+  }
+};
+assert.equal((await loadEditorialDashboard(publicationSupabase)).schema_version, "editorial-workflow-v1");
+await publishContent(publicationSupabase, normalizedQuality.items[0]);
+await unpublishContent(publicationSupabase, normalizedQuality.items[0], "test");
+await bulkSetPublication(publicationSupabase, [normalizedQuality.items[0]], true);
+await bulkSubmitForReview(publicationSupabase, [normalizedQuality.items[0]]);
+assert.equal((await duplicateContent(publicationSupabase, normalizedQuality.items[0], "lesson-ready-copy")).new_id, "lesson-ready-copy");
+assert.equal((await loadEditorialPreview(publicationSupabase, normalizedQuality.items[0], "ro")).student_visible, true);
+assert.deepEqual(await loadPublicationHistory(publicationSupabase, normalizedQuality.items[0]), { entries: [] });
+assert.deepEqual(publicationRpcCalls.map(([name]) => name), [
+  "mh_admin_get_editorial_dashboard",
+  "mh_admin_publish_content",
+  "mh_admin_unpublish_content",
+  "mh_admin_bulk_set_publication",
+  "mh_admin_bulk_submit_for_review",
+  "mh_admin_duplicate_content",
+  "mh_admin_preview_content",
+  "mh_admin_get_publication_history"
 ]);
 
 

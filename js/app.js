@@ -3383,7 +3383,30 @@ ${details}`);
         contentQualityAdminController = runtime.createContentQualityAdminController({
           host: document.getElementById("mhContentQualityAdminStudio"),
           supabase,
-          getLanguage: () => LANG
+          getLanguage: () => LANG,
+          onChanged: async () => {
+            invalidateContentCatalogCache();
+            invalidateRoadmapCache();
+            invalidateConceptCatalogCache();
+            await reloadAllContentFromSupabase(true);
+            await refreshConceptCatalog(true);
+            await roadmapController?.load(true);
+            mhRenderAdminList();
+            renderCards();
+            buildNestedTree();
+            learningWorkspaceController?.refresh();
+          },
+          onEditContent: (qualityItem) => {
+            const collection = qualityItem?.content_type === "problem"
+              ? DATA.problems
+              : qualityItem?.content_type === "exam"
+                ? DATA.exams
+                : DATA.lessons;
+            const item = collection.find((entry) => entry.id === qualityItem?.content_id);
+            if (!item) return;
+            mhFillAdminFormFromItem(item);
+            adminStudioController?.openEditor();
+          }
         });
       }
 

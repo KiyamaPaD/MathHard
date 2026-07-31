@@ -62,13 +62,15 @@ if (!model.includes("normalizeContentQualityDashboard") ||
   errors.push("Content Quality model helpers are incomplete.");
 }
 if (!controller.includes("createContentQualityAdminController") ||
-    !controller.includes("eligible_for_publish") ||
+    !controller.includes("data-quality-publish") ||
+    !controller.includes("data-quality-bulk-publish") ||
     !controller.includes("blocking_issues")) {
-  errors.push("Content Quality Admin controller is incomplete.");
+  errors.push("Content Quality / Publication Admin controller is incomplete.");
 }
 if (!css.includes(".mh-quality-layout") ||
     !css.includes(".mh-quality-auto-checks") ||
-    !css.includes("@media(max-width:650px)")) {
+    !css.includes(".mh-quality-modal") ||
+    !css.includes("@media(max-width:700px)")) {
   errors.push("Content Quality responsive styling is incomplete.");
 }
 if (!adminStudio.includes('"concepts", "quality"')) {
@@ -85,7 +87,7 @@ if (errors.length) {
 } else {
   console.log("- editorial quality model and RPC repository: present");
   console.log("- Admin Studio Quality workspace: present");
-  console.log("- server-gated verification UI contract: present");
+  console.log("- server-gated verification and publication UI contract: present");
   console.log("- responsive layout: present");
   console.log("- SQL kept outside Git: confirmed");
   console.log("MathHard Content Quality audit passed.");

@@ -16,6 +16,8 @@ const moduleJsFiles = [
   "js/content-quality-model.js",
   "js/content-quality-repository.js",
   "js/content-quality-admin-controller.js",
+  "js/content-publication-model.js",
+  "js/content-publication-repository.js",
   "js/progress-repository.js",
   "js/lesson-status-repository.js",
   "js/lesson-quiz-model.js",
@@ -119,6 +121,7 @@ const requiredFiles = [
   "scripts/concept-mastery-audit.mjs",
   "scripts/concept-retention-audit.mjs",
   "scripts/content-quality-audit.mjs",
+  "scripts/publication-workflow-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
