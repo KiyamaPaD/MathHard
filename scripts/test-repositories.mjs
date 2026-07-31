@@ -217,6 +217,12 @@ const {
   normalizeConceptMasteryPayload
 } = await importBrowserModule("js/concept-mastery-model.js");
 const {
+  buildConceptReviewQueue,
+  emptyConceptRetention,
+  normalizeConceptRetentionPayload,
+  retentionConceptTitle
+} = await importBrowserModule("js/concept-retention-model.js");
+const {
   achievementProgress,
   clampDailyGoal,
   levelRemaining,
@@ -1252,6 +1258,70 @@ assert.equal(conceptHighlights.strengths[0].id, "natural-numbers");
 assert.equal(conceptHighlights.priorities[0].id, "divisibility");
 assert.equal(conceptHighlights.ready[0].id, "fractions");
 assert.equal(emptyConceptMastery({ available: false, reason: "not_installed" }).available, false);
+
+// Product Phase 01D: retention normalization and review ordering.
+const conceptRetentionPayload = normalizeConceptRetentionPayload({
+  summary: {
+    active_concepts: 4,
+    due_now: 2,
+    overdue: 1,
+    due_soon: 1,
+    stable: 1,
+    average_retention: 67.5
+  },
+  queue: [
+    {
+      id: "comparison",
+      title_ro: "Comparare",
+      title_en: "Comparison",
+      mastery: 76,
+      confidence: 61,
+      retention_score: 52,
+      activity_count: 12,
+      review_state: "due",
+      review_priority: 65,
+      days_until_review: 0
+    },
+    {
+      id: "divisibility",
+      title_ro: "Divizibilitate",
+      title_en: "Divisibility",
+      mastery: 84,
+      confidence: 72,
+      retention_score: 43,
+      activity_count: 18,
+      review_state: "overdue",
+      review_priority: 90,
+      days_until_review: -5
+    },
+    {
+      id: "fractions",
+      title_ro: "Fracții",
+      title_en: "Fractions",
+      mastery: 68,
+      confidence: 44,
+      retention_score: 62,
+      activity_count: 7,
+      review_state: "upcoming",
+      review_priority: 44,
+      days_until_review: 3
+    }
+  ],
+  concepts: [
+    { id: "comparison", activity_count: 12, review_state: "due", retention_score: 52 },
+    { id: "divisibility", activity_count: 18, review_state: "overdue", retention_score: 43 },
+    { id: "fractions", activity_count: 7, review_state: "upcoming", retention_score: 62 },
+    { id: "algebra", activity_count: 9, review_state: "stable", retention_score: 88 }
+  ]
+});
+assert.equal(conceptRetentionPayload.summary.dueNow, 2);
+assert.equal(conceptRetentionPayload.queue[0].retention, 52);
+assert.equal(retentionConceptTitle(conceptRetentionPayload.queue[0], "en"), "Comparison");
+const conceptReviewQueue = buildConceptReviewQueue(conceptRetentionPayload, 3);
+assert.equal(conceptReviewQueue.queue[0].id, "divisibility");
+assert.equal(conceptReviewQueue.queue[1].id, "comparison");
+assert.equal(conceptReviewQueue.queue[2].id, "fractions");
+assert.equal(emptyConceptRetention({ available: false, reason: "not_installed" }).available, false);
 
 // Phase 16: normalized levels, goals, achievements and leaderboard rows.
 const gamificationPayload = normalizeGamificationPayload({

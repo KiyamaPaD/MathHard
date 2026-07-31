@@ -10,6 +10,10 @@ import {
   buildConceptMasteryHighlights,
   conceptTitle
 } from "./concept-mastery-model.js";
+import {
+  buildConceptReviewQueue,
+  retentionConceptTitle
+} from "./concept-retention-model.js";
 import { normalizeUiError, renderUiState } from "./ui-feedback.js";
 
 const RANGE_KEY = "mh_analytics_range_v1";
@@ -64,6 +68,27 @@ const COPY = {
       blocked: "Blocat",
       in_progress: "În progres",
       mastered: "Stăpânit"
+    },
+    retentionTitle: "Plan de recapitulare",
+    retentionHint: "Retenție estimată și următoarea repetare",
+    retentionAverage: "retenție medie",
+    retentionDueNow: "de repetat acum",
+    retentionOverdue: "întârziate",
+    retentionDueSoon: "în următoarele 7 zile",
+    retentionStable: "stabile",
+    retentionEmpty: "Nu există încă o recapitulare programată.",
+    retentionState: {
+      overdue: "Întârziat",
+      due: "Astăzi",
+      upcoming: "Urmează",
+      stable: "Stabil",
+      no_evidence: "Fără activitate"
+    },
+    reviewTiming: {
+      overdue: "întârziere",
+      today: "astăzi",
+      tomorrow: "mâine",
+      inDays: "în {days} zile"
     },
     attempts: "încercări",
     accuracy: "acuratețe",
@@ -145,6 +170,27 @@ const COPY = {
       blocked: "Blocked",
       in_progress: "In progress",
       mastered: "Mastered"
+    },
+    retentionTitle: "Review plan",
+    retentionHint: "Estimated retention and next spaced review",
+    retentionAverage: "average retention",
+    retentionDueNow: "due now",
+    retentionOverdue: "overdue",
+    retentionDueSoon: "within 7 days",
+    retentionStable: "stable",
+    retentionEmpty: "There is no scheduled review yet.",
+    retentionState: {
+      overdue: "Overdue",
+      due: "Today",
+      upcoming: "Upcoming",
+      stable: "Stable",
+      no_evidence: "No activity"
+    },
+    reviewTiming: {
+      overdue: "overdue",
+      today: "today",
+      tomorrow: "tomorrow",
+      inDays: "in {days} days"
     },
     attempts: "attempts",
     accuracy: "accuracy",
@@ -413,6 +459,73 @@ function renderConceptMastery(payload) {
   `;
 }
 
+
+function formatReviewTiming(concept) {
+  const t = copy();
+  const days = Number(concept?.daysUntilReview || 0);
+  if (concept?.reviewState === "overdue") {
+    return `${Math.max(1, Math.abs(days))} ${t.days} ${t.reviewTiming.overdue}`;
+  }
+  if (days <= 0) return t.reviewTiming.today;
+  if (days === 1) return t.reviewTiming.tomorrow;
+  return t.reviewTiming.inDays.replace("{days}", String(days));
+}
+
+function renderConceptReviewRow(concept) {
+  const t = copy();
+  const title = retentionConceptTitle(concept, locale());
+  const state = t.retentionState[concept.reviewState] || concept.reviewState;
+
+  return `
+    <article class="mh-analytics-review-row ${escapeHtml(concept.reviewState)}">
+      <div class="mh-analytics-review-head">
+        <div>
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(concept.domain || concept.conceptType || "—")}</span>
+        </div>
+        <div class="mh-analytics-review-score">
+          <strong>${formatNumber(concept.retention, 1)}%</strong>
+          <span>${escapeHtml(state)}</span>
+        </div>
+      </div>
+      <div class="mh-analytics-retention-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(concept.retention)}">
+        <i style="width:${Math.max(0, Math.min(100, concept.retention))}%"></i>
+      </div>
+      <p>${escapeHtml(formatReviewTiming(concept))} · ${formatNumber(concept.mastery, 1)}% mastery · ${formatNumber(concept.confidence)}% ${t.confidence}</p>
+    </article>
+  `;
+}
+
+function renderConceptRetention(payload) {
+  if (!payload?.available) return "";
+
+  const t = copy();
+  const summary = payload.summary || {};
+  const review = buildConceptReviewQueue(payload, 6);
+  if (!review.hasEvidence) return "";
+
+  return `
+    <section class="mh-analytics-card mh-analytics-span-2 mh-analytics-concept-retention">
+      <div class="mh-analytics-card-head">
+        <div>
+          <h3>${t.retentionTitle}</h3>
+          <p>${t.retentionHint}</p>
+        </div>
+        <strong class="mh-analytics-retention-average">${formatNumber(summary.averageRetention, 1)}%</strong>
+      </div>
+      <div class="mh-analytics-retention-summary" aria-label="${escapeHtml(t.retentionTitle)}">
+        <span><strong>${formatNumber(summary.dueNow)}</strong> ${t.retentionDueNow}</span>
+        <span><strong>${formatNumber(summary.overdue)}</strong> ${t.retentionOverdue}</span>
+        <span><strong>${formatNumber(summary.dueSoon)}</strong> ${t.retentionDueSoon}</span>
+        <span><strong>${formatNumber(summary.stable)}</strong> ${t.retentionStable}</span>
+      </div>
+      <div class="mh-analytics-review-list">
+        ${review.queue.map(renderConceptReviewRow).join("") || `<p class="mh-analytics-muted">${escapeHtml(t.retentionEmpty)}</p>`}
+      </div>
+    </section>
+  `;
+}
+
 function renderInsightList(title, rows, emptyText, kind) {
   return `
     <section class="mh-analytics-card">
@@ -505,6 +618,7 @@ function renderDashboard(data) {
       ${renderHeatmap(data.heatmap)}
       ${renderChapterList(data.chapters)}
       ${renderConceptMastery(data.conceptMastery)}
+      ${renderConceptRetention(data.conceptRetention)}
       ${renderInsightList(t.strengths, insights.strengths, t.noStrengths, "strength")}
       ${renderInsightList(t.weaknesses, insights.weaknesses, t.noWeaknesses, "weakness")}
       ${renderExamTypes(data.examTypes)}

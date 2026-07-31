@@ -1,5 +1,6 @@
 import { clampAnalyticsRange, normalizeAnalyticsPayload } from "./analytics-model.js";
 import { loadConceptMastery } from "./concept-mastery-repository.js";
+import { loadConceptRetention } from "./concept-retention-repository.js";
 
 export async function loadUserAnalytics(supabase, {
   days = 90,
@@ -10,13 +11,17 @@ export async function loadUserAnalytics(supabase, {
   const safeDays = clampAnalyticsRange(days);
   const safeLocale = String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
 
-  const [analyticsResult, conceptMastery] = await Promise.all([
+  const [analyticsResult, conceptMastery, conceptRetention] = await Promise.all([
     supabase.rpc("mh_get_user_analytics", {
       p_days: safeDays,
       p_locale: safeLocale
     }),
     loadConceptMastery(supabase, {
       days: safeDays,
+      locale: safeLocale
+    }),
+    loadConceptRetention(supabase, {
+      limit: 8,
       locale: safeLocale
     })
   ]);
@@ -32,6 +37,7 @@ export async function loadUserAnalytics(supabase, {
 
   return {
     ...normalizeAnalyticsPayload(analyticsResult.data || {}),
-    conceptMastery
+    conceptMastery,
+    conceptRetention
   };
 }

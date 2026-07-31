@@ -563,3 +563,141 @@
     justify-content: center;
   }
 }
+
+/* MathHard Product Phase 01D — concept retention + spaced review */
+.mh-analytics-concept-retention {
+  display: grid;
+  gap: 16px;
+}
+
+.mh-analytics-retention-average {
+  color: var(--accent);
+  font-size: 1.35rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mh-analytics-retention-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mh-analytics-retention-summary span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.mh-analytics-retention-summary strong {
+  color: var(--text);
+  font-size: .88rem;
+}
+
+.mh-analytics-review-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mh-analytics-review-row {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+}
+
+.mh-analytics-review-row.overdue {
+  border-color: color-mix(in srgb, #ff6b6b 48%, var(--border));
+}
+
+.mh-analytics-review-row.due {
+  border-color: color-mix(in srgb, #ffb86b 48%, var(--border));
+}
+
+.mh-analytics-review-row.upcoming {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+}
+
+.mh-analytics-review-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mh-analytics-review-head > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.mh-analytics-review-head > div:first-child strong,
+.mh-analytics-review-head > div:first-child span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mh-analytics-review-head > div:first-child span,
+.mh-analytics-review-score span,
+.mh-analytics-review-row p {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.mh-analytics-review-score {
+  flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.mh-analytics-review-score strong {
+  color: var(--accent);
+}
+
+.mh-analytics-retention-track {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 62%, transparent);
+}
+
+.mh-analytics-retention-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #ffb86b), var(--accent));
+}
+
+.mh-analytics-review-row p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .mh-analytics-review-list {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-analytics-retention-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mh-analytics-retention-summary span {
+    justify-content: center;
+    text-align: center;
+  }
+}

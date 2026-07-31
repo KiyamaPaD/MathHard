@@ -54,6 +54,8 @@ const moduleJsFiles = [
   "js/analytics-model.js",
   "js/concept-mastery-model.js",
   "js/concept-mastery-repository.js",
+  "js/concept-retention-model.js",
+  "js/concept-retention-repository.js",
   "js/analytics-repository.js",
   "js/analytics-controller.js",
   "js/ui-feedback.js",
@@ -111,6 +113,7 @@ const requiredFiles = [
   "scripts/concept-layer-audit.mjs",
   "scripts/concept-coverage-audit.mjs",
   "scripts/concept-mastery-audit.mjs",
+  "scripts/concept-retention-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -298,6 +301,8 @@ const performanceBootstrapSource = readFileSync(resolve(root, "js/performance-bo
 const analyticsModelSource = readFileSync(resolve(root, "js/analytics-model.js"), "utf8");
 const conceptMasteryModelSource = readFileSync(resolve(root, "js/concept-mastery-model.js"), "utf8");
 const conceptMasteryRepositorySource = readFileSync(resolve(root, "js/concept-mastery-repository.js"), "utf8");
+const conceptRetentionModelSource = readFileSync(resolve(root, "js/concept-retention-model.js"), "utf8");
+const conceptRetentionRepositorySource = readFileSync(resolve(root, "js/concept-retention-repository.js"), "utf8");
 const analyticsRepositorySource = readFileSync(resolve(root, "js/analytics-repository.js"), "utf8");
 const analyticsControllerSource = readFileSync(resolve(root, "js/analytics-controller.js"), "utf8");
 const analyticsCss = readFileSync(resolve(root, "css/analytics.css"), "utf8");
@@ -919,6 +924,25 @@ if (!analyticsRepositorySource.includes("loadConceptMastery") ||
 if (!analyticsCss.includes(".mh-analytics-concept-mastery") ||
     !analyticsCss.includes(".mh-analytics-concept-row")) {
   fail("Phase 01C concept mastery styles are incomplete.");
+}
+
+// Product Phase 01D: derived retention and spaced review queue.
+if (!conceptRetentionRepositorySource.includes('"mh_get_concept_retention"') ||
+    !conceptRetentionRepositorySource.includes("not_installed")) {
+  fail("Concept retention repository must use the secure RPC and tolerate frontend-first deploys.");
+}
+if (!conceptRetentionModelSource.includes("normalizeConceptRetentionPayload") ||
+    !conceptRetentionModelSource.includes("buildConceptReviewQueue")) {
+  fail("Concept retention normalization or queue helpers are missing.");
+}
+if (!analyticsRepositorySource.includes("loadConceptRetention") ||
+    !analyticsControllerSource.includes("renderConceptRetention") ||
+    !analyticsControllerSource.includes("mh-analytics-concept-retention")) {
+  fail("Analytics is missing the Phase 01D concept retention integration.");
+}
+if (!analyticsCss.includes(".mh-analytics-concept-retention") ||
+    !analyticsCss.includes(".mh-analytics-review-row")) {
+  fail("Phase 01D concept retention styles are incomplete.");
 }
 
 // Phase 16: server-backed levels, achievements, challenge and opt-in leaderboard.
