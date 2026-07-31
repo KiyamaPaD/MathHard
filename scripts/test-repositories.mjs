@@ -211,6 +211,12 @@ const {
   progressPercent
 } = await importBrowserModule("js/analytics-model.js");
 const {
+  buildConceptMasteryHighlights,
+  conceptTitle,
+  emptyConceptMastery,
+  normalizeConceptMasteryPayload
+} = await importBrowserModule("js/concept-mastery-model.js");
+const {
   achievementProgress,
   clampDailyGoal,
   levelRemaining,
@@ -1180,6 +1186,72 @@ const analyticsInsights = buildAnalyticsInsights(analyticsPayload);
 assert.equal(analyticsInsights.strengths[0].chapter, "Algebra");
 assert.equal(analyticsInsights.weaknesses[0].chapter, "Geometry");
 assert.ok(aggregateDailyActivity(analyticsPayload.dailyActivity, 30).length <= 30);
+
+// Product Phase 01C: concept mastery normalization and prioritization.
+const conceptMasteryPayload = normalizeConceptMasteryPayload({
+  range_days: 90,
+  summary: {
+    concepts_total: 4,
+    active_concepts: 3,
+    mastered_concepts: 1,
+    proficient_concepts: 1,
+    building_concepts: 1,
+    ready_concepts: 1,
+    blocked_concepts: 1,
+    average_mastery: 68.4,
+    average_confidence: 52
+  },
+  concepts: [
+    {
+      id: "natural-numbers",
+      title_ro: "Numere naturale",
+      title_en: "Natural numbers",
+      mastery: 94,
+      confidence: 78,
+      status: "mastered",
+      readiness: "mastered",
+      activity_count: 18
+    },
+    {
+      id: "comparison",
+      title_ro: "Comparare",
+      title_en: "Comparison",
+      mastery: 71,
+      confidence: 55,
+      status: "proficient",
+      readiness: "in_progress",
+      activity_count: 10
+    },
+    {
+      id: "divisibility",
+      title_ro: "Divizibilitate",
+      title_en: "Divisibility",
+      mastery: 40,
+      confidence: 35,
+      status: "building",
+      readiness: "in_progress",
+      activity_count: 8
+    },
+    {
+      id: "fractions",
+      title_ro: "Fracții",
+      title_en: "Fractions",
+      mastery: 0,
+      confidence: 0,
+      status: "no_evidence",
+      readiness: "ready",
+      activity_count: 0
+    }
+  ]
+});
+assert.equal(conceptMasteryPayload.summary.masteredConcepts, 1);
+assert.equal(conceptMasteryPayload.concepts[0].mastery, 94);
+assert.equal(conceptTitle(conceptMasteryPayload.concepts[0], "en"), "Natural numbers");
+const conceptHighlights = buildConceptMasteryHighlights(conceptMasteryPayload);
+assert.equal(conceptHighlights.strengths[0].id, "natural-numbers");
+assert.equal(conceptHighlights.priorities[0].id, "divisibility");
+assert.equal(conceptHighlights.ready[0].id, "fractions");
+assert.equal(emptyConceptMastery({ available: false, reason: "not_installed" }).available, false);
 
 // Phase 16: normalized levels, goals, achievements and leaderboard rows.
 const gamificationPayload = normalizeGamificationPayload({

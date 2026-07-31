@@ -52,6 +52,8 @@ const moduleJsFiles = [
   "js/performance-bootstrap.js",
   "js/app-shell-controller.js",
   "js/analytics-model.js",
+  "js/concept-mastery-model.js",
+  "js/concept-mastery-repository.js",
   "js/analytics-repository.js",
   "js/analytics-controller.js",
   "js/ui-feedback.js",
@@ -107,6 +109,8 @@ const requiredFiles = [
   "scripts/performance-audit.mjs",
   "scripts/stability-audit.mjs",
   "scripts/concept-layer-audit.mjs",
+  "scripts/concept-coverage-audit.mjs",
+  "scripts/concept-mastery-audit.mjs",
   "scripts/debug-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
@@ -292,6 +296,8 @@ const runtimeDiagnosticsSource = readFileSync(resolve(root, "js/runtime-diagnost
 const runtimeLoaderSource = readFileSync(resolve(root, "js/runtime-loader.js"), "utf8");
 const performanceBootstrapSource = readFileSync(resolve(root, "js/performance-bootstrap.js"), "utf8");
 const analyticsModelSource = readFileSync(resolve(root, "js/analytics-model.js"), "utf8");
+const conceptMasteryModelSource = readFileSync(resolve(root, "js/concept-mastery-model.js"), "utf8");
+const conceptMasteryRepositorySource = readFileSync(resolve(root, "js/concept-mastery-repository.js"), "utf8");
 const analyticsRepositorySource = readFileSync(resolve(root, "js/analytics-repository.js"), "utf8");
 const analyticsControllerSource = readFileSync(resolve(root, "js/analytics-controller.js"), "utf8");
 const analyticsCss = readFileSync(resolve(root, "css/analytics.css"), "utf8");
@@ -894,6 +900,25 @@ if (!analyticsCss.includes(".mh-analytics-summary-grid") ||
     !analyticsCss.includes(".mh-analytics-heatmap") ||
     !analyticsCss.includes(".mh-analytics-donut")) {
   fail("Phase 15A analytics visual system is incomplete.");
+}
+
+// Product Phase 01C: server-derived concept mastery inside Analytics.
+if (!conceptMasteryRepositorySource.includes('"mh_get_concept_mastery"') ||
+    !conceptMasteryRepositorySource.includes("not_installed")) {
+  fail("Concept mastery repository must use the secure RPC and tolerate frontend-first deploys.");
+}
+if (!conceptMasteryModelSource.includes("normalizeConceptMasteryPayload") ||
+    !conceptMasteryModelSource.includes("buildConceptMasteryHighlights")) {
+  fail("Concept mastery normalization or prioritization helpers are missing.");
+}
+if (!analyticsRepositorySource.includes("loadConceptMastery") ||
+    !analyticsControllerSource.includes("renderConceptMastery") ||
+    !analyticsControllerSource.includes("mh-analytics-concept-mastery")) {
+  fail("Analytics is missing the Phase 01C concept mastery integration.");
+}
+if (!analyticsCss.includes(".mh-analytics-concept-mastery") ||
+    !analyticsCss.includes(".mh-analytics-concept-row")) {
+  fail("Phase 01C concept mastery styles are incomplete.");
 }
 
 // Phase 16: server-backed levels, achievements, challenge and opt-in leaderboard.

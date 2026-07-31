@@ -1,4 +1,5 @@
 import { clampAnalyticsRange, normalizeAnalyticsPayload } from "./analytics-model.js";
+import { loadConceptMastery } from "./concept-mastery-repository.js";
 
 export async function loadUserAnalytics(supabase, {
   days = 90,
@@ -6,12 +7,22 @@ export async function loadUserAnalytics(supabase, {
 } = {}) {
   if (!supabase?.rpc) throw new Error("Supabase client is unavailable.");
 
-  const { data, error } = await supabase.rpc("mh_get_user_analytics", {
-    p_days: clampAnalyticsRange(days),
-    p_locale: String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro"
-  });
+  const safeDays = clampAnalyticsRange(days);
+  const safeLocale = String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
 
-  if (error) {
+  const [analyticsResult, conceptMastery] = await Promise.all([
+    supabase.rpc("mh_get_user_analytics", {
+      p_days: safeDays,
+      p_locale: safeLocale
+    }),
+    loadConceptMastery(supabase, {
+      days: safeDays,
+      locale: safeLocale
+    })
+  ]);
+
+  if (analyticsResult.error) {
+    const error = analyticsResult.error;
     const missingRpc = error.code === "PGRST202" || error.status === 404;
     if (missingRpc) {
       throw new Error("Analytics backend is not installed. Run the Phase 15A SQL migration.");
@@ -19,5 +30,8 @@ export async function loadUserAnalytics(supabase, {
     throw error;
   }
 
-  return normalizeAnalyticsPayload(data || {});
+  return {
+    ...normalizeAnalyticsPayload(analyticsResult.data || {}),
+    conceptMastery
+  };
 }

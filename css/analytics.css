@@ -425,3 +425,141 @@
   .mh-analytics-recent-row { grid-template-columns: auto minmax(0, 1fr); }
   .mh-analytics-recent-row time { grid-column: 2; }
 }
+
+/* MathHard Product Phase 01C — concept mastery */
+.mh-analytics-concept-mastery {
+  display: grid;
+  gap: 16px;
+}
+
+.mh-analytics-concept-average {
+  color: var(--accent);
+  font-size: 1.35rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mh-analytics-concept-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mh-analytics-concept-summary span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.mh-analytics-concept-summary strong {
+  color: var(--text);
+  font-size: .88rem;
+}
+
+.mh-analytics-concept-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.mh-analytics-concept-group {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.mh-analytics-concept-group h4 {
+  margin: 0;
+  font-size: .86rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.mh-analytics-concept-list {
+  display: grid;
+  gap: 9px;
+}
+
+.mh-analytics-concept-row {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+}
+
+.mh-analytics-concept-row.mastered {
+  border-color: color-mix(in srgb, #55d6be 45%, var(--border));
+}
+
+.mh-analytics-concept-row.building {
+  border-color: color-mix(in srgb, #ffb86b 35%, var(--border));
+}
+
+.mh-analytics-concept-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mh-analytics-concept-head > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.mh-analytics-concept-head > div:first-child strong,
+.mh-analytics-concept-head > div:first-child span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mh-analytics-concept-head > div:first-child span,
+.mh-analytics-concept-score span,
+.mh-analytics-concept-row p {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.mh-analytics-concept-score {
+  flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.mh-analytics-concept-score strong {
+  color: var(--accent);
+}
+
+.mh-analytics-concept-row p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .mh-analytics-concept-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-analytics-concept-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mh-analytics-concept-summary span {
+    justify-content: center;
+  }
+}

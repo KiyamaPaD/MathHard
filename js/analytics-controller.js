@@ -6,6 +6,10 @@ import {
   progressPercent
 } from "./analytics-model.js";
 import { loadUserAnalytics } from "./analytics-repository.js";
+import {
+  buildConceptMasteryHighlights,
+  conceptTitle
+} from "./concept-mastery-model.js";
 import { normalizeUiError, renderUiState } from "./ui-feedback.js";
 
 const RANGE_KEY = "mh_analytics_range_v1";
@@ -35,6 +39,32 @@ const COPY = {
     heatmap: "Consistență",
     heatmapHint: "Ultimele 365 de zile",
     mastery: "Mastery pe capitole",
+    conceptMastery: "Mastery pe concepte",
+    conceptMasteryHint: "Scor derivat din progres validat server-side",
+    conceptStrengths: "Concepte solide",
+    conceptPriorities: "De consolidat",
+    conceptReady: "Următoarele concepte",
+    conceptNoEvidence: "Nu există încă activitate pe conceptele mapate.",
+    concepts: "concepte",
+    conceptsActive: "active",
+    conceptsMastered: "stăpânite",
+    conceptsReadyCount: "pregătite",
+    conceptsBlocked: "blocate",
+    confidence: "încredere",
+    evidence: "dovezi",
+    prerequisites: "prerechizite",
+    conceptStatus: {
+      no_evidence: "Fără activitate",
+      building: "În lucru",
+      proficient: "Solid",
+      mastered: "Stăpânit"
+    },
+    conceptReadiness: {
+      ready: "Pregătit",
+      blocked: "Blocat",
+      in_progress: "În progres",
+      mastered: "Stăpânit"
+    },
     attempts: "încercări",
     accuracy: "acuratețe",
     strengths: "Puncte forte",
@@ -90,6 +120,32 @@ const COPY = {
     heatmap: "Consistency",
     heatmapHint: "Last 365 days",
     mastery: "Mastery by chapter",
+    conceptMastery: "Concept mastery",
+    conceptMasteryHint: "Derived from server-validated progress",
+    conceptStrengths: "Strong concepts",
+    conceptPriorities: "Needs work",
+    conceptReady: "Next concepts",
+    conceptNoEvidence: "There is no activity on mapped concepts yet.",
+    concepts: "concepts",
+    conceptsActive: "active",
+    conceptsMastered: "mastered",
+    conceptsReadyCount: "ready",
+    conceptsBlocked: "blocked",
+    confidence: "confidence",
+    evidence: "evidence",
+    prerequisites: "prerequisites",
+    conceptStatus: {
+      no_evidence: "No activity",
+      building: "Building",
+      proficient: "Proficient",
+      mastered: "Mastered"
+    },
+    conceptReadiness: {
+      ready: "Ready",
+      blocked: "Blocked",
+      in_progress: "In progress",
+      mastered: "Mastered"
+    },
     attempts: "attempts",
     accuracy: "accuracy",
     strengths: "Strengths",
@@ -277,6 +333,86 @@ function renderChapterList(chapters) {
   `;
 }
 
+
+function renderConceptMasteryRow(concept) {
+  const t = copy();
+  const language = locale();
+  const title = conceptTitle(concept, language);
+  const status = t.conceptStatus[concept.status] || concept.status;
+  const readiness = t.conceptReadiness[concept.readiness] || concept.readiness;
+  const prerequisiteCopy = concept.requiredPrerequisites > 0
+    ? ` · ${concept.masteredPrerequisites}/${concept.requiredPrerequisites} ${t.prerequisites}`
+    : "";
+
+  return `
+    <article class="mh-analytics-concept-row ${escapeHtml(concept.status)}">
+      <div class="mh-analytics-concept-head">
+        <div>
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(concept.domain || concept.conceptType || "—")}</span>
+        </div>
+        <div class="mh-analytics-concept-score">
+          <strong>${formatNumber(concept.mastery, 1)}%</strong>
+          <span>${escapeHtml(status)}</span>
+        </div>
+      </div>
+      <div class="mh-analytics-mastery-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(concept.mastery)}">
+        <i style="width:${Math.max(0, Math.min(100, concept.mastery))}%"></i>
+      </div>
+      <p>${escapeHtml(readiness)} · ${formatNumber(concept.confidence)}% ${t.confidence} · ${formatNumber(concept.activityCount)} ${t.evidence}${escapeHtml(prerequisiteCopy)}</p>
+    </article>
+  `;
+}
+
+function renderConceptMasteryGroup(title, rows, emptyText) {
+  return `
+    <div class="mh-analytics-concept-group">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="mh-analytics-concept-list">
+        ${rows.map(renderConceptMasteryRow).join("") || `<p class="mh-analytics-muted">${escapeHtml(emptyText)}</p>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderConceptMastery(payload) {
+  if (!payload?.available) return "";
+
+  const t = copy();
+  const summary = payload.summary || {};
+  const highlights = buildConceptMasteryHighlights(payload);
+  if (!highlights.hasConcepts) return "";
+
+  const firstGroup = highlights.hasEvidence
+    ? renderConceptMasteryGroup(t.conceptStrengths, highlights.strengths, t.conceptNoEvidence)
+    : renderConceptMasteryGroup(t.conceptReady, highlights.ready, t.conceptNoEvidence);
+  const secondRows = highlights.hasEvidence ? highlights.priorities : highlights.blocked;
+  const secondTitle = highlights.hasEvidence ? t.conceptPriorities : t.conceptsBlocked;
+
+  return `
+    <section class="mh-analytics-card mh-analytics-span-2 mh-analytics-concept-mastery">
+      <div class="mh-analytics-card-head">
+        <div>
+          <h3>${t.conceptMastery}</h3>
+          <p>${t.conceptMasteryHint}</p>
+        </div>
+        <strong class="mh-analytics-concept-average">${formatNumber(summary.averageMastery, 1)}%</strong>
+      </div>
+      <div class="mh-analytics-concept-summary" aria-label="${escapeHtml(t.conceptMastery)}">
+        <span><strong>${formatNumber(summary.conceptsTotal)}</strong> ${t.concepts}</span>
+        <span><strong>${formatNumber(summary.activeConcepts)}</strong> ${t.conceptsActive}</span>
+        <span><strong>${formatNumber(summary.masteredConcepts)}</strong> ${t.conceptsMastered}</span>
+        <span><strong>${formatNumber(summary.readyConcepts)}</strong> ${t.conceptsReadyCount}</span>
+        <span><strong>${formatNumber(summary.blockedConcepts)}</strong> ${t.conceptsBlocked}</span>
+      </div>
+      <div class="mh-analytics-concept-columns">
+        ${firstGroup}
+        ${renderConceptMasteryGroup(secondTitle, secondRows, t.conceptNoEvidence)}
+      </div>
+    </section>
+  `;
+}
+
 function renderInsightList(title, rows, emptyText, kind) {
   return `
     <section class="mh-analytics-card">
@@ -368,6 +504,7 @@ function renderDashboard(data) {
       ${renderTrend(data.dailyActivity)}
       ${renderHeatmap(data.heatmap)}
       ${renderChapterList(data.chapters)}
+      ${renderConceptMastery(data.conceptMastery)}
       ${renderInsightList(t.strengths, insights.strengths, t.noStrengths, "strength")}
       ${renderInsightList(t.weaknesses, insights.weaknesses, t.noWeaknesses, "weakness")}
       ${renderExamTypes(data.examTypes)}
