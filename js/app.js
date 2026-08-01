@@ -7270,6 +7270,7 @@ function openExam(exam){
   }
 
   document.getElementById("infoBtn").onclick = (event) => {
+    if (modal.classList.contains("open")) return closeUtilityModal(modal);
     const ui = MAIN_UI_TEXT[LANG] || MAIN_UI_TEXT.ro;
     document.getElementById("modalTitle").textContent = ui.info_modal.title;
     document.getElementById("modalBody").innerHTML = ui.info_modal.body;
@@ -7770,7 +7771,11 @@ function openExam(exam){
 
     const modalBox = aboutModal.querySelector(".about-box") || aboutModal.querySelector(".box");
 
-    function openAbout(event){
+    function toggleAbout(event){
+      if (aboutModal.classList.contains("open")) {
+        closeUtilityModal(aboutModal);
+        return;
+      }
       openUtilityModal(aboutModal, event?.currentTarget || aboutBtn);
       if (modalBox) modalBox.scrollTop = 0;
     }
@@ -7778,7 +7783,7 @@ function openExam(exam){
       closeUtilityModal(aboutModal);
     }
 
-    aboutBtn.addEventListener("click", openAbout);
+    aboutBtn.addEventListener("click", toggleAbout);
 
     if (aboutClose){
       aboutClose.addEventListener("click", closeAbout);

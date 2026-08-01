@@ -820,7 +820,7 @@ if (!performanceBootstrapSource.includes('./section-layout-controller.js')) {
 if (!indexHtml.includes('href="css/app-shell.css"')) {
   fail("Phase 14A app shell stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/app-shell-controller.js"')) {
+if (!indexHtml.includes('src="/js/app-shell-controller.js?v=4j1"')) {
   fail("Phase 14A app shell controller is missing from index.html.");
 }
 if (!appShellSource.includes("normalizeAppRoute") ||

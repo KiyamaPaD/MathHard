@@ -125,7 +125,7 @@ const ICONS = Object.freeze({
   lessons: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5Z"/>',
   problems: '<path d="M4 7h10"/><path d="M4 17h10"/><path d="M7 4v6"/><path d="m17 14 4 4"/><path d="m21 14-4 4"/>',
   exams: '<path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 4H5a2 2 0 0 0-2 2v15h18V6a2 2 0 0 0-2-2h-1"/><path d="m7 12 2 2 4-4"/><path d="M7 18h10"/>',
-  xp: '<path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19V3"/>',
+  xp: '<circle cx="12" cy="12" r="9"/><path d="m13 5-5 8h4l-1 6 5-8h-4z"/>',
   analytics: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20V7"/><path d="M2 20h22"/>',
   gamification: '<path d="M8 4h8v3a4 4 0 0 1-8 0Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4"/><path d="M16 5h4v2a4 4 0 0 1-4 4"/><path d="M12 11v5"/><path d="M8 21h8"/><path d="M9 16h6v5H9z"/>',
   leaderboards: '<path d="M4 21v-6h5v6"/><path d="M10 21V9h5v12"/><path d="M16 21V4h5v17"/>',

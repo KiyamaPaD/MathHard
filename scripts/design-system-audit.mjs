@@ -13,8 +13,8 @@ function requireTokens(source, label, tokens) {
 
 for (const page of ["index.html", "profile.html", "u.html"]) {
   const source = read(page);
-  requireTokens(source, page, ["/css/design-system.css?v=4j"]);
-  const designIndex = source.indexOf("/css/design-system.css?v=4j");
+  requireTokens(source, page, ["/css/design-system.css?v=4j1"]);
+  const designIndex = source.indexOf("/css/design-system.css?v=4j1");
   const motionIndex = source.indexOf("/css/microinteractions.css?v=4i");
   if (designIndex < motionIndex) errors.push(`${page}: design-system.css trebuie încărcat după stilurile componentelor.`);
 }
@@ -58,9 +58,42 @@ if (/langBtn\.textContent[^\n]+🌐/u.test(app)) {
   errors.push("Header: selectorul de limbă conține încă emoji.");
 }
 
+const problemCss = read("css/problem-workspace.css");
+requireTokens(problemCss, "Problem workspace", [
+  ".mh-problem-hero {",
+  "position: relative",
+  "top: auto",
+  "Phase 4J.1 — keep the problem summary card",
+]);
+
+const communityAdminCss = read("css/community-admin.css");
+requireTokens(communityAdminCss, "Community Admin", [
+  "#mhCommunityAdminBody",
+  ".mh-community-admin-feedback:empty",
+  "Phase 4J.1 — stable vertical rhythm",
+  ".mh-community-integrity-editor",
+]);
+
+requireTokens(design, "Visual hotfix", [
+  'data-community-feedback-open="feedback"',
+  "#aboutModal.open",
+  "padding-top: max(78px",
+]);
+
+requireTokens(shell, "Distinct navigation icons", [
+  `xp: '<circle cx="12" cy="12" r="9"`,
+  `analytics: '<path d="M4 20V10"`,
+]);
+
+requireTokens(app, "Utility modal toggles", [
+  'if (modal.classList.contains("open"))',
+  'function toggleAbout(event)',
+  'if (aboutModal.classList.contains("open"))',
+]);
+
 if (errors.length) {
   console.error("MathHard design-system audit failed:\n- " + errors.join("\n- "));
   process.exit(1);
 }
 
-console.log("MathHard 4J design-system audit passed.");
+console.log("MathHard 4J.1 visual hotfix audit passed.");

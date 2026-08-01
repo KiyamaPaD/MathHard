@@ -930,3 +930,55 @@ body.mh-shell-ready .card:hover {
   .hub-cta,
   .mh-radar-item { transition: none !important; }
 }
+
+
+/* Phase 4J.1 — highlighted suggestions action. */
+:where(button, a)[data-community-feedback-open="feedback"] {
+  border-color: rgba(111, 124, 255, .58) !important;
+  background: linear-gradient(135deg, #6f7cff 0%, #5268e8 48%, #38bdf8 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 14px 34px -22px rgba(82, 104, 232, .78) !important;
+}
+
+:where(button, a)[data-community-feedback-open="feedback"]:hover {
+  border-color: rgba(125, 211, 252, .72) !important;
+  background: linear-gradient(135deg, #7b87ff 0%, #5a70ee 46%, #4ac8f5 100%) !important;
+  box-shadow: 0 17px 38px -22px rgba(56, 189, 248, .82) !important;
+}
+
+/* Utility modals remain inside the viewport and About starts below the app chrome. */
+#modal,
+#aboutModal {
+  z-index: 12000;
+}
+
+#aboutModal.open {
+  align-items: start;
+  overflow-y: auto;
+  padding-top: max(78px, calc(env(safe-area-inset-top) + 18px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+#aboutModal .about-box {
+  max-height: calc(100dvh - max(98px, calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 36px)));
+}
+
+#aboutModal .about-body {
+  scroll-padding-top: 12px;
+}
+
+#aboutModal .story-content {
+  min-width: 0;
+  padding-bottom: 8px;
+}
+
+@media (max-width: 720px) {
+  #aboutModal.open {
+    align-items: end;
+    padding-top: max(58px, calc(env(safe-area-inset-top) + 10px));
+  }
+
+  #aboutModal .about-box {
+    max-height: calc(100dvh - max(68px, calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 22px)));
+  }
+}
