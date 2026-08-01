@@ -1931,6 +1931,7 @@ const communitySupabase = {
     if (name === "mh_submit_community_feedback") return { data: { accepted: true, payload: payload.p_payload }, error: null };
     if (name === "mh_submit_community_profile_report") return { data: { accepted: true, username: payload.p_username }, error: null };
     if (name === "mh_admin_get_community_moderation") return { data: { counts: {}, feedback: [], reports: [], users: [] }, error: null };
+    if (name === "mh_admin_save_community_case") return { data: { id: payload.p_id, kind: payload.p_kind, status: payload.p_status, priority: payload.p_priority, admin_note: payload.p_note }, error: null };
     if (name === "mh_admin_update_community_case") return { data: { id: payload.p_id, kind: payload.p_kind, status: payload.p_status, priority: payload.p_priority, admin_note: payload.p_note }, error: null };
     if (name === "mh_admin_set_community_access") return { data: true, error: null };
     return { data: null, error: new Error(`Unexpected community RPC: ${name}`) };
@@ -1965,9 +1966,36 @@ assert.deepEqual(communityRpcCalls.map(([name]) => name), [
   "mh_submit_community_feedback",
   "mh_submit_community_profile_report",
   "mh_admin_get_community_moderation",
-  "mh_admin_update_community_case",
+  "mh_admin_save_community_case",
   "mh_admin_set_community_access"
 ]);
+
+const moderationFallbackCalls = [];
+const moderationFallbackSupabase = {
+  async rpc(name, payload = {}) {
+    moderationFallbackCalls.push(name);
+    if (name === "mh_admin_save_community_case") {
+      return { data: null, error: { code: "PGRST202", message: "Could not find the function" } };
+    }
+    if (name === "mh_admin_update_community_case") return { data: true, error: null };
+    return { data: null, error: new Error(`Unexpected fallback RPC: ${name}`) };
+  }
+};
+const moderationFallbackSaved = await updateCommunityModerationCase(moderationFallbackSupabase, {
+  kind: "feedback",
+  id: "fallback-feedback",
+  status: "in_review",
+  priority: "high",
+  adminNote: "fallback"
+});
+assert.deepEqual(moderationFallbackCalls, ["mh_admin_save_community_case", "mh_admin_update_community_case"]);
+assert.deepEqual(moderationFallbackSaved, {
+  id: "fallback-feedback",
+  kind: "feedback",
+  status: "in_review",
+  priority: "high",
+  admin_note: "fallback"
+});
 
 const {
   availableLeaderboardScopes,

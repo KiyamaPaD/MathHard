@@ -281,6 +281,22 @@ if (existsSync(globalDiscoverySqlPath)) {
   warn("Phase 4D SQL is not present in local-sql; global discovery checks were skipped.");
 }
 
+const moderationSaveSqlPath = resolve(root, "local-sql/059_product_phase_04d_2_feedback_case_save.sql");
+if (existsSync(moderationSaveSqlPath)) {
+  const moderationSaveSql = readFileSync(moderationSaveSqlPath, "utf8");
+  if (!moderationSaveSql.includes("mh_admin_save_community_case") || !moderationSaveSql.includes("security definer")) {
+    fail("Phase 4D.2 moderation save SQL is missing its versioned SECURITY DEFINER RPC.");
+  }
+  if (!moderationSaveSql.includes("if v_actor is null or not public.is_admin()") || !moderationSaveSql.includes("grant execute on function public.mh_admin_save_community_case")) {
+    fail("Phase 4D.2 moderation save RPC does not enforce Admin access or authenticated grants.");
+  }
+  if (!moderationSaveSql.includes("revoke all on function public.mh_admin_save_community_case") || !moderationSaveSql.includes("set search_path = public, auth, pg_temp")) {
+    fail("Phase 4D.2 moderation save RPC is missing hardened privileges/search_path.");
+  }
+} else {
+  warn("Phase 4D.2 SQL is not present in local-sql; moderation save database checks were skipped.");
+}
+
 const communityAdminController = sources.get("js/community-admin-controller.js") || "";
 if (!communityAdminController.includes('assignmentMode === "manual"')) {
   fail("Community badge assignment UI must restrict direct grants to manual badges.");

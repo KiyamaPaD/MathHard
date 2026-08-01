@@ -41,6 +41,29 @@ const PRIORITY_LABELS = { low: "Scăzută", normal: "Normală", high: "Ridicată
 const CATEGORY_LABELS = { suggestion: "Sugestie", bug: "Problemă tehnică", content: "Conținut", account: "Cont", other: "Altceva" };
 const REASON_LABELS = { impersonation: "Identitate falsă", inappropriate: "Conținut nepotrivit", spam: "Spam", unsafe_link: "Link nesigur", other: "Alt motiv" };
 
+function moderationErrorMessage(error) {
+  const code = String(error?.code || "").trim();
+  const message = String(error?.message || "").trim();
+  if (/admin required/i.test(message) || code === "42501") return "Sesiunea Admin nu mai este validă. Reautentifică-te.";
+  if (/not found/i.test(message) || code === "P0002") return "Cazul nu mai există.";
+  if (/invalid status|invalid priority|invalid case/i.test(message) || code === "22023") return "Datele cazului nu sunt valide.";
+  if (/could not find the function|does not exist/i.test(message) || ["PGRST202", "PGRST203", "42883"].includes(code.toUpperCase())) {
+    return "Migrarea de salvare nu este instalată sau schema API nu s-a reîncărcat.";
+  }
+  return code ? `Cazul nu a putut fi salvat (${code}).` : "Cazul nu a putut fi salvat.";
+}
+
+function validateModerationCaseDraft(value) {
+  const kind = String(value.kind || "");
+  const id = String(value.id || "");
+  const status = String(value.status || "");
+  const priority = String(value.priority || "");
+  if (!id || !["feedback", "profile_report"].includes(kind)) return "Cazul selectat nu este valid.";
+  if (!Object.hasOwn(STATUS_LABELS, status)) return "Statusul selectat nu este valid.";
+  if (!Object.hasOwn(PRIORITY_LABELS, priority)) return "Prioritatea selectată nu este validă.";
+  return "";
+}
+
 export function createCommunityAdminController({ host, supabase }) {
   if (!host) return { load() {}, refresh() {}, setAdmin() {} };
 
@@ -310,6 +333,9 @@ export function createCommunityAdminController({ host, supabase }) {
     }
 
     if (form.id === "mhCommunityCaseForm") {
+      const validationError = validateModerationCaseDraft(value);
+      if (validationError) return setFeedback(validationError, "error");
+
       setFeedback("Se salvează...", "loading");
       setFormBusy(form, true);
       try {
@@ -320,21 +346,24 @@ export function createCommunityAdminController({ host, supabase }) {
           priority: value.priority,
           adminNote: value.admin_note
         }), value.kind);
+
+        if (!persisted.id || persisted.id !== value.id) throw new Error("Invalid moderation save response");
+
         const collection = value.kind === "feedback" ? "feedback" : "reports";
         const selectedKey = value.kind === "feedback" ? "selectedFeedbackId" : "selectedReportId";
         const index = state.moderation[collection].findIndex((item) => item.id === persisted.id);
         if (index >= 0) state.moderation[collection][index] = { ...state.moderation[collection][index], ...persisted };
         state[selectedKey] = persisted.id;
-
         if (!caseMatchesFilter(persisted.status)) state.status = persisted.status;
-        state.moderationLoaded = false;
-        await loadModeration({ force: true });
+
+        // Render the persisted state immediately. A list refresh is explicit and can no longer
+        // make a successful save look like a failed one when the network is unstable.
         render();
         setFeedback("Caz salvat.", "success");
+        state.moderationLoaded = false;
       } catch (error) {
         console.error("Community case update failed:", error);
-        const message = String(error?.message || "").toLowerCase();
-        setFeedback(message.includes("not found") ? "Cazul nu mai există." : "Cazul nu a putut fi salvat.", "error");
+        setFeedback(moderationErrorMessage(error), "error");
         setFormBusy(form, false);
       }
       return;

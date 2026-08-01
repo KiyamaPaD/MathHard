@@ -15,20 +15,20 @@ const feedbackController = read("js/community-feedback-controller.js");
 const adminController = read("js/community-admin-controller.js");
 const adminRepository = read("js/community-profile-repository.js");
 const feedbackCss = read("css/community-feedback.css");
-const migration = read("local-sql/058_product_phase_04d_global_discovery_moderation_fixes.sql");
-const smoke = read("local-sql/058_phase4d_transactional_smoke_test.sql");
+const migration = read("local-sql/059_product_phase_04d_2_feedback_case_save.sql");
+const smoke = read("local-sql/059_phase4d2_transactional_smoke_test.sql");
 
 requireTokens(feedbackModel, "Feedback model", ["validateCommunityFeedbackDraft", "validateCommunityProfileReportDraft", "normalizeCommunityCase", "normalizeCommunityModerationDashboard"]);
 requireTokens(feedbackRepository, "Feedback repository", ["mh_submit_community_feedback", "mh_submit_community_profile_report"]);
-requireTokens(adminRepository, "Moderation repository", ["mh_admin_get_community_moderation", "mh_admin_update_community_case", "mh_admin_set_community_access"]);
+requireTokens(adminRepository, "Moderation repository", ["mh_admin_get_community_moderation", "mh_admin_save_community_case", "mh_admin_update_community_case", "isMissingRpcError", "mh_admin_set_community_access"]);
 if (feedbackRepository.includes(".from(") || adminRepository.includes(".from(")) errors.push("Community feedback/moderation uses direct table access.");
 requireTokens(feedbackController, "Logged-out reporting UX", ["authenticationPrompt", "authTitle", "authAction", "supabase.auth.getSession", "submitCommunityProfileReport"]);
 requireTokens(feedbackCss, "Reporting prompt styles", [".mh-community-feedback-auth", ".mh-community-feedback-modal"]);
-requireTokens(adminController, "Moderation save flow", ["setFormBusy", "caseMatchesFilter", "normalizeCommunityCase", "Caz salvat.", "state.status = persisted.status"]);
+requireTokens(adminController, "Moderation save flow", ["setFormBusy", "caseMatchesFilter", "normalizeCommunityCase", "validateModerationCaseDraft", "moderationErrorMessage", "Caz salvat.", "state.status = persisted.status"]);
 requireTokens(migration, "Moderation save SQL", [
-  "drop function if exists public.mh_admin_update_community_case", "returns jsonb", "returning jsonb_build_object", "case_updated", "grant execute on function public.mh_admin_update_community_case"
+  "mh_admin_save_community_case", "drop function if exists public.mh_admin_update_community_case", "returns jsonb", "returning feedback.user_id", "case_updated", "grant execute on function public.mh_admin_save_community_case"
 ]);
-requireTokens(smoke, "Moderation smoke test", ["mh_admin_update_community_case", "Verificare Phase 4D", "Moderation case changes were not persisted", "rollback;"]);
+requireTokens(smoke, "Moderation smoke test", ["mh_admin_save_community_case", "mh_admin_update_community_case", "Salvare Phase 4D.2", "Moderation case changes were not persisted", "rollback;"]);
 if (!balanced(migration)) errors.push("Phase 4D SQL has unbalanced $$ blocks.");
 if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
 
@@ -41,14 +41,14 @@ assert.deepEqual(model.normalizeCommunityCase({ id: "f1", status: "in_review", p
   status: "in_review", priority: "high", adminNote: "Verificat", createdAt: "", updatedAt: "", resolvedAt: ""
 });
 
-console.log("MathHard Phase 4D Moderation Fix audit");
+console.log("MathHard Phase 4D.2 Moderation Save audit");
 if (errors.length) {
   errors.forEach((error) => console.error(`ERROR: ${error}`));
   process.exitCode = 1;
 } else {
-  console.log("- feedback case save returns persisted state: present");
+  console.log("- versioned moderation save RPC returns persisted state: present");
   console.log("- resolved cases remain discoverable after filter change: present");
   console.log("- logged-out profile reports show sign-in guidance: present");
   console.log("- authenticated users may report any other public profile, including Admin: preserved");
-  console.log("MathHard Phase 4D Moderation Fix audit passed.");
+  console.log("MathHard Phase 4D.2 Moderation Save audit passed.");
 }

@@ -66,14 +66,48 @@ export function loadCommunityModerationDashboard(supabase, filters = {}) {
   });
 }
 
-export function updateCommunityModerationCase(supabase, value) {
-  return call(supabase, "mh_admin_update_community_case", {
+function isMissingRpcError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  return ["PGRST202", "PGRST203", "42883"].includes(code)
+    || message.includes("could not find the function")
+    || message.includes("does not exist");
+}
+
+function moderationCaseFallback(value) {
+  return {
+    id: value.id,
+    kind: value.kind,
+    status: value.status,
+    priority: value.priority,
+    admin_note: value.adminNote || null
+  };
+}
+
+export async function updateCommunityModerationCase(supabase, value) {
+  const args = {
     p_kind: value.kind,
     p_id: value.id,
     p_status: value.status,
     p_priority: value.priority,
     p_note: value.adminNote || null
-  });
+  };
+
+  try {
+    const saved = await call(supabase, "mh_admin_save_community_case", args);
+    if (!saved || typeof saved !== "object" || String(saved.id || "") !== String(value.id || "")) {
+      throw new Error("Invalid moderation save response");
+    }
+    return saved;
+  } catch (error) {
+    if (!isMissingRpcError(error)) throw error;
+
+    // Compatibility path for databases that still expose the Phase 4C/4D RPC.
+    const saved = await call(supabase, "mh_admin_update_community_case", args);
+    if (saved === true) return moderationCaseFallback(value);
+    if (!saved || typeof saved !== "object") throw new Error("Invalid moderation save response");
+    return saved;
+  }
 }
 
 export function setCommunityUserAccess(supabase, value) {
