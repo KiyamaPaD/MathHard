@@ -99,8 +99,8 @@
 }
 
 .mh-problem-side {
-  position: sticky;
-  top: 16px;
+  position: static;
+  top: auto;
   align-self: start;
 }
 

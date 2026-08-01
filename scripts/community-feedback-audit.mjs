@@ -18,6 +18,7 @@ const appSource = read("js/app.js");
 const indexSource = read("index.html");
 const feedbackCss = read("css/community-feedback.css");
 const adminCss = read("css/community-admin.css");
+const designCss = read("css/design-system.css");
 const migration = read("local-sql/059_product_phase_04d_2_feedback_case_save.sql");
 const smoke = read("local-sql/059_phase4d2_transactional_smoke_test.sql");
 
@@ -26,7 +27,18 @@ requireTokens(feedbackRepository, "Feedback repository", ["mh_submit_community_f
 requireTokens(adminRepository, "Moderation repository", ["mh_admin_get_community_moderation", "mh_admin_save_community_case", "mh_admin_update_community_case", "isMissingRpcError", "mh_admin_set_community_access"]);
 if (feedbackRepository.includes(".from(") || adminRepository.includes(".from(")) errors.push("Community feedback/moderation uses direct table access.");
 requireTokens(feedbackController, "Logged-out reporting UX", ["authenticationPrompt", "authTitle", "authAction", "supabase.auth.getSession", "submitCommunityProfileReport"]);
-requireTokens(feedbackCss, "Reporting prompt styles", [".mh-community-feedback-auth", ".mh-community-feedback-modal"]);
+requireTokens(feedbackCss, "Reporting prompt styles", [
+  ".mh-community-feedback-auth",
+  ".mh-community-feedback-modal",
+  ".mh-community-feedback-dialog>header",
+  "position:static",
+  "border:0",
+  "background:transparent",
+  "backdrop-filter:none"
+]);
+if (/data-community-feedback-open=["']feedback["']/.test(designCss)) {
+  errors.push("Suggestions trigger still has a forced design-system gradient.");
+}
 requireTokens(adminController, "Moderation save flow", ["data-community-action=\"save-case\"", "saveModerationCase", "event.preventDefault()", "setFormBusy", "normalizeCommunityCase", "validateModerationCaseDraft", "moderationErrorMessage", "Caz salvat.", "state.status = persisted.status"]);
 requireTokens(appSource, "Community Admin cache bust", ["community-admin-controller.js?v=4g3"]);
 requireTokens(migration, "Moderation save SQL", [

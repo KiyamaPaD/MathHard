@@ -123,7 +123,7 @@ function init() {
     void requestRouteModule(initialRoute, { showState: true });
   }
 
-  scheduleIdle(() => void safelyLoadModule("./microinteractions-bootstrap.js?v=4i"), 380);
+  scheduleIdle(() => void safelyLoadModule("./microinteractions-bootstrap.js?v=4j2"), 380);
   scheduleIdle(() => void safelyLoadModule("./ui-language-guard.js?v=4i"), 620);
   scheduleIdle(() => void safelyLoadModule("./section-layout-controller.js"), 500);
   scheduleIdle(() => void safelyLoadModule("./quick-nav-controller.js"), 900);

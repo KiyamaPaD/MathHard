@@ -932,18 +932,20 @@ body.mh-shell-ready .card:hover {
 }
 
 
-/* Phase 4J.1 — highlighted suggestions action. */
-:where(button, a)[data-community-feedback-open="feedback"] {
-  border-color: rgba(111, 124, 255, .58) !important;
-  background: linear-gradient(135deg, #6f7cff 0%, #5268e8 48%, #38bdf8 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 14px 34px -22px rgba(82, 104, 232, .78) !important;
-}
 
-:where(button, a)[data-community-feedback-open="feedback"]:hover {
-  border-color: rgba(125, 211, 252, .72) !important;
-  background: linear-gradient(135deg, #7b87ff 0%, #5a70ee 46%, #4ac8f5 100%) !important;
-  box-shadow: 0 17px 38px -22px rgba(56, 189, 248, .82) !important;
+/* Phase 4J.2 — component headers must not inherit the global app header. */
+.mh-secure-lesson-quiz > .quizHead {
+  position: static !important;
+  inset: auto !important;
+  top: auto !important;
+  z-index: auto !important;
+  margin: 0 0 12px !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--mh-border-soft) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Utility modals remain inside the viewport and About starts below the app chrome. */

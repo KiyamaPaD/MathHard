@@ -497,6 +497,12 @@ function bindAdminClose() {
   const floatingClose = document.getElementById("mhAdminFloatingClose");
   if (!drawer || !floatingClose) return;
 
+  const closeDrawer = () => {
+    drawer.classList.remove("open");
+    document.body.classList.remove("mh-admin-drawer-open");
+    document.getElementById("adminBtn")?.focus?.({ preventScroll: true });
+  };
+
   const sync = () => {
     const authorized = adminVisible();
     const open = authorized && drawer.classList.contains("open");
@@ -509,7 +515,8 @@ function bindAdminClose() {
     }
   };
 
-  floatingClose.addEventListener("click", () => proxyClick("closeAdmin"));
+  floatingClose.addEventListener("click", closeDrawer);
+  document.getElementById("closeAdmin")?.addEventListener("click", closeDrawer);
   new MutationObserver(sync).observe(drawer, {
     attributes: true,
     attributeFilter: ["class"],

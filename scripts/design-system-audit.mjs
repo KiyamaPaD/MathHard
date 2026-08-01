@@ -13,8 +13,8 @@ function requireTokens(source, label, tokens) {
 
 for (const page of ["index.html", "profile.html", "u.html"]) {
   const source = read(page);
-  requireTokens(source, page, ["/css/design-system.css?v=4j1"]);
-  const designIndex = source.indexOf("/css/design-system.css?v=4j1");
+  requireTokens(source, page, ["/css/design-system.css?v=4j2"]);
+  const designIndex = source.indexOf("/css/design-system.css?v=4j2");
   const motionIndex = source.indexOf("/css/microinteractions.css?v=4i");
   if (designIndex < motionIndex) errors.push(`${page}: design-system.css trebuie încărcat după stilurile componentelor.`);
 }
@@ -63,7 +63,8 @@ requireTokens(problemCss, "Problem workspace", [
   ".mh-problem-hero {",
   "position: relative",
   "top: auto",
-  "Phase 4J.1 — keep the problem summary card",
+  "position: static",
+  "top: auto",
 ]);
 
 const communityAdminCss = read("css/community-admin.css");
@@ -75,9 +76,30 @@ requireTokens(communityAdminCss, "Community Admin", [
 ]);
 
 requireTokens(design, "Visual hotfix", [
-  'data-community-feedback-open="feedback"',
+  ".mh-secure-lesson-quiz > .quizHead",
+  "position: static !important",
+  "background: transparent !important",
   "#aboutModal.open",
   "padding-top: max(78px",
+]);
+
+if (/data-community-feedback-open=["']feedback["']/.test(design)) {
+  errors.push("Sugestii: design system still forces a highlighted gradient on the trigger button.");
+}
+
+const feedbackCss = read("css/community-feedback.css");
+requireTokens(feedbackCss, "Suggestions dialog header", [
+  ".mh-community-feedback-dialog>header",
+  "position:static",
+  "border:0",
+  "background:transparent",
+  "backdrop-filter:none",
+]);
+
+requireTokens(shell, "Admin close behavior", [
+  "const closeDrawer = () =>",
+  'floatingClose.addEventListener("click", closeDrawer)',
+  'document.getElementById("closeAdmin")?.addEventListener("click", closeDrawer)',
 ]);
 
 requireTokens(shell, "Distinct navigation icons", [
@@ -96,4 +118,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("MathHard 4J.1 visual hotfix audit passed.");
+console.log("MathHard 4J.2 visual behavior audit passed.");

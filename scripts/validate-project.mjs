@@ -797,7 +797,7 @@ ${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
 if (!indexHtml.includes('href="css/quick-nav.css"')) {
   fail("Quick navigation stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/performance-bootstrap.js"') ||
+if (!indexHtml.includes('src="/js/performance-bootstrap.js?v=4j2"') ||
     !performanceBootstrapSource.includes('./quick-nav-controller.js')) {
   fail("Quick navigation controller must be loaded through the performance bootstrap.");
 }
@@ -820,7 +820,7 @@ if (!performanceBootstrapSource.includes('./section-layout-controller.js')) {
 if (!indexHtml.includes('href="css/app-shell.css"')) {
   fail("Phase 14A app shell stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/app-shell-controller.js?v=4j1"')) {
+if (!indexHtml.includes('src="/js/app-shell-controller.js?v=4j2"')) {
   fail("Phase 14A app shell controller is missing from index.html.");
 }
 if (!appShellSource.includes("normalizeAppRoute") ||
@@ -1407,7 +1407,7 @@ if (!runtimeDiagnosticsSource.includes("collectLayoutDiagnostics") ||
 }
 
 // Phase 18C.3: route-aware lazy loading and duplicate-request guards.
-if (!indexHtml.includes('src="/js/performance-bootstrap.js"') ||
+if (!indexHtml.includes('src="/js/performance-bootstrap.js?v=4j2"') ||
     indexHtml.includes('src="/js/analytics-controller.js"') ||
     indexHtml.includes('src="/js/gamification-controller.js"') ||
     indexHtml.includes('src="/js/animation-numberline.js"')) {

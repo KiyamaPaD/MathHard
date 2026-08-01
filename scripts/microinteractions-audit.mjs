@@ -66,13 +66,13 @@ for (const [name, html] of [["index.html", index], ["profile.html", profile], ["
   if (!html.includes("/css/microinteractions.css?v=4i")) fail(`${name} must load microinteraction styles.`);
   if (!html.includes('name="mathhard-build" content="4i"')) fail(`${name} must expose build 4i.`);
 }
-if (!performanceBootstrap.includes('safelyLoadModule("./microinteractions-bootstrap.js?v=4i")')) {
+if (!performanceBootstrap.includes('safelyLoadModule("./microinteractions-bootstrap.js?v=4j2")')) {
   fail("Main-page microinteractions must be lazy-loaded by performance-bootstrap.js.");
 }
 if (index.includes('<script type="module" src="/js/microinteractions-bootstrap.js')) {
   fail("index.html must not load the microinteraction runtime eagerly.");
 }
-if (!profile.includes('/js/microinteractions-bootstrap.js?v=4i') || !publicProfile.includes('/js/microinteractions-bootstrap.js?v=4i')) {
+if (!profile.includes('/js/microinteractions-bootstrap.js?v=4j2') || !publicProfile.includes('/js/microinteractions-bootstrap.js?v=4j2')) {
   fail("Profile pages must load the lightweight motion bootstrap.");
 }
 
@@ -82,6 +82,16 @@ for (const marker of ["customElements.define", "ResizeObserver", "IntersectionOb
 if (!bootstrap.includes("requestIdleCallback") || !bootstrap.includes("React microinteraction island unavailable")) {
   fail("Motion bootstrap must lazy-load React and keep a local fallback.");
 }
+
+if (!bootstrap.includes('from "./microinteraction-engine.js?v=4j2"')) {
+  fail("Motion bootstrap must cache-bust the updated XP animation engine.");
+}
+for (const motionSource of [engine, engineTs]) {
+  if (!motionSource.includes("width:0;height:1.55rem") || !motionSource.includes(":host([data-active]){width:1.55rem")) {
+    fail("XP pulse must collapse outside the active animation.");
+  }
+}
+
 if (!reactIsland.includes("react@18.3.1") || !reactIsland.includes("react-dom@18.3.1")) {
   fail("React island dependencies must be pinned.");
 }

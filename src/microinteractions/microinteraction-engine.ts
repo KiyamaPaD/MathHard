@@ -101,7 +101,7 @@ class MhXpPulse extends HTMLElement {
     const shadow = this.attachShadow({ mode: "open" });
     shadow.innerHTML = `
       <style>
-        :host{display:inline-grid;place-items:center;width:1.55rem;height:1.55rem;vertical-align:middle;margin-inline-start:.28rem;contain:layout paint;pointer-events:none}
+        :host{display:inline-grid;place-items:center;width:0;height:1.55rem;min-width:0;overflow:visible;vertical-align:middle;margin-inline-start:0;opacity:0;contain:layout;pointer-events:none;transition:width .18s cubic-bezier(.2,.8,.2,1),margin-inline-start .18s cubic-bezier(.2,.8,.2,1),opacity .12s ease}:host([data-active]){width:1.55rem;margin-inline-start:.28rem;opacity:1}
         .wrap{position:relative;display:grid;place-items:center;width:100%;height:100%}
         svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);filter:drop-shadow(0 0 .32rem color-mix(in srgb, var(--accent,#7c5cff) 55%, transparent))}
         circle{fill:none;stroke:color-mix(in srgb, var(--accent,#7c5cff) 72%, white);stroke-width:2.2;stroke-linecap:round;stroke-dasharray:52;stroke-dashoffset:52}

@@ -1,4 +1,4 @@
-import { createMicrointeractionEngine } from "./microinteraction-engine.js";
+import { createMicrointeractionEngine } from "./microinteraction-engine.js?v=4j2";
 
 const pendingCelebrations = [];
 const queueEarlyCelebration = (event) => pendingCelebrations.push(event.detail || {});
