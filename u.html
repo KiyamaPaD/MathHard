@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title id="communityPublicTitle">MathHard — Profil public</title>
+  <meta id="communityPublicMeta" name="description" content="Profil public MathHard.">
+  <link rel="preconnect" href="https://esm.sh" crossorigin>
+  <link rel="preconnect" href="https://wvbwbmnibibkzctiymmj.supabase.co" crossorigin>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/loading-screen.css">
+  <link rel="stylesheet" href="/css/ui-feedback.css">
+  <link rel="stylesheet" href="/css/community-profile.css">
+  <link rel="stylesheet" href="/css/mobile-hardening.css">
+  <script defer src="/js/loading-screen.js"></script>
+</head>
+<body class="mh-app community-public-body" data-accent="sky" data-theme="aurora">
+  <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
+    <div class="mh-loading-panel">
+      <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true">
+      <p class="mh-loading-brand">MathHard</p>
+      <div class="mh-loading-track" aria-hidden="true"><span></span></div>
+      <p class="mh-loading-status" data-loading-status>Se încarcă…</p>
+    </div>
+  </div>
+
+  <header class="community-public-topbar">
+    <div class="bar">
+      <a href="/index.html" class="logo">
+        <img src="/img/mathhard-logo.png" alt="MathHard" class="logo-img">
+        <div class="logo-text-block"><span class="logo-title">MathHard</span><span class="logo-slogan">Comunitate</span></div>
+      </a>
+      <a class="btn small" href="/index.html">Înapoi</a>
+    </div>
+  </header>
+
+  <main class="community-public-page" id="communityPublicPage">
+    <section class="community-public-empty" id="communityPublicEmpty">
+      <div><h1>Se încarcă profilul</h1><p>Profilurile publice afișează doar informațiile alese de utilizator.</p></div>
+    </section>
+
+    <div id="communityPublicContent" hidden>
+      <article class="community-public-card">
+        <div class="community-public-banner" id="communityPublicBanner"></div>
+        <div class="community-public-hero-content">
+          <div class="community-public-avatar" id="communityPublicAvatar">M</div>
+          <div class="community-public-actions">
+            <button class="btn small" id="communityCopyProfile" type="button">Copiază linkul</button>
+          </div>
+          <div>
+            <div class="community-public-name-row">
+              <h1 id="communityPublicName">Profil MathHard</h1>
+              <span class="community-featured-badge" id="communityFeaturedBadge" hidden></span>
+            </div>
+            <p class="community-public-username" id="communityPublicUsername">@username</p>
+            <p class="community-public-location" id="communityPublicLocation" hidden></p>
+          </div>
+          <p class="community-public-bio" id="communityPublicBio"></p>
+        </div>
+      </article>
+
+      <div class="community-public-grid">
+        <section class="community-public-section is-wide" id="communityStatsSection" hidden>
+          <h2 id="communityStatsTitle">Progres</h2>
+          <div class="community-public-stats" id="communityPublicStats"></div>
+        </section>
+
+        <section class="community-public-section" id="communityEducationSection" hidden>
+          <h2 id="communityEducationTitle">Educație</h2>
+          <dl class="community-public-list" id="communityPublicEducation"></dl>
+        </section>
+
+        <section class="community-public-section" id="communityMathSection" hidden>
+          <h2 id="communityMathTitle">Matematică</h2>
+          <dl class="community-public-list" id="communityPublicMath"></dl>
+          <div class="community-public-tags" id="communityPublicTopics"></div>
+        </section>
+
+        <section class="community-public-section is-wide" id="communityBadgesSection" hidden>
+          <h2 id="communityBadgesTitle">Badge-uri</h2>
+          <div class="community-public-badges" id="communityPublicBadges"></div>
+        </section>
+
+        <section class="community-public-section" id="communityAchievementsSection" hidden>
+          <h2 id="communityAchievementsTitle">Realizări</h2>
+          <div class="community-public-badges" id="communityPublicAchievements"></div>
+        </section>
+
+        <section class="community-public-section" id="communityLinksSection" hidden>
+          <h2 id="communityLinksTitle">Linkuri</h2>
+          <div class="community-public-links" id="communityPublicLinks"></div>
+        </section>
+
+        <section class="community-public-section" id="communityActivitySection" hidden>
+          <h2 id="communityActivityTitle">Comunitate</h2>
+          <dl class="community-public-list" id="communityPublicActivity"></dl>
+        </section>
+
+        <section class="community-public-section is-wide" id="communityQuoteSection" hidden>
+          <blockquote class="community-public-quote" id="communityPublicQuote"></blockquote>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/runtime-diagnostics.js"></script>
+  <script type="module" src="/js/ui-feedback.js"></script>
+  <script type="module" src="/js/community-profile-page.js"></script>
+</body>
+</html>

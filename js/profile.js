@@ -387,6 +387,7 @@ function renderGuest() {
   resetProfileExperience();
   renderProfileIdentity({ userId: "guest" });
   setStatus("");
+  window.dispatchEvent(new CustomEvent("mh:profile-auth-user", { detail: { userId: "" } }));
 }
 
 function renderUser(user, profileRow = null) {
@@ -419,6 +420,8 @@ function renderUser(user, profileRow = null) {
   if (authText) {
     authText.textContent = t("auth_text_connected");
   }
+
+  window.dispatchEvent(new CustomEvent("mh:profile-auth-user", { detail: { userId: user.id } }));
 }
 
 /* ========= AUTH / PROFILE DATA ========= */
@@ -1050,6 +1053,13 @@ async function handleLogout() {
     setAuthLoading(false);
   }
 }
+
+
+window.addEventListener("mh:community-profile-saved", () => {
+  loadCurrentUser({ force: true }).catch((error) => {
+    console.error("Profile refresh after community save failed:", error);
+  });
+});
 
 /* ========= EVENT BINDING ========= */
 loginBtn?.addEventListener("click", handleLogin);

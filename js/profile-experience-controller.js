@@ -1,7 +1,7 @@
 import { buildProfileExperienceSummary } from "./profile-experience-model.js";
 
 const TAB_STORAGE_KEY = "mh_profile_active_tab_v2";
-const ALLOWED_TABS = new Set(["overview", "progress", "activity", "account"]);
+const ALLOWED_TABS = new Set(["overview", "progress", "activity", "community", "account"]);
 
 const TEXT = {
   ro: {
@@ -9,6 +9,7 @@ const TEXT = {
       overview: "Prezentare",
       progress: "Progres",
       activity: "Activitate",
+      community: "Profil public",
       account: "Cont"
     },
     completion: "Progres general",
@@ -30,6 +31,7 @@ const TEXT = {
       overview: "Overview",
       progress: "Progress",
       activity: "Activity",
+      community: "Public profile",
       account: "Account"
     },
     completion: "Overall progress",

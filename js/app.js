@@ -104,6 +104,7 @@ import {
   let adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
+  let communityAdminController = null;
   let adminHistoryController = null;
   let learningWorkspaceController = null;
   let lessonQuizAdminController = null;
@@ -128,6 +129,7 @@ import {
       import("./admin-history-controller.js"),
       import("./admin-history-repository.js"),
       import("./gamification-admin-controller.js"),
+      import("./community-admin-controller.js"),
       import("./concept-admin-controller.js"),
       import("./content-quality-admin-controller.js")
     ]).then(([
@@ -138,6 +140,7 @@ import {
       adminHistoryModule,
       adminHistoryRepositoryModule,
       gamificationAdminModule,
+      communityAdminModule,
       conceptAdminModule,
       contentQualityAdminModule
     ]) => {
@@ -149,6 +152,7 @@ import {
         ...adminHistoryModule,
         ...adminHistoryRepositoryModule,
         ...gamificationAdminModule,
+        ...communityAdminModule,
         ...conceptAdminModule,
         ...contentQualityAdminModule
       };
@@ -3329,6 +3333,13 @@ ${details}`);
         });
       }
 
+      if (!communityAdminController) {
+        communityAdminController = runtime.createCommunityAdminController({
+          host: document.getElementById("mhCommunityAdminStudio"),
+          supabase
+        });
+      }
+
       if (!conceptAdminController) {
         conceptAdminController = runtime.createConceptAdminController({
           host: document.getElementById("mhConceptAdminStudio"),
@@ -3393,6 +3404,7 @@ ${details}`);
           },
           onPanelChange: (panelName) => {
             if (panelName === "gamification") void gamificationAdminController?.load();
+            if (panelName === "community") void communityAdminController?.load();
             if (panelName === "concepts") void conceptAdminController?.load();
             if (panelName === "quality") void contentQualityAdminController?.load();
             if (panelName === "history") void adminHistoryController?.load();
@@ -3451,6 +3463,7 @@ ${details}`);
         lessonQuizAdminController,
         adminHistoryController,
         gamificationAdminController,
+        communityAdminController,
         adminStudioController,
         adminDraftController,
         roadmapAdminController,
@@ -3534,6 +3547,7 @@ ${details}`);
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
+      communityAdminController?.setAdmin(false);
       conceptAdminController?.setAdmin(false);
       contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
@@ -3625,6 +3639,7 @@ ${details}`);
     adminExamRecoveryController?.setAdmin(isAdmin);
     roadmapAdminController?.setAdmin(isAdmin);
     gamificationAdminController?.setAdmin(isAdmin);
+    communityAdminController?.setAdmin(isAdmin);
     conceptAdminController?.setAdmin(isAdmin);
     contentQualityAdminController?.setAdmin(isAdmin);
     adminHistoryController?.setAdmin(isAdmin);
@@ -3686,6 +3701,7 @@ ${details}`);
       adminExamRecoveryController?.setAdmin(true);
       roadmapAdminController?.setAdmin(true);
       gamificationAdminController?.setAdmin(true);
+      communityAdminController?.setAdmin(true);
       conceptAdminController?.setAdmin(true);
       contentQualityAdminController?.setAdmin(true);
       adminHistoryController?.setAdmin(true);
@@ -3711,6 +3727,7 @@ ${details}`);
     adminExamRecoveryController?.setAdmin(false);
     roadmapAdminController?.setAdmin(false);
     gamificationAdminController?.setAdmin(false);
+    communityAdminController?.setAdmin(false);
     conceptAdminController?.setAdmin(false);
     contentQualityAdminController?.setAdmin(false);
     invalidateContentCatalogCache();
@@ -7600,6 +7617,7 @@ function openExam(exam){
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
+      communityAdminController?.setAdmin(false);
       conceptAdminController?.setAdmin(false);
       contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);

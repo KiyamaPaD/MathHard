@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="/css/loading-screen.css" />
   <link rel="stylesheet" href="/css/ui-feedback.css" />
   <link rel="stylesheet" href="/css/profile.css" />
+  <link rel="stylesheet" href="/css/community-profile.css" />
   <link rel="stylesheet" href="/css/mobile-hardening.css" />
   <script defer src="/js/loading-screen.js"></script>
 </head>
@@ -136,6 +137,7 @@
       <button type="button" role="tab" data-profile-tab="overview" aria-selected="true">Prezentare</button>
       <button type="button" role="tab" data-profile-tab="progress" aria-selected="false">Progres</button>
       <button type="button" role="tab" data-profile-tab="activity" aria-selected="false">Activitate</button>
+      <button type="button" role="tab" data-profile-tab="community" aria-selected="false">Profil public</button>
       <button type="button" role="tab" data-profile-tab="account" aria-selected="false">Cont</button>
     </nav>
 
@@ -169,6 +171,109 @@
     </section>
 
     <!-- Panel order stays stable for the existing RO/EN profile text mapping. -->
+    <section class="profile-tab-pane" data-profile-pane="community" hidden>
+      <div class="community-settings" id="communityProfileSettings">
+        <div class="community-settings-head">
+          <div>
+            <span class="profile-panel-kicker" data-profile-text-key="community_kicker">Comunitate</span>
+            <h2 data-profile-text-key="community_title">Profil public</h2>
+            <p data-profile-text-key="community_intro">Construiește profilul care va apărea în comunitate și în clasamente.</p>
+          </div>
+          <div class="community-settings-actions">
+            <a class="btn small" id="communityOpenProfile" href="/u.html" target="_blank" rel="noopener" hidden data-profile-text-key="community_open">Deschide profilul</a>
+            <button class="btn" id="communitySaveProfile" type="button" data-profile-text-key="community_save">Salvează</button>
+          </div>
+        </div>
+
+        <p class="community-settings-status" id="communityProfileStatus" role="status" aria-live="polite"></p>
+
+        <div class="community-settings-layout">
+          <form class="community-profile-form" id="communityProfileForm">
+            <section class="community-form-section">
+              <div class="community-form-heading"><h3 data-profile-text-key="community_identity_title">Identitate</h3><span data-profile-text-key="community_identity_help">Câmpurile principale ale profilului.</span></div>
+              <div class="community-form-grid">
+                <label class="profile-field">
+                  <span data-profile-text-key="community_username_label">Username</span>
+                  <div class="community-username-field"><span>@</span><input id="communityUsername" name="username" maxlength="24" autocomplete="username" placeholder="cristi" required></div>
+                  <small id="communityUsernameHint" data-profile-text-key="community_username_hint">3–24 caractere: litere mici, cifre, punct, minus sau underscore.</small>
+                </label>
+                <label class="profile-field"><span data-profile-text-key="community_display_name">Nume afișat</span><input id="communityDisplayName" name="display_name" maxlength="60" autocomplete="nickname" required></label>
+                <label class="profile-field"><span data-profile-text-key="community_avatar">Avatar URL</span><input id="communityAvatarUrl" name="avatar_url" type="url" placeholder="https://..."></label>
+                <label class="profile-field community-field-wide"><span data-profile-text-key="community_banner">Banner URL</span><input id="communityBannerUrl" name="banner_url" type="url" placeholder="https://..."></label>
+                <label class="profile-field community-field-wide"><span data-profile-text-key="community_bio">Bio</span><textarea id="communityBio" name="bio" maxlength="280" rows="4" placeholder="Despre tine, ce înveți și ce construiești."></textarea></label>
+              </div>
+            </section>
+
+            <section class="community-form-section">
+              <div class="community-form-heading"><h3 data-profile-text-key="community_location_title">Locație și educație</h3><span data-profile-text-key="community_location_help">Locația exactă și școala nu sunt solicitate.</span></div>
+              <div class="community-form-grid">
+                <label class="profile-field"><span data-profile-text-key="community_country">Țară</span><select id="communityCountry" name="country_code"><option value="" data-profile-text-key="community_unspecified_f">Nespecificată</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_region">Județ / regiune</span><select id="communityRegion" name="region_code" disabled><option value="" data-profile-text-key="community_unspecified_f">Nespecificată</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_education_level">Nivel educațional</span><select id="communityEducationLevel" name="education_level"><option value="" data-profile-text-key="community_unspecified_m">Nespecificat</option><option value="middle-school" data-profile-text-key="community_middle_school">Gimnaziu</option><option value="high-school" data-profile-text-key="community_high_school">Liceu</option><option value="university" data-profile-text-key="community_university">Facultate</option><option value="graduate" data-profile-text-key="community_graduate">Master / Doctorat</option><option value="teacher" data-profile-text-key="community_teacher">Profesor</option><option value="other" data-profile-text-key="community_other">Altul</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_grade">Clasă / an</span><input id="communityGradeLevel" name="grade_level" maxlength="24" placeholder="Clasa a XII-a"></label>
+                <label class="profile-field"><span data-profile-text-key="community_study_track">Profil / specializare</span><input id="communityStudyTrack" name="study_track" maxlength="120" placeholder="Matematică-informatică"></label>
+                <label class="profile-field"><span data-profile-text-key="community_goal">Obiectiv academic</span><input id="communityAcademicGoal" name="academic_goal" maxlength="120" placeholder="Admitere UBB FMI"></label>
+              </div>
+            </section>
+
+            <section class="community-form-section">
+              <div class="community-form-heading"><h3 data-profile-text-key="community_personality_title">Matematică și personalitate</h3><span data-profile-text-key="community_personality_help">Câmpuri opționale pentru un profil mai personal.</span></div>
+              <div class="community-form-grid">
+                <label class="profile-field"><span data-profile-text-key="community_current_focus">Învăț acum</span><input id="communityCurrentFocus" name="current_focus" maxlength="120" placeholder="Algebră modulară"></label>
+                <label class="profile-field"><span data-profile-text-key="community_favorite_topics">Capitole favorite</span><input id="communityFavoriteTopics" name="favorite_topics" maxlength="320" placeholder="Algebră, analiză, geometrie"></label>
+                <label class="profile-field"><span data-profile-text-key="community_favorite_mathematician">Matematician favorit</span><input id="communityFavoriteMathematician" name="favorite_mathematician" maxlength="120"></label>
+                <label class="profile-field"><span data-profile-text-key="community_favorite_theorem">Teoremă favorită</span><input id="communityFavoriteTheorem" name="favorite_theorem" maxlength="120"></label>
+                <label class="profile-field"><span data-profile-text-key="community_languages">Limbi</span><input id="communityLanguages" name="languages" maxlength="160" placeholder="Română, engleză"></label>
+                <label class="profile-field community-field-wide"><span data-profile-text-key="community_quote">Citat</span><input id="communityQuote" name="quote" maxlength="180"></label>
+              </div>
+            </section>
+
+            <section class="community-form-section">
+              <div class="community-form-heading"><h3 data-profile-text-key="community_links_title">Linkuri și stil</h3><span data-profile-text-key="community_links_help">Linkurile apar numai dacă activezi vizibilitatea lor.</span></div>
+              <div class="community-form-grid">
+                <label class="profile-field"><span data-profile-text-key="community_website">Website</span><input id="communityWebsiteUrl" name="website_url" type="url" placeholder="https://..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_github">GitHub</span><input id="communityGithubUrl" name="github_url" type="url" placeholder="https://github.com/..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_portfolio">Portofoliu</span><input id="communityPortfolioUrl" name="portfolio_url" type="url" placeholder="https://..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_accent">Culoare profil</span><select id="communityAccent" name="profile_accent"><option value="sky">Sky</option><option value="indigo">Indigo</option><option value="violet">Violet</option><option value="emerald">Emerald</option><option value="amber">Amber</option><option value="rose">Rose</option><option value="slate">Slate</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_theme">Stil profil</span><select id="communityTheme" name="profile_theme"><option value="aurora">Aurora</option><option value="minimal">Minimal</option><option value="grid">Grid</option><option value="cosmos">Cosmos</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_featured_badge">Badge principal</span><select id="communityFeaturedBadge" name="featured_badge_id"><option value="" data-profile-text-key="community_auto">Automat</option></select></label>
+              </div>
+            </section>
+
+            <section class="community-form-section">
+              <div class="community-form-heading"><h3 data-profile-text-key="community_privacy_title">Confidențialitate</h3><span data-profile-text-key="community_privacy_help">Profilul și clasamentele sunt opt-in.</span></div>
+              <div class="community-privacy-grid">
+                <label class="community-switch community-switch-primary"><input id="communityIsPublic" name="is_public" type="checkbox"><span><strong data-profile-text-key="community_public">Profil public</strong><small data-profile-text-key="community_public_help">Permite afișarea paginii tale publice.</small></span></label>
+                <label class="community-switch"><input id="communityLeaderboardOptIn" name="leaderboard_opt_in" type="checkbox"><span><strong data-profile-text-key="community_leaderboard">Participă în clasamente</strong><small data-profile-text-key="community_leaderboard_help">Necesită un profil public.</small></span></label>
+                <label class="community-switch"><input name="show_location" type="checkbox"><span><strong data-profile-text-key="community_privacy_location">Locație</strong><small data-profile-text-key="community_privacy_location_help">Țară și regiune.</small></span></label>
+                <label class="community-switch"><input name="show_education" type="checkbox"><span><strong data-profile-text-key="community_privacy_education">Educație</strong><small data-profile-text-key="community_privacy_education_help">Nivel, clasă și obiectiv.</small></span></label>
+                <label class="community-switch"><input name="show_personality" type="checkbox"><span><strong data-profile-text-key="community_privacy_personality">Matematică și personalitate</strong><small data-profile-text-key="community_privacy_personality_help">Preferințe, focus, limbi și citat.</small></span></label>
+                <label class="community-switch"><input name="show_progress" type="checkbox"><span><strong data-profile-text-key="community_privacy_progress">Progres</strong><small data-profile-text-key="community_privacy_progress_help">Lecții, probleme și examene.</small></span></label>
+                <label class="community-switch"><input name="show_badges" type="checkbox"><span><strong data-profile-text-key="community_privacy_badges">Badge-uri</strong><small data-profile-text-key="community_privacy_badges_help">Roluri și contribuții.</small></span></label>
+                <label class="community-switch"><input name="show_achievements" type="checkbox"><span><strong data-profile-text-key="community_privacy_achievements">Realizări</strong><small data-profile-text-key="community_privacy_achievements_help">Realizări de progres.</small></span></label>
+                <label class="community-switch"><input name="show_streak" type="checkbox"><span><strong data-profile-text-key="community_privacy_streak">Streak</strong><small data-profile-text-key="community_privacy_streak_help">Activitatea consecutivă.</small></span></label>
+                <label class="community-switch"><input name="show_links" type="checkbox"><span><strong data-profile-text-key="community_privacy_links">Linkuri</strong><small data-profile-text-key="community_privacy_links_help">Website, GitHub și portofoliu.</small></span></label>
+                <label class="community-switch"><input name="show_activity" type="checkbox"><span><strong data-profile-text-key="community_privacy_activity">Activitate</strong><small data-profile-text-key="community_privacy_activity_help">Data înscrierii și ultima activitate.</small></span></label>
+              </div>
+            </section>
+          </form>
+
+          <aside class="community-preview" id="communityProfilePreview" data-accent="sky" data-theme="aurora">
+            <div class="community-preview-banner" id="communityPreviewBanner"></div>
+            <div class="community-preview-content">
+              <div class="community-preview-avatar" id="communityPreviewAvatar">M</div>
+              <span class="community-preview-state" id="communityPreviewState">Privat</span>
+              <h3 id="communityPreviewName">Profilul tău</h3>
+              <p class="community-preview-username" id="communityPreviewUsername">@username</p>
+              <p id="communityPreviewBio">Adaugă o bio scurtă.</p>
+              <div class="community-preview-badges" id="communityPreviewBadges"></div>
+              <dl class="community-preview-details" id="communityPreviewDetails"></dl>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <section class="profile-tab-pane" data-profile-pane="account" hidden>
       <article class="profile-panel">
         <div class="profile-panel-heading">
@@ -325,17 +430,7 @@
         <p class="profile-muted" data-profile-text-key="settings_text">Actualizează datele publice și securitatea contului.</p>
 
         <div class="profile-edit-form">
-          <div class="profile-edit-grid">
-            <label class="profile-field">
-              <span data-profile-text-key="edit_display_name">Nume afișat</span>
-              <input type="text" id="editDisplayName" placeholder="Cristi" autocomplete="nickname" />
-            </label>
-
-            <label class="profile-field">
-              <span data-profile-text-key="edit_avatar_url">Avatar URL</span>
-              <input type="url" id="editAvatarUrl" placeholder="https://..." />
-            </label>
-
+          <div class="profile-edit-grid profile-security-grid">
             <label class="profile-field">
               <span data-profile-text-key="edit_new_password">Parolă nouă</span>
               <input type="password" id="newPassword" placeholder="Minimum 6 caractere" autocomplete="new-password" />
@@ -343,9 +438,7 @@
           </div>
 
           <div class="profile-auth-actions">
-            <button class="btn" id="saveProfileBtn" type="button">Salvează profilul</button>
             <button class="btn" id="changePasswordBtn" type="button">Schimbă parola</button>
-            <button class="btn" id="resetProfileBtn" type="button">Resetează profilul</button>
           </div>
 
           <div class="profile-danger-zone">
@@ -363,5 +456,6 @@
   <script type="module" src="/js/runtime-diagnostics.js"></script>
   <script type="module" src="/js/ui-feedback.js"></script>
   <script type="module" src="/js/profile.js"></script>
+  <script type="module" src="/js/community-profile-settings-controller.js"></script>
 </body>
 </html>

@@ -75,7 +75,13 @@ const moduleJsFiles = [
   "js/gamification-admin-controller.js",
   "js/admin-history-model.js",
   "js/admin-history-repository.js",
-  "js/admin-history-controller.js"
+  "js/admin-history-controller.js",
+  "js/community-profile-model.js",
+  "js/community-profile-repository.js",
+  "js/community-profile-settings-controller.js",
+  "js/community-profile-page.js",
+  "js/community-admin-model.js",
+  "js/community-admin-controller.js"
 ];
 
 const classicJsFiles = [
@@ -87,6 +93,7 @@ const classicJsFiles = [
 const requiredFiles = [
   "index.html",
   "profile.html",
+  "u.html",
   "README.md",
   "css/roadmap.css",
   "css/roadmap-studio.css",
@@ -106,6 +113,8 @@ const requiredFiles = [
   "css/gamification-studio.css",
   "css/admin-history.css",
   "css/profile.css",
+  "css/community-profile.css",
+  "css/community-admin.css",
   "css/loading-screen.css",
   "css/ui-feedback.css",
   "css/onboarding.css",
@@ -124,6 +133,7 @@ const requiredFiles = [
   "scripts/publication-workflow-audit.mjs",
   "scripts/frontend-experience-audit.mjs",
   "scripts/debug-audit.mjs",
+  "scripts/community-profile-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
@@ -139,6 +149,7 @@ const removedLegacyFiles = [
 const runtimeTextFiles = [
   "index.html",
   "profile.html",
+  "u.html",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
@@ -248,6 +259,11 @@ for (const relativePath of runtimeTextFiles) {
 
 const indexHtml = readFileSync(resolve(root, "index.html"), "utf8");
 const profileHtml = readFileSync(resolve(root, "profile.html"), "utf8");
+const publicProfileHtml = readFileSync(resolve(root, "u.html"), "utf8");
+const communityProfileModelSource = readFileSync(resolve(root, "js/community-profile-model.js"), "utf8");
+const communityProfileRepositorySource = readFileSync(resolve(root, "js/community-profile-repository.js"), "utf8");
+const communityProfilePageSource = readFileSync(resolve(root, "js/community-profile-page.js"), "utf8");
+const communityAdminControllerSource = readFileSync(resolve(root, "js/community-admin-controller.js"), "utf8");
 const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
 const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
 const contentRepositorySource = readFileSync(resolve(root, "js/content-repository.js"), "utf8");
@@ -541,6 +557,27 @@ if (!profileModelSource.includes("export function buildProfileStats")) {
 }
 if (!profileTextSource.includes("export const PROFILE_TEXT")) {
   fail("profile-text.js must own profile translations.");
+}
+if (!profileHtml.includes('data-profile-tab="community"') || !profileHtml.includes('id="communityProfileForm"')) {
+  fail("Phase 4A community profile editor is missing from profile.html.");
+}
+if (!publicProfileHtml.includes('id="communityPublicContent"') || !publicProfileHtml.includes('/js/community-profile-page.js')) {
+  fail("Phase 4A public profile page is incomplete.");
+}
+if (!communityProfileModelSource.includes("COMMUNITY_PRIVACY_KEYS") || !communityProfileModelSource.includes("show_personality")) {
+  fail("Community profile model must centralize profile privacy, including personality fields.");
+}
+if (!communityProfileRepositorySource.includes("mh_get_public_community_profile") || communityProfileRepositorySource.includes(".from(")) {
+  fail("Community profiles must use the sanitized RPC contract instead of direct table reads.");
+}
+if (!communityProfilePageSource.includes("profile.privacy.show_activity") || !communityProfilePageSource.includes("profile.privacy.show_personality")) {
+  fail("Public profiles must honor activity and personality privacy switches.");
+}
+if (!communityAdminControllerSource.includes("mhCommunityAssignmentForm") || !communityAdminControllerSource.includes('assignmentMode === "manual"')) {
+  fail("Community Admin must expose controlled manual badge assignment.");
+}
+if (!indexHtml.includes('data-admin-panel-target="community"') || !indexHtml.includes('id="mhCommunityAdminStudio"')) {
+  fail("Phase 4A Community workspace is missing from Admin Studio.");
 }
 if (!appProgressSource.includes("export function createAppProgressController")) {
   fail("app-progress.js must own app progress hydration and mutations.");

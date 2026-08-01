@@ -1799,4 +1799,136 @@ assert.deepEqual(publicationRpcCalls.map(([name]) => name), [
 ]);
 
 
+const {
+  COMMUNITY_PRIVACY_KEYS,
+  communityProfileDraft,
+  normalizeCommunityProfile,
+  normalizeUsername,
+  publicProfileUrl,
+  validateCommunityProfileDraft,
+  validateUsername
+} = await importBrowserModule("js/community-profile-model.js");
+const {
+  assignCommunityBadge,
+  checkCommunityUsername,
+  loadCommunityBadgeStudio,
+  loadCommunityCountries,
+  loadCommunityRegions,
+  loadOwnCommunityProfile,
+  loadPublicCommunityProfile,
+  revokeCommunityBadge,
+  saveCommunityBadgeDefinition,
+  saveOwnCommunityProfile
+} = await importBrowserModule("js/community-profile-repository.js");
+const {
+  normalizeCommunityBadgeStudio,
+  validateCommunityBadgeDraft
+} = await importBrowserModule("js/community-admin-model.js");
+
+assert.equal(normalizeUsername("  CRIȘTI Test  "), "criti-test");
+assert.equal(validateUsername("cristi.math").valid, true);
+assert.equal(validateUsername("admin").valid, false);
+assert.equal(COMMUNITY_PRIVACY_KEYS.includes("show_personality"), true);
+
+const communityProfile = normalizeCommunityProfile({
+  available: true,
+  is_owner: true,
+  profile: {
+    username: "Cristi.Math",
+    display_name: "Cristi",
+    country_code: "RO",
+    region_code: "RO-BN",
+    current_focus: "Algebră modulară",
+    favorite_topics: ["Algebră", "Geometrie", "Algebră"],
+    languages: ["Română", "Engleză"],
+    is_public: true,
+    leaderboard_opt_in: true,
+    privacy: {
+      show_location: true,
+      show_education: true,
+      show_personality: true,
+      show_progress: true,
+      show_badges: true,
+      show_achievements: true,
+      show_streak: false,
+      show_links: true,
+      show_activity: true
+    },
+    joined_at: "2026-01-01T00:00:00Z",
+    last_active_at: "2026-07-31T12:00:00Z"
+  },
+  badges: [{ id: "tester", title_ro: "Tester", assignment_mode: "manual", is_public: true }],
+  stats: { xp: 625, level: 6, lessons_learned: 9, problems_solved: 20 }
+});
+assert.equal(communityProfile.username, "cristi.math");
+assert.equal(communityProfile.countryCode, "RO");
+assert.equal(communityProfile.favoriteTopics.length, 2);
+assert.equal(communityProfile.privacy.showPersonality, undefined);
+assert.equal(communityProfile.privacy.show_personality, true);
+assert.equal(communityProfile.lastActiveAt, "2026-07-31T12:00:00Z");
+assert.equal(communityProfile.badges[0].assignmentMode, "manual");
+const communityDraft = communityProfileDraft(communityProfile);
+assert.equal(communityDraft.country_code, "RO");
+assert.deepEqual(communityDraft.favorite_topics, ["Algebră", "Geometrie"]);
+assert.equal(communityDraft.privacy.show_personality, true);
+assert.equal(validateCommunityProfileDraft(communityDraft).valid, true);
+assert.equal(validateCommunityProfileDraft({ ...communityDraft, is_public: false, leaderboard_opt_in: true }).valid, false);
+assert.equal(publicProfileUrl("Cristi.Math", "https://mathhard.app/"), "https://mathhard.app/u.html?u=cristi.math");
+
+const manualBadge = validateCommunityBadgeDraft({
+  id: "early-tester",
+  title_ro: "Tester timpuriu",
+  title_en: "Early tester",
+  description_ro: "A testat MathHard devreme.",
+  description_en: "Tested MathHard early.",
+  assignment_mode: "manual",
+  category: "community",
+  rarity: "rare",
+  active: true
+});
+assert.equal(manualBadge.valid, true);
+assert.equal(validateCommunityBadgeDraft({ id: "INVALID ID" }).valid, false);
+assert.equal(normalizeCommunityBadgeStudio({ users: [{ user_id: "u1", username: "cristi", badges: [] }] }).users[0].userId, "u1");
+
+const communityRpcCalls = [];
+const communitySupabase = {
+  async rpc(name, payload = {}) {
+    communityRpcCalls.push([name, payload]);
+    if (name === "mh_get_my_community_profile") return { data: { available: true, profile: { username: "cristi" } }, error: null };
+    if (name === "mh_update_my_community_profile") return { data: { available: true, profile: payload.p_profile }, error: null };
+    if (name === "mh_check_community_username") return { data: { available: true, username: payload.p_username }, error: null };
+    if (name === "mh_get_public_community_profile") return { data: { available: true, profile: { username: payload.p_username } }, error: null };
+    if (name === "mh_get_community_countries") return { data: [{ code: "RO" }], error: null };
+    if (name === "mh_get_community_regions") return { data: [{ code: "RO-BN", country_code: payload.p_country_code }], error: null };
+    if (name === "mh_admin_get_community_badge_studio") return { data: { badges: [], users: [], query: payload.p_query }, error: null };
+    if (name === "mh_admin_upsert_community_badge") return { data: { badges: [payload.p_badge], users: [] }, error: null };
+    if (name === "mh_admin_assign_community_badge") return { data: { assigned: payload.p_badge_id }, error: null };
+    if (name === "mh_admin_revoke_community_badge") return { data: { revoked: payload.p_badge_id }, error: null };
+    return { data: null, error: new Error(`Unexpected community RPC: ${name}`) };
+  }
+};
+await loadOwnCommunityProfile(communitySupabase);
+await saveOwnCommunityProfile(communitySupabase, communityDraft);
+await checkCommunityUsername(communitySupabase, "cristi");
+await loadPublicCommunityProfile(communitySupabase, "cristi");
+await loadCommunityCountries(communitySupabase);
+await loadCommunityRegions(communitySupabase, "RO");
+await loadCommunityBadgeStudio(communitySupabase, "cristi");
+await saveCommunityBadgeDefinition(communitySupabase, manualBadge.badge);
+await assignCommunityBadge(communitySupabase, { user_id: "u1", badge_id: "early-tester", featured: true, note: "test" });
+await revokeCommunityBadge(communitySupabase, "u1", "early-tester");
+assert.deepEqual(communityRpcCalls.map(([name]) => name), [
+  "mh_get_my_community_profile",
+  "mh_update_my_community_profile",
+  "mh_check_community_username",
+  "mh_get_public_community_profile",
+  "mh_get_community_countries",
+  "mh_get_community_regions",
+  "mh_admin_get_community_badge_studio",
+  "mh_admin_upsert_community_badge",
+  "mh_admin_assign_community_badge",
+  "mh_admin_revoke_community_badge"
+]);
+
+
 console.log("MathHard repository tests passed.");

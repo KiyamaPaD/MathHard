@@ -56,13 +56,16 @@ const targets = [
   "js/secure-exam-repository.js",
   "js/app.js",
   "js/profile.js",
+  "js/community-profile-repository.js",
+  "js/community-profile-page.js",
+  "js/community-admin-controller.js",
   "js/supabase-client.js"
 ];
 
 const sources = new Map(targets.map((path) => [path, read(path)]));
 const allFiles = [
   ...walk(resolve(root, "js")),
-  ...["index.html", "profile.html", "README.md"]
+  ...["index.html", "profile.html", "u.html", "README.md"]
     .map((path) => resolve(root, path))
     .filter(existsSync)
 ];
@@ -158,6 +161,27 @@ if (!app.includes("getVerifiedActiveUser") || !app.includes('from("user_roles")'
 }
 if (!app.includes("setAdminButtonVisibility(false") || !app.includes("isCurrentUserAdmin(activeUser)")) {
   fail("Admin access is not visibly fail-closed and revalidated on entry.");
+}
+
+const communityProfileRepository = sources.get("js/community-profile-repository.js") || "";
+if (!communityProfileRepository.includes("mh_get_public_community_profile") || !communityProfileRepository.includes("mh_update_my_community_profile")) {
+  fail("Community profile access must use the Phase 4A RPC contract.");
+}
+if (communityProfileRepository.includes(".from(")) {
+  fail("Community profile repository must not read profile, badge or geography tables directly.");
+}
+
+const communityProfilePage = sources.get("js/community-profile-page.js") || "";
+if (/email|user_id|uuid|provider/i.test(communityProfilePage)) {
+  fail("Public community profile page references an internal account identifier.");
+}
+if (!communityProfilePage.includes("profile.privacy.show_personality") || !communityProfilePage.includes("profile.privacy.show_activity")) {
+  fail("Public community profile page must honor privacy switches before rendering optional sections.");
+}
+
+const communityAdminController = sources.get("js/community-admin-controller.js") || "";
+if (!communityAdminController.includes('assignmentMode === "manual"')) {
+  fail("Community badge assignment UI must restrict direct grants to manual badges.");
 }
 
 const supabaseClient = sources.get("js/supabase-client.js") || "";
