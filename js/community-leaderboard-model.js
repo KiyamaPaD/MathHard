@@ -10,11 +10,23 @@ export const COMMUNITY_LEADERBOARD_METRICS = Object.freeze([
   "xp", "problems", "lessons", "exams"
 ]);
 
+export const COMMUNITY_CONTINENT_CODES = Object.freeze([
+  "EU", "AS", "AF", "NA", "SA", "OC", "AN"
+]);
+
 const asText = (value, max = 200) => String(value ?? "").trim().slice(0, max);
 const asCount = (value, minimum = 0) => Math.max(minimum, Number(value) || 0);
 const normalizeRegionCode = (value) => {
   const code = asText(value, 16).toUpperCase();
   return /^[A-Z0-9]{2,3}-[A-Z0-9]{1,8}$/.test(code) ? code : "";
+};
+const normalizeCountryCode = (value) => {
+  const code = asText(value, 2).toUpperCase();
+  return /^[A-Z]{2}$/.test(code) ? code : "";
+};
+const normalizeContinentCode = (value) => {
+  const code = asText(value, 2).toUpperCase();
+  return COMMUNITY_CONTINENT_CODES.includes(code) ? code : "";
 };
 
 export function normalizeLeaderboardQuery(query = {}) {
@@ -24,7 +36,9 @@ export function normalizeLeaderboardQuery(query = {}) {
   const page = Math.max(1, Math.trunc(Number(query.page) || 1));
   const pageSize = Math.min(50, Math.max(10, Math.trunc(Number(query.pageSize ?? query.page_size) || 25)));
   const regionCode = normalizeRegionCode(query.regionCode ?? query.region_code);
-  return { scope, period, metric, page, pageSize, regionCode };
+  const countryCode = normalizeCountryCode(query.countryCode ?? query.country_code);
+  const continentCode = normalizeContinentCode(query.continentCode ?? query.continent_code);
+  return { scope, period, metric, page, pageSize, regionCode, countryCode, continentCode };
 }
 
 export function normalizeLeaderboardContext(context = {}) {
@@ -36,16 +50,17 @@ export function normalizeLeaderboardContext(context = {}) {
     showProgress: Boolean(context.show_progress ?? context.showProgress),
     showLocation: Boolean(context.show_location ?? context.showLocation),
     username: asText(context.username, 24),
-    countryCode: asText(context.country_code ?? context.countryCode, 2).toUpperCase(),
+    countryCode: normalizeCountryCode(context.country_code ?? context.countryCode),
     regionCode: normalizeRegionCode(context.region_code ?? context.regionCode),
     regionName: asText(context.region_name ?? context.regionName, 140),
     regionType: asText(context.region_type ?? context.regionType, 60),
-    continentCode: asText(context.continent_code ?? context.continentCode, 2).toUpperCase(),
+    continentCode: normalizeContinentCode(context.continent_code ?? context.continentCode),
     euMember: Boolean(context.eu_member ?? context.euMember),
     targetRegionCode: normalizeRegionCode(context.target_region_code ?? context.targetRegionCode),
     targetRegionName: asText(context.target_region_name ?? context.targetRegionName, 140),
     targetRegionType: asText(context.target_region_type ?? context.targetRegionType, 60),
-    targetCountryCode: asText(context.target_country_code ?? context.targetCountryCode, 2).toUpperCase()
+    targetCountryCode: normalizeCountryCode(context.target_country_code ?? context.targetCountryCode),
+    targetContinentCode: normalizeContinentCode(context.target_continent_code ?? context.targetContinentCode)
   };
 }
 
@@ -75,7 +90,7 @@ export function normalizeLeaderboardRow(row = {}) {
     problemsSolved: asCount(row.problems_solved ?? row.problemsSolved),
     lessonsLearned: asCount(row.lessons_learned ?? row.lessonsLearned),
     examsPassed: asCount(row.exams_passed ?? row.examsPassed),
-    countryCode: asText(row.country_code ?? row.countryCode, 2).toUpperCase(),
+    countryCode: normalizeCountryCode(row.country_code ?? row.countryCode),
     regionName: asText(row.region_name ?? row.regionName, 140),
     isCurrentUser: Boolean(row.is_current_user ?? row.isCurrentUser),
     badge: normalizeLeaderboardBadge(row.badge)
@@ -85,7 +100,7 @@ export function normalizeLeaderboardRow(row = {}) {
 export function normalizeLeaderboardRegion(region = {}) {
   return {
     code: normalizeRegionCode(region.code),
-    countryCode: asText(region.country_code ?? region.countryCode, 2).toUpperCase(),
+    countryCode: normalizeCountryCode(region.country_code ?? region.countryCode),
     name: asText(region.name, 140),
     type: asText(region.type ?? region.region_type ?? region.regionType, 60),
     publicMembers: asCount(region.public_members ?? region.publicMembers)
@@ -98,6 +113,33 @@ export function normalizeLeaderboardRegionResults(payload = []) {
     .filter((region) => region.code && region.name);
 }
 
+export function normalizeLeaderboardCountry(country = {}) {
+  return {
+    code: normalizeCountryCode(country.code),
+    continentCode: normalizeContinentCode(country.continent_code ?? country.continentCode),
+    euMember: Boolean(country.eu_member ?? country.euMember),
+    publicMembers: asCount(country.public_members ?? country.publicMembers)
+  };
+}
+
+export function normalizeLeaderboardContinent(continent = {}) {
+  return {
+    code: normalizeContinentCode(continent.code),
+    publicMembers: asCount(continent.public_members ?? continent.publicMembers)
+  };
+}
+
+export function normalizeLeaderboardGeographyOptions(payload = {}) {
+  return {
+    countries: (Array.isArray(payload.countries) ? payload.countries : [])
+      .map(normalizeLeaderboardCountry)
+      .filter((country) => country.code),
+    continents: (Array.isArray(payload.continents) ? payload.continents : [])
+      .map(normalizeLeaderboardContinent)
+      .filter((continent) => continent.code)
+  };
+}
+
 export function normalizeCommunityLeaderboard(payload = {}, fallbackQuery = {}) {
   const query = normalizeLeaderboardQuery({
     ...fallbackQuery,
@@ -106,7 +148,9 @@ export function normalizeCommunityLeaderboard(payload = {}, fallbackQuery = {}) 
     metric: payload.metric ?? fallbackQuery.metric,
     page: payload.page ?? fallbackQuery.page,
     pageSize: payload.page_size ?? fallbackQuery.pageSize,
-    regionCode: payload.context?.target_region_code ?? fallbackQuery.regionCode
+    regionCode: payload.context?.target_region_code ?? fallbackQuery.regionCode,
+    countryCode: payload.context?.target_country_code ?? fallbackQuery.countryCode,
+    continentCode: payload.context?.target_continent_code ?? fallbackQuery.continentCode
   });
 
   const rows = Array.isArray(payload.rows)
@@ -126,14 +170,8 @@ export function normalizeCommunityLeaderboard(payload = {}, fallbackQuery = {}) 
   };
 }
 
-export function availableLeaderboardScopes(context = {}) {
-  const normalized = normalizeLeaderboardContext(context);
-  const scopes = ["region"];
-  if (normalized.showLocation && normalized.countryCode) scopes.push("country");
-  if (normalized.showLocation && normalized.euMember) scopes.push("eu");
-  if (normalized.showLocation && normalized.continentCode) scopes.push("continent");
-  scopes.push("global");
-  return scopes;
+export function availableLeaderboardScopes() {
+  return [...COMMUNITY_LEADERBOARD_SCOPES];
 }
 
 export function leaderboardProfileUrl(username, origin = "") {

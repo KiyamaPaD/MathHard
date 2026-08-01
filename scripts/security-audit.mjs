@@ -208,8 +208,8 @@ if (!communityProfileSettings.includes("normalizeLinkInputs")) {
 }
 
 const communityLeaderboardRepository = sources.get("js/community-leaderboard-repository.js") || "";
-if (!communityLeaderboardRepository.includes("mh_get_community_leaderboard") || !communityLeaderboardRepository.includes("mh_search_leaderboard_regions")) {
-  fail("Community leaderboards must use the sanitized leaderboard and region-search RPCs.");
+if (!communityLeaderboardRepository.includes("mh_get_community_leaderboard") || !communityLeaderboardRepository.includes("mh_search_leaderboard_regions") || !communityLeaderboardRepository.includes("mh_get_leaderboard_geography_options")) {
+  fail("Community leaderboards must use sanitized leaderboard and geography RPCs.");
 }
 if (communityLeaderboardRepository.includes(".from(")) {
   fail("Community leaderboards must not query progress or profiles directly.");
@@ -260,6 +260,25 @@ if (existsSync(regionExplorerSqlPath)) {
   }
 } else {
   warn("Phase 4B.3 SQL is not present in local-sql; region explorer database checks were skipped.");
+}
+
+const globalDiscoverySqlPath = resolve(root, "local-sql/058_product_phase_04d_global_discovery_moderation_fixes.sql");
+if (existsSync(globalDiscoverySqlPath)) {
+  const globalDiscoverySql = readFileSync(globalDiscoverySqlPath, "utf8");
+  if (!globalDiscoverySql.includes("p_country_code") || !globalDiscoverySql.includes("p_continent_code")) {
+    fail("Global discovery SQL does not bind country and continent selections explicitly.");
+  }
+  if (!globalDiscoverySql.includes("coalesce(control.profile_allowed, true)") || !globalDiscoverySql.includes("coalesce(control.leaderboard_allowed, true)")) {
+    fail("Global discovery SQL does not enforce community moderation controls.");
+  }
+  if (!globalDiscoverySql.includes("to_jsonb(row) - 'user_id'")) {
+    fail("Global discovery SQL does not strip internal user IDs.");
+  }
+  if (!globalDiscoverySql.includes("returns jsonb") || !globalDiscoverySql.includes("returning jsonb_build_object")) {
+    fail("Moderation save RPC does not return the persisted case state.");
+  }
+} else {
+  warn("Phase 4D SQL is not present in local-sql; global discovery checks were skipped.");
 }
 
 const communityAdminController = sources.get("js/community-admin-controller.js") || "";

@@ -1931,7 +1931,7 @@ const communitySupabase = {
     if (name === "mh_submit_community_feedback") return { data: { accepted: true, payload: payload.p_payload }, error: null };
     if (name === "mh_submit_community_profile_report") return { data: { accepted: true, username: payload.p_username }, error: null };
     if (name === "mh_admin_get_community_moderation") return { data: { counts: {}, feedback: [], reports: [], users: [] }, error: null };
-    if (name === "mh_admin_update_community_case") return { data: true, error: null };
+    if (name === "mh_admin_update_community_case") return { data: { id: payload.p_id, kind: payload.p_kind, status: payload.p_status, priority: payload.p_priority, admin_note: payload.p_note }, error: null };
     if (name === "mh_admin_set_community_access") return { data: true, error: null };
     return { data: null, error: new Error(`Unexpected community RPC: ${name}`) };
   }
@@ -1973,11 +1973,13 @@ const {
   availableLeaderboardScopes,
   leaderboardProfileUrl,
   normalizeCommunityLeaderboard,
+  normalizeLeaderboardGeographyOptions,
   normalizeLeaderboardQuery,
   normalizeLeaderboardRegionResults
 } = await importBrowserModule("js/community-leaderboard-model.js");
 const {
   loadCommunityLeaderboard,
+  loadLeaderboardGeographyOptions,
   searchLeaderboardRegions
 } = await importBrowserModule("js/community-leaderboard-repository.js");
 
@@ -1988,7 +1990,7 @@ assert.deepEqual(normalizeLeaderboardQuery({
   page: 2,
   page_size: 100,
   region_code: "ro-bn"
-}), { scope: "region", period: "month", metric: "problems", page: 2, pageSize: 50, regionCode: "RO-BN" });
+}), { scope: "region", period: "month", metric: "problems", page: 2, pageSize: 50, regionCode: "RO-BN", countryCode: "", continentCode: "" });
 assert.deepEqual(availableLeaderboardScopes({
   show_location: true,
   region_code: "RO-BN",
@@ -1996,7 +1998,7 @@ assert.deepEqual(availableLeaderboardScopes({
   continent_code: "EU",
   eu_member: true
 }), ["region", "country", "eu", "continent", "global"]);
-assert.deepEqual(availableLeaderboardScopes({ show_location: false }), ["region", "global"]);
+assert.deepEqual(availableLeaderboardScopes({ show_location: false }), ["region", "country", "eu", "continent", "global"]);
 assert.equal(leaderboardProfileUrl("cristi.math", "https://mathhard.app/"), "https://mathhard.app/u.html?u=cristi.math");
 assert.deepEqual(normalizeLeaderboardRegionResults([{
   code: "ro-bn",
@@ -2011,6 +2013,13 @@ assert.deepEqual(normalizeLeaderboardRegionResults([{
   type: "County",
   publicMembers: 4
 }]);
+assert.deepEqual(normalizeLeaderboardGeographyOptions({
+  countries: [{ code: "ro", continent_code: "eu", eu_member: true, public_members: 8 }],
+  continents: [{ code: "eu", public_members: 14 }]
+}), {
+  countries: [{ code: "RO", continentCode: "EU", euMember: true, publicMembers: 8 }],
+  continents: [{ code: "EU", publicMembers: 14 }]
+});
 
 const leaderboardPayload = normalizeCommunityLeaderboard({
   scope: "region",
@@ -2034,7 +2043,8 @@ const leaderboardPayload = normalizeCommunityLeaderboard({
     target_region_code: "RO-CJ",
     target_region_name: "Cluj",
     target_region_type: "County",
-    target_country_code: "RO"
+    target_country_code: "RO",
+    target_continent_code: "EU"
   },
   rows: [{
     rank: 1,
@@ -2053,6 +2063,7 @@ const leaderboardPayload = normalizeCommunityLeaderboard({
 assert.equal(leaderboardPayload.context.countryCode, "RO");
 assert.equal(leaderboardPayload.context.targetRegionCode, "RO-CJ");
 assert.equal(leaderboardPayload.context.targetRegionName, "Cluj");
+assert.equal(leaderboardPayload.context.targetContinentCode, "EU");
 assert.equal(leaderboardPayload.rows[0].isCurrentUser, true);
 assert.equal(leaderboardPayload.rows[0].badge.id, "tester");
 
@@ -2066,6 +2077,9 @@ const leaderboardSupabase = {
         error: null
       };
     }
+    if (name === "mh_get_leaderboard_geography_options") {
+      return { data: { countries: [{ code: "RO", continent_code: "EU", public_members: 7 }], continents: [{ code: "EU", public_members: 7 }] }, error: null };
+    }
     return { data: leaderboardPayload, error: null };
   }
 };
@@ -2078,8 +2092,10 @@ const loadedLeaderboard = await loadCommunityLeaderboard(leaderboardSupabase, {
   regionCode: "RO-CJ"
 });
 const foundRegions = await searchLeaderboardRegions(leaderboardSupabase, "Cluj", 14);
+const geographyOptions = await loadLeaderboardGeographyOptions(leaderboardSupabase);
 assert.equal(loadedLeaderboard.rows.length, 1);
 assert.equal(foundRegions[0].code, "RO-CJ");
+assert.equal(geographyOptions.countries[0].code, "RO");
 assert.deepEqual(leaderboardRpcCalls, [
   ["mh_get_community_leaderboard", {
     p_scope: "region",
@@ -2087,12 +2103,15 @@ assert.deepEqual(leaderboardRpcCalls, [
     p_metric: "xp",
     p_page: 1,
     p_page_size: 25,
-    p_region_code: "RO-CJ"
+    p_region_code: "RO-CJ",
+    p_country_code: null,
+    p_continent_code: null
   }],
   ["mh_search_leaderboard_regions", {
     p_query: "Cluj",
     p_limit: 14
-  }]
+  }],
+  ["mh_get_leaderboard_geography_options", {}]
 ]);
 
 console.log("MathHard repository tests passed.");

@@ -62,7 +62,7 @@ export function validateCommunityProfileReportDraft(value = {}, locale = "ro") {
   return { valid: errors.length === 0, errors, draft };
 }
 
-function normalizeCase(item = {}, kind = "feedback") {
+export function normalizeCommunityCase(item = {}, kind = "feedback") {
   return {
     id: text(item.id, 80),
     kind,
@@ -111,8 +111,8 @@ export function normalizeCommunityModerationDashboard(payload = {}) {
       reportsNew: Math.max(0, Number(payload.counts?.reports_new) || 0),
       restrictedUsers: Math.max(0, Number(payload.counts?.restricted_users) || 0)
     },
-    feedback: Array.isArray(payload.feedback) ? payload.feedback.map((item) => normalizeCase(item, "feedback")) : [],
-    reports: Array.isArray(payload.reports) ? payload.reports.map((item) => normalizeCase(item, "profile_report")) : [],
+    feedback: Array.isArray(payload.feedback) ? payload.feedback.map((item) => normalizeCommunityCase(item, "feedback")) : [],
+    reports: Array.isArray(payload.reports) ? payload.reports.map((item) => normalizeCommunityCase(item, "profile_report")) : [],
     users: Array.isArray(payload.users) ? payload.users.map(normalizeCommunityIntegrityUser) : []
   };
 }

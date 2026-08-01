@@ -40,7 +40,10 @@ const COPY = {
     sent: "Mulțumim. Feedbackul a fost trimis.",
     reported: "Raportarea a fost trimisă.",
     error: "Nu s-a putut trimite. Încearcă din nou.",
-    auth: "Autentifică-te pentru a raporta un profil."
+    auth: "Autentifică-te pentru a raporta un profil.",
+    authTitle: "Autentificare necesară",
+    authIntro: "Raportările de profil sunt disponibile utilizatorilor autentificați.",
+    authAction: "Mergi la autentificare"
   },
   en: {
     feedbackTitle: "Send feedback",
@@ -62,7 +65,10 @@ const COPY = {
     sent: "Thank you. Your feedback was sent.",
     reported: "The report was sent.",
     error: "Unable to send. Try again.",
-    auth: "Sign in to report a profile."
+    auth: "Sign in to report a profile.",
+    authTitle: "Sign in required",
+    authIntro: "Profile reports are available to signed-in users.",
+    authAction: "Go to sign in"
   }
 };
 
@@ -131,15 +137,29 @@ function reportForm(username) {
   return `<form id="mhCommunityReportForm" class="mh-community-feedback-form"><input type="hidden" name="username" value="${escapeHtml(username)}"><label><span>${escapeHtml(c.reason)}</span><select name="reason">${optionMarkup(COMMUNITY_REPORT_REASONS, REASON_COPY[language()])}</select></label><label><span>${escapeHtml(c.details)}</span><textarea name="details" maxlength="1500" required placeholder="${escapeHtml(c.detailsPlaceholder)}"></textarea></label><div class="mh-community-feedback-actions"><button type="button" class="btn small" data-community-feedback-close>${escapeHtml(c.cancel)}</button><button type="submit" class="btn">${escapeHtml(c.send)}</button></div></form>`;
 }
 
-function openModal(trigger) {
+function authenticationPrompt() {
+  const c = copy();
+  return `<div class="mh-community-feedback-auth"><p>${escapeHtml(c.auth)}</p><a class="btn" href="/profile.html">${escapeHtml(c.authAction)}</a></div>`;
+}
+
+async function openModal(trigger) {
   const root = ensureModal();
   activeTrigger = trigger;
   mode = trigger.dataset.communityFeedbackOpen === "profile-report" ? "profile-report" : "feedback";
   const username = trigger.dataset.communityReportUsername || new URLSearchParams(location.search).get("u") || "";
   const c = copy();
-  root.querySelector("#mhCommunityFeedbackTitle").textContent = mode === "profile-report" ? c.reportTitle : c.feedbackTitle;
-  root.querySelector("#mhCommunityFeedbackIntro").textContent = mode === "profile-report" ? c.reportIntro : c.feedbackIntro;
-  root.querySelector("#mhCommunityFeedbackBody").innerHTML = mode === "profile-report" ? reportForm(username) : feedbackForm();
+  let authenticated = true;
+  if (mode === "profile-report") {
+    try {
+      const { data } = await supabase.auth.getSession();
+      authenticated = Boolean(data?.session?.user);
+    } catch {
+      authenticated = false;
+    }
+  }
+  root.querySelector("#mhCommunityFeedbackTitle").textContent = mode === "profile-report" && !authenticated ? c.authTitle : mode === "profile-report" ? c.reportTitle : c.feedbackTitle;
+  root.querySelector("#mhCommunityFeedbackIntro").textContent = mode === "profile-report" && !authenticated ? c.authIntro : mode === "profile-report" ? c.reportIntro : c.feedbackIntro;
+  root.querySelector("#mhCommunityFeedbackBody").innerHTML = mode === "profile-report" ? (authenticated ? reportForm(username) : authenticationPrompt()) : feedbackForm();
   root.querySelector("#mhCommunityFeedbackStatus").textContent = "";
   root.hidden = false;
   document.documentElement.classList.add("mh-community-modal-open");
@@ -223,7 +243,7 @@ async function handleSubmit(event) {
 function init() {
   document.addEventListener("click", (event) => {
     const trigger = event.target.closest("[data-community-feedback-open]");
-    if (trigger) openModal(trigger);
+    if (trigger) void openModal(trigger);
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && modal && !modal.hidden) closeModal();

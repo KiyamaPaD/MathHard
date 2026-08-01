@@ -13,6 +13,7 @@ import {
   normalizeCommunityModerationDashboard,
   validateCommunityBadgeDraft
 } from "./community-admin-model.js";
+import { normalizeCommunityCase } from "./community-feedback-model.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -81,6 +82,18 @@ export function createCommunityAdminController({ host, supabase }) {
   function setFeedback(message = "", status = "") {
     feedback.textContent = message;
     feedback.dataset.state = status;
+  }
+
+  function setFormBusy(form, busy) {
+    form?.querySelectorAll("button, input, select, textarea").forEach((element) => {
+      element.disabled = busy;
+    });
+  }
+
+  function caseMatchesFilter(status) {
+    return state.status === "all"
+      || state.status === status
+      || (state.status === "open" && ["new", "in_review"].includes(status));
   }
 
   function updateCounts() {
@@ -298,12 +311,32 @@ export function createCommunityAdminController({ host, supabase }) {
 
     if (form.id === "mhCommunityCaseForm") {
       setFeedback("Se salvează...", "loading");
+      setFormBusy(form, true);
       try {
-        await updateCommunityModerationCase(supabase, { kind: value.kind, id: value.id, status: value.status, priority: value.priority, adminNote: value.admin_note });
+        const persisted = normalizeCommunityCase(await updateCommunityModerationCase(supabase, {
+          kind: value.kind,
+          id: value.id,
+          status: value.status,
+          priority: value.priority,
+          adminNote: value.admin_note
+        }), value.kind);
+        const collection = value.kind === "feedback" ? "feedback" : "reports";
+        const selectedKey = value.kind === "feedback" ? "selectedFeedbackId" : "selectedReportId";
+        const index = state.moderation[collection].findIndex((item) => item.id === persisted.id);
+        if (index >= 0) state.moderation[collection][index] = { ...state.moderation[collection][index], ...persisted };
+        state[selectedKey] = persisted.id;
+
+        if (!caseMatchesFilter(persisted.status)) state.status = persisted.status;
         state.moderationLoaded = false;
         await loadModeration({ force: true });
-        setFeedback("Caz actualizat.", "success");
-      } catch (error) { console.error("Community case update failed:", error); setFeedback("Cazul nu a putut fi actualizat.", "error"); }
+        render();
+        setFeedback("Caz salvat.", "success");
+      } catch (error) {
+        console.error("Community case update failed:", error);
+        const message = String(error?.message || "").toLowerCase();
+        setFeedback(message.includes("not found") ? "Cazul nu mai există." : "Cazul nu a putut fi salvat.", "error");
+        setFormBusy(form, false);
+      }
       return;
     }
 

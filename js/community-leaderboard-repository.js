@@ -1,5 +1,6 @@
 import {
   normalizeCommunityLeaderboard,
+  normalizeLeaderboardGeographyOptions,
   normalizeLeaderboardQuery,
   normalizeLeaderboardRegionResults
 } from "./community-leaderboard-model.js";
@@ -17,7 +18,9 @@ export async function loadCommunityLeaderboard(supabase, query = {}) {
     p_metric: normalized.metric,
     p_page: normalized.page,
     p_page_size: normalized.pageSize,
-    p_region_code: normalized.regionCode || null
+    p_region_code: normalized.regionCode || null,
+    p_country_code: normalized.countryCode || null,
+    p_continent_code: normalized.continentCode || null
   });
   if (error) throw error;
   return normalizeCommunityLeaderboard(data || {}, normalized);
@@ -33,4 +36,11 @@ export async function searchLeaderboardRegions(supabase, search = "", limit = 12
   });
   if (error) throw error;
   return normalizeLeaderboardRegionResults(data || []);
+}
+
+export async function loadLeaderboardGeographyOptions(supabase) {
+  assertClient(supabase);
+  const { data, error } = await supabase.rpc("mh_get_leaderboard_geography_options", {});
+  if (error) throw error;
+  return normalizeLeaderboardGeographyOptions(data || {});
 }
