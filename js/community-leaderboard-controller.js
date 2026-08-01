@@ -19,9 +19,9 @@ const COPY = {
   ro: {
     loading: "Se încarcă clasamentul…", error: "Clasamentul nu a putut fi încărcat.", retry: "Reîncearcă",
     title: "Clasamente MathHard", subtitle: "Compară progresul pe județ, țară, continent și global.",
-    scope: "Zonă", period: "Perioadă", metric: "Clasificare", position: "Loc", profile: "Profil",
+    scope: "Zonă", period: "Perioadă", metric: "Criteriu", position: "Loc", profile: "Profil",
     level: "Nivel", xp: "XP", problems: "Probleme", lessons: "Lecții", exams: "Examene",
-    week: "Săptămâna aceasta", month: "Luna aceasta", all: "All-time", global: "Global",
+    week: "Săptămâna aceasta", month: "Luna aceasta", all: "Toată perioada", global: "Global",
     eu: "Uniunea Europeană", continent: "Continent", country: "Țară", region: "Regiune", county: "Județ",
     empty: "Nu există încă rezultate pentru acest clasament.", chooseAreaEmpty: "Alege o zonă pentru a vedea clasamentul.",
     ownRank: "Poziția ta", outsidePage: "Poziția ta nu este pe pagina curentă.", previous: "Anterior", next: "Următor",

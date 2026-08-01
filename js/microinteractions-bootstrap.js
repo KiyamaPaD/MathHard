@@ -36,7 +36,7 @@ async function start() {
 
   const loadReactIsland = async () => {
     try {
-      const { mountCelebrationIsland } = await import("./microinteractions-react-island.js?v=4h");
+      const { mountCelebrationIsland } = await import("./microinteractions-react-island.js?v=4i");
       window.removeEventListener("mathhard:celebrate", queueEarlyCelebration);
       mountCelebrationIsland(root, { initialEvents: pendingCelebrations.splice(0) });
       document.documentElement.classList.add("mh-react-motion-ready");

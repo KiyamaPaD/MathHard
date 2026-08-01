@@ -15,7 +15,7 @@ const DEFAULT_COPY = Object.freeze({
     problem: "Problemă rezolvată",
     lesson: "Lecție învățată",
     exam: "Examen promovat",
-    achievement: "Achievement deblocat",
+    achievement: "Realizare deblocată",
     level: "Nivel nou",
     generic: "Progres salvat"
   },

@@ -1,6 +1,6 @@
 import { recordDiagnostic } from "./runtime-diagnostics.js";
 
-const BUILD = "4g4";
+const BUILD = "4i";
 const RECOVERY_ID = "mhBetaRecovery";
 const MAX_VISIBLE_ERRORS = 1;
 let visibleErrors = 0;
@@ -37,11 +37,11 @@ function context() {
 function feedbackSubject(ctx = context()) {
   const labels = {
     dashboard: ["Acasă", "Home"],
-    roadmap: ["Roadmap", "Roadmap"],
+    roadmap: ["Plan de studiu", "Roadmap"],
     lessons: ["Lecții", "Lessons"],
     problems: ["Probleme", "Problems"],
     exams: ["Examene", "Exams"],
-    analytics: ["Analytics", "Analytics"],
+    analytics: ["Analiză", "Analytics"],
     gamification: ["Recompense", "Rewards"],
     leaderboards: ["Clasamente", "Leaderboards"],
     profile: ["Profil", "Profile"],
@@ -104,11 +104,11 @@ function showRecovery(error, scope = "runtime") {
   const root = ensureRecovery();
   root.querySelector("[data-beta-recovery-title]").textContent = text("A apărut o problemă", "Something went wrong");
   root.querySelector("[data-beta-recovery-copy]").textContent = text(
-    "Reîncarcă pagina. Dacă problema revine, trimite feedback din același ecran.",
+    "Reîncarcă pagina. Dacă problema revine, trimite o sugestie din același ecran.",
     "Reload the page. If it happens again, send feedback from this screen."
   );
   root.querySelector("[data-beta-reload]").textContent = text("Reîncarcă", "Reload");
-  root.querySelector("[data-beta-report]").textContent = text("Trimite feedback", "Send feedback");
+  root.querySelector("[data-beta-report]").textContent = text("Trimite o sugestie", "Send feedback");
   decorateTrigger(root.querySelector("[data-beta-report]"), { bug: true });
   root.hidden = false;
 }

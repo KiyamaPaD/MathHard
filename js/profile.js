@@ -316,6 +316,16 @@ function applyProfileStaticTexts() {
     if (key) element.textContent = t(key);
   });
 
+  document.querySelectorAll("[data-profile-placeholder-key]").forEach((element) => {
+    const key = element.dataset.profilePlaceholderKey;
+    if (key) element.placeholder = t(key);
+  });
+
+  document.querySelectorAll("[data-profile-aria-key]").forEach((element) => {
+    const key = element.dataset.profileAriaKey;
+    if (key) element.setAttribute("aria-label", t(key));
+  });
+
   if (authEmail) authEmail.placeholder = "email@example.com";
   if (authPassword) authPassword.placeholder = t("password_placeholder");
   if (authDisplayName) authDisplayName.placeholder = t("display_name_signup_placeholder");

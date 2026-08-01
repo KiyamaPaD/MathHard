@@ -20,7 +20,7 @@ const SECTION_CONFIG = Object.freeze([
   {
     key: "roadmap",
     id: "mhRoadmap",
-    titles: { ro: "🗺️ Roadmap", en: "🗺️ Roadmap" },
+    titles: { ro: "🗺️ Plan de studiu", en: "🗺️ Roadmap" },
   },
   {
     key: "boss",

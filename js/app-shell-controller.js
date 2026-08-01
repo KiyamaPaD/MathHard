@@ -37,38 +37,38 @@ const TEXT = {
     groups: { main: "Principal", learn: "Învățare", explore: "Explorează" },
     routes: {
       dashboard: ["Acasă", "Următorul pas, progresul de azi și acces rapid."],
-      roadmap: ["Roadmap", "Traseul selectat, prerechizite și progres."],
+      roadmap: ["Plan de studiu", "Traseul selectat, prerechizitele și progresul tău."],
       lessons: ["Lecții", "Teorie structurată și exemple."],
-      problems: ["Probleme", "Antrenament, hinturi și soluții."],
+      problems: ["Probleme", "Antrenament, indicii și soluții."],
       exams: ["Examene", "Simulări și rezultate."],
       research: ["Cercetare", "Concepte avansate și idei de explorat."],
       history: ["Istorie", "Oameni și idei din matematică."],
       xp: ["Progres", "XP și activitatea ta."],
-      analytics: ["Analytics", "Mastery, acuratețe și consistență."],
-      gamification: ["Recompense", "Nivel, obiectiv zilnic și achievements."],
+      analytics: ["Analiză", "Stăpânire, acuratețe și consecvență."],
+      gamification: ["Recompense", "Nivel, obiectiv zilnic și realizări."],
       leaderboards: ["Clasamente", "Poziții locale, naționale și globale."],
     },
     nav: {
       dashboard: "Acasă",
-      roadmap: "Roadmap",
+      roadmap: "Plan de studiu",
       lessons: "Lecții",
       problems: "Probleme",
       exams: "Examene",
       research: "Cercetare",
       history: "Istorie",
       xp: "Progres",
-      analytics: "Analytics",
+      analytics: "Analiză",
       gamification: "Recompense",
       leaderboards: "Clasamente",
       profile: "Profil",
-      admin: "Admin",
+      admin: "Administrare",
       about: "Despre",
       info: "Ajutor",
       theme: "Temă",
       language: "Limbă",
       collapse: "Compactează meniul",
       expand: "Extinde meniul",
-      closeAdmin: "Închide Admin",
+      closeAdmin: "Închide administrarea",
     },
     continue: "Continuă",
     menu: "Meniu",
@@ -218,7 +218,7 @@ function createShellMarkup() {
     </main>
     <button class="mh-admin-floating-close" id="mhAdminFloatingClose" type="button" hidden>
       <span aria-hidden="true">✕</span>
-      <span data-admin-close-label>Închide Admin</span>
+      <span data-admin-close-label>Închide administrarea</span>
     </button>
     <nav class="mh-shell-bottom-nav" id="mhShellBottomNav" aria-label="Mobile navigation">
       <button type="button" data-shell-route="dashboard"><span>⌂</span><span data-shell-label="dashboard"></span></button>

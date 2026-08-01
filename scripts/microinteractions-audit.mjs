@@ -63,16 +63,16 @@ const gamification = source("js/gamification-controller.js");
 const svg = source("img/microinteractions-sprite.svg");
 
 for (const [name, html] of [["index.html", index], ["profile.html", profile], ["u.html", publicProfile]]) {
-  if (!html.includes("/css/microinteractions.css?v=4h")) fail(`${name} must load microinteraction styles.`);
-  if (!html.includes('name="mathhard-build" content="4h"')) fail(`${name} must expose build 4h.`);
+  if (!html.includes("/css/microinteractions.css?v=4i")) fail(`${name} must load microinteraction styles.`);
+  if (!html.includes('name="mathhard-build" content="4i"')) fail(`${name} must expose build 4i.`);
 }
-if (!performanceBootstrap.includes('safelyLoadModule("./microinteractions-bootstrap.js?v=4h")')) {
+if (!performanceBootstrap.includes('safelyLoadModule("./microinteractions-bootstrap.js?v=4i")')) {
   fail("Main-page microinteractions must be lazy-loaded by performance-bootstrap.js.");
 }
 if (index.includes('<script type="module" src="/js/microinteractions-bootstrap.js')) {
   fail("index.html must not load the microinteraction runtime eagerly.");
 }
-if (!profile.includes('/js/microinteractions-bootstrap.js?v=4h') || !publicProfile.includes('/js/microinteractions-bootstrap.js?v=4h')) {
+if (!profile.includes('/js/microinteractions-bootstrap.js?v=4i') || !publicProfile.includes('/js/microinteractions-bootstrap.js?v=4i')) {
   fail("Profile pages must load the lightweight motion bootstrap.");
 }
 

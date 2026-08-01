@@ -7,7 +7,7 @@
   <title id="profilePageTitle">MathHard — Profil</title>
   <meta name="robots" content="noindex,nofollow" />
   <meta name="theme-color" content="#0b1020" />
-  <meta name="mathhard-build" content="4h" />
+  <meta name="mathhard-build" content="4i" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="icon" href="/img/mathhard-logo.png" type="image/png" />
   <meta
@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="/css/community-profile.css?v=4g3" />
   <link rel="stylesheet" href="/css/community-feedback.css" />
   <link rel="stylesheet" href="/css/mobile-hardening.css" />
-  <link rel="stylesheet" href="/css/microinteractions.css?v=4h" />
+  <link rel="stylesheet" href="/css/microinteractions.css?v=4i" />
   <script defer src="/js/loading-screen.js"></script>
 </head>
 <body class="mh-app profile-v2-body">
@@ -53,7 +53,7 @@
         </div>
       </a>
 
-      <div class="profile-topbar-actions"><button class="btn small" type="button" data-community-feedback-open="feedback">Feedback</button><a id="backHomeBtn" href="/index.html" class="btn small profile-back-btn">Înapoi</a></div>
+      <div class="profile-topbar-actions"><button class="btn small" type="button" data-community-feedback-open="feedback" data-profile-text-key="feedback_btn">Sugestii</button><a id="backHomeBtn" href="/index.html" class="btn small profile-back-btn">Înapoi</a></div>
     </div>
   </header>
 
@@ -75,11 +75,11 @@
           </div>
 
           <div class="profile-quick-actions" aria-label="Acțiuni rapide">
-            <a id="profileContinueBtn" class="btn profile-primary-action" href="/index.html#dashboard">Continuă</a>
-            <a id="profileRoadmapBtn" class="btn small" href="/index.html#roadmap">Roadmap</a>
-            <a id="profileAnalyticsBtn" class="btn small" href="/index.html#analytics">Analytics</a>
-            <a id="profileRewardsBtn" class="btn small" href="/index.html#gamification">Recompense</a>
-            <a id="profileLeaderboardsBtn" class="btn small" href="/index.html#leaderboards">Clasamente</a>
+            <a id="profileContinueBtn" class="btn profile-primary-action" href="/index.html#dashboard" data-profile-text-key="continue_btn">Continuă</a>
+            <a id="profileRoadmapBtn" class="btn small" href="/index.html#roadmap" data-profile-text-key="study_plan_btn">Plan de studiu</a>
+            <a id="profileAnalyticsBtn" class="btn small" href="/index.html#analytics" data-profile-text-key="analytics_btn">Analiză</a>
+            <a id="profileRewardsBtn" class="btn small" href="/index.html#gamification" data-profile-text-key="rewards_btn">Recompense</a>
+            <a id="profileLeaderboardsBtn" class="btn small" href="/index.html#leaderboards" data-profile-text-key="leaderboards_btn">Clasamente</a>
           </div>
         </div>
       </article>
@@ -125,24 +125,24 @@
           </label>
 
           <div class="profile-auth-actions">
-            <button class="btn" id="loginBtn" type="button">Autentificare</button>
-            <button class="btn" id="signupBtn" type="button">Creează cont</button>
+            <button class="btn" id="loginBtn" type="button" data-profile-text-key="login_btn">Autentificare</button>
+            <button class="btn" id="signupBtn" type="button" data-profile-text-key="signup_btn">Creează cont</button>
           </div>
         </div>
 
         <div class="profile-user-box" id="profileUserBox" hidden>
           <div class="profile-user-row">
-            <span class="profile-user-label" data-profile-text-key="status_label">Status</span>
+            <span class="profile-user-label" data-profile-text-key="status_label">Stare:</span>
             <strong id="profileUserStatus">Logat</strong>
           </div>
-          <button class="btn small" id="logoutBtn" type="button">Deconectare</button>
+          <button class="btn small" id="logoutBtn" type="button" data-profile-text-key="logout_btn">Deconectare</button>
         </div>
 
         <p class="profile-auth-status" id="authStatus" aria-live="polite"></p>
       </article>
     </section>
 
-    <nav class="profile-tabs" role="tablist" aria-label="Secțiuni profil">
+    <nav class="profile-tabs" role="tablist" aria-label="Secțiunile profilului" data-profile-aria-key="tabs_aria">
       <button type="button" role="tab" data-profile-tab="overview" aria-selected="true">Prezentare</button>
       <button type="button" role="tab" data-profile-tab="progress" aria-selected="false">Progres</button>
       <button type="button" role="tab" data-profile-tab="activity" aria-selected="false">Activitate</button>
@@ -202,16 +202,16 @@
               <div class="community-form-heading"><h3 data-profile-text-key="community_identity_title">Identitate</h3><span data-profile-text-key="community_identity_help">Câmpurile principale ale profilului.</span></div>
               <div class="community-form-grid">
                 <label class="profile-field">
-                  <span data-profile-text-key="community_username_label">Username</span>
+                  <span data-profile-text-key="community_username_label">Nume de utilizator</span>
                   <div class="community-username-field"><span>@</span><input id="communityUsername" name="username" maxlength="24" autocomplete="username" placeholder="cristi" required></div>
-                  <small id="communityUsernameHint" data-profile-text-key="community_username_hint">3–24 caractere: litere mici, cifre, punct, minus sau underscore.</small>
+                  <small id="communityUsernameHint" data-profile-text-key="community_username_hint">3–24 caractere: litere mici, cifre, punct, cratimă sau caracter de subliniere.</small>
                 </label>
                 <label class="profile-field"><span data-profile-text-key="community_display_name">Nume afișat</span><input id="communityDisplayName" name="display_name" maxlength="60" autocomplete="nickname" required></label>
-                <label class="profile-field"><span data-profile-text-key="community_headline">Titlu scurt</span><input id="communityHeadline" name="headline" maxlength="100" placeholder="Elev · Builder · Matematică"></label>
-                <label class="profile-field"><span data-profile-text-key="community_pronouns">Pronume</span><input id="communityPronouns" name="pronouns" maxlength="40" placeholder="opțional"></label>
+                <label class="profile-field"><span data-profile-text-key="community_headline">Titlu scurt</span><input data-profile-placeholder-key="placeholder_headline" id="communityHeadline" name="headline" maxlength="100" placeholder="Elev · Builder · Matematică"></label>
+                <label class="profile-field"><span data-profile-text-key="community_pronouns">Pronume</span><input data-profile-placeholder-key="placeholder_optional" id="communityPronouns" name="pronouns" maxlength="40" placeholder="opțional"></label>
                 <label class="profile-field"><span data-profile-text-key="community_avatar">Avatar URL</span><input id="communityAvatarUrl" name="avatar_url" type="url" placeholder="https://..."></label>
                 <label class="profile-field community-field-wide"><span data-profile-text-key="community_banner">Banner URL</span><input id="communityBannerUrl" name="banner_url" type="url" placeholder="https://..."></label>
-                <label class="profile-field community-field-wide"><span data-profile-text-key="community_bio">Bio</span><textarea id="communityBio" name="bio" maxlength="280" rows="4" placeholder="Despre tine, ce înveți și ce construiești."></textarea></label>
+                <label class="profile-field community-field-wide"><span data-profile-text-key="community_bio">Descriere</span><textarea data-profile-placeholder-key="placeholder_bio" id="communityBio" name="bio" maxlength="280" rows="4" placeholder="Despre tine, ce înveți și ce construiești."></textarea></label>
               </div>
             </section>
 
@@ -221,42 +221,42 @@
                 <label class="profile-field"><span data-profile-text-key="community_country">Țară</span><select id="communityCountry" name="country_code"><option value="" data-profile-text-key="community_unspecified_f">Nespecificată</option></select></label>
                 <label class="profile-field"><span data-profile-text-key="community_region">Județ / regiune</span><select id="communityRegion" name="region_code" disabled><option value="" data-profile-text-key="community_unspecified_f">Nespecificată</option></select></label>
                 <label class="profile-field"><span data-profile-text-key="community_education_level">Nivel educațional</span><select id="communityEducationLevel" name="education_level"><option value="" data-profile-text-key="community_unspecified_m">Nespecificat</option><option value="middle-school" data-profile-text-key="community_middle_school">Gimnaziu</option><option value="high-school" data-profile-text-key="community_high_school">Liceu</option><option value="university" data-profile-text-key="community_university">Facultate</option><option value="graduate" data-profile-text-key="community_graduate">Master / Doctorat</option><option value="teacher" data-profile-text-key="community_teacher">Profesor</option><option value="other" data-profile-text-key="community_other">Altul</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_grade">Clasă / an</span><input id="communityGradeLevel" name="grade_level" maxlength="24" placeholder="Clasa a XII-a"></label>
-                <label class="profile-field"><span data-profile-text-key="community_study_track">Profil / specializare</span><input id="communityStudyTrack" name="study_track" maxlength="120" placeholder="Matematică-informatică"></label>
-                <label class="profile-field"><span data-profile-text-key="community_goal">Obiectiv academic</span><input id="communityAcademicGoal" name="academic_goal" maxlength="120" placeholder="Admitere UBB FMI"></label>
+                <label class="profile-field"><span data-profile-text-key="community_grade">Clasă / an</span><input data-profile-placeholder-key="placeholder_grade" id="communityGradeLevel" name="grade_level" maxlength="24" placeholder="Clasa a XII-a"></label>
+                <label class="profile-field"><span data-profile-text-key="community_study_track">Profil / specializare</span><input data-profile-placeholder-key="placeholder_study_track" id="communityStudyTrack" name="study_track" maxlength="120" placeholder="Matematică-informatică"></label>
+                <label class="profile-field"><span data-profile-text-key="community_goal">Obiectiv academic</span><input data-profile-placeholder-key="placeholder_academic_goal" id="communityAcademicGoal" name="academic_goal" maxlength="120" placeholder="Admitere UBB FMI"></label>
               </div>
             </section>
 
             <section class="community-form-section">
               <div class="community-form-heading"><h3 data-profile-text-key="community_personality_title">Matematică și personalitate</h3><span data-profile-text-key="community_personality_help">Câmpuri opționale pentru un profil mai personal.</span></div>
               <div class="community-form-grid">
-                <label class="profile-field"><span data-profile-text-key="community_current_focus">Învăț acum</span><input id="communityCurrentFocus" name="current_focus" maxlength="120" placeholder="Algebră modulară"></label>
-                <label class="profile-field"><span data-profile-text-key="community_favorite_topics">Capitole favorite</span><input id="communityFavoriteTopics" name="favorite_topics" maxlength="320" placeholder="Algebră, analiză, geometrie"></label>
+                <label class="profile-field"><span data-profile-text-key="community_current_focus">Învăț acum</span><input data-profile-placeholder-key="placeholder_current_focus" id="communityCurrentFocus" name="current_focus" maxlength="120" placeholder="Algebră modulară"></label>
+                <label class="profile-field"><span data-profile-text-key="community_favorite_topics">Capitole favorite</span><input data-profile-placeholder-key="placeholder_topics" id="communityFavoriteTopics" name="favorite_topics" maxlength="320" placeholder="Algebră, analiză, geometrie"></label>
                 <label class="profile-field"><span data-profile-text-key="community_favorite_mathematician">Matematician favorit</span><input id="communityFavoriteMathematician" name="favorite_mathematician" maxlength="120"></label>
                 <label class="profile-field"><span data-profile-text-key="community_favorite_theorem">Teoremă favorită</span><input id="communityFavoriteTheorem" name="favorite_theorem" maxlength="120"></label>
-                <label class="profile-field"><span data-profile-text-key="community_dream_school">Facultate / obiectiv de vis</span><input id="communityDreamSchool" name="dream_school" maxlength="120" placeholder="UBB FMI, Tübingen..."></label>
-                <label class="profile-field"><span data-profile-text-key="community_problem_type">Tip de probleme preferat</span><input id="communityFavoriteProblemType" name="favorite_problem_type" maxlength="120" placeholder="Algebră, combinatorică..."></label>
-                <label class="profile-field"><span data-profile-text-key="community_learning_style">Stil de învățare</span><select id="communityLearningStyle" name="learning_style"><option value="">Nespecificat</option><option value="visual">Vizual</option><option value="practice">Prin exerciții</option><option value="theory">Teorie întâi</option><option value="mixed">Mixt</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_collaboration">Disponibilitate</span><select id="communityCollaborationStatus" name="collaboration_status"><option value="">Nespecificată</option><option value="studying">Caut colegi de studiu</option><option value="helping">Pot ajuta alți membri</option><option value="projects">Deschis la proiecte</option><option value="private">Prefer să lucrez individual</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_weekly_goal">Obiectiv săptămânal</span><input id="communityWeeklyGoal" name="weekly_goal" maxlength="120" placeholder="20 probleme și 3 lecții"></label>
-                <label class="profile-field"><span data-profile-text-key="community_languages">Limbi</span><input id="communityLanguages" name="languages" maxlength="160" placeholder="Română, engleză"></label>
+                <label class="profile-field"><span data-profile-text-key="community_dream_school">Facultate / obiectiv de vis</span><input data-profile-placeholder-key="placeholder_dream_school" id="communityDreamSchool" name="dream_school" maxlength="120" placeholder="UBB FMI, Tübingen..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_problem_type">Tip de probleme preferat</span><input data-profile-placeholder-key="placeholder_problem_type" id="communityFavoriteProblemType" name="favorite_problem_type" maxlength="120" placeholder="Algebră, combinatorică..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_learning_style">Stil de învățare</span><select id="communityLearningStyle" name="learning_style"><option value="">Nespecificat</option><option value="visual" data-profile-text-key="learning_visual">Vizual</option><option value="practice" data-profile-text-key="learning_practice">Prin exerciții</option><option value="theory" data-profile-text-key="learning_theory">Teorie întâi</option><option value="mixed" data-profile-text-key="learning_mixed">Mixt</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_collaboration">Disponibilitate</span><select id="communityCollaborationStatus" name="collaboration_status"><option value="">Nespecificată</option><option value="studying" data-profile-text-key="collaboration_studying">Caut colegi de studiu</option><option value="helping" data-profile-text-key="collaboration_helping">Pot ajuta alți membri</option><option value="projects" data-profile-text-key="collaboration_projects">Deschis la proiecte</option><option value="private" data-profile-text-key="collaboration_private">Prefer să lucrez individual</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_weekly_goal">Obiectiv săptămânal</span><input data-profile-placeholder-key="placeholder_weekly_goal" id="communityWeeklyGoal" name="weekly_goal" maxlength="120" placeholder="20 probleme și 3 lecții"></label>
+                <label class="profile-field"><span data-profile-text-key="community_languages">Limbi</span><input data-profile-placeholder-key="placeholder_languages" id="communityLanguages" name="languages" maxlength="160" placeholder="Română, engleză"></label>
                 <label class="profile-field community-field-wide"><span data-profile-text-key="community_quote">Citat</span><input id="communityQuote" name="quote" maxlength="180"></label>
               </div>
             </section>
 
             <section class="community-form-section">
-              <div class="community-form-heading"><h3 data-profile-text-key="community_links_title">Linkuri și stil</h3><span data-profile-text-key="community_links_help">Linkurile apar numai dacă activezi vizibilitatea lor.</span></div>
+              <div class="community-form-heading"><h3 data-profile-text-key="community_links_title">Adrese și stil</h3><span data-profile-text-key="community_links_help">Adresele apar numai dacă activezi vizibilitatea lor.</span></div>
               <div class="community-form-grid">
-                <label class="profile-field"><span data-profile-text-key="community_website">Website</span><input id="communityWebsiteUrl" name="website_url" type="url" placeholder="https://..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_website">Site web</span><input id="communityWebsiteUrl" name="website_url" type="url" placeholder="https://..."></label>
                 <label class="profile-field"><span data-profile-text-key="community_github">GitHub</span><input id="communityGithubUrl" name="github_url" type="url" placeholder="https://github.com/..."></label>
                 <label class="profile-field"><span data-profile-text-key="community_portfolio">Portofoliu</span><input id="communityPortfolioUrl" name="portfolio_url" type="url" placeholder="https://..."></label>
-                <label class="profile-field"><span data-profile-text-key="community_accent">Culoare profil</span><select id="communityAccent" name="profile_accent"><option value="sky">Sky</option><option value="indigo">Indigo</option><option value="violet">Violet</option><option value="emerald">Emerald</option><option value="amber">Amber</option><option value="rose">Rose</option><option value="slate">Slate</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_theme">Stil profil</span><select id="communityTheme" name="profile_theme"><option value="aurora">Aurora</option><option value="minimal">Minimal</option><option value="grid">Grid</option><option value="cosmos">Cosmos</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_frame">Ramă profil</span><select id="communityFrame" name="profile_frame"><option value="none">Fără ramă</option><option value="soft">Soft</option><option value="neon">Neon</option><option value="gold">Gold</option><option value="cosmos">Cosmos</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_badge_style">Stil badge-uri</span><select id="communityBadgeStyle" name="badge_display_style"><option value="chips">Chips</option><option value="cards">Carduri</option><option value="compact">Compact</option></select></label>
-                <label class="profile-field"><span data-profile-text-key="community_featured_badge">Badge principal</span><select id="communityFeaturedBadge" name="featured_badge_id"><option value="" data-profile-text-key="community_auto">Automat</option></select></label>
-                <label class="profile-field community-field-wide"><span data-profile-text-key="community_featured_badges">Badge-uri favorite (max. 6)</span><select id="communityFeaturedBadges" name="featured_badge_ids" multiple size="5"></select><small>Ține Ctrl/Cmd pentru selecție multiplă.</small></label>
-                <div class="community-field-wide community-badge-visibility"><span data-profile-text-key="community_badge_visibility">Badge-uri publice</span><div id="communityBadgeVisibility"></div></div>
+                <label class="profile-field"><span data-profile-text-key="community_accent">Culoare profil</span><select id="communityAccent" name="profile_accent"><option value="sky" data-profile-text-key="accent_sky">Cer</option><option value="indigo" data-profile-text-key="accent_indigo">Indigo</option><option value="violet" data-profile-text-key="accent_violet">Violet</option><option value="emerald" data-profile-text-key="accent_emerald">Smarald</option><option value="amber" data-profile-text-key="accent_amber">Chihlimbar</option><option value="rose" data-profile-text-key="accent_rose">Trandafiriu</option><option value="slate" data-profile-text-key="accent_slate">Ardezie</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_theme">Stil profil</span><select id="communityTheme" name="profile_theme"><option value="aurora" data-profile-text-key="theme_aurora">Auroră</option><option value="minimal" data-profile-text-key="theme_minimal">Minimal</option><option value="grid" data-profile-text-key="theme_grid">Grilă</option><option value="cosmos" data-profile-text-key="theme_cosmos">Cosmos</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_frame">Ramă profil</span><select id="communityFrame" name="profile_frame"><option value="none" data-profile-text-key="frame_none">Fără ramă</option><option value="soft" data-profile-text-key="frame_soft">Delicată</option><option value="neon" data-profile-text-key="frame_neon">Neon</option><option value="gold" data-profile-text-key="frame_gold">Aurie</option><option value="cosmos" data-profile-text-key="theme_cosmos">Cosmos</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_badge_style">Stilul insignelor</span><select id="communityBadgeStyle" name="badge_display_style"><option value="chips" data-profile-text-key="badge_style_chips">Capsule</option><option value="cards" data-profile-text-key="badge_style_cards">Carduri</option><option value="compact" data-profile-text-key="badge_style_compact">Compact</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_featured_badge">Insignă principală</span><select id="communityFeaturedBadge" name="featured_badge_id"><option value="" data-profile-text-key="community_auto">Automat</option></select></label>
+                <label class="profile-field community-field-wide"><span data-profile-text-key="community_featured_badges">Insigne favorite (maximum 6)</span><select id="communityFeaturedBadges" name="featured_badge_ids" multiple size="5"></select><small data-profile-text-key="multi_select_hint">Ține apăsat Ctrl sau Cmd pentru selecție multiplă.</small></label>
+                <div class="community-field-wide community-badge-visibility"><span data-profile-text-key="community_badge_visibility">Insigne publice</span><div id="communityBadgeVisibility"></div></div>
               </div>
             </section>
 
@@ -264,11 +264,11 @@
               <div class="community-form-heading"><h3 data-profile-text-key="community_stats_title">Statistici pe profil</h3><span data-profile-text-key="community_stats_help">Alege maximum patru statistici principale.</span></div>
               <div class="community-stat-picker">
                 <label><input type="checkbox" name="featured_stat_keys" value="xp"><span>XP</span></label>
-                <label><input type="checkbox" name="featured_stat_keys" value="level"><span>Nivel</span></label>
-                <label><input type="checkbox" name="featured_stat_keys" value="lessonsLearned"><span>Lecții învățate</span></label>
-                <label><input type="checkbox" name="featured_stat_keys" value="problemsSolved"><span>Probleme rezolvate</span></label>
-                <label><input type="checkbox" name="featured_stat_keys" value="examsPassed"><span>Examene promovate</span></label>
-                <label><input type="checkbox" name="featured_stat_keys" value="currentStreak"><span>Streak</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="level"><span data-profile-text-key="stat_level">Nivel</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="lessonsLearned"><span data-profile-text-key="stat_lessons">Lecții învățate</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="problemsSolved"><span data-profile-text-key="stat_problems">Probleme rezolvate</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="examsPassed"><span data-profile-text-key="stat_exams">Examene promovate</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="currentStreak"><span data-profile-text-key="stat_streak">Serie</span></label>
               </div>
             </section>
 
@@ -279,12 +279,12 @@
                 <label class="community-switch"><input id="communityLeaderboardOptIn" name="leaderboard_opt_in" type="checkbox"><span><strong data-profile-text-key="community_leaderboard">Participă în clasamente</strong><small data-profile-text-key="community_leaderboard_help">Necesită profil public și progres vizibil.</small></span></label>
                 <label class="community-switch"><input name="show_location" type="checkbox"><span><strong data-profile-text-key="community_privacy_location">Locație</strong><small data-profile-text-key="community_privacy_location_help">Țară și regiune.</small></span></label>
                 <label class="community-switch"><input name="show_education" type="checkbox"><span><strong data-profile-text-key="community_privacy_education">Educație</strong><small data-profile-text-key="community_privacy_education_help">Nivel, clasă și obiectiv.</small></span></label>
-                <label class="community-switch"><input name="show_personality" type="checkbox"><span><strong data-profile-text-key="community_privacy_personality">Matematică și personalitate</strong><small data-profile-text-key="community_privacy_personality_help">Preferințe, focus, limbi și citat.</small></span></label>
+                <label class="community-switch"><input name="show_personality" type="checkbox"><span><strong data-profile-text-key="community_privacy_personality">Matematică și personalitate</strong><small data-profile-text-key="community_privacy_personality_help">Preferințe, direcție, limbi și citat.</small></span></label>
                 <label class="community-switch"><input name="show_progress" type="checkbox"><span><strong data-profile-text-key="community_privacy_progress">Progres</strong><small data-profile-text-key="community_privacy_progress_help">Lecții, probleme și examene.</small></span></label>
-                <label class="community-switch"><input name="show_badges" type="checkbox"><span><strong data-profile-text-key="community_privacy_badges">Badge-uri</strong><small data-profile-text-key="community_privacy_badges_help">Roluri și contribuții.</small></span></label>
+                <label class="community-switch"><input name="show_badges" type="checkbox"><span><strong data-profile-text-key="community_privacy_badges">Insigne</strong><small data-profile-text-key="community_privacy_badges_help">Roluri și contribuții.</small></span></label>
                 <label class="community-switch"><input name="show_achievements" type="checkbox"><span><strong data-profile-text-key="community_privacy_achievements">Realizări</strong><small data-profile-text-key="community_privacy_achievements_help">Realizări de progres.</small></span></label>
-                <label class="community-switch"><input name="show_streak" type="checkbox"><span><strong data-profile-text-key="community_privacy_streak">Streak</strong><small data-profile-text-key="community_privacy_streak_help">Activitatea consecutivă.</small></span></label>
-                <label class="community-switch"><input name="show_links" type="checkbox"><span><strong data-profile-text-key="community_privacy_links">Linkuri</strong><small data-profile-text-key="community_privacy_links_help">Website, GitHub și portofoliu.</small></span></label>
+                <label class="community-switch"><input name="show_streak" type="checkbox"><span><strong data-profile-text-key="community_privacy_streak">Serie</strong><small data-profile-text-key="community_privacy_streak_help">Activitatea consecutivă.</small></span></label>
+                <label class="community-switch"><input name="show_links" type="checkbox"><span><strong data-profile-text-key="community_privacy_links">Adrese</strong><small data-profile-text-key="community_privacy_links_help">Site web, GitHub și portofoliu.</small></span></label>
                 <label class="community-switch"><input name="show_activity" type="checkbox"><span><strong data-profile-text-key="community_privacy_activity">Activitate</strong><small data-profile-text-key="community_privacy_activity_help">Data înscrierii și ultima activitate.</small></span></label>
               </div>
             </section>
@@ -296,9 +296,9 @@
               <div class="community-preview-avatar" id="communityPreviewAvatar">M</div>
               <span class="community-preview-state" id="communityPreviewState">Privat</span>
               <div class="community-preview-name-row"><h3 id="communityPreviewName">Profilul tău</h3><span id="communityPreviewPronouns" hidden></span></div>
-              <p class="community-preview-username" id="communityPreviewUsername">@username</p>
+              <p class="community-preview-username" id="communityPreviewUsername">@utilizator</p>
               <p class="community-preview-headline" id="communityPreviewHeadline" hidden></p>
-              <p id="communityPreviewBio">Adaugă o bio scurtă.</p>
+              <p id="communityPreviewBio">Adaugă o descriere scurtă.</p>
               <div class="community-preview-badges" id="communityPreviewBadges"></div>
               <div class="community-preview-links" id="communityPreviewLinks" hidden></div>
               <dl class="community-preview-details" id="communityPreviewDetails"></dl>
@@ -312,7 +312,7 @@
       <article class="profile-panel">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Identitate</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_identity">Identitate</span>
             <h2 data-profile-text-key="account_data_title">Date cont</h2>
           </div>
         </div>
@@ -329,10 +329,10 @@
       <article class="profile-panel">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Catalog</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_catalog">Catalog</span>
             <h2 data-profile-text-key="progress_title">Rezumat progres</h2>
           </div>
-          <a class="profile-inline-link" href="/index.html#analytics">Detalii</a>
+          <a class="profile-inline-link" href="/index.html#analytics" data-profile-text-key="details_link">Detalii</a>
         </div>
 
         <div class="profile-progress-block">
@@ -361,14 +361,14 @@
       <article class="profile-panel">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Distribuție</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_distribution">Distribuție</span>
             <h2 data-profile-text-key="detailed_title">Statistici detaliate</h2>
           </div>
         </div>
 
         <div class="profile-metric-columns">
           <div class="profile-metric-group">
-            <h3>Probleme</h3>
+            <h3 data-profile-text-key="metric_problems">Probleme</h3>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_solved">Rezolvate</span><strong id="detailProblemsSolved">0</strong></div>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_attempted">Încercate</span><strong id="detailProblemsAttempted">0</strong></div>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_opened">Deschise</span><strong id="detailProblemsOpened">0</strong></div>
@@ -376,14 +376,14 @@
           </div>
 
           <div class="profile-metric-group">
-            <h3>Lecții</h3>
+            <h3 data-profile-text-key="metric_lessons">Lecții</h3>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_learned">Învățate</span><strong id="detailLessonsLearned">0</strong></div>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_read_only">Citite, de verificat</span><strong id="detailLessonsReadOnly">0</strong></div>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_lessons_unread">Necitite</span><strong id="detailLessonsUnread">0</strong></div>
           </div>
 
           <div class="profile-metric-group">
-            <h3>Examene</h3>
+            <h3 data-profile-text-key="metric_exams">Examene</h3>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_exams_passed">Promovate</span><strong id="detailExamsPassed">0</strong></div>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_exams_unpassed">Nepromovate</span><strong id="detailExamsUnpassed">0</strong></div>
             <div class="profile-info-row"><span class="profile-info-label" data-profile-text-key="detail_exams_unattempted">Neîncercate</span><strong id="detailExamsUnattempted">0</strong></div>
@@ -396,7 +396,7 @@
       <article class="profile-panel profile-next-panel">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Focus</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_focus">Direcție</span>
             <h2 data-profile-text-key="next_title">Ce urmează</h2>
           </div>
         </div>
@@ -410,7 +410,7 @@
         <a class="profile-focus-card" href="/index.html#exams">
           <span id="profileExamHeading">Recomandare examen</span>
           <strong id="profileExamValue">—</strong>
-          <small>Deschide examenele</small>
+          <small data-profile-text-key="open_exams">Deschide examenele</small>
         </a>
 
         <span id="nextLessonText" class="profile-data-mirror" aria-hidden="true">—</span>
@@ -422,15 +422,15 @@
       <article class="profile-panel">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Cronologie</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_timeline">Cronologie</span>
             <h2 data-profile-text-key="recent_title">Activitate recentă</h2>
           </div>
         </div>
 
         <div class="profile-timeline">
-          <div class="profile-timeline-item"><span>Lecție</span><strong id="profileRecentLesson">—</strong></div>
-          <div class="profile-timeline-item"><span>Problemă</span><strong id="profileRecentProblem">—</strong></div>
-          <div class="profile-timeline-item"><span>Examen</span><strong id="profileRecentExam">—</strong></div>
+          <div class="profile-timeline-item"><span data-profile-text-key="timeline_lesson">Lecție</span><strong id="profileRecentLesson">—</strong></div>
+          <div class="profile-timeline-item"><span data-profile-text-key="timeline_problem">Problemă</span><strong id="profileRecentProblem">—</strong></div>
+          <div class="profile-timeline-item"><span data-profile-text-key="timeline_exam">Examen</span><strong id="profileRecentExam">—</strong></div>
         </div>
       </article>
     </section>
@@ -439,10 +439,10 @@
       <article class="profile-panel">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Examene</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_exams">Examene</span>
             <h2 data-profile-text-key="extra_exam_title">Performanță examene</h2>
           </div>
-          <a class="profile-inline-link" href="/index.html#exams">Deschide</a>
+          <a class="profile-inline-link" href="/index.html#exams" data-profile-text-key="open_link">Deschide</a>
         </div>
 
         <div class="profile-info-list">
@@ -457,7 +457,7 @@
       <article class="profile-panel profile-panel-full">
         <div class="profile-panel-heading">
           <div>
-            <span class="profile-panel-kicker">Setări</span>
+            <span class="profile-panel-kicker" data-profile-text-key="panel_settings">Setări</span>
             <h2 data-profile-text-key="settings_title">Cont și profil</h2>
           </div>
         </div>
@@ -467,20 +467,20 @@
           <div class="profile-edit-grid profile-security-grid">
             <label class="profile-field">
               <span data-profile-text-key="edit_new_password">Parolă nouă</span>
-              <input type="password" id="newPassword" placeholder="Minimum 6 caractere" autocomplete="new-password" />
+              <input type="password" data-profile-placeholder-key="placeholder_new_password" id="newPassword" placeholder="Minimum 6 caractere" autocomplete="new-password" />
             </label>
           </div>
 
           <div class="profile-auth-actions">
-            <button class="btn" id="changePasswordBtn" type="button">Schimbă parola</button>
+            <button class="btn" id="changePasswordBtn" type="button" data-profile-text-key="change_password_btn">Schimbă parola</button>
           </div>
 
           <div class="profile-danger-zone">
             <div>
-              <strong>Ștergere cont</strong>
-              <p>Elimină definitiv contul și progresul asociat.</p>
+              <strong data-profile-text-key="delete_title">Ștergerea contului</strong>
+              <p data-profile-text-key="delete_text">Elimină definitiv contul și progresul asociat.</p>
             </div>
-            <button class="btn danger" id="deleteAccountBtn" type="button">Șterge contul</button>
+            <button class="btn danger" id="deleteAccountBtn" type="button" data-profile-text-key="delete_account_btn">Șterge contul</button>
           </div>
         </div>
       </article>
@@ -489,10 +489,10 @@
 
   <script type="module" src="/js/runtime-diagnostics.js"></script>
   <script type="module" src="/js/ui-feedback.js"></script>
-  <script type="module" src="/js/profile.js?v=4f"></script>
-  <script type="module" src="/js/community-profile-settings-controller.js?v=4g3"></script>
-  <script type="module" src="/js/community-feedback-controller.js?v=4g4"></script>
-  <script type="module" src="/js/beta-readiness-controller.js?v=4g4"></script>
-  <script type="module" src="/js/microinteractions-bootstrap.js?v=4h"></script>
+  <script type="module" src="/js/profile.js?v=4i"></script>
+  <script type="module" src="/js/community-profile-settings-controller.js?v=4i"></script>
+  <script type="module" src="/js/community-feedback-controller.js?v=4i"></script>
+  <script type="module" src="/js/beta-readiness-controller.js?v=4i"></script>
+  <script type="module" src="/js/microinteractions-bootstrap.js?v=4i"></script>
 </body>
 </html>

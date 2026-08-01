@@ -49,22 +49,22 @@ const copy = language === "en" ? {
   loading: "Se încarcă...",
   loadError: "Profilul public nu a putut fi încărcat. Reîncearcă.",
   regionsError: "Regiunile nu au putut fi încărcate.",
-  currentUsername: "Username-ul actual.",
-  usernameAvailable: "Username disponibil.",
-  usernameUnavailable: "Username indisponibil.",
-  usernameDeferred: "Disponibilitatea va fi verificată la salvare.",
+  currentUsername: "Numele de utilizator actual.",
+  usernameAvailable: "Nume de utilizator disponibil.",
+  usernameUnavailable: "Nume de utilizator indisponibil.",
+  usernameDeferred: "Disponibilitatea numelui va fi verificată la salvare.",
   saving: "Se salvează...",
   saved: "Profil salvat.",
-  duplicateUsername: "Username-ul este folosit sau rezervat temporar.",
-  usernameCooldown: "Username-ul poate fi schimbat o dată la 30 de zile.",
-  unsafeLink: "Unul dintre linkuri nu este permis.",
+  duplicateUsername: "Numele de utilizator este folosit sau rezervat temporar.",
+  usernameCooldown: "Numele de utilizator poate fi schimbat o dată la 30 de zile.",
+  unsafeLink: "Una dintre adrese nu este permisă.",
   reviewPending: "Profil salvat. Conținutul public a fost trimis la verificare.",
   saveError: "Profilul nu a putut fi salvat. Verifică datele și reîncearcă.",
   publicState: "Public",
   privateState: "Privat",
   defaultName: "Profilul tău",
-  defaultUsername: "@username",
-  defaultBio: "Adaugă o bio scurtă.",
+  defaultUsername: "@utilizator",
+  defaultBio: "Adaugă o descriere scurtă.",
   learningNow: "Învăț acum",
   location: "Locație",
   goal: "Obiectiv",
@@ -217,7 +217,7 @@ if (root && form) {
     previewBadges.replaceChildren(...visibleBadges.map((badge) => {
       const chip = document.createElement("span");
       chip.className = "community-preview-badge";
-      chip.textContent = `${badge.icon} ${badge.titleRo || badge.title}`;
+      chip.textContent = `${badge.icon} ${language === "en" ? (badge.titleEn || badge.titleRo || badge.title) : (badge.titleRo || badge.titleEn || badge.title)}`;
       return chip;
     }));
 
@@ -238,7 +238,7 @@ if (root && form) {
     }));
 
     const links = profile.privacy.show_links ? [
-      ["Website", profile.websiteUrl],
+      [language === "en" ? "Website" : "Site web", profile.websiteUrl],
       ["GitHub", profile.githubUrl],
       ["Portfolio", profile.portfolioUrl]
     ].filter(([, url]) => url) : [];

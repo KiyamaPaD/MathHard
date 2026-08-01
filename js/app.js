@@ -92,8 +92,6 @@ import {
   safeWriteJson,
   scopedStorageKey
 } from "./browser-state.js";
-
-
   const DATA = createRuntimeData();
   let CONTENT_BOOT_ERROR = null;
   let MH_AUTH_USER = null;
@@ -116,11 +114,9 @@ import {
   let lessonQuizAvailabilityRequest = null;
   let lessonQuizAvailabilityEpoch = 0;
   let CONCEPT_CATALOG = buildConceptIndex(normalizeConceptCatalog({}));
-
   async function loadAdminRuntime() {
     if (adminRuntime) return adminRuntime;
     if (adminRuntimePromise) return adminRuntimePromise;
-
     adminRuntimePromise = Promise.all([
       import("./lesson-quiz-admin-controller.js"),
       import("./roadmap-admin-controller.js"),
@@ -161,10 +157,8 @@ import {
       adminRuntimePromise = null;
       throw error;
     });
-
     return adminRuntimePromise;
   }
-
   async function refreshLessonQuizAvailability() {
     const userId = MH_AUTH_USER?.id || "";
     if (!userId) {
@@ -176,7 +170,6 @@ import {
     if (lessonQuizAvailabilityRequest?.userId === userId) {
       return lessonQuizAvailabilityRequest.promise;
     }
-
     const requestEpoch = ++lessonQuizAvailabilityEpoch;
     const promise = loadLessonQuizAvailability(supabase)
       .then((availability) => {
@@ -197,11 +190,9 @@ import {
           lessonQuizAvailabilityRequest = null;
         }
       });
-
     lessonQuizAvailabilityRequest = { userId, promise };
     return promise;
   }
-
   function applyConceptCatalog(payload) {
     CONCEPT_CATALOG = buildConceptIndex(normalizeConceptCatalog(payload));
     DATA.concepts.length = 0;
@@ -212,13 +203,11 @@ import {
     DATA.contentConcepts.push(...CONCEPT_CATALOG.mappings);
     return CONCEPT_CATALOG;
   }
-
   async function refreshConceptCatalog(forceRefresh = false) {
     if (!MH_AUTH_USER?.id) {
       invalidateConceptCatalogCache();
       return applyConceptCatalog({});
     }
-
     try {
       const payload = await loadConceptCatalog({
         supabase,
@@ -231,16 +220,13 @@ import {
       return applyConceptCatalog({});
     }
   }
-
   function conceptContentType(itemType) {
     return itemType === "problem" ? "problem" : itemType === "exam" ? "exam" : "lesson";
   }
-
   function conceptIdsForItem(item, explicitType = "") {
     const type = conceptContentType(explicitType || item?.content_type || item?.type || (item?.lessonId ? "problem" : "lesson"));
     return conceptIdsForContent(CONCEPT_CATALOG, type, item?.id);
   }
-
   function conceptDetailsHtml(contentType, contentId) {
     return renderContentConceptDetails({
       catalog: CONCEPT_CATALOG,
@@ -250,11 +236,9 @@ import {
       escapeHtml: esc
     });
   }
-
   try {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
     if (initialAuthError) throw initialAuthError;
-
     MH_AUTH_USER = initialAuthData?.session?.user || null;
     if (MH_AUTH_USER?.id) {
       const [initialCatalog] = await Promise.all([
@@ -274,15 +258,12 @@ import {
       console.error("Catalogul MathHard nu a putut fi încărcat:", error);
     }
   }
-
   /* ===== Utils ===== */
   const esc = s => String(s)
     .replaceAll('&','&amp;').replaceAll('<','&lt;')
     .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-
   const TIP_RO = '💡 Pentru a bifa o lecție: derulează până jos <b>și</b> așteaptă să se termine timerul de 1 minut.';
   const TIP_EN = '💡 To mark a lesson as learned: scroll to the bottom <b>and</b> wait for the 1-minute timer.';
-  
   // Texte pentru sloganul din HERO
   const HERO_VARIANTS_RO = [
   "lecții clare, cu exemple",
@@ -298,17 +279,15 @@ import {
   "research topics explained simply",
   "stories from the history of math"
   ];
-
   // Prag de promovare examene
   const PASS_THRESHOLD = 60;
-
   const MAIN_UI_TEXT = {
     ro: {
       header: {
         info_btn: "Ajutor",
         about_btn: "Despre",
         profile_btn: "Profil",
-        admin_btn: "Admin",
+        admin_btn: "Administrare",
         modal_close: "Închide",
         stats_titles: [
           "Probleme rezolvate",
@@ -318,7 +297,6 @@ import {
           "XP acumulat"
         ]
       },
-
       progress_cards: {
         solved_title: "✅ Probleme rezolvate",
         solved_sub: "Deschide lista",
@@ -329,13 +307,12 @@ import {
         passed_title: "🏆 Examene promovate",
         passed_sub: "Deschide lista"
       },
-
       about: {
         title: "Despre MathHard",
         subtitle: "Lecții, probleme și trasee de studiu într-un singur loc.",
         pills: [
           "Lecții structurate",
-          "Probleme cu feedback",
+          "Probleme cu explicații",
           "Examene și simulări",
           "Progres detaliat",
           "Planuri de pregătire"
@@ -361,7 +338,7 @@ import {
                 <li>Alege o lecție sau un pas din planul tău.</li>
                 <li>Parcurge teoria și verificarea lecției.</li>
                 <li>Rezolvă problemele asociate.</li>
-                <li>Folosește Analytics pentru următorul obiectiv.</li>
+                <li>Folosește secțiunea Analiză pentru a-ți alege următorul obiectiv.</li>
               </ol>
             `
           },
@@ -391,7 +368,6 @@ import {
           }
         }
       },
-
       info_modal: {
         title: "Ajutor",
         body: `
@@ -407,7 +383,7 @@ import {
           </ul>
 
           <h4>XP</h4>
-          <p>O problemă acordă până la <b>10 XP</b>. Răspunsurile greșite și hinturile reduc punctajul disponibil.</p>
+          <p>O problemă acordă până la <b>10 XP</b>. Răspunsurile greșite și indiciile reduc punctajul disponibil.</p>
         `
       }
     },
@@ -1080,7 +1056,7 @@ import {
     if (!raw) {
       previewEl.innerHTML = `
         <div class="mh-live-preview-empty">
-          ${LANG === "ro" ? "Preview live..." : "Live preview..."}
+          ${LANG === "ro" ? "Previzualizare în timp real..." : "Live preview..."}
         </div>
       `;
       return;
@@ -1303,7 +1279,7 @@ import {
 
     if (roadmapTitle) {
       roadmapTitle.textContent = ro
-        ? "Roadmap"
+        ? "Plan de studiu"
         : "Roadmap";
     }
 
@@ -1315,7 +1291,7 @@ import {
 
     if (roadmapReset) {
       roadmapReset.textContent = ro
-        ? "♻️ Reset filtre"
+        ? "♻️ Resetează filtrele"
         : "♻️ Reset filters";
     }
 
@@ -1361,12 +1337,12 @@ import {
 
     mhSetRoadmapCard(
       '.mh-roadmap-card[data-mh-chip="research"]',
-      ro ? "Level secret" : "Secret level",
+      ro ? "Nivel secret" : "Secret level",
       ro ? "Cercetare & facultate" : "Research & university",
       ro
         ? "Collatz, serii de puteri, topologie, analiză funcțională."
         : "Collatz, power series, topology, functional analysis.",
-      ro ? "🔬 Lecții de research" : "🔬 Research lessons"
+      ro ? "🔬 Lecții de cercetare" : "🔬 Research lessons"
     );
 
     // ===== BOSS =====
@@ -1582,24 +1558,29 @@ import {
 
   const MH_UI_TEXT = {
     ro: {
+      page_title: "MathHard — lecții și probleme",
+      meta_description: "MathHard: lecții, probleme, examene și planuri de studiu pentru matematică.",
+      og_title: "MathHard — lecții și probleme",
+      og_description: "Lecții, probleme, examene și planuri de studiu pentru matematică.",
       header_logo_slogan: "Învață. Exersează. Reușește.",
       header_search_placeholder: "Caută…",
       header_btn_info: "Ajutor",
       header_btn_about: "Despre",
-      header_btn_focus_off: "🎯 Focus",
-      header_btn_focus_on: "🎯 Focus ON",
-      header_btn_theme_dark: "🌙 Dark",
-      header_btn_theme_light: "☀️ Light",
+      header_btn_feedback: "Sugestii",
+      header_btn_focus_off: "🎯 Concentrare",
+      header_btn_focus_on: "🎯 Concentrare activă",
+      header_btn_theme_dark: "🌙 Întunecat",
+      header_btn_theme_light: "☀️ Luminos",
       header_btn_profile: "Profil",
-      header_btn_admin: "Admin",
+      header_btn_admin: "Administrare",
 
       header_counter_solved_title: "Probleme rezolvate",
       header_counter_read_title: "Lecții citite",
       header_counter_learned_title: "Lecții învățate",
-      header_counter_exams_title: "Examene promovate / Exams passed",
+      header_counter_exams_title: "Examene promovate",
       header_counter_xp_title: "XP acumulat din probleme",
 
-      tip_text: "Pentru statusul Citită, parcurge lecția până la final și așteaptă un minut.",
+      tip_text: "Pentru starea Citită, parcurge lecția până la final și așteaptă un minut.",
 
       progress_card_solved_title: "✅ Probleme rezolvate",
       progress_card_solved_sub: "Vezi lista",
@@ -1612,12 +1593,17 @@ import {
     },
 
     en: {
+      page_title: "MathHard — lessons and problems",
+      meta_description: "MathHard: mathematics lessons, problems, exams and study roadmaps.",
+      og_title: "MathHard — lessons and problems",
+      og_description: "Mathematics lessons, problems, exams and study roadmaps.",
       header_logo_slogan: "Learn. Practice. Succeed.",
       header_search_placeholder: "Search…",
       header_btn_info: "Help",
       header_btn_about: "About",
+      header_btn_feedback: "Feedback",
       header_btn_focus_off: "🎯 Focus",
-      header_btn_focus_on: "🎯 Focus ON",
+      header_btn_focus_on: "🎯 Focus on",
       header_btn_theme_dark: "🌙 Dark",
       header_btn_theme_light: "☀️ Light",
       header_btn_profile: "Profile",
@@ -2030,7 +2016,7 @@ import {
       if (LANG === "ro") {
         btn.title = FOCUS
           ? "Mod de antrenament: mai puține distrageri, accent pe probleme."
-          : "Pornește modul de focus (ascunde decorațiuni & sidebar).";
+          : "Pornește modul de concentrare (ascunde decorațiunile și bara laterală).";
       } else {
         btn.title = FOCUS
           ? "Training mode: fewer distractions, focus on problems."
@@ -3921,7 +3907,7 @@ ${details}`);
         <div id="exam-open-res-${exam.id}-${item.id}"></div>
       </div>
       <div class="mh-live-preview-wrap">
-        <div class="legend">${LANG === "ro" ? "Preview live" : "Live preview"}</div>
+        <div class="legend">${LANG === "ro" ? "Previzualizare în timp real" : "Live preview"}</div>
         <div class="mh-live-preview-box" id="exam-open-preview-${exam.id}-${item.id}"></div>
       </div>
       <div class="mh-math-input-host" id="exam-open-tools-${exam.id}-${item.id}"></div>
@@ -4209,7 +4195,7 @@ ${details}`);
 
   function getGuestLockTitle() {
     return LANG === "ro"
-      ? "🔒 Trebuie să te loghezi"
+      ? "🔒 Trebuie să te autentifici"
       : "🔒 You need to log in";
   }
 
@@ -4228,7 +4214,7 @@ ${details}`);
         </div>
         <div>
           <a class="btn" href="/profile.html">
-            ${LANG === "ro" ? "🔑 Mergi la login / signup" : "🔑 Go to login / signup"}
+            ${LANG === "ro" ? "🔑 Mergi la autentificare / creare cont" : "🔑 Go to sign in / create account"}
           </a>
         </div>
       </div>
@@ -4238,7 +4224,7 @@ ${details}`);
   function showGuestContentMessage() {
     alert(
       LANG === "ro"
-        ? "Trebuie să te loghezi ca să vezi lecțiile, problemele și examenele."
+        ? "Trebuie să te autentifici ca să vezi lecțiile, problemele și examenele."
         : "You need to log in to view lessons, problems and exams."
     );
   }
@@ -4561,36 +4547,36 @@ ${details}`);
   function mhUi(key){
     const dict = {
       ro: {
-        mobile_filters_title: "📚 Filtre & capitole",
+        mobile_filters_title: "📚 Filtre și capitole",
         mobile_filters_btn: "☰ Filtre",
         advanced_filters: "🏷️ Filtre avansate",
         others: "Altele",
         difficulty_range: "Dificultate probleme (0–5)",
-        tags: "Tag-uri",
-        global_tags: "🌐 Taguri globale",
-        structural_tags: "📂 Taguri structurale",
+        tags: "Etichete",
+        global_tags: "🌐 Etichete globale",
+        structural_tags: "📂 Etichete structurale",
         special_categories: "Categorii speciale",
-        lessons_curriculum: "📚 Lecții / Curriculum",
+        lessons_curriculum: "📚 Lecții și programă",
         school: "🏫 Școală (V–VIII)",
         highschool: "🏫 Liceu (IX–XII)",
         olympiad: "🏅 Olimpiada",
         faculty: "🏛 Facultate",
-        faculty_courses: "Cursuri & capitole",
+        faculty_courses: "Cursuri și capitole",
         research: "🔬 CERCETARE",
         history: "🕰 Istoria matematicii",
         exam_problems: "📚 Probleme date la examene",
         exam_sets: "📑 Seturi de examene",
-        exam_tips: "🧠 Tips & Tricks examen",
-        no_tags: "(fără taguri)",
-        login_structure: "🔒 Loghează-te ca să vezi structura lecțiilor și capitolelor.",
-        login_tags: "🔒 Tag-urile devin vizibile după login.",
+        exam_tips: "🧠 Sfaturi pentru examen",
+        no_tags: "(fără etichete)",
+        login_structure: "🔒 Autentifică-te pentru a vedea structura lecțiilor și capitolelor.",
+        login_tags: "🔒 Etichetele devin vizibile după autentificare.",
         class_label: "Clasa",
         olymp_class_label: "Olimp. clasa",
         olymp_lessons: "🏅 Lecții de Olimpiadă",
         olymp_problems: "🏅 Probleme de Olimpiadă",
         exam_linked_problems: "📚 Probleme la examene",
         exam_sets_chip: "📑 Seturi de examene",
-        faculty_chip: "🏛 Facultate (cursuri)",
+        faculty_chip: "🏛 Facultate și cursuri",
         admit_chip: "🎓 Admitere (RO)",
         research_chip: "🔬 CERCETARE",
         history_chip: "🕰 Istoria matematicii"
@@ -4806,6 +4792,17 @@ ${details}`);
 
     const aboutBtn = document.getElementById("aboutBtn");
     if (aboutBtn) aboutBtn.textContent = ui.header_btn_about;
+
+    const feedbackBtn = document.getElementById("feedbackBtn");
+    if (feedbackBtn) feedbackBtn.textContent = ui.header_btn_feedback;
+
+    document.title = ui.page_title;
+    const metaDescription = document.getElementById("metaDescription");
+    if (metaDescription) metaDescription.content = ui.meta_description;
+    const ogTitle = document.getElementById("ogTitle");
+    if (ogTitle) ogTitle.content = ui.og_title;
+    const ogDescription = document.getElementById("ogDescription");
+    if (ogDescription) ogDescription.content = ui.og_description;
 
     const langBtn = document.getElementById("langBtn");
     if (langBtn) {
@@ -5532,7 +5529,7 @@ ${details}`);
           <div class="legend">${LANG === "ro" ? "XP acumulat" : "XP earned"}</div>
           <div class="xp-total-number">${XP_TOTAL}</div>
         </div>
-        <div class="mh-problem-lifecycle-summary" aria-label="${LANG === "ro" ? "Statusuri probleme" : "Problem statuses"}">
+        <div class="mh-problem-lifecycle-summary" aria-label="${LANG === "ro" ? "Stările problemelor" : "Problem statuses"}">
           <span class="is-solved">✅ ${LANG === "ro" ? "Rezolvate" : "Solved"}: <b>${groups.solved.length}</b></span>
           <span class="is-attempted">✍ ${LANG === "ro" ? "Încercate" : "Attempted"}: <b>${groups.attempted.length}</b></span>
           <span class="is-opened">👁 ${LANG === "ro" ? "Deschise" : "Opened"}: <b>${groups.opened.length}</b></span>
@@ -5817,7 +5814,7 @@ ${details}`);
       algebra: LANG === "ro" ? "Algebră" : "Algebra",
       geometrie: LANG === "ro" ? "Geometrie" : "Geometry",
       olymp: LANG === "ro" ? "Olimpiadă" : "Olympiad",
-      research: LANG === "ro" ? "Research" : "Research"
+      research: LANG === "ro" ? "Cercetare" : "Research"
     };
 
     if (filter.byLessonId){
@@ -6573,12 +6570,12 @@ ${details}`);
       <div class="checkrow">
         <input id="${prefix}-ans" ${locked?'disabled':''} placeholder="${LANG==='ro'?'Răspuns…':'Answer…'}" />
         <button class="btn" id="${prefix}-btn" ${locked?'disabled':''} type="button">✅ ${LANG==='ro'?'Verifică':'Check'}</button>
-        <button class="btn" id="${prefix}-reset" ${locked?'disabled':''} title="Resetează UI-ul, păstrând istoricul" type="button">♻️ Reset</button>
+        <button class="btn" id="${prefix}-reset" ${locked?'disabled':''} title="${LANG==='ro'?'Resetează interfața, păstrând istoricul':'Reset the interface while keeping history'}" type="button">♻️ ${LANG==='ro'?'Resetează':'Reset'}</button>
         <div id="${prefix}-res"></div>
       </div>
 
       <div class="mh-live-preview-wrap">
-        <div class="legend">Preview live</div>
+        <div class="legend">${LANG==='ro'?'Previzualizare în timp real':'Live preview'}</div>
         <div class="mh-live-preview-box" id="${prefix}-preview"></div>
       </div>
 
@@ -7111,7 +7108,7 @@ function openExam(exam){
     } catch (error) {
       console.error("Secure exam resume failed:", error);
       renderHiddenUntilStart();
-      setStatus(LANG === "ro" ? "Nu s-a putut verifica tentativa activă. Reîncearcă după refresh." : "The active attempt could not be checked. Retry after refresh.", "bad");
+      setStatus(LANG === "ro" ? "Nu s-a putut verifica tentativa activă. Reîncearcă după reîncărcarea paginii." : "The active attempt could not be checked. Retry after reloading the page.", "bad");
       startBtn.disabled = false;
       hoursSel.disabled = false;
     }

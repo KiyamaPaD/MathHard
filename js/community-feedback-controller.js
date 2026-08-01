@@ -16,13 +16,13 @@ const CATEGORY_COPY = {
   en: { suggestion: "Suggestion", bug: "Technical issue", content: "Content", account: "Account", other: "Other" }
 };
 const REASON_COPY = {
-  ro: { impersonation: "Identitate falsă", inappropriate: "Conținut nepotrivit", spam: "Spam", unsafe_link: "Link nesigur", other: "Alt motiv" },
+  ro: { impersonation: "Identitate falsă", inappropriate: "Conținut nepotrivit", spam: "Mesaje nedorite", unsafe_link: "Adresă nesigură", other: "Alt motiv" },
   en: { impersonation: "Impersonation", inappropriate: "Inappropriate content", spam: "Spam", unsafe_link: "Unsafe link", other: "Other" }
 };
 const COPY = {
   ro: {
-    feedbackTitle: "Trimite feedback",
-    feedbackIntro: "Spune-ne ce ar trebui îmbunătățit.",
+    feedbackTitle: "Trimite o sugestie",
+    feedbackIntro: "Spune-ne ce ar trebui îmbunătățit sau corectat.",
     reportTitle: "Raportează profilul",
     reportIntro: "Raportarea ajunge doar la administratori.",
     category: "Categorie",
@@ -37,7 +37,7 @@ const COPY = {
     cancel: "Renunță",
     send: "Trimite",
     sending: "Se trimite…",
-    sent: "Mulțumim. Feedbackul a fost trimis.",
+    sent: "Mulțumim. Sugestia a fost trimisă.",
     reported: "Raportarea a fost trimisă.",
     error: "Nu s-a putut trimite. Încearcă din nou.",
     auth: "Autentifică-te pentru a raporta un profil.",
@@ -114,7 +114,7 @@ function ensureModal() {
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-modal", "true");
   modal.setAttribute("aria-labelledby", "mhCommunityFeedbackTitle");
-  modal.innerHTML = `<div class="mh-community-feedback-backdrop" data-community-feedback-close></div><section class="mh-community-feedback-dialog" tabindex="-1"><header><div><h2 id="mhCommunityFeedbackTitle"></h2><p id="mhCommunityFeedbackIntro"></p></div><button type="button" class="mh-community-feedback-close" data-community-feedback-close aria-label="Închide">×</button></header><div id="mhCommunityFeedbackBody"></div><p class="mh-community-feedback-status" id="mhCommunityFeedbackStatus" role="status"></p></section>`;
+  modal.innerHTML = `<div class="mh-community-feedback-backdrop" data-community-feedback-close></div><section class="mh-community-feedback-dialog" tabindex="-1"><header><div><h2 id="mhCommunityFeedbackTitle"></h2><p id="mhCommunityFeedbackIntro"></p></div><button type="button" class="mh-community-feedback-close" data-community-feedback-close aria-label="${escapeHtml(copy().cancel)}">×</button></header><div id="mhCommunityFeedbackBody"></div><p class="mh-community-feedback-status" id="mhCommunityFeedbackStatus" role="status"></p></section>`;
   document.body.append(modal);
   modal.addEventListener("click", (event) => {
     if (event.target.closest("[data-community-feedback-close]")) closeModal();

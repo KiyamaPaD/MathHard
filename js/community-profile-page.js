@@ -10,6 +10,12 @@ const $ = (id) => document.getElementById(id);
 const username = normalizeUsername(new URLSearchParams(location.search).get("u") || "");
 const lang = localStorage.getItem("mh_lang") === "en" ? "en" : "ro";
 const copy = lang === "en" ? {
+  pageTitle: "MathHard — Public profile",
+  metaDescription: "Public MathHard profile.",
+  slogan: "Community",
+  back: "Back",
+  loadingTitle: "Loading profile",
+  loadingText: "Public profiles show only the information selected by the user.",
   missingTitle: "Profile unavailable",
   missingText: "This profile is private, unavailable or the username is invalid.",
   progress: ["XP", "Level", "Lessons learned", "Problems solved", "Exams passed", "Streak"],
@@ -30,18 +36,25 @@ const copy = lang === "en" ? {
   copied: "Link copied",
   copyLink: "Copy link",
   leaderboards: "Leaderboards",
-  portfolio: "Portfolio"
+  portfolio: "Portfolio",
+  report: "Report"
 } : {
+  pageTitle: "MathHard — Profil public",
+  metaDescription: "Profil public MathHard.",
+  slogan: "Comunitate",
+  back: "Înapoi",
+  loadingTitle: "Se încarcă profilul",
+  loadingText: "Profilurile publice afișează numai informațiile alese de utilizator.",
   missingTitle: "Profil indisponibil",
-  missingText: "Profilul este privat, indisponibil sau username-ul nu este valid.",
-  progress: ["XP", "Nivel", "Lecții învățate", "Probleme rezolvate", "Examene promovate", "Streak"],
+  missingText: "Profilul este privat, indisponibil sau numele de utilizator nu este valid.",
+  progress: ["XP", "Nivel", "Lecții învățate", "Probleme rezolvate", "Examene promovate", "Serie"],
   sections: {
     progress: "Progres",
     education: "Educație",
     mathematics: "Matematică",
-    badges: "Badge-uri",
+    badges: "Insigne",
     achievements: "Realizări",
-    links: "Linkuri",
+    links: "Adrese",
     activity: "Comunitate"
   },
   education: ["Nivel", "Clasă / an", "Profil / specializare", "Obiectiv"],
@@ -49,10 +62,11 @@ const copy = lang === "en" ? {
   activity: ["Membru din", "Ultima activitate"],
   locationSeparator: " · ",
   days: "zile",
-  copied: "Link copiat",
-  copyLink: "Copiază linkul",
+  copied: "Adresă copiată",
+  copyLink: "Copiază adresa",
   leaderboards: "Clasamente",
-  portfolio: "Portofoliu"
+  portfolio: "Portofoliu",
+  report: "Raportează"
 };
 
 const LEARNING_STYLE_LABELS = lang === "en"
@@ -61,6 +75,25 @@ const LEARNING_STYLE_LABELS = lang === "en"
 const COLLABORATION_LABELS = lang === "en"
   ? { studying: "Looking for study partners", helping: "Available to help", projects: "Open to projects", private: "Prefers individual work" }
   : { studying: "Caut colegi de studiu", helping: "Pot ajuta alți membri", projects: "Deschis la proiecte", private: "Prefer să lucrez individual" };
+
+function applyStaticText() {
+  document.documentElement.lang = lang;
+  document.title = copy.pageTitle;
+  if ($("communityPublicMeta")) $("communityPublicMeta").content = copy.metaDescription;
+  const slogan = document.querySelector(".community-public-topbar .logo-slogan");
+  if (slogan) slogan.textContent = copy.slogan;
+  const back = document.querySelector('.community-public-topbar a.btn[href="/index.html"]');
+  if (back) back.textContent = copy.back;
+  const empty = $("communityPublicEmpty");
+  if (empty) {
+    const title = empty.querySelector("h1");
+    const text = empty.querySelector("p");
+    if (title) title.textContent = copy.loadingTitle;
+    if (text) text.textContent = copy.loadingText;
+  }
+}
+
+applyStaticText();
 
 function setImage(container, url, fallbackText) {
   container.replaceChildren();
@@ -139,6 +172,7 @@ function render(profile) {
   $("communityPublicContent").hidden = false;
   const reportButton = $("communityReportProfile");
   if (reportButton) {
+    reportButton.textContent = copy.report;
     reportButton.hidden = profile.isOwner;
     reportButton.dataset.communityReportUsername = profile.username;
   }
@@ -263,7 +297,7 @@ function render(profile) {
 
   if (profile.privacy.show_links) {
     const links = [
-      ["Website", profile.websiteUrl],
+      [lang === "en" ? "Website" : "Site web", profile.websiteUrl],
       ["GitHub", profile.githubUrl],
       [copy.portfolio, profile.portfolioUrl]
     ].filter(([, url]) => url);

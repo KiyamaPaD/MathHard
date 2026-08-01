@@ -14,12 +14,12 @@ const openingUsers = new Set();
 const COPY = Object.freeze({
   ro: {
     title: "Configurează MathHard",
-    text: "Alege traseul principal. Îl poți schimba oricând din Roadmap.",
-    roadmap: "Roadmap",
+    text: "Alege traseul principal. Îl poți schimba oricând din Planul de studiu.",
+    roadmap: "Plan de studiu",
     start: "Începe",
     skip: "Mai târziu",
-    loading: "Se încarcă roadmap-urile…",
-    empty: "Nu există încă roadmap-uri publicate.",
+    loading: "Se încarcă planurile de studiu…",
+    empty: "Nu există încă planuri de studiu publicate.",
     saved: "MathHard este configurat.",
     error: "Setarea nu a putut fi salvată."
   },

@@ -12,7 +12,7 @@ const TEXT = {
     resetLayout: "↺ Resetează aspectul",
     items: {
       hub: "Antrenamentul de azi",
-      roadmap: "Roadmap",
+      roadmap: "Plan de studiu",
       boss: "Antrenament rapid",
       radar: "Radarul tău",
       lessons: "Lecții",
@@ -22,7 +22,7 @@ const TEXT = {
       research: "Cercetare",
       history: "Istoria matematicii",
       profile: "Profilul tău",
-      admin: "Admin Studio",
+      admin: "Administrare",
     },
   },
   en: {
@@ -39,7 +39,7 @@ const TEXT = {
     items: {
       hub: "Today's training",
       roadmap: "Roadmap",
-      boss: "Antrenament rapid",
+      boss: "Quick practice",
       radar: "Your math radar",
       lessons: "Lessons",
       problems: "Problems",

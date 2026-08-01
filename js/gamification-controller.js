@@ -24,17 +24,17 @@ const COPY = {
     dailyGoal: "Obiectiv zilnic",
     dailyGoalHint: "Lecții, probleme și examene finalizate azi.",
     actions: "activități",
-    streak: "Streak",
+    streak: "Serie",
     days: "zile",
     best: "Record",
-    weekly: "Challenge săptămânal",
+    weekly: "Provocare săptămânală",
     reward: "Recompensă",
     claim: "Colectează XP",
     claimed: "Recompensă colectată",
     inProgress: "În progres",
     completed: "Finalizat",
-    achievements: "Achievements",
-    achievementsHint: "Deblocate automat din progresul tău.",
+    achievements: "Realizări",
+    achievementsHint: "Deblocate automat pe baza progresului tău.",
     unlocked: "Deblocat",
     locked: "În progres",
     saving: "Se salvează…",
@@ -345,7 +345,7 @@ export function createGamificationController({ host }) {
         window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
           detail: {
             kind: "achievement",
-            title: locale() === "en" ? "Weekly challenge completed" : "Challenge săptămânal finalizat",
+            title: locale() === "en" ? "Weekly challenge completed" : "Provocare săptămânală finalizată",
             subtitle: locale() === "en" ? "Reward claimed" : "Recompensă colectată",
             xp: Number(claimed?.rewardXp || claimed?.reward_xp || 0)
           }

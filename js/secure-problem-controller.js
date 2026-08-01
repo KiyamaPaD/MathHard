@@ -23,8 +23,8 @@ function messageFor(language, key, ok = false) {
       wrong: "❌ Răspuns incorect. Încearcă din nou.",
       unavailable: "Verificarea nu este disponibilă momentan.",
       checking: "Se verifică…",
-      hint_locked: "Hintul nu este încă deblocat.",
-      hint_missing: "Această problemă nu are acest hint.",
+      hint_locked: "Indiciul nu este încă deblocat.",
+      hint_missing: "Această problemă nu are acest indiciu.",
       reveal_failed: "Răspunsul nu a putut fi afișat."
     },
     en: {
