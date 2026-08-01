@@ -1567,10 +1567,10 @@ import {
       header_btn_info: "Ajutor",
       header_btn_about: "Despre",
       header_btn_feedback: "Sugestii",
-      header_btn_focus_off: "🎯 Concentrare",
-      header_btn_focus_on: "🎯 Concentrare activă",
-      header_btn_theme_dark: "🌙 Întunecat",
-      header_btn_theme_light: "☀️ Luminos",
+      header_btn_focus_off: "Concentrare",
+      header_btn_focus_on: "Concentrare activă",
+      header_btn_theme_dark: "Întunecat",
+      header_btn_theme_light: "Luminos",
       header_btn_profile: "Profil",
       header_btn_admin: "Administrare",
 
@@ -1602,10 +1602,10 @@ import {
       header_btn_info: "Help",
       header_btn_about: "About",
       header_btn_feedback: "Feedback",
-      header_btn_focus_off: "🎯 Focus",
-      header_btn_focus_on: "🎯 Focus on",
-      header_btn_theme_dark: "🌙 Dark",
-      header_btn_theme_light: "☀️ Light",
+      header_btn_focus_off: "Focus",
+      header_btn_focus_on: "Focus on",
+      header_btn_theme_dark: "Dark",
+      header_btn_theme_light: "Light",
       header_btn_profile: "Profile",
       header_btn_admin: "Admin",
 
@@ -4806,7 +4806,7 @@ ${details}`);
 
     const langBtn = document.getElementById("langBtn");
     if (langBtn) {
-      langBtn.textContent = LANG === "ro" ? "🌐 RO / EN" : "🌐 EN / RO";
+      langBtn.textContent = LANG === "ro" ? "RO / EN" : "EN / RO";
     }
 
     const focusBtn = document.getElementById("focusBtn");

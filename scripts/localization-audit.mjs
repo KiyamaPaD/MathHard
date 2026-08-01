@@ -66,8 +66,8 @@ requireTokens(app, "Main application copy", [
   'header_btn_feedback: "Feedback"',
   'header_btn_admin: "Administrare"',
   'header_btn_admin: "Admin"',
-  'header_btn_focus_off: "🎯 Concentrare"',
-  'header_btn_focus_off: "🎯 Focus"',
+  'header_btn_focus_off: "Concentrare"',
+  'header_btn_focus_off: "Focus"',
   '"Previzualizare în timp real"',
   '"Live preview"',
   'research: LANG === "ro" ? "Cercetare" : "Research"'

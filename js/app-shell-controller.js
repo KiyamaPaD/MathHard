@@ -118,19 +118,47 @@ const TEXT = {
   },
 };
 
+const ICONS = Object.freeze({
+  dashboard: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+  roadmap: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h4a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3"/><path d="m16 5 3-2 2 3-3 2"/>',
+  profile: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
+  lessons: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5Z"/>',
+  problems: '<path d="M4 7h10"/><path d="M4 17h10"/><path d="M7 4v6"/><path d="m17 14 4 4"/><path d="m21 14-4 4"/>',
+  exams: '<path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 4H5a2 2 0 0 0-2 2v15h18V6a2 2 0 0 0-2-2h-1"/><path d="m7 12 2 2 4-4"/><path d="M7 18h10"/>',
+  xp: '<path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19V3"/>',
+  analytics: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20V7"/><path d="M2 20h22"/>',
+  gamification: '<path d="M8 4h8v3a4 4 0 0 1-8 0Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4"/><path d="M16 5h4v2a4 4 0 0 1-4 4"/><path d="M12 11v5"/><path d="M8 21h8"/><path d="M9 16h6v5H9z"/>',
+  leaderboards: '<path d="M4 21v-6h5v6"/><path d="M10 21V9h5v12"/><path d="M16 21V4h5v17"/>',
+  research: '<path d="M9 3h6"/><path d="M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 16h9"/>',
+  history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M3 4v5h5"/>',
+  admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05-2.78 2.78-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.45 1.2V21H9v-.08a1.8 1.8 0 0 0-.45-1.2 1.8 1.8 0 0 0-1-.6 1.8 1.8 0 0 0-1.98.36l-.05.05-2.78-2.78.05-.05A1.8 1.8 0 0 0 3.15 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.2-.45H1.2V9h.08a1.8 1.8 0 0 0 1.2-.45 1.8 1.8 0 0 0 .6-1 1.8 1.8 0 0 0-.36-1.98l-.05-.05 2.78-2.78.05.05A1.8 1.8 0 0 0 7.5 3.15a1.8 1.8 0 0 0 1-.6 1.8 1.8 0 0 0 .45-1.2V1.2h4.55v.08a1.8 1.8 0 0 0 .45 1.2 1.8 1.8 0 0 0 1 .6 1.8 1.8 0 0 0 1.98-.36l.05-.05 2.78 2.78-.05.05A1.8 1.8 0 0 0 19.4 7.5a1.8 1.8 0 0 0 .6 1 1.8 1.8 0 0 0 1.2.45h.08v4.55h-.08a1.8 1.8 0 0 0-1.2.45 1.8 1.8 0 0 0-.6 1Z"/>',
+  theme: '<path d="M20.5 14.5A8 8 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"/>',
+  language: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 1 1 3.1 2.4c-.8.3-1.3.8-1.3 1.6"/><path d="M12 17h.01"/>',
+  collapse: '<path d="M4 5h16v14H4z"/><path d="M9 5v14"/><path d="m15 9-3 3 3 3"/>',
+  menu: '<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>',
+  close: '<path d="m6 6 12 12"/><path d="m18 6-12 12"/>',
+});
+
+function iconMarkup(name, className = "mh-shell-nav-icon") {
+  const paths = ICONS[name] || ICONS.dashboard;
+  return `<span class="${className}" aria-hidden="true"><svg viewBox="0 0 24 24">${paths}</svg></span>`;
+}
+
 const NAV_ITEMS = Object.freeze([
-  { route: "dashboard", icon: "⌂", group: "main" },
-  { route: "roadmap", icon: "◇", group: "main" },
-  { route: "profile", icon: "◉", group: "main", href: "/profile.html" },
-  { route: "lessons", icon: "▤", group: "learn" },
-  { route: "problems", icon: "◆", group: "learn" },
-  { route: "exams", icon: "▣", group: "learn" },
-  { route: "xp", icon: "↗", group: "learn" },
-  { route: "analytics", icon: "◫", group: "learn" },
-  { route: "gamification", icon: "✦", group: "learn" },
-  { route: "leaderboards", icon: "≡", group: "learn" },
-  { route: "research", icon: "⌁", group: "explore" },
-  { route: "history", icon: "◷", group: "explore" },
+  { route: "dashboard", icon: "dashboard", group: "main" },
+  { route: "roadmap", icon: "roadmap", group: "main" },
+  { route: "profile", icon: "profile", group: "main", href: "/profile.html" },
+  { route: "lessons", icon: "lessons", group: "learn" },
+  { route: "problems", icon: "problems", group: "learn" },
+  { route: "exams", icon: "exams", group: "learn" },
+  { route: "xp", icon: "xp", group: "learn" },
+  { route: "analytics", icon: "analytics", group: "learn" },
+  { route: "gamification", icon: "gamification", group: "learn" },
+  { route: "leaderboards", icon: "leaderboards", group: "learn" },
+  { route: "research", icon: "research", group: "explore" },
+  { route: "history", icon: "history", group: "explore" },
 ]);
 
 export function normalizeAppRoute(value) {
@@ -151,7 +179,7 @@ function buttonMarkup(item) {
   if (item.href) {
     return `
       <a class="mh-shell-nav-button" href="${item.href}" data-shell-link="${item.route}">
-        <span class="mh-shell-nav-icon" aria-hidden="true">${item.icon}</span>
+        ${iconMarkup(item.icon)}
         <span class="mh-shell-nav-label" data-shell-label="${item.route}"></span>
       </a>
     `;
@@ -159,7 +187,7 @@ function buttonMarkup(item) {
 
   return `
     <button class="mh-shell-nav-button" type="button" data-shell-route="${item.route}">
-      <span class="mh-shell-nav-icon" aria-hidden="true">${item.icon}</span>
+      ${iconMarkup(item.icon)}
       <span class="mh-shell-nav-label" data-shell-label="${item.route}"></span>
     </button>
   `;
@@ -173,7 +201,7 @@ function createShellMarkup() {
   `).join("");
 
   return `
-    <button class="mh-shell-mobile-toggle" id="mhShellMobileToggle" type="button" aria-controls="mhShellSidebar" aria-expanded="false">☰</button>
+    <button class="mh-shell-mobile-toggle" id="mhShellMobileToggle" type="button" aria-controls="mhShellSidebar" aria-expanded="false">${iconMarkup("menu", "mh-shell-mobile-icon")}</button>
     <div class="mh-shell-mobile-backdrop" id="mhShellMobileBackdrop" hidden></div>
     <aside class="mh-shell-sidebar" id="mhShellSidebar" aria-label="MathHard navigation">
       <div class="mh-shell-brand">
@@ -185,12 +213,12 @@ function createShellMarkup() {
       </div>
       <nav class="mh-shell-nav" id="mhShellNav">${nav}</nav>
       <div class="mh-shell-sidebar-footer">
-        <button class="mh-shell-utility-button" type="button" data-shell-proxy="themeBtn" title="Theme">◐</button>
-        <button class="mh-shell-utility-button" type="button" data-shell-proxy="langBtn" title="Language">文</button>
-        <button class="mh-shell-utility-button" type="button" data-shell-proxy="infoBtn" title="Help">?</button>
-        <button class="mh-shell-utility-button" type="button" data-shell-proxy="aboutBtn" title="About">i</button>
+        <button class="mh-shell-utility-button" type="button" data-shell-proxy="themeBtn" data-shell-utility="theme">${iconMarkup("theme", "mh-shell-utility-icon")}</button>
+        <button class="mh-shell-utility-button" type="button" data-shell-proxy="langBtn" data-shell-utility="language">${iconMarkup("language", "mh-shell-utility-icon")}</button>
+        <button class="mh-shell-utility-button" type="button" data-shell-proxy="infoBtn" data-shell-utility="info">${iconMarkup("help", "mh-shell-utility-icon")}</button>
+        <button class="mh-shell-utility-button" type="button" data-shell-proxy="aboutBtn" data-shell-utility="about">${iconMarkup("info", "mh-shell-utility-icon")}</button>
         <button class="mh-shell-utility-button mh-shell-sidebar-toggle" id="mhShellSidebarToggle" type="button">
-          <span class="mh-shell-nav-icon" aria-hidden="true">⇤</span>
+          ${iconMarkup("collapse")}
           <span class="mh-shell-nav-label" id="mhShellSidebarToggleLabel"></span>
         </button>
       </div>
@@ -217,15 +245,15 @@ function createShellMarkup() {
       <section class="mh-shell-workspace-panel" data-panel="leaderboards" id="mhShellPanelLeaderboards" hidden></section>
     </main>
     <button class="mh-admin-floating-close" id="mhAdminFloatingClose" type="button" hidden>
-      <span aria-hidden="true">✕</span>
+      ${iconMarkup("close", "mh-shell-close-icon")}
       <span data-admin-close-label>Închide administrarea</span>
     </button>
     <nav class="mh-shell-bottom-nav" id="mhShellBottomNav" aria-label="Mobile navigation">
-      <button type="button" data-shell-route="dashboard"><span>⌂</span><span data-shell-label="dashboard"></span></button>
-      <button type="button" data-shell-route="roadmap"><span>◇</span><span data-shell-label="roadmap"></span></button>
-      <button type="button" data-shell-route="lessons"><span>▤</span><span data-shell-label="lessons"></span></button>
-      <button type="button" data-shell-route="exams"><span>▣</span><span data-shell-label="exams"></span></button>
-      <a href="/profile.html"><span>◉</span><span data-shell-label="profile"></span></a>
+      <button type="button" data-shell-route="dashboard">${iconMarkup("dashboard", "mh-shell-bottom-icon")}<span data-shell-label="dashboard"></span></button>
+      <button type="button" data-shell-route="roadmap">${iconMarkup("roadmap", "mh-shell-bottom-icon")}<span data-shell-label="roadmap"></span></button>
+      <button type="button" data-shell-route="lessons">${iconMarkup("lessons", "mh-shell-bottom-icon")}<span data-shell-label="lessons"></span></button>
+      <button type="button" data-shell-route="exams">${iconMarkup("exams", "mh-shell-bottom-icon")}<span data-shell-label="exams"></span></button>
+      <a href="/profile.html">${iconMarkup("profile", "mh-shell-bottom-icon")}<span data-shell-label="profile"></span></a>
     </nav>
   `;
 }
@@ -265,7 +293,7 @@ function createAdminNavButton() {
   button.type = "button";
   button.dataset.shellAction = "admin";
   button.innerHTML = `
-    <span class="mh-shell-nav-icon" aria-hidden="true">⚙</span>
+    ${iconMarkup("admin")}
     <span class="mh-shell-nav-label" data-shell-label="admin"></span>
   `;
   button.hidden = true;
@@ -287,6 +315,24 @@ function applyLanguage() {
   for (const node of document.querySelectorAll("[data-shell-label]")) {
     const key = node.dataset.shellLabel;
     node.textContent = text.nav[key] || key;
+  }
+
+  const utilityLabels = {
+    theme: text.nav.theme,
+    language: text.nav.language,
+    info: text.nav.info,
+    about: text.nav.about,
+  };
+  for (const node of document.querySelectorAll("[data-shell-utility]")) {
+    const label = utilityLabels[node.dataset.shellUtility] || "MathHard";
+    node.title = label;
+    node.setAttribute("aria-label", label);
+  }
+
+  const mobileToggle = document.getElementById("mhShellMobileToggle");
+  if (mobileToggle) {
+    mobileToggle.title = text.menu;
+    mobileToggle.setAttribute("aria-label", text.menu);
   }
 
   const compact = document.body.classList.contains("mh-sidebar-compact");
