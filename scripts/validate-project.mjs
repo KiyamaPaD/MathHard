@@ -94,6 +94,7 @@ const classicJsFiles = [
 ];
 
 const requiredFiles = [
+  "package.json",
   "index.html",
   "profile.html",
   "u.html",
@@ -189,6 +190,15 @@ let failed = false;
 function fail(message) {
   console.error(message);
   failed = true;
+}
+
+try {
+  const packageConfig = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  if (packageConfig.type !== "module") {
+    fail('package.json must declare "type": "module" so Node can import browser ES modules during audits.');
+  }
+} catch (error) {
+  fail(`Invalid package.json: ${error.message}`);
 }
 
 for (const relativePath of requiredFiles) {
