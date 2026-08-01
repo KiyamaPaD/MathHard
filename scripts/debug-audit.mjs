@@ -60,8 +60,10 @@ for (const htmlPath of htmlFiles) {
 for (const jsPath of jsFiles) {
   const source = read(jsPath);
   for (const match of source.matchAll(/from\s+["'](\.\.?\/[^"']+)["']/g)) {
-    const imported = resolve(root, dirname(jsPath), match[1]);
-    if (!existsSync(imported)) fail(`${jsPath}: missing import ${match[1]}`);
+    const importSpecifier = match[1];
+    const filesystemSpecifier = importSpecifier.split(/[?#]/, 1)[0];
+    const imported = resolve(root, dirname(jsPath), filesystemSpecifier);
+    if (!existsSync(imported)) fail(`${jsPath}: missing import ${importSpecifier}`);
   }
 
   const dynamicButtons = [...source.matchAll(/<button\b[^>]*>/gi)].map((match) => match[0]);

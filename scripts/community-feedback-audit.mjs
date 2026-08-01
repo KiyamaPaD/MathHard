@@ -15,7 +15,9 @@ const feedbackController = read("js/community-feedback-controller.js");
 const adminController = read("js/community-admin-controller.js");
 const adminRepository = read("js/community-profile-repository.js");
 const appSource = read("js/app.js");
+const indexSource = read("index.html");
 const feedbackCss = read("css/community-feedback.css");
+const adminCss = read("css/community-admin.css");
 const migration = read("local-sql/059_product_phase_04d_2_feedback_case_save.sql");
 const smoke = read("local-sql/059_phase4d2_transactional_smoke_test.sql");
 
@@ -26,13 +28,34 @@ if (feedbackRepository.includes(".from(") || adminRepository.includes(".from("))
 requireTokens(feedbackController, "Logged-out reporting UX", ["authenticationPrompt", "authTitle", "authAction", "supabase.auth.getSession", "submitCommunityProfileReport"]);
 requireTokens(feedbackCss, "Reporting prompt styles", [".mh-community-feedback-auth", ".mh-community-feedback-modal"]);
 requireTokens(adminController, "Moderation save flow", ["data-community-action=\"save-case\"", "saveModerationCase", "event.preventDefault()", "setFormBusy", "normalizeCommunityCase", "validateModerationCaseDraft", "moderationErrorMessage", "Caz salvat.", "state.status = persisted.status"]);
-requireTokens(appSource, "Community Admin cache bust", ["community-admin-controller.js?v=4d3"]);
+requireTokens(appSource, "Community Admin cache bust", ["community-admin-controller.js?v=4d4"]);
 requireTokens(migration, "Moderation save SQL", [
   "mh_admin_save_community_case", "drop function if exists public.mh_admin_update_community_case", "returns jsonb", "returning feedback.user_id", "case_updated", "grant execute on function public.mh_admin_save_community_case"
 ]);
 requireTokens(smoke, "Moderation smoke test", ["mh_admin_save_community_case", "mh_admin_update_community_case", "Salvare Phase 4D.2", "Moderation case changes were not persisted", "rollback;"]);
 if (!balanced(migration)) errors.push("Phase 4D SQL has unbalanced $$ blocks.");
 if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
+
+requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=4d4", "css/community-admin.css?v=4d4"]);
+requireTokens(adminController, "direct community case save binding", [
+  'id="mhCommunityCaseSaveBtn"',
+  'type="button"',
+  'bindCaseSaveButton()',
+  'button.addEventListener("pointerup", triggerSave)',
+  'button.addEventListener("click", triggerSave)',
+  'saveCurrentCase() { return saveModerationCase(); }'
+]);
+requireTokens(appSource, "capture-phase community save fallback", [
+  "mhCommunitySaveFallback",
+  "#mhCommunityCaseSaveBtn",
+  "communityAdminController?.saveCurrentCase?.()",
+  "}, true);"
+]);
+requireTokens(adminCss, "community save button pointer hardening", [
+  "#mhCommunityCaseSaveBtn",
+  "pointer-events:auto!important",
+  "touch-action:manipulation"
+]);
 
 const model = await import(pathToFileURL(resolve(root, "js/community-feedback-model.js")).href);
 assert.equal(model.validateCommunityFeedbackDraft({ subject: "Bug mobil", message: "Butonul nu răspunde după schimbarea tabului." }).valid, true);

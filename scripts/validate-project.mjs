@@ -252,9 +252,11 @@ for (const relativePath of moduleJsFiles) {
   const source = readFileSync(resolve(root, relativePath), "utf8");
   const importPattern = /from\s+["'](\.\.?\/[^"']+)["']/g;
   for (const match of source.matchAll(importPattern)) {
-    const importedPath = resolve(root, dirname(relativePath), match[1]);
+    const importSpecifier = match[1];
+    const filesystemSpecifier = importSpecifier.split(/[?#]/, 1)[0];
+    const importedPath = resolve(root, dirname(relativePath), filesystemSpecifier);
     if (!existsSync(importedPath)) {
-      fail(`${relativePath} imports missing module: ${match[1]}`);
+      fail(`${relativePath} imports missing module: ${importSpecifier}`);
     }
   }
 }

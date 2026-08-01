@@ -6,7 +6,7 @@ import {
   saveCommunityBadgeDefinition,
   setCommunityUserAccess,
   updateCommunityModerationCase
-} from "./community-profile-repository.js";
+} from "./community-profile-repository.js?v=4d4";
 import {
   normalizeCommunityBadgeDraft,
   normalizeCommunityBadgeStudio,
@@ -171,7 +171,7 @@ export function createCommunityAdminController({ host, supabase }) {
   function caseEditor(item, kind) {
     if (!item) return `<div class="mh-community-editor-empty"><strong>Selectează un caz</strong><span>Detaliile și acțiunile apar aici.</span></div>`;
     const isReport = kind === "profile_report";
-    return `<form class="mh-community-case-editor" id="mhCommunityCaseForm"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="id" value="${escapeHtml(item.id)}"><div class="mh-community-editor-head"><div><span>${isReport ? "Raportare profil" : "Feedback"}</span><h3>${escapeHtml(isReport ? `@${item.reportedUsername}` : item.subject)}</h3><code>${escapeHtml(formatDate(item.createdAt))}</code></div></div><div class="mh-community-case-meta"><span>${escapeHtml(isReport ? REASON_LABELS[item.reason] : CATEGORY_LABELS[item.category])}</span><span>${escapeHtml(item.reporterLabel || "Utilizator")}</span>${item.pageUrl ? `<a href="${escapeHtml(item.pageUrl)}" target="_blank" rel="noopener noreferrer">Deschide pagina</a>` : ""}</div><p class="mh-community-case-message">${escapeHtml(item.message)}</p>${item.contactEmail ? `<p class="mh-community-case-contact">Contact: ${escapeHtml(item.contactEmail)}</p>` : ""}<div class="mh-community-form-grid"><label><span>Status</span><select name="status">${Object.entries(STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Prioritate</span><select name="priority">${Object.entries(PRIORITY_LABELS).map(([value,label]) => `<option value="${value}" ${item.priority === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="is-wide"><span>Notă internă</span><textarea name="admin_note" maxlength="2000">${escapeHtml(item.adminNote)}</textarea></label></div><div class="mh-community-case-actions"><button class="btn" type="submit" data-community-action="save-case">Salvează cazul</button>${isReport ? `<button class="btn small danger" type="button" data-community-restrict-profile="${escapeHtml(item.reportedUserId)}">Ascunde profilul</button><button class="btn small" type="button" data-community-restrict-leaderboard="${escapeHtml(item.reportedUserId)}">Exclude din clasament</button>` : ""}</div></form>`;
+    return `<form class="mh-community-case-editor" id="mhCommunityCaseForm"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="id" value="${escapeHtml(item.id)}"><div class="mh-community-editor-head"><div><span>${isReport ? "Raportare profil" : "Feedback"}</span><h3>${escapeHtml(isReport ? `@${item.reportedUsername}` : item.subject)}</h3><code>${escapeHtml(formatDate(item.createdAt))}</code></div></div><div class="mh-community-case-meta"><span>${escapeHtml(isReport ? REASON_LABELS[item.reason] : CATEGORY_LABELS[item.category])}</span><span>${escapeHtml(item.reporterLabel || "Utilizator")}</span>${item.pageUrl ? `<a href="${escapeHtml(item.pageUrl)}" target="_blank" rel="noopener noreferrer">Deschide pagina</a>` : ""}</div><p class="mh-community-case-message">${escapeHtml(item.message)}</p>${item.contactEmail ? `<p class="mh-community-case-contact">Contact: ${escapeHtml(item.contactEmail)}</p>` : ""}<div class="mh-community-form-grid"><label><span>Status</span><select name="status">${Object.entries(STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Prioritate</span><select name="priority">${Object.entries(PRIORITY_LABELS).map(([value,label]) => `<option value="${value}" ${item.priority === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="is-wide"><span>Notă internă</span><textarea name="admin_note" maxlength="2000">${escapeHtml(item.adminNote)}</textarea></label></div><div class="mh-community-case-actions"><button class="btn" id="mhCommunityCaseSaveBtn" type="button" data-community-action="save-case">Salvează cazul</button>${isReport ? `<button class="btn small danger" type="button" data-community-restrict-profile="${escapeHtml(item.reportedUserId)}">Ascunde profilul</button><button class="btn small" type="button" data-community-restrict-leaderboard="${escapeHtml(item.reportedUserId)}">Exclude din clasament</button>` : ""}</div></form>`;
   }
 
   function renderCases(kind) {
@@ -179,6 +179,7 @@ export function createCommunityAdminController({ host, supabase }) {
     const selectedId = kind === "feedback" ? state.selectedFeedbackId : state.selectedReportId;
     const selected = items.find((item) => item.id === selectedId) || null;
     body.innerHTML = `${searchToolbar(kind === "feedback" ? "Subiect, mesaj sau email" : "Username sau detalii", "search-cases", true)}<div class="mh-community-admin-layout"><section class="mh-community-admin-list"><div class="mh-community-case-list">${items.map((item) => caseCard(item, selectedId, kind)).join("") || '<p class="legend">Nu există cazuri pentru filtrul selectat.</p>'}</div></section><aside class="mh-community-admin-editor">${caseEditor(selected, kind === "feedback" ? "feedback" : "profile_report")}</aside></div>`;
+    bindCaseSaveButton();
   }
 
   function integrityCard(user) {
@@ -241,7 +242,23 @@ export function createCommunityAdminController({ host, supabase }) {
     return ["feedback", "reports", "integrity"].includes(state.activeTab) ? loadModeration({ force }) : loadBadges({ force });
   }
 
-  async function saveModerationCase(form) {
+  function bindCaseSaveButton() {
+    const form = body.querySelector("#mhCommunityCaseForm");
+    const button = body.querySelector("#mhCommunityCaseSaveBtn");
+    if (!form || !button) return;
+
+    const triggerSave = (event) => {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      void saveModerationCase(form);
+    };
+
+    button.dataset.bound = "1";
+    button.addEventListener("pointerup", triggerSave);
+    button.addEventListener("click", triggerSave);
+  }
+
+  async function saveModerationCase(form = body.querySelector("#mhCommunityCaseForm")) {
     if (!form || form.id !== "mhCommunityCaseForm" || form.dataset.saving === "1") return;
 
     const value = formValues(form);
@@ -323,7 +340,6 @@ export function createCommunityAdminController({ host, supabase }) {
     const action = event.target.closest("[data-community-action]")?.dataset.communityAction;
     if (action === "save-case") {
       event.preventDefault();
-      event.stopPropagation();
       const form = event.target.closest("#mhCommunityCaseForm") || body.querySelector("#mhCommunityCaseForm");
       void saveModerationCase(form);
       return;
@@ -404,6 +420,7 @@ export function createCommunityAdminController({ host, supabase }) {
 
   return {
     load,
+    saveCurrentCase() { return saveModerationCase(); },
     refresh() { state.badgeLoaded = false; state.moderationLoaded = false; return load({ force: true }); },
     setAdmin(isAdmin) {
       state.isAdmin = Boolean(isAdmin);

@@ -129,7 +129,7 @@ import {
       import("./admin-history-controller.js"),
       import("./admin-history-repository.js"),
       import("./gamification-admin-controller.js"),
-      import("./community-admin-controller.js?v=4d3"),
+      import("./community-admin-controller.js?v=4d4"),
       import("./concept-admin-controller.js"),
       import("./content-quality-admin-controller.js")
     ]).then(([
@@ -3338,6 +3338,16 @@ ${details}`);
           host: document.getElementById("mhCommunityAdminStudio"),
           supabase
         });
+      }
+
+      if (!document.documentElement.dataset.mhCommunitySaveFallback) {
+        document.documentElement.dataset.mhCommunitySaveFallback = "1";
+        document.addEventListener("click", (event) => {
+          const button = event.target?.closest?.("#mhCommunityCaseSaveBtn");
+          if (!button || !document.getElementById("mhCommunityAdminStudio")?.contains(button)) return;
+          event.preventDefault();
+          void communityAdminController?.saveCurrentCase?.();
+        }, true);
       }
 
       if (!conceptAdminController) {
