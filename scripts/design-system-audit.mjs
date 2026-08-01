@@ -59,6 +59,7 @@ if (/langBtn\.textContent[^\n]+🌐/u.test(app)) {
 }
 
 const problemCss = read("css/problem-workspace.css");
+const secureProblem = read("js/secure-problem-controller.js");
 requireTokens(problemCss, "Problem workspace", [
   ".mh-problem-hero {",
   "position: relative",
@@ -66,6 +67,10 @@ requireTokens(problemCss, "Problem workspace", [
   "position: static",
   "top: auto",
 ]);
+
+if (!secureProblem.includes('<section class="mh-problem-hero"') || secureProblem.includes('<header class="mh-problem-hero"')) {
+  errors.push("Problem summary must not be a <header>, because legacy panel header CSS makes it sticky.");
+}
 
 const communityAdminCss = read("css/community-admin.css");
 requireTokens(communityAdminCss, "Community Admin", [
@@ -105,16 +110,20 @@ if (shell.includes("mhAdminFloatingClose") || shell.includes("mh-admin-floating-
   errors.push("The obsolete floating Admin close control is still present.");
 }
 
-requireTokens(problemCss, "Problem summary isolated scroll architecture", [
+requireTokens(problemCss, "Problem workspace single-scroll architecture", [
+  "Phase 4J.5 — one scroll layer for the complete problem",
   ".mh-problem-workspace > .mh-problem-hero",
   ".mh-problem-workspace > .mh-problem-layout",
-  "grid-template-rows: auto minmax(0, 1fr)",
-  "overflow: hidden",
+  "position: static !important",
   "overflow-y: auto",
-  "position: relative",
+  "overflow: visible",
+  "height: auto",
 ]);
-if (/\.mh-problem-workspace\s*>\s*\.mh-problem-hero[\s\S]{0,260}position:\s*sticky/.test(problemCss)) {
-  errors.push("Problem summary must not share a sticky layer with the scrolling problem cards.");
+if (/\.mh-problem-workspace\s*>\s*\.mh-problem-hero[\s\S]{0,320}position:\s*sticky/.test(problemCss)) {
+  errors.push("Problem summary must scroll naturally with the complete problem.");
+}
+if (/Phase 4J\.5[\s\S]*?\.mh-problem-workspace\s*>\s*\.mh-problem-layout[\s\S]{0,260}overflow-y:\s*auto/.test(problemCss)) {
+  errors.push("Problem layout must not create a second scrolling layer.");
 }
 
 requireTokens(shell, "Distinct navigation icons", [
@@ -133,4 +142,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("MathHard 4J.4 isolated problem scroll audit passed.");
+console.log("MathHard 4J.5 single problem scroll audit passed.");

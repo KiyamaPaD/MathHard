@@ -427,7 +427,7 @@ if (!appSource.includes('from "./progress-repository.js"')) {
 if (!appSource.includes('from "./secure-evaluation-repository.js"')) {
   fail("app.js must use the Phase 11A secure learning-event repository.");
 }
-if (!appSource.includes('from "./secure-problem-controller.js"')) {
+if (!appSource.includes('from "./secure-problem-controller.js?v=4j5"')) {
   fail("app.js must use the Phase 11A secure problem controller.");
 }
 if (!appSource.includes('from "./secure-exam-repository.js"')) {
@@ -952,15 +952,25 @@ if (!roadmapRepositorySource.includes("loadEpoch")) {
 if (!secureProblemControllerSource.includes("workspaceSaveChain") || !secureProblemControllerSource.includes("Array.isArray(attempts[problem.id])")) {
   fail("Problem workspace saves and legacy attempt fallbacks must be race-safe.");
 }
-if (!problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-hero") ||
-    !problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-layout") ||
-    !problemWorkspaceCss.includes("grid-template-rows: auto minmax(0, 1fr)") ||
-    !problemWorkspaceCss.includes("overflow-y: auto") ||
-    !problemWorkspaceCss.includes("position: relative")) {
-  fail("Problem workspace must isolate the fixed summary row from the independently scrolling body.");
+if (!secureProblemControllerSource.includes('<section class="mh-problem-hero"') ||
+    secureProblemControllerSource.includes('<header class="mh-problem-hero"') ||
+    !secureProblemControllerSource.includes('id="mhProblemTitle"')) {
+  fail("Problem summary must use a non-header section so legacy panel header styles cannot make it sticky.");
 }
-if (/\.mh-problem-workspace\s*>\s*\.mh-problem-hero[\s\S]{0,260}position:\s*sticky/.test(problemWorkspaceCss)) {
-  fail("Problem summary must not be sticky inside the same scroll layer as problem cards.");
+if (!problemWorkspaceCss.includes("Phase 4J.5 — one scroll layer for the complete problem") ||
+    !problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-hero") ||
+    !problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-layout") ||
+    !problemWorkspaceCss.includes("position: static !important") ||
+    !problemWorkspaceCss.includes("overflow-y: auto") ||
+    !problemWorkspaceCss.includes("overflow: visible") ||
+    !problemWorkspaceCss.includes("height: auto")) {
+  fail("Problem workspace must use one scrolling layer and keep its summary in normal document flow.");
+}
+if (/\.mh-problem-workspace\s*>\s*\.mh-problem-hero[\s\S]{0,320}position:\s*sticky/.test(problemWorkspaceCss)) {
+  fail("Problem summary must scroll naturally with the complete problem.");
+}
+if (/Phase 4J\.5[\s\S]*?\.mh-problem-workspace\s*>\s*\.mh-problem-layout[\s\S]{0,260}overflow-y:\s*auto/.test(problemWorkspaceCss)) {
+  fail("Problem layout must not create a nested scrolling layer.");
 }
 if (indexHtml.includes('/img/preview.png')) {
   fail("Open Graph image points to a removed asset.");

@@ -37,7 +37,7 @@ import {
   startSecureExamAttempt,
   submitSecureExamAttempt
 } from "./secure-exam-repository.js";
-import { createSecureProblemController } from "./secure-problem-controller.js";
+import { createSecureProblemController } from "./secure-problem-controller.js?v=4j5";
 import {
   getChapterLabel,
   getCurrentLangSafe,

@@ -107,10 +107,10 @@ export function createSecureProblemController({
 
     host.innerHTML = `
       <article class="problem mh-problem-workspace">
-        <header class="mh-problem-hero">
+        <section class="mh-problem-hero" aria-labelledby="mhProblemTitle">
           <div>
             <div class="stars">🧩 ${stars}</div>
-            <h2>${escapeHtml(title)}</h2>
+            <h2 id="mhProblemTitle">${escapeHtml(title)}</h2>
             <div class="legend">
               📘 ${escapeHtml(translated(lesson, language) || lesson.chapter || "")}
               ${lesson.grade ? ` • 🎓 ${escapeHtml(lesson.grade)}` : ""}
@@ -132,7 +132,7 @@ export function createSecureProblemController({
               </div>
             </div>` : ""}
           </div>
-        </header>
+        </section>
 
         <div class="mh-problem-layout">
           <main class="mh-problem-main">

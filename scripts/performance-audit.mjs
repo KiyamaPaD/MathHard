@@ -22,7 +22,7 @@ function localScriptReferences(html) {
 function staticImports(source) {
   const imports = [];
   const pattern = /(?:import|export)\s+(?:[^;]*?\s+from\s+)?["'](\.[^"']+)["']/g;
-  for (const match of source.matchAll(pattern)) imports.push(match[1]);
+  for (const match of source.matchAll(pattern)) imports.push(match[1].split(/[?#]/)[0]);
   return imports;
 }
 
