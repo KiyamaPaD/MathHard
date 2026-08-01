@@ -953,10 +953,14 @@ if (!secureProblemControllerSource.includes("workspaceSaveChain") || !secureProb
   fail("Problem workspace saves and legacy attempt fallbacks must be race-safe.");
 }
 if (!problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-hero") ||
-    !problemWorkspaceCss.includes("position: sticky") ||
-    !problemWorkspaceCss.includes("z-index: 20") ||
-    !problemWorkspaceCss.includes("background-color: var(--bg)")) {
-  fail("Problem summary must remain a visible sticky layer above scrolling content.");
+    !problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-layout") ||
+    !problemWorkspaceCss.includes("grid-template-rows: auto minmax(0, 1fr)") ||
+    !problemWorkspaceCss.includes("overflow-y: auto") ||
+    !problemWorkspaceCss.includes("position: relative")) {
+  fail("Problem workspace must isolate the fixed summary row from the independently scrolling body.");
+}
+if (/\.mh-problem-workspace\s*>\s*\.mh-problem-hero[\s\S]{0,260}position:\s*sticky/.test(problemWorkspaceCss)) {
+  fail("Problem summary must not be sticky inside the same scroll layer as problem cards.");
 }
 if (indexHtml.includes('/img/preview.png')) {
   fail("Open Graph image points to a removed asset.");

@@ -105,13 +105,17 @@ if (shell.includes("mhAdminFloatingClose") || shell.includes("mh-admin-floating-
   errors.push("The obsolete floating Admin close control is still present.");
 }
 
-requireTokens(problemCss, "Problem summary sticky layer", [
+requireTokens(problemCss, "Problem summary isolated scroll architecture", [
   ".mh-problem-workspace > .mh-problem-hero",
-  "position: sticky",
-  "top: 0",
-  "z-index: 20",
-  "background-color: var(--bg)",
+  ".mh-problem-workspace > .mh-problem-layout",
+  "grid-template-rows: auto minmax(0, 1fr)",
+  "overflow: hidden",
+  "overflow-y: auto",
+  "position: relative",
 ]);
+if (/\.mh-problem-workspace\s*>\s*\.mh-problem-hero[\s\S]{0,260}position:\s*sticky/.test(problemCss)) {
+  errors.push("Problem summary must not share a sticky layer with the scrolling problem cards.");
+}
 
 requireTokens(shell, "Distinct navigation icons", [
   `xp: '<circle cx="12" cy="12" r="9"`,
@@ -129,4 +133,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("MathHard 4J.3 sticky problem and Admin cleanup audit passed.");
+console.log("MathHard 4J.4 isolated problem scroll audit passed.");

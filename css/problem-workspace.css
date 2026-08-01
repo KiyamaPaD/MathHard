@@ -747,18 +747,42 @@
 }
 
 
-/* Phase 4J.3 — keep the problem summary anchored above the scrolling content.
-   It remains constrained by the problem article, so it leaves the viewport
-   naturally when the workspace ends instead of behaving like a fixed overlay. */
+/* Phase 4J.4 — split the problem workspace into a fixed summary row and an
+   independent scrolling body. The summary is no longer sticky inside the same
+   scroll layer, so problem cards can never pass over or underneath it. */
+.drawer.is-problem-workspace > .panel > .content.viewer {
+  overflow: hidden;
+}
+
+.drawer.is-problem-workspace > .panel > .content.viewer
+  .mh-problem-workspace {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
 .drawer.is-problem-workspace > .panel > .content.viewer
   .mh-problem-workspace > .mh-problem-hero {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  isolation: isolate;
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  flex: 0 0 auto;
   background-color: var(--bg);
   background-image: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--bg)), var(--bg));
   box-shadow: 0 18px 34px -28px rgba(0, 0, 0, .9);
+}
+
+.drawer.is-problem-workspace > .panel > .content.viewer
+  .mh-problem-workspace > .mh-problem-layout {
+  min-height: 0;
+  height: 100%;
+  align-content: start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 0 4px 48px 0;
 }
 
 .mh-problem-hero-actions {
@@ -795,6 +819,12 @@
 }
 
 @media (max-width: 760px) {
+  .drawer.is-problem-workspace > .panel > .content.viewer
+    .mh-problem-workspace > .mh-problem-layout {
+    padding-right: 0;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  }
+
   .mh-problem-hero-actions {
     grid-template-columns: minmax(0, 1fr);
   }
