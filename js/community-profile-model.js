@@ -7,7 +7,9 @@ export const COMMUNITY_PROFILE_LIMITS = Object.freeze({
   quoteMax: 180,
   linkMax: 500,
   topicsMax: 8,
-  topicLengthMax: 40
+  topicLengthMax: 40,
+  featuredBadgesMax: 6,
+  featuredStatsMax: 4
 });
 
 export const COMMUNITY_PROFILE_ACCENTS = Object.freeze([
@@ -16,6 +18,18 @@ export const COMMUNITY_PROFILE_ACCENTS = Object.freeze([
 
 export const COMMUNITY_PROFILE_THEMES = Object.freeze([
   "aurora", "minimal", "grid", "cosmos"
+]);
+
+export const COMMUNITY_PROFILE_FRAMES = Object.freeze([
+  "none", "soft", "neon", "gold", "cosmos"
+]);
+
+export const COMMUNITY_BADGE_STYLES = Object.freeze([
+  "chips", "cards", "compact"
+]);
+
+export const COMMUNITY_STAT_KEYS = Object.freeze([
+  "xp", "level", "lessonsLearned", "problemsSolved", "examsPassed", "currentStreak"
 ]);
 
 export const COMMUNITY_PRIVACY_KEYS = Object.freeze([
@@ -57,12 +71,12 @@ function asUrl(value) {
   return normalizeProfileUrl(value);
 }
 
-function asArray(value, maxItems = COMMUNITY_PROFILE_LIMITS.topicsMax) {
+function asArray(value, maxItems = COMMUNITY_PROFILE_LIMITS.topicsMax, maxLength = COMMUNITY_PROFILE_LIMITS.topicLengthMax) {
   const source = Array.isArray(value)
     ? value
     : String(value ?? "").split(",");
   return [...new Set(source
-    .map((item) => asText(item, COMMUNITY_PROFILE_LIMITS.topicLengthMax))
+    .map((item) => asText(item, maxLength))
     .filter(Boolean))]
     .slice(0, maxItems);
 }
@@ -110,6 +124,13 @@ export function normalizeCommunityProfile(payload = {}) {
     avatarUrl: asUrl(profile.avatar_url ?? profile.avatarUrl),
     bannerUrl: asUrl(profile.banner_url ?? profile.bannerUrl),
     bio: asText(profile.bio, COMMUNITY_PROFILE_LIMITS.bioMax),
+    headline: asText(profile.headline, 100),
+    pronouns: asText(profile.pronouns, 40),
+    dreamSchool: asText(profile.dream_school ?? profile.dreamSchool, COMMUNITY_PROFILE_LIMITS.shortTextMax),
+    favoriteProblemType: asText(profile.favorite_problem_type ?? profile.favoriteProblemType, COMMUNITY_PROFILE_LIMITS.shortTextMax),
+    learningStyle: asText(profile.learning_style ?? profile.learningStyle, 40),
+    collaborationStatus: asText(profile.collaboration_status ?? profile.collaborationStatus, 40),
+    weeklyGoal: asText(profile.weekly_goal ?? profile.weeklyGoal, COMMUNITY_PROFILE_LIMITS.shortTextMax),
     countryCode: asText(profile.country_code ?? profile.countryCode ?? geography.country_code, 2).toUpperCase(),
     regionCode: asText(profile.region_code ?? profile.regionCode ?? geography.region_code, 16).toUpperCase(),
     countryName: asText(profile.country_name ?? profile.countryName ?? geography.country_name, 100),
@@ -131,7 +152,13 @@ export function normalizeCommunityProfile(payload = {}) {
     portfolioUrl: asUrl(profile.portfolio_url ?? profile.portfolioUrl),
     accent: COMMUNITY_PROFILE_ACCENTS.includes(profile.profile_accent ?? profile.accent) ? profile.profile_accent ?? profile.accent : "sky",
     theme: COMMUNITY_PROFILE_THEMES.includes(profile.profile_theme ?? profile.theme) ? profile.profile_theme ?? profile.theme : "aurora",
+    frame: COMMUNITY_PROFILE_FRAMES.includes(profile.profile_frame ?? profile.frame) ? profile.profile_frame ?? profile.frame : "none",
+    badgeStyle: COMMUNITY_BADGE_STYLES.includes(profile.badge_display_style ?? profile.badgeStyle) ? profile.badge_display_style ?? profile.badgeStyle : "chips",
     featuredBadgeId: asText(profile.featured_badge_id ?? profile.featuredBadgeId, 80),
+    featuredBadgeIds: asArray(profile.featured_badge_ids ?? profile.featuredBadgeIds, COMMUNITY_PROFILE_LIMITS.featuredBadgesMax, 80),
+    publicBadgeIds: asArray(profile.public_badge_ids ?? profile.publicBadgeIds, 100, 80),
+    featuredStatKeys: asArray(profile.featured_stat_keys ?? profile.featuredStatKeys, COMMUNITY_PROFILE_LIMITS.featuredStatsMax)
+      .filter((key) => COMMUNITY_STAT_KEYS.includes(key)),
     privacy: Object.fromEntries(COMMUNITY_PRIVACY_KEYS.map((key) => [
       key,
       asBoolean(privacy[key] ?? profile[key], key === "show_badges")
@@ -177,7 +204,9 @@ export function normalizeBadge(item = {}) {
     isPublic: item.is_public !== false,
     awardedAt: item.awarded_at || "",
     expiresAt: item.expires_at || "",
-    userCount: Math.max(0, Number(item.user_count || 0))
+    userCount: Math.max(0, Number(item.user_count || 0)),
+    source: asText(item.source ?? item.metadata?.source, 80),
+    awardReason: asText(item.award_reason ?? item.reason ?? item.admin_note, 300)
   };
 }
 
@@ -189,6 +218,13 @@ export function communityProfileDraft(profile = {}) {
     avatar_url: normalized.avatarUrl || null,
     banner_url: normalized.bannerUrl || null,
     bio: normalized.bio || null,
+    headline: normalized.headline || null,
+    pronouns: normalized.pronouns || null,
+    dream_school: normalized.dreamSchool || null,
+    favorite_problem_type: normalized.favoriteProblemType || null,
+    learning_style: normalized.learningStyle || null,
+    collaboration_status: normalized.collaborationStatus || null,
+    weekly_goal: normalized.weeklyGoal || null,
     country_code: normalized.countryCode || null,
     region_code: normalized.regionCode || null,
     education_level: normalized.educationLevel || null,
@@ -206,7 +242,12 @@ export function communityProfileDraft(profile = {}) {
     portfolio_url: normalized.portfolioUrl || null,
     profile_accent: normalized.accent,
     profile_theme: normalized.theme,
+    profile_frame: normalized.frame,
+    badge_display_style: normalized.badgeStyle,
     featured_badge_id: normalized.featuredBadgeId || null,
+    featured_badge_ids: normalized.featuredBadgeIds,
+    public_badge_ids: normalized.publicBadgeIds.length ? normalized.publicBadgeIds : normalized.badges.filter((badge) => badge.isPublic).map((badge) => badge.id),
+    featured_stat_keys: normalized.featuredStatKeys,
     is_public: normalized.isPublic,
     leaderboard_opt_in: normalized.leaderboardOptIn,
     privacy: normalized.privacy

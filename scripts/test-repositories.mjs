@@ -1852,6 +1852,13 @@ const communityProfile = normalizeCommunityProfile({
     country_code: "RO",
     region_code: "RO-BN",
     current_focus: "Algebră modulară",
+    headline: "Elev · Builder",
+    pronouns: "el/lui",
+    profile_frame: "neon",
+    badge_display_style: "cards",
+    featured_badge_ids: ["tester"],
+    public_badge_ids: ["tester"],
+    featured_stat_keys: ["xp", "problemsSolved"],
     favorite_topics: ["Algebră", "Geometrie", "Algebră"],
     languages: ["Română", "Engleză"],
     is_public: true,
@@ -1880,9 +1887,14 @@ assert.equal(communityProfile.privacy.showPersonality, undefined);
 assert.equal(communityProfile.privacy.show_personality, true);
 assert.equal(communityProfile.lastActiveAt, "2026-07-31T12:00:00Z");
 assert.equal(communityProfile.badges[0].assignmentMode, "manual");
+assert.equal(communityProfile.headline, "Elev · Builder");
+assert.equal(communityProfile.frame, "neon");
+assert.deepEqual(communityProfile.publicBadgeIds, ["tester"]);
+assert.deepEqual(communityProfile.featuredStatKeys, ["xp", "problemsSolved"]);
 const communityDraft = communityProfileDraft(communityProfile);
 assert.equal(communityDraft.country_code, "RO");
 assert.deepEqual(communityDraft.favorite_topics, ["Algebră", "Geometrie"]);
+assert.deepEqual(communityDraft.public_badge_ids, ["tester"]);
 assert.equal(communityDraft.privacy.show_personality, true);
 assert.equal(validateCommunityProfileDraft(communityDraft).valid, true);
 assert.equal(validateCommunityProfileDraft({ ...communityDraft, is_public: false, leaderboard_opt_in: true }).valid, false);
@@ -1910,6 +1922,7 @@ const manualBadge = validateCommunityBadgeDraft({
 assert.equal(manualBadge.valid, true);
 assert.equal(validateCommunityBadgeDraft({ id: "INVALID ID" }).valid, false);
 assert.equal(normalizeCommunityBadgeStudio({ users: [{ user_id: "u1", username: "cristi", badges: [] }] }).users[0].userId, "u1");
+assert.equal(normalizeCommunityBadgeStudio({ history: [{ id: 1, badge_id: "tester", event_type: "awarded" }] }).history[0].eventType, "awarded");
 assert.equal(validateCommunityFeedbackDraft({ subject: "Sugestie profil", message: "Aș dori mai multe opțiuni pentru profilul public." }).valid, true);
 assert.equal(validateCommunityProfileReportDraft({ username: "demo", reason: "spam", details: "Profilul conține linkuri repetitive și reclame." }).valid, true);
 assert.equal(normalizeCommunityModerationDashboard({ counts: { feedback_new: 2 }, users: [{ user_id: "u1", profile_allowed: false }] }).users[0].profileAllowed, false);
@@ -1918,13 +1931,13 @@ const communityRpcCalls = [];
 const communitySupabase = {
   async rpc(name, payload = {}) {
     communityRpcCalls.push([name, payload]);
-    if (name === "mh_get_my_community_profile") return { data: { available: true, profile: { username: "cristi" } }, error: null };
-    if (name === "mh_update_my_community_profile") return { data: { available: true, profile: payload.p_profile }, error: null };
+    if (name === "mh_get_my_community_profile_v2") return { data: { available: true, profile: { username: "cristi" } }, error: null };
+    if (name === "mh_update_my_community_profile_v2") return { data: { available: true, profile: payload.p_profile }, error: null };
     if (name === "mh_check_community_username") return { data: { available: true, username: payload.p_username }, error: null };
-    if (name === "mh_get_public_community_profile") return { data: { available: true, profile: { username: payload.p_username } }, error: null };
+    if (name === "mh_get_public_community_profile_v2") return { data: { available: true, profile: { username: payload.p_username } }, error: null };
     if (name === "mh_get_community_countries") return { data: [{ code: "RO" }], error: null };
     if (name === "mh_get_community_regions") return { data: [{ code: "RO-BN", country_code: payload.p_country_code }], error: null };
-    if (name === "mh_admin_get_community_badge_studio") return { data: { badges: [], users: [], query: payload.p_query }, error: null };
+    if (name === "mh_admin_get_community_badge_studio_v2") return { data: { badges: [], users: [], history: [], query: payload.p_query }, error: null };
     if (name === "mh_admin_upsert_community_badge") return { data: { badges: [payload.p_badge], users: [] }, error: null };
     if (name === "mh_admin_assign_community_badge") return { data: { assigned: payload.p_badge_id }, error: null };
     if (name === "mh_admin_revoke_community_badge") return { data: { revoked: payload.p_badge_id }, error: null };
@@ -1953,13 +1966,13 @@ await loadCommunityModerationDashboard(communitySupabase, { status: "open", quer
 await updateCommunityModerationCase(communitySupabase, { kind: "feedback", id: "f1", status: "resolved", priority: "normal", adminNote: "ok" });
 await setCommunityUserAccess(communitySupabase, { userId: "u1", profileAllowed: true, leaderboardAllowed: false, note: "test" });
 assert.deepEqual(communityRpcCalls.map(([name]) => name), [
-  "mh_get_my_community_profile",
-  "mh_update_my_community_profile",
+  "mh_get_my_community_profile_v2",
+  "mh_update_my_community_profile_v2",
   "mh_check_community_username",
-  "mh_get_public_community_profile",
+  "mh_get_public_community_profile_v2",
   "mh_get_community_countries",
   "mh_get_community_regions",
-  "mh_admin_get_community_badge_studio",
+  "mh_admin_get_community_badge_studio_v2",
   "mh_admin_upsert_community_badge",
   "mh_admin_assign_community_badge",
   "mh_admin_revoke_community_badge",

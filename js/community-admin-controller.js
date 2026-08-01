@@ -6,7 +6,7 @@ import {
   saveCommunityBadgeDefinition,
   setCommunityUserAccess,
   updateCommunityModerationCase
-} from "./community-profile-repository.js?v=4d5";
+} from "./community-profile-repository.js";
 import {
   normalizeCommunityBadgeDraft,
   normalizeCommunityBadgeStudio,
@@ -40,6 +40,11 @@ const STATUS_LABELS = { new: "Nou", in_review: "În analiză", resolved: "Rezolv
 const PRIORITY_LABELS = { low: "Scăzută", normal: "Normală", high: "Ridicată", urgent: "Urgentă" };
 const CATEGORY_LABELS = { suggestion: "Sugestie", bug: "Problemă tehnică", content: "Conținut", account: "Cont", other: "Altceva" };
 const REASON_LABELS = { impersonation: "Identitate falsă", inappropriate: "Conținut nepotrivit", spam: "Spam", unsafe_link: "Link nesigur", other: "Alt motiv" };
+const BADGE_EVENT_LABELS = { awarded: "Acordat", updated: "Actualizat", revoked: "Retras" };
+const BADGE_SOURCE_LABELS = { automatic: "Automat", admin: "Admin", system: "Sistem", subscription: "Abonament", user_roles: "Rol administrativ", migration: "Migrare", "smoke-test": "Test" };
+
+function badgeEventLabel(value) { return BADGE_EVENT_LABELS[value] || "Actualizat"; }
+function badgeSourceLabel(value) { return BADGE_SOURCE_LABELS[value] || "Sistem"; }
 
 function moderationErrorMessage(error) {
   const code = String(error?.code || "").trim();
@@ -88,7 +93,7 @@ export function createCommunityAdminController({ host, supabase }) {
     <div class="mh-community-admin-toolbar">
       <div class="mh-community-admin-tabs" role="tablist" aria-label="Administrare comunitate">
         <button class="is-active" data-community-tab="badges" type="button">Badge-uri</button>
-        <button data-community-tab="assignments" type="button">Acordări</button>
+        <button data-community-tab="assignments" type="button">Acordări</button><button data-community-tab="badge-history" type="button">Istoric badge-uri</button>
         <button data-community-tab="feedback" type="button">Feedback <em data-community-count="feedback"></em></button>
         <button data-community-tab="reports" type="button">Raportări <em data-community-count="reports"></em></button>
         <button data-community-tab="integrity" type="button">Integritate</button>
@@ -197,10 +202,18 @@ export function createCommunityAdminController({ host, supabase }) {
     body.innerHTML = `${searchToolbar("Username, nume sau email", "search-integrity")}<div class="mh-community-admin-layout"><section class="mh-community-admin-list"><div class="mh-community-integrity-list">${state.moderation.users.map(integrityCard).join("") || '<p class="legend">Nu există rezultate.</p>'}</div></section><aside class="mh-community-admin-editor">${integrityEditor(selected)}</aside></div>`;
   }
 
+
+
+  function renderBadgeHistory() {
+    const events = state.badges.history || [];
+    body.innerHTML = `<section class="mh-community-badge-history"><div class="mh-community-list-head"><strong>${events.length} evenimente recente</strong><span>Acordări, modificări și retrageri</span></div><div class="mh-community-history-list">${events.map((event) => `<article><span class="mh-community-badge-icon">${escapeHtml(event.badgeIcon)}</span><div><strong>${escapeHtml(event.badgeTitle)}</strong><p>${escapeHtml(event.displayName)} · @${escapeHtml(event.username)}</p><small>${escapeHtml(badgeEventLabel(event.eventType))} · ${escapeHtml(badgeSourceLabel(event.source))}${event.reason ? ` · ${escapeHtml(event.reason)}` : ""}</small></div><time>${escapeHtml(formatDate(event.createdAt))}</time></article>`).join("") || '<p class="legend">Nu există evenimente de badge.</p>'}</div></section>`;
+  }
+
   function render() {
     host.querySelectorAll("[data-community-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.communityTab === state.activeTab));
     updateCounts();
     if (state.activeTab === "assignments") renderAssignments();
+    else if (state.activeTab === "badge-history") renderBadgeHistory();
     else if (state.activeTab === "feedback") renderCases("feedback");
     else if (state.activeTab === "reports") renderCases("reports");
     else if (state.activeTab === "integrity") renderIntegrity();
@@ -362,7 +375,8 @@ export function createCommunityAdminController({ host, supabase }) {
       if (!confirm("Retragi acest badge?")) return;
       setFeedback("Se retrage...", "loading");
       try {
-        state.badges = normalizeCommunityBadgeStudio(await revokeCommunityBadge(supabase, revoke.dataset.communityUser, revoke.dataset.communityRevoke));
+        await revokeCommunityBadge(supabase, revoke.dataset.communityUser, revoke.dataset.communityRevoke);
+        state.badges = normalizeCommunityBadgeStudio(await loadCommunityBadgeStudio(supabase, state.query));
         render(); setFeedback("Badge retras.", "success");
       } catch (error) { console.error("Community badge revoke failed:", error); setFeedback("Badge-ul nu a putut fi retras.", "error"); }
       return;
@@ -396,7 +410,12 @@ export function createCommunityAdminController({ host, supabase }) {
     if (formId === "mhCommunityAssignmentForm") {
       if (!value.badge_id) return setFeedback("Alege un badge.", "error");
       setFeedback("Se acordă...", "loading");
-      try { state.badges = normalizeCommunityBadgeStudio(await assignCommunityBadge(supabase, { user_id: value.user_id, badge_id: value.badge_id, featured: value.featured, note: value.note, expires_at: value.expires_at || null })); render(); setFeedback("Badge acordat.", "success"); }
+      try {
+        await assignCommunityBadge(supabase, { user_id: value.user_id, badge_id: value.badge_id, featured: value.featured, note: value.note, expires_at: value.expires_at || null });
+        state.badges = normalizeCommunityBadgeStudio(await loadCommunityBadgeStudio(supabase, state.query));
+        render();
+        setFeedback("Badge acordat.", "success");
+      }
       catch (error) { console.error("Community badge assignment failed:", error); setFeedback("Badge-ul nu a putut fi acordat.", "error"); }
       return;
     }

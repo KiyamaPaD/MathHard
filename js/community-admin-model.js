@@ -46,6 +46,19 @@ export function normalizeCommunityBadgeStudio(payload = {}) {
       email: String(user.email || ""),
       isPublic: Boolean(user.is_public),
       badges: Array.isArray(user.badges) ? user.badges.map(normalizeBadge) : []
+    })) : [],
+    history: Array.isArray(payload.history) ? payload.history.map((event) => ({
+      id: Number(event.id || 0),
+      userId: String(event.user_id || ""),
+      username: String(event.username || ""),
+      displayName: String(event.display_name || event.username || "Utilizator"),
+      badgeId: String(event.badge_id || ""),
+      badgeTitle: String(event.badge_title || event.badge_id || "Badge"),
+      badgeIcon: String(event.badge_icon || "◆"),
+      eventType: String(event.event_type || "updated"),
+      source: String(event.source || "system"),
+      reason: String(event.reason || ""),
+      createdAt: event.created_at || ""
     })) : []
   };
 }

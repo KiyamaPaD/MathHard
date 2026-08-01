@@ -184,7 +184,7 @@ if (/innerHTML\s*=\s*[^;]{0,200}\bmessage\b/i.test(communityFeedbackController))
 }
 
 const communityProfileRepository = sources.get("js/community-profile-repository.js") || "";
-if (!communityProfileRepository.includes("mh_get_public_community_profile") || !communityProfileRepository.includes("mh_update_my_community_profile")) {
+if (!communityProfileRepository.includes("mh_get_public_community_profile_v2") || !communityProfileRepository.includes("mh_update_my_community_profile_v2")) {
   fail("Community profile access must use the Phase 4A RPC contract.");
 }
 if (communityProfileRepository.includes(".from(")) {
@@ -205,6 +205,9 @@ if (communityProfileSettings.includes("new FormData(form)")) {
 }
 if (!communityProfileSettings.includes("normalizeLinkInputs")) {
   fail("Community profile links must be normalized before save.");
+}
+if (!communityProfileSettings.includes("public_badge_ids") || !communityProfileSettings.includes("data-badge-visibility")) {
+  fail("Community profile settings must persist per-badge visibility through the controlled RPC.");
 }
 
 const communityLeaderboardRepository = sources.get("js/community-leaderboard-repository.js") || "";
@@ -295,6 +298,25 @@ if (existsSync(moderationSaveSqlPath)) {
   }
 } else {
   warn("Phase 4D.2 SQL is not present in local-sql; moderation save database checks were skipped.");
+}
+
+const badgePersonalizationSqlPath = resolve(root, "local-sql/060_product_phase_04f_badge_profile_personalization.sql");
+if (existsSync(badgePersonalizationSqlPath)) {
+  const badgePersonalizationSql = readFileSync(badgePersonalizationSqlPath, "utf8");
+  if (!badgePersonalizationSql.includes("mh_community_badge_events") || !badgePersonalizationSql.includes("revoke all on table public.mh_community_badge_events")) {
+    fail("Phase 4F badge history is not protected as an RPC-only table.");
+  }
+  if (!badgePersonalizationSql.includes("mh_get_public_community_profile_v2") || !badgePersonalizationSql.includes("assignment.is_public")) {
+    fail("Phase 4F public profile RPC does not filter badge visibility server-side.");
+  }
+  if (!badgePersonalizationSql.includes("featured_badge_id',case when v_profile.show_badges and exists") || !badgePersonalizationSql.includes("public_badge_ids")) {
+    fail("Phase 4F may expose private featured-badge preferences.");
+  }
+  if (!badgePersonalizationSql.includes("set search_path = public, pg_temp") || !badgePersonalizationSql.includes("revoke all on function public.mh_update_my_community_profile_v2")) {
+    fail("Phase 4F profile RPCs are missing hardened privileges/search_path.");
+  }
+} else {
+  warn("Phase 4F SQL is not present in local-sql; badge privacy checks were skipped.");
 }
 
 const communityAdminController = sources.get("js/community-admin-controller.js") || "";

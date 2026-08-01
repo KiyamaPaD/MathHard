@@ -55,6 +55,13 @@ const copy = lang === "en" ? {
   portfolio: "Portofoliu"
 };
 
+const LEARNING_STYLE_LABELS = lang === "en"
+  ? { visual: "Visual", practice: "Practice-first", theory: "Theory-first", mixed: "Mixed" }
+  : { visual: "Vizual", practice: "Prin exerciții", theory: "Teorie întâi", mixed: "Mixt" };
+const COLLABORATION_LABELS = lang === "en"
+  ? { studying: "Looking for study partners", helping: "Available to help", projects: "Open to projects", private: "Prefers individual work" }
+  : { studying: "Caut colegi de studiu", helping: "Pot ajuta alți membri", projects: "Deschis la proiecte", private: "Prefer să lucrez individual" };
+
 function setImage(container, url, fallbackText) {
   container.replaceChildren();
   if (!url) {
@@ -115,6 +122,8 @@ function render(profile) {
   document.documentElement.lang = lang;
   document.body.dataset.accent = profile.accent;
   document.body.dataset.theme = profile.theme;
+  document.body.dataset.frame = profile.frame;
+  document.body.dataset.badgeStyle = profile.badgeStyle;
   document.title = `${profile.displayName} (@${profile.username}) — MathHard`;
   $("communityPublicMeta").content = profile.bio || (lang === "en" ? `${profile.displayName}'s MathHard profile.` : `Profilul MathHard al lui ${profile.displayName}.`);
   $("communityStatsTitle").textContent = copy.sections.progress;
@@ -136,12 +145,19 @@ function render(profile) {
 
   $("communityPublicName").textContent = profile.displayName;
   $("communityPublicUsername").textContent = `@${profile.username}`;
+  $("communityPublicPronouns").textContent = profile.pronouns;
+  $("communityPublicPronouns").hidden = !profile.pronouns;
+  $("communityPublicHeadline").textContent = profile.headline;
+  $("communityPublicHeadline").hidden = !profile.headline;
   $("communityPublicBio").textContent = profile.bio || "";
   $("communityPublicBio").hidden = !profile.bio;
   setImage($("communityPublicAvatar"), profile.avatarUrl, profile.displayName);
   $("communityPublicBanner").style.backgroundImage = profile.bannerUrl ? `url("${profile.bannerUrl.replaceAll('"', '%22')}")` : "";
 
-  const featured = profile.badges.find((badge) => badge.id === profile.featuredBadgeId) || profile.badges.find((badge) => badge.featured) || profile.badges[0];
+  const featured = profile.badges.find((badge) => badge.id === profile.featuredBadgeId)
+    || profile.featuredBadgeIds.map((id) => profile.badges.find((badge) => badge.id === id)).find(Boolean)
+    || profile.badges.find((badge) => badge.featured)
+    || profile.badges[0];
   if (featured) {
     $("communityFeaturedBadge").hidden = false;
     $("communityFeaturedBadge").textContent = `${featured.icon} ${lang === "en" ? (featured.titleEn || featured.title) : (featured.titleRo || featured.title)}`;
@@ -154,25 +170,30 @@ function render(profile) {
   }
 
   if (profile.privacy.show_progress) {
-    const values = [
-      profile.stats.xp,
-      profile.stats.level,
-      profile.stats.lessonsLearned,
-      profile.stats.problemsSolved,
-      profile.stats.examsPassed,
-      profile.privacy.show_streak ? `${profile.stats.currentStreak} ${copy.days}` : null
-    ];
-    $("communityPublicStats").replaceChildren(...copy.progress.map((label, index) => values[index] === null ? null : (() => {
+    const statMap = {
+      xp: [copy.progress[0], profile.stats.xp],
+      level: [copy.progress[1], profile.stats.level],
+      lessonsLearned: [copy.progress[2], profile.stats.lessonsLearned],
+      problemsSolved: [copy.progress[3], profile.stats.problemsSolved],
+      examsPassed: [copy.progress[4], profile.stats.examsPassed],
+      currentStreak: [copy.progress[5], profile.privacy.show_streak ? `${profile.stats.currentStreak} ${copy.days}` : null]
+    };
+    const keys = profile.featuredStatKeys.length
+      ? profile.featuredStatKeys
+      : ["xp", "level", "lessonsLearned", "problemsSolved"];
+    $("communityPublicStats").replaceChildren(...keys.map((key) => {
+      const [label, value] = statMap[key] || [];
+      if (value === null || value === undefined) return null;
       const card = document.createElement("article");
       card.className = "community-public-stat";
       const span = document.createElement("span");
       const strong = document.createElement("strong");
       span.textContent = label;
-      strong.textContent = String(values[index]);
+      strong.textContent = String(value);
       card.append(span, strong);
       return card;
-    })()).filter(Boolean));
-    $("communityStatsSection").hidden = false;
+    }).filter(Boolean));
+    $("communityStatsSection").hidden = $("communityPublicStats").children.length === 0;
   }
 
   if (profile.privacy.show_education) {
@@ -180,7 +201,8 @@ function render(profile) {
       [copy.education[0], profile.educationLevel],
       [copy.education[1], profile.gradeLevel],
       [copy.education[2], profile.studyTrack],
-      [copy.education[3], profile.academicGoal]
+      [copy.education[3], profile.academicGoal],
+      [lang === "en" ? "Dream school" : "Facultate / obiectiv de vis", profile.dreamSchool]
     ];
     appendRows($("communityPublicEducation"), educationRows);
     $("communityEducationSection").hidden = !educationRows.some(([, value]) => value);
@@ -191,6 +213,10 @@ function render(profile) {
       [copy.mathematics[0], profile.currentFocus],
       [copy.mathematics[1], profile.favoriteMathematician],
       [copy.mathematics[2], profile.favoriteTheorem],
+      [lang === "en" ? "Favorite problem type" : "Tip de probleme preferat", profile.favoriteProblemType],
+      [lang === "en" ? "Learning style" : "Stil de învățare", LEARNING_STYLE_LABELS[profile.learningStyle] || profile.learningStyle],
+      [lang === "en" ? "Availability" : "Disponibilitate", COLLABORATION_LABELS[profile.collaborationStatus] || profile.collaborationStatus],
+      [lang === "en" ? "Weekly goal" : "Obiectiv săptămânal", profile.weeklyGoal],
       [copy.mathematics[3], profile.languages.join(", ")]
     ];
     appendRows($("communityPublicMath"), mathRows);
@@ -204,12 +230,22 @@ function render(profile) {
   }
 
   if (profile.privacy.show_badges && profile.badges.length) {
-    $("communityPublicBadges").replaceChildren(...profile.badges.map((badge) => {
+    const preferredIds = profile.featuredBadgeIds.length ? profile.featuredBadgeIds : [profile.featuredBadgeId].filter(Boolean);
+    const ordered = [
+      ...preferredIds.map((id) => profile.badges.find((badge) => badge.id === id)).filter(Boolean),
+      ...profile.badges.filter((badge) => !preferredIds.includes(badge.id))
+    ];
+    $("communityPublicBadges").replaceChildren(...ordered.map((badge) => {
       const chip = document.createElement("span");
       chip.className = "community-public-badge";
       chip.dataset.rarity = badge.rarity;
+      chip.dataset.category = badge.category;
       chip.title = lang === "en" ? badge.descriptionEn : badge.descriptionRo;
-      chip.textContent = `${badge.icon} ${lang === "en" ? (badge.titleEn || badge.title) : (badge.titleRo || badge.title)}`;
+      const icon = document.createElement("b");
+      const content = document.createElement("span");
+      icon.textContent = badge.icon;
+      content.textContent = lang === "en" ? (badge.titleEn || badge.title) : (badge.titleRo || badge.title);
+      chip.append(icon, content);
       return chip;
     }));
     $("communityBadgesSection").hidden = false;

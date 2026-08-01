@@ -10,12 +10,12 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/loading-screen.css">
   <link rel="stylesheet" href="/css/ui-feedback.css">
-  <link rel="stylesheet" href="/css/community-profile.css">
+  <link rel="stylesheet" href="/css/community-profile.css?v=4f">
   <link rel="stylesheet" href="/css/community-feedback.css">
   <link rel="stylesheet" href="/css/mobile-hardening.css">
   <script defer src="/js/loading-screen.js"></script>
 </head>
-<body class="mh-app community-public-body" data-accent="sky" data-theme="aurora">
+<body class="mh-app community-public-body" data-accent="sky" data-theme="aurora" data-frame="none" data-badge-style="chips">
   <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
     <div class="mh-loading-panel">
       <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true">
@@ -53,9 +53,11 @@
           <div>
             <div class="community-public-name-row">
               <h1 id="communityPublicName">Profil MathHard</h1>
+              <span class="community-public-pronouns" id="communityPublicPronouns" hidden></span>
               <span class="community-featured-badge" id="communityFeaturedBadge" hidden></span>
             </div>
             <p class="community-public-username" id="communityPublicUsername">@username</p>
+            <p class="community-public-headline" id="communityPublicHeadline" hidden></p>
             <p class="community-public-location" id="communityPublicLocation" hidden></p>
           </div>
           <p class="community-public-bio" id="communityPublicBio"></p>
@@ -108,7 +110,7 @@
 
   <script type="module" src="/js/runtime-diagnostics.js"></script>
   <script type="module" src="/js/ui-feedback.js"></script>
-  <script type="module" src="/js/community-profile-page.js"></script>
+  <script type="module" src="/js/community-profile-page.js?v=4f"></script>
   <script type="module" src="/js/community-feedback-controller.js"></script>
 </body>
 </html>

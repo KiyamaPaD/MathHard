@@ -79,11 +79,15 @@ if (root && form) {
   const countrySelect = $("communityCountry");
   const regionSelect = $("communityRegion");
   const featuredBadgeSelect = $("communityFeaturedBadge");
+  const featuredBadgesSelect = $("communityFeaturedBadges");
+  const badgeVisibility = $("communityBadgeVisibility");
   const preview = $("communityProfilePreview");
   const previewBanner = $("communityPreviewBanner");
   const previewAvatar = $("communityPreviewAvatar");
   const previewState = $("communityPreviewState");
   const previewName = $("communityPreviewName");
+  const previewPronouns = $("communityPreviewPronouns");
+  const previewHeadline = $("communityPreviewHeadline");
   const previewUsername = $("communityPreviewUsername");
   const previewBio = $("communityPreviewBio");
   const previewBadges = $("communityPreviewBadges");
@@ -128,6 +132,10 @@ if (root && form) {
     raw.leaderboard_opt_in = Boolean(form.elements.leaderboard_opt_in?.checked);
     raw.favorite_topics = listFromInput("favorite_topics");
     raw.languages = listFromInput("languages");
+    raw.featured_badge_ids = Array.from(featuredBadgesSelect?.selectedOptions || []).map((option) => option.value).filter(Boolean).slice(0, 6);
+    raw.public_badge_ids = Array.from(badgeVisibility?.querySelectorAll('input[data-badge-visibility]:checked') || []).map((input) => input.value);
+    if (raw.featured_badge_id && !raw.public_badge_ids.includes(raw.featured_badge_id)) raw.public_badge_ids.unshift(raw.featured_badge_id);
+    raw.featured_stat_keys = Array.from(form.querySelectorAll('input[name="featured_stat_keys"]:checked')).map((input) => input.value).slice(0, 4);
     raw.privacy = Object.fromEntries(COMMUNITY_PRIVACY_KEYS.map((key) => [
       key,
       Boolean(form.elements[key]?.checked)
@@ -174,20 +182,31 @@ if (root && form) {
 
   function renderPreview() {
     const raw = readDraft();
-    const profile = normalizeCommunityProfile({ profile: raw, badges: currentProfile?.badges || [] });
+    const publicIds = new Set(raw.public_badge_ids || []);
+    const badges = (currentProfile?.badges || []).map((badge) => ({ ...badge, is_public: publicIds.has(badge.id) }));
+    const profile = normalizeCommunityProfile({ profile: raw, badges });
     preview.dataset.accent = profile.accent;
     preview.dataset.theme = profile.theme;
+    preview.dataset.frame = profile.frame;
+    preview.dataset.badgeStyle = profile.badgeStyle;
     previewBanner.style.backgroundImage = profile.bannerUrl ? `url("${profile.bannerUrl.replaceAll('"', '%22')}")` : "";
     setImage(previewAvatar, profile.avatarUrl, profile.displayName);
     previewName.textContent = profile.displayName || copy.defaultName;
     previewUsername.textContent = profile.username ? `@${profile.username}` : copy.defaultUsername;
+    previewPronouns.textContent = profile.pronouns;
+    previewPronouns.hidden = !profile.pronouns;
+    previewHeadline.textContent = profile.headline;
+    previewHeadline.hidden = !profile.headline;
     previewBio.textContent = profile.bio;
     previewBio.hidden = !profile.bio;
     previewState.textContent = profile.isPublic ? copy.publicState : copy.privateState;
     previewState.classList.toggle("is-public", profile.isPublic);
 
+    const publicBadges = profile.badges.filter((badge) => badge.isPublic);
+    const preferredIds = profile.featuredBadgeIds.length ? profile.featuredBadgeIds : [profile.featuredBadgeId].filter(Boolean);
+    const preferred = preferredIds.map((id) => publicBadges.find((badge) => badge.id === id)).filter(Boolean);
     const visibleBadges = profile.privacy.show_badges
-      ? profile.badges.filter((badge) => badge.isPublic).slice(0, 4)
+      ? [...preferred, ...publicBadges.filter((badge) => !preferredIds.includes(badge.id))].slice(0, 6)
       : [];
     previewBadges.replaceChildren(...visibleBadges.map((badge) => {
       const chip = document.createElement("span");
@@ -198,6 +217,8 @@ if (root && form) {
 
     const details = [];
     if (profile.privacy.show_personality && profile.currentFocus) details.push([copy.learningNow, profile.currentFocus]);
+    if (profile.privacy.show_personality && profile.weeklyGoal) details.push([language === "en" ? "Weekly goal" : "Obiectiv săptămânal", profile.weeklyGoal]);
+    if (profile.privacy.show_personality && profile.collaborationStatus) details.push([language === "en" ? "Availability" : "Disponibilitate", selectedOptionText(form.elements.collaboration_status)]);
     if (profile.privacy.show_location && profile.countryCode) details.push([copy.location, [selectedOptionText(countrySelect), regionSelect.value ? selectedOptionText(regionSelect) : ""].filter(Boolean).join(" · ")]);
     if (profile.privacy.show_education && profile.academicGoal) details.push([copy.goal, profile.academicGoal]);
     previewDetails.replaceChildren(...details.map(([label, value]) => {
@@ -227,10 +248,34 @@ if (root && form) {
   }
 
   function fillBadgeOptions(profile) {
-    const badges = profile.badges.filter((badge) => badge.isPublic);
+    const badges = profile.badges;
     featuredBadgeSelect.replaceChildren(new Option(copy.automatic, ""));
-    badges.forEach((badge) => featuredBadgeSelect.add(new Option(`${badge.icon} ${badge.titleRo || badge.title}`, badge.id)));
+    featuredBadgesSelect?.replaceChildren();
+    badges.forEach((badge) => {
+      const label = `${badge.icon} ${badge.titleRo || badge.title}`;
+      featuredBadgeSelect.add(new Option(label, badge.id));
+      if (featuredBadgesSelect) {
+        const option = new Option(label, badge.id);
+        option.selected = profile.featuredBadgeIds.includes(badge.id);
+        featuredBadgesSelect.add(option);
+      }
+    });
     featuredBadgeSelect.value = profile.featuredBadgeId || "";
+    if (badgeVisibility) {
+      badgeVisibility.replaceChildren(...badges.map((badge) => {
+        const label = document.createElement("label");
+        label.className = "community-badge-visibility-item";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = badge.id;
+        input.checked = badge.isPublic;
+        input.dataset.badgeVisibility = "1";
+        const span = document.createElement("span");
+        span.textContent = `${badge.icon} ${badge.titleRo || badge.title}`;
+        label.append(input, span);
+        return label;
+      }));
+    }
   }
 
   async function fillRegions(countryCode, selected = "") {
@@ -262,6 +307,8 @@ if (root && form) {
     setValue("avatar_url", profile.avatarUrl);
     setValue("banner_url", profile.bannerUrl);
     setValue("bio", profile.bio);
+    setValue("headline", profile.headline);
+    setValue("pronouns", profile.pronouns);
     setValue("country_code", profile.countryCode);
     setValue("education_level", profile.educationLevel);
     setValue("grade_level", profile.gradeLevel);
@@ -271,6 +318,11 @@ if (root && form) {
     setValue("favorite_topics", profile.favoriteTopics.join(", "));
     setValue("favorite_mathematician", profile.favoriteMathematician);
     setValue("favorite_theorem", profile.favoriteTheorem);
+    setValue("dream_school", profile.dreamSchool);
+    setValue("favorite_problem_type", profile.favoriteProblemType);
+    setValue("learning_style", profile.learningStyle);
+    setValue("collaboration_status", profile.collaborationStatus);
+    setValue("weekly_goal", profile.weeklyGoal);
     setValue("quote", profile.quote);
     setValue("languages", profile.languages.join(", "));
     setValue("website_url", profile.websiteUrl);
@@ -278,9 +330,20 @@ if (root && form) {
     setValue("portfolio_url", profile.portfolioUrl);
     setValue("profile_accent", profile.accent);
     setValue("profile_theme", profile.theme);
+    setValue("profile_frame", profile.frame);
+    setValue("badge_display_style", profile.badgeStyle);
+    form.querySelectorAll('input[name="featured_stat_keys"]').forEach((input) => {
+      input.checked = profile.featuredStatKeys.includes(input.value);
+    });
     setValue("is_public", profile.isPublic);
     setValue("leaderboard_opt_in", profile.leaderboardOptIn);
     COMMUNITY_PRIVACY_KEYS.forEach((key) => setValue(key, profile.privacy[key]));
+    if (!profile.featuredStatKeys.length) {
+      ["xp", "level", "problemsSolved", "lessonsLearned"].forEach((key) => {
+        const input = form.querySelector(`input[name="featured_stat_keys"][value="${key}"]`);
+        if (input) input.checked = true;
+      });
+    }
     fillBadgeOptions(profile);
     await fillRegions(profile.countryCode, profile.regionCode);
     openButton.href = publicProfileUrl(profile.username, location.origin);
@@ -375,7 +438,28 @@ if (root && form) {
   }
 
   form.addEventListener("input", renderPreview);
-  form.addEventListener("change", renderPreview);
+  form.addEventListener("change", (event) => {
+    if (event.target?.name === "featured_stat_keys") {
+      const checked = Array.from(form.querySelectorAll('input[name="featured_stat_keys"]:checked'));
+      if (checked.length > 4) {
+        event.target.checked = false;
+        setStatus(language === "en" ? "Choose up to four statistics." : "Alege maximum patru statistici.", "error");
+      }
+    }
+    if (event.target === featuredBadgesSelect && featuredBadgesSelect.selectedOptions.length > 6) {
+      event.target.selectedOptions[event.target.selectedOptions.length - 1].selected = false;
+      setStatus(language === "en" ? "Choose up to six badges." : "Alege maximum șase badge-uri.", "error");
+    }
+    if (event.target === featuredBadgeSelect && featuredBadgeSelect.value) {
+      const visibility = badgeVisibility?.querySelector(`input[data-badge-visibility][value="${CSS.escape(featuredBadgeSelect.value)}"]`);
+      if (visibility) visibility.checked = true;
+    }
+    if (event.target?.matches?.('input[data-badge-visibility]') && !event.target.checked && event.target.value === featuredBadgeSelect.value) {
+      event.target.checked = true;
+      setStatus(language === "en" ? "The featured badge must remain public." : "Badge-ul principal trebuie să rămână public.", "error");
+    }
+    renderPreview();
+  });
   ["avatar_url", "banner_url", "website_url", "github_url", "portfolio_url"].forEach((name) => {
     form.elements[name]?.addEventListener("blur", () => {
       normalizeLinkInputs();

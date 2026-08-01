@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="/css/loading-screen.css" />
   <link rel="stylesheet" href="/css/ui-feedback.css" />
   <link rel="stylesheet" href="/css/profile.css" />
-  <link rel="stylesheet" href="/css/community-profile.css" />
+  <link rel="stylesheet" href="/css/community-profile.css?v=4f" />
   <link rel="stylesheet" href="/css/community-feedback.css" />
   <link rel="stylesheet" href="/css/mobile-hardening.css" />
   <script defer src="/js/loading-screen.js"></script>
@@ -200,6 +200,8 @@
                   <small id="communityUsernameHint" data-profile-text-key="community_username_hint">3–24 caractere: litere mici, cifre, punct, minus sau underscore.</small>
                 </label>
                 <label class="profile-field"><span data-profile-text-key="community_display_name">Nume afișat</span><input id="communityDisplayName" name="display_name" maxlength="60" autocomplete="nickname" required></label>
+                <label class="profile-field"><span data-profile-text-key="community_headline">Titlu scurt</span><input id="communityHeadline" name="headline" maxlength="100" placeholder="Elev · Builder · Matematică"></label>
+                <label class="profile-field"><span data-profile-text-key="community_pronouns">Pronume</span><input id="communityPronouns" name="pronouns" maxlength="40" placeholder="opțional"></label>
                 <label class="profile-field"><span data-profile-text-key="community_avatar">Avatar URL</span><input id="communityAvatarUrl" name="avatar_url" type="url" placeholder="https://..."></label>
                 <label class="profile-field community-field-wide"><span data-profile-text-key="community_banner">Banner URL</span><input id="communityBannerUrl" name="banner_url" type="url" placeholder="https://..."></label>
                 <label class="profile-field community-field-wide"><span data-profile-text-key="community_bio">Bio</span><textarea id="communityBio" name="bio" maxlength="280" rows="4" placeholder="Despre tine, ce înveți și ce construiești."></textarea></label>
@@ -225,6 +227,11 @@
                 <label class="profile-field"><span data-profile-text-key="community_favorite_topics">Capitole favorite</span><input id="communityFavoriteTopics" name="favorite_topics" maxlength="320" placeholder="Algebră, analiză, geometrie"></label>
                 <label class="profile-field"><span data-profile-text-key="community_favorite_mathematician">Matematician favorit</span><input id="communityFavoriteMathematician" name="favorite_mathematician" maxlength="120"></label>
                 <label class="profile-field"><span data-profile-text-key="community_favorite_theorem">Teoremă favorită</span><input id="communityFavoriteTheorem" name="favorite_theorem" maxlength="120"></label>
+                <label class="profile-field"><span data-profile-text-key="community_dream_school">Facultate / obiectiv de vis</span><input id="communityDreamSchool" name="dream_school" maxlength="120" placeholder="UBB FMI, Tübingen..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_problem_type">Tip de probleme preferat</span><input id="communityFavoriteProblemType" name="favorite_problem_type" maxlength="120" placeholder="Algebră, combinatorică..."></label>
+                <label class="profile-field"><span data-profile-text-key="community_learning_style">Stil de învățare</span><select id="communityLearningStyle" name="learning_style"><option value="">Nespecificat</option><option value="visual">Vizual</option><option value="practice">Prin exerciții</option><option value="theory">Teorie întâi</option><option value="mixed">Mixt</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_collaboration">Disponibilitate</span><select id="communityCollaborationStatus" name="collaboration_status"><option value="">Nespecificată</option><option value="studying">Caut colegi de studiu</option><option value="helping">Pot ajuta alți membri</option><option value="projects">Deschis la proiecte</option><option value="private">Prefer să lucrez individual</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_weekly_goal">Obiectiv săptămânal</span><input id="communityWeeklyGoal" name="weekly_goal" maxlength="120" placeholder="20 probleme și 3 lecții"></label>
                 <label class="profile-field"><span data-profile-text-key="community_languages">Limbi</span><input id="communityLanguages" name="languages" maxlength="160" placeholder="Română, engleză"></label>
                 <label class="profile-field community-field-wide"><span data-profile-text-key="community_quote">Citat</span><input id="communityQuote" name="quote" maxlength="180"></label>
               </div>
@@ -238,7 +245,23 @@
                 <label class="profile-field"><span data-profile-text-key="community_portfolio">Portofoliu</span><input id="communityPortfolioUrl" name="portfolio_url" type="url" placeholder="https://..."></label>
                 <label class="profile-field"><span data-profile-text-key="community_accent">Culoare profil</span><select id="communityAccent" name="profile_accent"><option value="sky">Sky</option><option value="indigo">Indigo</option><option value="violet">Violet</option><option value="emerald">Emerald</option><option value="amber">Amber</option><option value="rose">Rose</option><option value="slate">Slate</option></select></label>
                 <label class="profile-field"><span data-profile-text-key="community_theme">Stil profil</span><select id="communityTheme" name="profile_theme"><option value="aurora">Aurora</option><option value="minimal">Minimal</option><option value="grid">Grid</option><option value="cosmos">Cosmos</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_frame">Ramă profil</span><select id="communityFrame" name="profile_frame"><option value="none">Fără ramă</option><option value="soft">Soft</option><option value="neon">Neon</option><option value="gold">Gold</option><option value="cosmos">Cosmos</option></select></label>
+                <label class="profile-field"><span data-profile-text-key="community_badge_style">Stil badge-uri</span><select id="communityBadgeStyle" name="badge_display_style"><option value="chips">Chips</option><option value="cards">Carduri</option><option value="compact">Compact</option></select></label>
                 <label class="profile-field"><span data-profile-text-key="community_featured_badge">Badge principal</span><select id="communityFeaturedBadge" name="featured_badge_id"><option value="" data-profile-text-key="community_auto">Automat</option></select></label>
+                <label class="profile-field community-field-wide"><span data-profile-text-key="community_featured_badges">Badge-uri favorite (max. 6)</span><select id="communityFeaturedBadges" name="featured_badge_ids" multiple size="5"></select><small>Ține Ctrl/Cmd pentru selecție multiplă.</small></label>
+                <div class="community-field-wide community-badge-visibility"><span data-profile-text-key="community_badge_visibility">Badge-uri publice</span><div id="communityBadgeVisibility"></div></div>
+              </div>
+            </section>
+
+            <section class="community-form-section">
+              <div class="community-form-heading"><h3 data-profile-text-key="community_stats_title">Statistici pe profil</h3><span data-profile-text-key="community_stats_help">Alege maximum patru statistici principale.</span></div>
+              <div class="community-stat-picker">
+                <label><input type="checkbox" name="featured_stat_keys" value="xp"><span>XP</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="level"><span>Nivel</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="lessonsLearned"><span>Lecții învățate</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="problemsSolved"><span>Probleme rezolvate</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="examsPassed"><span>Examene promovate</span></label>
+                <label><input type="checkbox" name="featured_stat_keys" value="currentStreak"><span>Streak</span></label>
               </div>
             </section>
 
@@ -260,13 +283,14 @@
             </section>
           </form>
 
-          <aside class="community-preview" id="communityProfilePreview" data-accent="sky" data-theme="aurora">
+          <aside class="community-preview" id="communityProfilePreview" data-accent="sky" data-theme="aurora" data-frame="none" data-badge-style="chips">
             <div class="community-preview-banner" id="communityPreviewBanner"></div>
             <div class="community-preview-content">
               <div class="community-preview-avatar" id="communityPreviewAvatar">M</div>
               <span class="community-preview-state" id="communityPreviewState">Privat</span>
-              <h3 id="communityPreviewName">Profilul tău</h3>
+              <div class="community-preview-name-row"><h3 id="communityPreviewName">Profilul tău</h3><span id="communityPreviewPronouns" hidden></span></div>
               <p class="community-preview-username" id="communityPreviewUsername">@username</p>
+              <p class="community-preview-headline" id="communityPreviewHeadline" hidden></p>
               <p id="communityPreviewBio">Adaugă o bio scurtă.</p>
               <div class="community-preview-badges" id="communityPreviewBadges"></div>
               <div class="community-preview-links" id="communityPreviewLinks" hidden></div>
@@ -458,8 +482,8 @@
 
   <script type="module" src="/js/runtime-diagnostics.js"></script>
   <script type="module" src="/js/ui-feedback.js"></script>
-  <script type="module" src="/js/profile.js"></script>
-  <script type="module" src="/js/community-profile-settings-controller.js"></script>
+  <script type="module" src="/js/profile.js?v=4f"></script>
+  <script type="module" src="/js/community-profile-settings-controller.js?v=4f"></script>
   <script type="module" src="/js/community-feedback-controller.js"></script>
 </body>
 </html>

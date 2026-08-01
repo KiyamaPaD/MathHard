@@ -9,20 +9,43 @@ async function call(supabase, name, args = {}) {
   return data;
 }
 
-export function loadOwnCommunityProfile(supabase) {
-  return call(supabase, "mh_get_my_community_profile");
+function isMissingRpc(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  return ["PGRST202", "PGRST203", "42883"].includes(code)
+    || message.includes("could not find the function")
+    || message.includes("does not exist");
 }
 
-export function saveOwnCommunityProfile(supabase, profile) {
-  return call(supabase, "mh_update_my_community_profile", { p_profile: profile });
+export async function loadOwnCommunityProfile(supabase) {
+  try {
+    return await call(supabase, "mh_get_my_community_profile_v2");
+  } catch (error) {
+    if (!isMissingRpc(error)) throw error;
+    return call(supabase, "mh_get_my_community_profile");
+  }
+}
+
+export async function saveOwnCommunityProfile(supabase, profile) {
+  try {
+    return await call(supabase, "mh_update_my_community_profile_v2", { p_profile: profile });
+  } catch (error) {
+    if (!isMissingRpc(error)) throw error;
+    return call(supabase, "mh_update_my_community_profile", { p_profile: profile });
+  }
 }
 
 export function checkCommunityUsername(supabase, username) {
   return call(supabase, "mh_check_community_username", { p_username: username });
 }
 
-export function loadPublicCommunityProfile(supabase, username) {
-  return call(supabase, "mh_get_public_community_profile", { p_username: username });
+export async function loadPublicCommunityProfile(supabase, username) {
+  try {
+    return await call(supabase, "mh_get_public_community_profile_v2", { p_username: username });
+  } catch (error) {
+    if (!isMissingRpc(error)) throw error;
+    return call(supabase, "mh_get_public_community_profile", { p_username: username });
+  }
 }
 
 export function loadCommunityCountries(supabase) {
@@ -33,8 +56,13 @@ export function loadCommunityRegions(supabase, countryCode) {
   return call(supabase, "mh_get_community_regions", { p_country_code: countryCode });
 }
 
-export function loadCommunityBadgeStudio(supabase, query = "") {
-  return call(supabase, "mh_admin_get_community_badge_studio", { p_query: query });
+export async function loadCommunityBadgeStudio(supabase, query = "") {
+  try {
+    return await call(supabase, "mh_admin_get_community_badge_studio_v2", { p_query: query });
+  } catch (error) {
+    if (!isMissingRpc(error)) throw error;
+    return call(supabase, "mh_admin_get_community_badge_studio", { p_query: query });
+  }
 }
 
 export function saveCommunityBadgeDefinition(supabase, badge) {
