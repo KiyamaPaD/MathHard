@@ -39,6 +39,7 @@ const COPY = {
     continent: "Continent",
     country: "Țară",
     region: "Regiune",
+    county: "Județ",
     empty: "Nu există încă suficiente rezultate pentru acest clasament.",
     chooseRegionEmpty: "Alege o regiune pentru a vedea clasamentul ei.",
     ownRank: "Poziția ta",
@@ -94,6 +95,7 @@ const COPY = {
     continent: "Continent",
     country: "Country",
     region: "Region",
+    county: "County",
     empty: "There are not enough results for this leaderboard yet.",
     chooseRegionEmpty: "Choose a region to view its leaderboard.",
     ownRank: "Your rank",
@@ -193,10 +195,13 @@ function countryLabel(code) {
 
 function scopeLabel(scope, context) {
   const copy = t();
-  if (scope === "region") return context.targetRegionName || context.regionName || copy.region;
-  if (scope === "country") return countryLabel(context.countryCode) || copy.country;
+  if (scope === "region") {
+    const countryCode = context.targetCountryCode || context.countryCode;
+    return countryCode === "RO" ? copy.county : copy.region;
+  }
+  if (scope === "country") return copy.country;
   if (scope === "eu") return copy.eu;
-  if (scope === "continent") return copy[CONTINENTS[context.continentCode]] || copy.continent;
+  if (scope === "continent") return copy.continent;
   return copy.global;
 }
 

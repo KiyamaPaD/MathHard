@@ -57,3 +57,30 @@ export function revokeCommunityBadge(supabase, userId, badgeId) {
     p_badge_id: badgeId
   });
 }
+
+export function loadCommunityModerationDashboard(supabase, filters = {}) {
+  return call(supabase, "mh_admin_get_community_moderation", {
+    p_status: filters.status || "open",
+    p_query: filters.query || "",
+    p_limit: Math.min(100, Math.max(20, Number(filters.limit) || 60))
+  });
+}
+
+export function updateCommunityModerationCase(supabase, value) {
+  return call(supabase, "mh_admin_update_community_case", {
+    p_kind: value.kind,
+    p_id: value.id,
+    p_status: value.status,
+    p_priority: value.priority,
+    p_note: value.adminNote || null
+  });
+}
+
+export function setCommunityUserAccess(supabase, value) {
+  return call(supabase, "mh_admin_set_community_access", {
+    p_user_id: value.userId,
+    p_profile_allowed: Boolean(value.profileAllowed),
+    p_leaderboard_allowed: Boolean(value.leaderboardAllowed),
+    p_note: value.note || null
+  });
+}

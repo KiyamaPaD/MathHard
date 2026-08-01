@@ -128,6 +128,12 @@ function render(profile) {
 
   $("communityPublicEmpty").hidden = true;
   $("communityPublicContent").hidden = false;
+  const reportButton = $("communityReportProfile");
+  if (reportButton) {
+    reportButton.hidden = profile.isOwner;
+    reportButton.dataset.communityReportUsername = profile.username;
+  }
+
   $("communityPublicName").textContent = profile.displayName;
   $("communityPublicUsername").textContent = `@${profile.username}`;
   $("communityPublicBio").textContent = profile.bio || "";

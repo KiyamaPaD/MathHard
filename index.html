@@ -60,6 +60,7 @@
   <link rel="stylesheet" href="css/content-quality-studio.css" />
   <link rel="stylesheet" href="css/community-admin.css" />
   <link rel="stylesheet" href="css/community-leaderboard.css" />
+  <link rel="stylesheet" href="css/community-feedback.css" />
   <link rel="stylesheet" href="/css/mobile-hardening.css" />
   <script defer src="/js/loading-screen.js"></script>
   <script defer src="js/katex-init.js"></script>
@@ -153,6 +154,7 @@
         <div class="header-actions">
           <button class="btn small" id="infoBtn" data-i18n="btn_info" type="button">Ghid</button>
           <button class="btn small" id="aboutBtn" data-i18n="btn_about" type="button">Despre</button>
+          <button class="btn small" type="button" data-community-feedback-open="feedback">Feedback</button>
           <button class="btn small" id="langBtn" type="button">🌐 RO/EN</button>
           <button class="btn small" id="focusBtn" data-i18n="btn_focus" type="button">🎯 Focus Mode</button>
           <button class="btn small" id="themeBtn" data-i18n="btn_theme" type="button">🌙 Dark</button>
@@ -966,7 +968,7 @@
 <div class="mh-admin-page-header">
 <div>
 <span class="mh-admin-eyebrow">Profiluri globale</span>
-<h2>Comunitate și badge-uri</h2>
+<h2>Comunitate</h2>
 </div>
 </div>
 <section id="mhCommunityAdminStudio"></section>
@@ -1093,6 +1095,7 @@
   </div>
 
   <script type="module" src="/js/ui-feedback.js"></script>
+  <script type="module" src="/js/community-feedback-controller.js"></script>
   <script type="module" src="/js/performance-bootstrap.js"></script>
   <script type="module" src="/js/app-shell-controller.js"></script>
   <script type="module" src="/js/app.js"></script>

@@ -1,4 +1,5 @@
 import { normalizeBadge } from "./community-profile-model.js";
+import { normalizeCommunityModerationDashboard } from "./community-feedback-model.js";
 
 const BADGE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,79}$/;
 const MODES = new Set(["manual", "automatic", "subscription", "system"]);
@@ -48,3 +49,5 @@ export function normalizeCommunityBadgeStudio(payload = {}) {
     })) : []
   };
 }
+
+export { normalizeCommunityModerationDashboard };

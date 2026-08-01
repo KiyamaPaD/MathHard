@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/css/ui-feedback.css" />
   <link rel="stylesheet" href="/css/profile.css" />
   <link rel="stylesheet" href="/css/community-profile.css" />
+  <link rel="stylesheet" href="/css/community-feedback.css" />
   <link rel="stylesheet" href="/css/mobile-hardening.css" />
   <script defer src="/js/loading-screen.js"></script>
 </head>
@@ -45,7 +46,7 @@
         </div>
       </a>
 
-      <a id="backHomeBtn" href="/index.html" class="btn small profile-back-btn">Înapoi</a>
+      <div class="profile-topbar-actions"><button class="btn small" type="button" data-community-feedback-open="feedback">Feedback</button><a id="backHomeBtn" href="/index.html" class="btn small profile-back-btn">Înapoi</a></div>
     </div>
   </header>
 
@@ -459,5 +460,6 @@
   <script type="module" src="/js/ui-feedback.js"></script>
   <script type="module" src="/js/profile.js"></script>
   <script type="module" src="/js/community-profile-settings-controller.js"></script>
+  <script type="module" src="/js/community-feedback-controller.js"></script>
 </body>
 </html>

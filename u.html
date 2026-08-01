@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/css/loading-screen.css">
   <link rel="stylesheet" href="/css/ui-feedback.css">
   <link rel="stylesheet" href="/css/community-profile.css">
+  <link rel="stylesheet" href="/css/community-feedback.css">
   <link rel="stylesheet" href="/css/mobile-hardening.css">
   <script defer src="/js/loading-screen.js"></script>
 </head>
@@ -47,6 +48,7 @@
           <div class="community-public-actions">
             <a class="btn small" id="communityLeaderboardLink" href="/index.html#leaderboards">Clasamente</a>
             <button class="btn small" id="communityCopyProfile" type="button">Copiază linkul</button>
+            <button class="btn small" id="communityReportProfile" type="button" data-community-feedback-open="profile-report" hidden>Raportează</button>
           </div>
           <div>
             <div class="community-public-name-row">
@@ -107,5 +109,6 @@
   <script type="module" src="/js/runtime-diagnostics.js"></script>
   <script type="module" src="/js/ui-feedback.js"></script>
   <script type="module" src="/js/community-profile-page.js"></script>
+  <script type="module" src="/js/community-feedback-controller.js"></script>
 </body>
 </html>

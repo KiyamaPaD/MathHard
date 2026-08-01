@@ -59,6 +59,8 @@ const targets = [
   "js/community-profile-repository.js",
   "js/community-profile-page.js",
   "js/community-profile-settings-controller.js",
+  "js/community-feedback-repository.js",
+  "js/community-feedback-controller.js",
   "js/community-leaderboard-repository.js",
   "js/community-leaderboard-controller.js",
   "js/community-admin-controller.js",
@@ -164,6 +166,21 @@ if (!app.includes("getVerifiedActiveUser") || !app.includes('from("user_roles")'
 }
 if (!app.includes("setAdminButtonVisibility(false") || !app.includes("isCurrentUserAdmin(activeUser)")) {
   fail("Admin access is not visibly fail-closed and revalidated on entry.");
+}
+
+const communityFeedbackRepository = sources.get("js/community-feedback-repository.js") || "";
+const communityFeedbackController = sources.get("js/community-feedback-controller.js") || "";
+if (!communityFeedbackRepository.includes("mh_submit_community_feedback") || !communityFeedbackRepository.includes("mh_submit_community_profile_report")) {
+  fail("Community feedback and profile reports must use controlled RPCs.");
+}
+if (communityFeedbackRepository.includes(".from(")) {
+  fail("Community feedback repository must not read or write moderation tables directly.");
+}
+if (!communityFeedbackController.includes("client_token") || !communityFeedbackController.includes("page_url")) {
+  fail("Community feedback controller needs anonymous rate-limit identity and page context.");
+}
+if (/innerHTML\s*=\s*[^;]{0,200}\bmessage\b/i.test(communityFeedbackController)) {
+  fail("Community feedback messages must not be injected into HTML without escaping.");
 }
 
 const communityProfileRepository = sources.get("js/community-profile-repository.js") || "";

@@ -80,6 +80,9 @@ const moduleJsFiles = [
   "js/community-profile-repository.js",
   "js/community-profile-settings-controller.js",
   "js/community-profile-page.js",
+  "js/community-feedback-model.js",
+  "js/community-feedback-repository.js",
+  "js/community-feedback-controller.js",
   "js/community-leaderboard-model.js",
   "js/community-leaderboard-repository.js",
   "js/community-leaderboard-controller.js",
@@ -118,6 +121,7 @@ const requiredFiles = [
   "css/admin-history.css",
   "css/profile.css",
   "css/community-profile.css",
+  "css/community-feedback.css",
   "css/community-leaderboard.css",
   "css/community-admin.css",
   "css/loading-screen.css",
@@ -140,6 +144,7 @@ const requiredFiles = [
   "scripts/debug-audit.mjs",
   "scripts/community-profile-audit.mjs",
   "scripts/community-leaderboard-audit.mjs",
+  "scripts/community-feedback-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];

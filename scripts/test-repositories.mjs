@@ -1814,17 +1814,29 @@ const {
   checkCommunityUsername,
   loadCommunityBadgeStudio,
   loadCommunityCountries,
+  loadCommunityModerationDashboard,
   loadCommunityRegions,
   loadOwnCommunityProfile,
   loadPublicCommunityProfile,
   revokeCommunityBadge,
   saveCommunityBadgeDefinition,
-  saveOwnCommunityProfile
+  saveOwnCommunityProfile,
+  setCommunityUserAccess,
+  updateCommunityModerationCase
 } = await importBrowserModule("js/community-profile-repository.js");
 const {
   normalizeCommunityBadgeStudio,
   validateCommunityBadgeDraft
 } = await importBrowserModule("js/community-admin-model.js");
+const {
+  normalizeCommunityModerationDashboard,
+  validateCommunityFeedbackDraft,
+  validateCommunityProfileReportDraft
+} = await importBrowserModule("js/community-feedback-model.js");
+const {
+  submitCommunityFeedback,
+  submitCommunityProfileReport
+} = await importBrowserModule("js/community-feedback-repository.js");
 
 assert.equal(normalizeUsername("  CRIȘTI Test  "), "criti-test");
 assert.equal(validateUsername("cristi.math").valid, true);
@@ -1898,6 +1910,9 @@ const manualBadge = validateCommunityBadgeDraft({
 assert.equal(manualBadge.valid, true);
 assert.equal(validateCommunityBadgeDraft({ id: "INVALID ID" }).valid, false);
 assert.equal(normalizeCommunityBadgeStudio({ users: [{ user_id: "u1", username: "cristi", badges: [] }] }).users[0].userId, "u1");
+assert.equal(validateCommunityFeedbackDraft({ subject: "Sugestie profil", message: "Aș dori mai multe opțiuni pentru profilul public." }).valid, true);
+assert.equal(validateCommunityProfileReportDraft({ username: "demo", reason: "spam", details: "Profilul conține linkuri repetitive și reclame." }).valid, true);
+assert.equal(normalizeCommunityModerationDashboard({ counts: { feedback_new: 2 }, users: [{ user_id: "u1", profile_allowed: false }] }).users[0].profileAllowed, false);
 
 const communityRpcCalls = [];
 const communitySupabase = {
@@ -1913,6 +1928,11 @@ const communitySupabase = {
     if (name === "mh_admin_upsert_community_badge") return { data: { badges: [payload.p_badge], users: [] }, error: null };
     if (name === "mh_admin_assign_community_badge") return { data: { assigned: payload.p_badge_id }, error: null };
     if (name === "mh_admin_revoke_community_badge") return { data: { revoked: payload.p_badge_id }, error: null };
+    if (name === "mh_submit_community_feedback") return { data: { accepted: true, payload: payload.p_payload }, error: null };
+    if (name === "mh_submit_community_profile_report") return { data: { accepted: true, username: payload.p_username }, error: null };
+    if (name === "mh_admin_get_community_moderation") return { data: { counts: {}, feedback: [], reports: [], users: [] }, error: null };
+    if (name === "mh_admin_update_community_case") return { data: true, error: null };
+    if (name === "mh_admin_set_community_access") return { data: true, error: null };
     return { data: null, error: new Error(`Unexpected community RPC: ${name}`) };
   }
 };
@@ -1926,6 +1946,11 @@ await loadCommunityBadgeStudio(communitySupabase, "cristi");
 await saveCommunityBadgeDefinition(communitySupabase, manualBadge.badge);
 await assignCommunityBadge(communitySupabase, { user_id: "u1", badge_id: "early-tester", featured: true, note: "test" });
 await revokeCommunityBadge(communitySupabase, "u1", "early-tester");
+await submitCommunityFeedback(communitySupabase, validateCommunityFeedbackDraft({ subject: "Sugestie profil", message: "Aș dori mai multe opțiuni pentru profilul public.", client_token: "test-client-token-1234" }).draft);
+await submitCommunityProfileReport(communitySupabase, validateCommunityProfileReportDraft({ username: "demo", reason: "spam", details: "Profilul conține linkuri repetitive și reclame." }).draft);
+await loadCommunityModerationDashboard(communitySupabase, { status: "open", query: "demo" });
+await updateCommunityModerationCase(communitySupabase, { kind: "feedback", id: "f1", status: "resolved", priority: "normal", adminNote: "ok" });
+await setCommunityUserAccess(communitySupabase, { userId: "u1", profileAllowed: true, leaderboardAllowed: false, note: "test" });
 assert.deepEqual(communityRpcCalls.map(([name]) => name), [
   "mh_get_my_community_profile",
   "mh_update_my_community_profile",
@@ -1936,7 +1961,12 @@ assert.deepEqual(communityRpcCalls.map(([name]) => name), [
   "mh_admin_get_community_badge_studio",
   "mh_admin_upsert_community_badge",
   "mh_admin_assign_community_badge",
-  "mh_admin_revoke_community_badge"
+  "mh_admin_revoke_community_badge",
+  "mh_submit_community_feedback",
+  "mh_submit_community_profile_report",
+  "mh_admin_get_community_moderation",
+  "mh_admin_update_community_case",
+  "mh_admin_set_community_access"
 ]);
 
 const {
