@@ -73,6 +73,11 @@
 /* Publication detail header: keep the selected-content summary in its own row.
    The previous right-aligned block could collide with the controls below. */
 .mh-quality-editor > header {
+  position: static !important;
+  inset: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
   align-items: start !important;

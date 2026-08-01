@@ -10,7 +10,7 @@ const css = read("css/admin-layout-polish.css");
 const failures = [];
 const expect = (condition, message) => { if (!condition) failures.push(message); };
 
-expect(index.includes('/css/admin-layout-polish.css?v=4e1'), "Phase 4E stylesheet is not loaded.");
+expect(index.includes('/css/admin-layout-polish.css?v=4e2'), "Phase 4E.2 stylesheet is not loaded.");
 expect(index.indexOf("admin-layout-polish.css") > index.indexOf("mobile-hardening.css"), "Phase 4E stylesheet must load after mobile hardening.");
 
 [
@@ -32,6 +32,8 @@ expect(css.includes("overflow-wrap: anywhere"), "Long Admin labels are not prote
 expect(css.includes(".mh-concept-coverage-section"), "Concept coverage cards are not hardened.");
 expect(css.includes(".mh-roadmap-admin-dashboard"), "Roadmap Studio is not hardened.");
 expect(css.includes(".mh-quality-editor > header"), "Publication detail header is not isolated.");
+expect(/\.mh-quality-editor\s*>\s*header\s*\{[^}]*position:\s*static\s*!important/s.test(css), "Publication detail header is still sticky through the global panel header rule.");
+expect(/\.mh-quality-editor\s*>\s*header\s*\{[^}]*z-index:\s*auto\s*!important/s.test(css), "Publication detail header still keeps a floating stacking layer.");
 expect(css.includes("grid-template-columns: minmax(0, 1fr) !important"), "Publication detail summary is not moved to its own row.");
 expect(css.includes("justify-self: stretch"), "Publication state card can still float over the right column.");
 
