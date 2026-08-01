@@ -127,6 +127,7 @@ function init() {
   scheduleIdle(() => void safelyLoadModule("./quick-nav-controller.js"), 900);
   scheduleIdle(() => void safelyLoadModule("./onboarding-controller.js"), 1300);
   scheduleIdle(() => void safelyLoadModule("./runtime-diagnostics.js"), 2200);
+  scheduleIdle(() => void safelyLoadModule("./beta-readiness-controller.js"), 2500);
 }
 
 if (typeof document !== "undefined") {

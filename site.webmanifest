@@ -1,0 +1,19 @@
+{
+  "name": "MathHard",
+  "short_name": "MathHard",
+  "description": "Lecții, probleme, examene și progres pentru matematică.",
+  "lang": "ro",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080b14",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "/img/mathhard-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 const STORAGE_KEY = "mh_runtime_diagnostics_v1";
 const MAX_EVENTS = 120;
-const BUILD_LABEL = "phase-18c-mobile-hardening";
+const BUILD_LABEL = "phase-4g4-beta-readiness";
 
 function getStorage() {
   try {

@@ -123,13 +123,13 @@ function ensureModal() {
   return modal;
 }
 
-function optionMarkup(values, labels) {
-  return values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(labels[value])}</option>`).join("");
+function optionMarkup(values, labels, selected = "") {
+  return values.map((value) => `<option value="${escapeHtml(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(labels[value])}</option>`).join("");
 }
 
-function feedbackForm() {
+function feedbackForm(preset = {}) {
   const c = copy();
-  return `<form id="mhCommunityFeedbackForm" class="mh-community-feedback-form"><label><span>${escapeHtml(c.category)}</span><select name="category">${optionMarkup(COMMUNITY_FEEDBACK_CATEGORIES, CATEGORY_COPY[language()])}</select></label><label><span>${escapeHtml(c.subject)}</span><input name="subject" maxlength="120" required placeholder="${escapeHtml(c.subjectPlaceholder)}"></label><label><span>${escapeHtml(c.message)}</span><textarea name="message" maxlength="3000" required placeholder="${escapeHtml(c.messagePlaceholder)}"></textarea></label><label><span>${escapeHtml(c.email)}</span><input name="contact_email" type="email" maxlength="254" autocomplete="email"></label><label class="mh-community-feedback-honeypot" aria-hidden="true"><span>Website</span><input name="website" tabindex="-1" autocomplete="off"></label><div class="mh-community-feedback-actions"><button type="button" class="btn small" data-community-feedback-close>${escapeHtml(c.cancel)}</button><button type="submit" class="btn">${escapeHtml(c.send)}</button></div></form>`;
+  return `<form id="mhCommunityFeedbackForm" class="mh-community-feedback-form"><input type="hidden" name="content_type" value="${escapeHtml(preset.contentType || "")}"><input type="hidden" name="content_id" value="${escapeHtml(preset.contentId || "")}"><label><span>${escapeHtml(c.category)}</span><select name="category">${optionMarkup(COMMUNITY_FEEDBACK_CATEGORIES, CATEGORY_COPY[language()], preset.category || "suggestion")}</select></label><label><span>${escapeHtml(c.subject)}</span><input name="subject" maxlength="120" required value="${escapeHtml(preset.subject || "")}" placeholder="${escapeHtml(c.subjectPlaceholder)}"></label><label><span>${escapeHtml(c.message)}</span><textarea name="message" maxlength="3000" required placeholder="${escapeHtml(c.messagePlaceholder)}">${escapeHtml(preset.message || "")}</textarea></label><label><span>${escapeHtml(c.email)}</span><input name="contact_email" type="email" maxlength="254" autocomplete="email"></label><label class="mh-community-feedback-honeypot" aria-hidden="true"><span>Website</span><input name="website" tabindex="-1" autocomplete="off"></label><div class="mh-community-feedback-actions"><button type="button" class="btn small" data-community-feedback-close>${escapeHtml(c.cancel)}</button><button type="submit" class="btn">${escapeHtml(c.send)}</button></div></form>`;
 }
 
 function reportForm(username) {
@@ -157,9 +157,16 @@ async function openModal(trigger) {
       authenticated = false;
     }
   }
+  const feedbackPreset = {
+    category: trigger.dataset.communityFeedbackCategory || "suggestion",
+    subject: trigger.dataset.communityFeedbackSubject || "",
+    message: trigger.dataset.communityFeedbackMessage || "",
+    contentType: trigger.dataset.communityFeedbackContentType || "",
+    contentId: trigger.dataset.communityFeedbackContentId || ""
+  };
   root.querySelector("#mhCommunityFeedbackTitle").textContent = mode === "profile-report" && !authenticated ? c.authTitle : mode === "profile-report" ? c.reportTitle : c.feedbackTitle;
   root.querySelector("#mhCommunityFeedbackIntro").textContent = mode === "profile-report" && !authenticated ? c.authIntro : mode === "profile-report" ? c.reportIntro : c.feedbackIntro;
-  root.querySelector("#mhCommunityFeedbackBody").innerHTML = mode === "profile-report" ? (authenticated ? reportForm(username) : authenticationPrompt()) : feedbackForm();
+  root.querySelector("#mhCommunityFeedbackBody").innerHTML = mode === "profile-report" ? (authenticated ? reportForm(username) : authenticationPrompt()) : feedbackForm(feedbackPreset);
   root.querySelector("#mhCommunityFeedbackStatus").textContent = "";
   root.hidden = false;
   document.documentElement.classList.add("mh-community-modal-open");

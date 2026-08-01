@@ -109,8 +109,9 @@ for (const modulePath of [
 
 if (!bootstrapSource.includes("requestIdleCallback") ||
     !bootstrapSource.includes("mh:analytics-route") ||
-    !bootstrapSource.includes("mh:gamification-route")) {
-  fail("Performance bootstrap is missing idle or route-aware loading guards.");
+    !bootstrapSource.includes("mh:gamification-route") ||
+    !bootstrapSource.includes("beta-readiness-controller.js")) {
+  fail("Performance bootstrap is missing idle, route-aware or beta readiness loading guards.");
 }
 if (!runtimeLoaderSource.includes("loadNumberLineRuntime") ||
     !runtimeLoaderSource.includes("classicScriptLoads")) {
