@@ -1943,17 +1943,22 @@ const {
   availableLeaderboardScopes,
   leaderboardProfileUrl,
   normalizeCommunityLeaderboard,
-  normalizeLeaderboardQuery
+  normalizeLeaderboardQuery,
+  normalizeLeaderboardRegionResults
 } = await importBrowserModule("js/community-leaderboard-model.js");
-const { loadCommunityLeaderboard } = await importBrowserModule("js/community-leaderboard-repository.js");
+const {
+  loadCommunityLeaderboard,
+  searchLeaderboardRegions
+} = await importBrowserModule("js/community-leaderboard-repository.js");
 
 assert.deepEqual(normalizeLeaderboardQuery({
   scope: "region",
   period: "month",
   metric: "problems",
   page: 2,
-  page_size: 100
-}), { scope: "region", period: "month", metric: "problems", page: 2, pageSize: 50 });
+  page_size: 100,
+  region_code: "ro-bn"
+}), { scope: "region", period: "month", metric: "problems", page: 2, pageSize: 50, regionCode: "RO-BN" });
 assert.deepEqual(availableLeaderboardScopes({
   show_location: true,
   region_code: "RO-BN",
@@ -1961,10 +1966,24 @@ assert.deepEqual(availableLeaderboardScopes({
   continent_code: "EU",
   eu_member: true
 }), ["region", "country", "eu", "continent", "global"]);
+assert.deepEqual(availableLeaderboardScopes({ show_location: false }), ["region", "global"]);
 assert.equal(leaderboardProfileUrl("cristi.math", "https://mathhard.app/"), "https://mathhard.app/u.html?u=cristi.math");
+assert.deepEqual(normalizeLeaderboardRegionResults([{
+  code: "ro-bn",
+  country_code: "ro",
+  name: "Bistrița-Năsăud",
+  type: "County",
+  public_members: 4
+}]), [{
+  code: "RO-BN",
+  countryCode: "RO",
+  name: "Bistrița-Năsăud",
+  type: "County",
+  publicMembers: 4
+}]);
 
 const leaderboardPayload = normalizeCommunityLeaderboard({
-  scope: "country",
+  scope: "region",
   period: "week",
   metric: "xp",
   page: 1,
@@ -1979,8 +1998,13 @@ const leaderboardPayload = normalizeCommunityLeaderboard({
     show_location: true,
     country_code: "RO",
     region_code: "RO-BN",
+    region_name: "Bistrița-Năsăud",
     continent_code: "EU",
-    eu_member: true
+    eu_member: true,
+    target_region_code: "RO-CJ",
+    target_region_name: "Cluj",
+    target_region_type: "County",
+    target_country_code: "RO"
   },
   rows: [{
     rank: 1,
@@ -1995,8 +2019,10 @@ const leaderboardPayload = normalizeCommunityLeaderboard({
     is_current_user: true,
     badge: { id: "tester", title_ro: "Tester", icon: "◆", rarity: "rare" }
   }]
-});
+}, { regionCode: "RO-CJ" });
 assert.equal(leaderboardPayload.context.countryCode, "RO");
+assert.equal(leaderboardPayload.context.targetRegionCode, "RO-CJ");
+assert.equal(leaderboardPayload.context.targetRegionName, "Cluj");
 assert.equal(leaderboardPayload.rows[0].isCurrentUser, true);
 assert.equal(leaderboardPayload.rows[0].badge.id, "tester");
 
@@ -2004,23 +2030,39 @@ const leaderboardRpcCalls = [];
 const leaderboardSupabase = {
   async rpc(name, payload) {
     leaderboardRpcCalls.push([name, payload]);
+    if (name === "mh_search_leaderboard_regions") {
+      return {
+        data: [{ code: "RO-CJ", country_code: "RO", name: "Cluj", type: "County", public_members: 7 }],
+        error: null
+      };
+    }
     return { data: leaderboardPayload, error: null };
   }
 };
 const loadedLeaderboard = await loadCommunityLeaderboard(leaderboardSupabase, {
-  scope: "country",
+  scope: "region",
   period: "week",
   metric: "xp",
   page: 1,
-  pageSize: 25
+  pageSize: 25,
+  regionCode: "RO-CJ"
 });
+const foundRegions = await searchLeaderboardRegions(leaderboardSupabase, "Cluj", 14);
 assert.equal(loadedLeaderboard.rows.length, 1);
-assert.deepEqual(leaderboardRpcCalls, [["mh_get_community_leaderboard", {
-  p_scope: "country",
-  p_period: "week",
-  p_metric: "xp",
-  p_page: 1,
-  p_page_size: 25
-}]]);
+assert.equal(foundRegions[0].code, "RO-CJ");
+assert.deepEqual(leaderboardRpcCalls, [
+  ["mh_get_community_leaderboard", {
+    p_scope: "region",
+    p_period: "week",
+    p_metric: "xp",
+    p_page: 1,
+    p_page_size: 25,
+    p_region_code: "RO-CJ"
+  }],
+  ["mh_search_leaderboard_regions", {
+    p_query: "Cluj",
+    p_limit: 14
+  }]
+]);
 
 console.log("MathHard repository tests passed.");

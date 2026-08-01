@@ -6,7 +6,10 @@ import {
   leaderboardProfileUrl,
   normalizeLeaderboardQuery
 } from "./community-leaderboard-model.js";
-import { loadCommunityLeaderboard } from "./community-leaderboard-repository.js";
+import {
+  loadCommunityLeaderboard,
+  searchLeaderboardRegions
+} from "./community-leaderboard-repository.js";
 
 const STORAGE_KEY = "mh_community_leaderboard_filters_v1";
 let host = null;
@@ -37,6 +40,7 @@ const COPY = {
     country: "Țară",
     region: "Regiune",
     empty: "Nu există încă suficiente rezultate pentru acest clasament.",
+    chooseRegionEmpty: "Alege o regiune pentru a vedea clasamentul ei.",
     ownRank: "Poziția ta",
     outsidePage: "Poziția ta nu este pe pagina curentă.",
     previous: "Anterior",
@@ -46,7 +50,17 @@ const COPY = {
     publicNeeded: "Activează profilul public și participarea în clasamente pentru a apărea aici.",
     configure: "Configurează profilul",
     locationNeeded: "Activează locația publică pentru clasamentele geografice.",
-    profileUnavailable: "Poți vedea clasamentul global. Pentru clasamente locale, completează profilul comunității.",
+    profileUnavailable: "Poți vedea clasamentele publice. Completează profilul comunității ca să apari și tu.",
+    regionSearch: "Explorează regiuni",
+    regionSearchPlaceholder: "Caută Bistrița-Năsăud, Cluj, Bavaria…",
+    regionSearchHint: "Poți vedea orice clasament regional fără să-ți schimbi locația profilului.",
+    selectedRegion: "Clasament selectat",
+    chooseRegion: "Caută și alege o regiune pentru a continua.",
+    myRegion: "Regiunea mea",
+    popularRegions: "Regiuni active",
+    searchingRegions: "Se caută…",
+    noRegionResults: "Nu am găsit regiunea.",
+    publicMembers: "membri publici",
     rankSuffix: "",
     europe: "Europa",
     africa: "Africa",
@@ -81,6 +95,7 @@ const COPY = {
     country: "Country",
     region: "Region",
     empty: "There are not enough results for this leaderboard yet.",
+    chooseRegionEmpty: "Choose a region to view its leaderboard.",
     ownRank: "Your rank",
     outsidePage: "Your rank is outside the current page.",
     previous: "Previous",
@@ -90,7 +105,17 @@ const COPY = {
     publicNeeded: "Enable a public profile and leaderboard participation to appear here.",
     configure: "Configure profile",
     locationNeeded: "Enable public location for geographic leaderboards.",
-    profileUnavailable: "You can view the global leaderboard. Complete your community profile for local rankings.",
+    profileUnavailable: "You can browse public leaderboards. Complete your community profile to appear in them.",
+    regionSearch: "Explore regions",
+    regionSearchPlaceholder: "Search Bistrița-Năsăud, Cluj, Bavaria…",
+    regionSearchHint: "Browse any regional leaderboard without changing your profile location.",
+    selectedRegion: "Selected leaderboard",
+    chooseRegion: "Search for and choose a region to continue.",
+    myRegion: "My region",
+    popularRegions: "Active regions",
+    searchingRegions: "Searching…",
+    noRegionResults: "No matching region found.",
+    publicMembers: "public members",
     rankSuffix: "",
     europe: "Europe",
     africa: "Africa",
@@ -117,6 +142,8 @@ let loading = false;
 let reloadAfterCurrent = false;
 let lastPayload = null;
 let query = readSavedQuery();
+let regionSearchTimer = 0;
+let regionSearchSerial = 0;
 
 function language() {
   return document.documentElement.lang?.toLowerCase().startsWith("en") ? "en" : "ro";
@@ -166,7 +193,7 @@ function countryLabel(code) {
 
 function scopeLabel(scope, context) {
   const copy = t();
-  if (scope === "region") return context.regionName || context.regionType || copy.region;
+  if (scope === "region") return context.targetRegionName || context.regionName || copy.region;
   if (scope === "country") return countryLabel(context.countryCode) || copy.country;
   if (scope === "eu") return copy.eu;
   if (scope === "continent") return copy[CONTINENTS[context.continentCode]] || copy.continent;
@@ -220,6 +247,46 @@ function renderRow(row, { own = false } = {}) {
   `;
 }
 
+function regionExplorerMarkup(payload) {
+  if (query.scope !== "region") return "";
+  const copy = t();
+  const context = payload.context;
+  const targetName = context.targetRegionName;
+  const targetCountry = countryLabel(context.targetCountryCode);
+  const ownAvailable = Boolean(context.regionCode && context.regionName);
+  const ownSelected = context.targetRegionCode && context.targetRegionCode === context.regionCode;
+  const ownButton = ownAvailable && !ownSelected
+    ? `<button type="button" class="mh-community-region-own" data-leaderboard-own-region="${escapeHtml(context.regionCode)}">${escapeHtml(copy.myRegion)} · ${escapeHtml(context.regionName)}</button>`
+    : "";
+
+  return `
+    <section class="mh-community-region-explorer" aria-labelledby="mhCommunityRegionExplorerTitle">
+      <div class="mh-community-region-explorer-head">
+        <div>
+          <span id="mhCommunityRegionExplorerTitle">${escapeHtml(copy.regionSearch)}</span>
+          <small>${escapeHtml(copy.regionSearchHint)}</small>
+        </div>
+        ${ownButton}
+      </div>
+      <div class="mh-community-region-picker">
+        <label class="mh-community-region-search" for="mhCommunityRegionSearch">
+          <span aria-hidden="true">⌕</span>
+          <input id="mhCommunityRegionSearch" type="search" autocomplete="off" spellcheck="false"
+            placeholder="${escapeHtml(copy.regionSearchPlaceholder)}"
+            role="combobox" aria-autocomplete="list" aria-expanded="false"
+            aria-controls="mhCommunityRegionResults" data-leaderboard-region-search>
+        </label>
+        <div id="mhCommunityRegionResults" class="mh-community-region-results" role="listbox" hidden></div>
+      </div>
+      <div class="mh-community-region-current ${targetName ? "has-region" : ""}">
+        <span>${escapeHtml(copy.selectedRegion)}</span>
+        <strong>${escapeHtml(targetName || copy.chooseRegion)}</strong>
+        ${targetName && targetCountry ? `<small>${escapeHtml(targetCountry)}${context.targetRegionType ? ` · ${escapeHtml(context.targetRegionType)}` : ""}</small>` : ""}
+      </div>
+    </section>
+  `;
+}
+
 function controls(payload) {
   const copy = t();
   const scopes = availableLeaderboardScopes(payload.context);
@@ -236,21 +303,27 @@ function controls(payload) {
 
   return `
     <div class="mh-community-leaderboard-controls">
-      <div><span>${copy.scope}</span><div class="mh-community-segmented">${scopeButtons}</div></div>
-      <div><span>${copy.period}</span><div class="mh-community-segmented">${periodButtons}</div></div>
-      <div><span>${copy.metric}</span><div class="mh-community-segmented">${metricButtons}</div></div>
+      <div><span>${escapeHtml(copy.scope)}</span><div class="mh-community-segmented">${scopeButtons}</div></div>
+      <div><span>${escapeHtml(copy.period)}</span><div class="mh-community-segmented">${periodButtons}</div></div>
+      <div><span>${escapeHtml(copy.metric)}</span><div class="mh-community-segmented">${metricButtons}</div></div>
     </div>
+    ${regionExplorerMarkup(payload)}
   `;
 }
 
 function noticeMarkup(payload) {
   const context = payload.context;
   const copy = t();
-  if (!context.authenticated) return `<p class="mh-community-leaderboard-notice">${escapeHtml(copy.profileUnavailable)} <a href="/profile.html#community">${escapeHtml(copy.configure)}</a></p>`;
+  if (query.scope === "region" && !context.targetRegionCode) {
+    return `<p class="mh-community-leaderboard-notice">${escapeHtml(copy.chooseRegion)}</p>`;
+  }
+  if (!context.authenticated) {
+    return `<p class="mh-community-leaderboard-notice">${escapeHtml(copy.profileUnavailable)} <a href="/profile.html#community">${escapeHtml(copy.configure)}</a></p>`;
+  }
   if (!context.isPublic || !context.showProgress || !context.leaderboardOptIn) {
     return `<p class="mh-community-leaderboard-notice">${escapeHtml(copy.publicNeeded)} <a href="/profile.html#community">${escapeHtml(copy.configure)}</a></p>`;
   }
-  if (!context.showLocation && query.scope !== "global") {
+  if (!context.showLocation && query.scope !== "global" && query.scope !== "region") {
     return `<p class="mh-community-leaderboard-notice">${escapeHtml(copy.locationNeeded)} <a href="/profile.html#community">${escapeHtml(copy.configure)}</a></p>`;
   }
   return "";
@@ -275,6 +348,9 @@ function renderPayload(payload) {
   const own = payload.ownRow && !pageHasOwn
     ? `<section class="mh-community-own-rank"><div><span>${escapeHtml(copy.ownRank)}</span><small>${escapeHtml(copy.outsidePage)}</small></div><table><tbody>${renderRow(payload.ownRow, { own: true })}</tbody></table></section>`
     : "";
+  const emptyText = query.scope === "region" && !payload.context.targetRegionCode
+    ? copy.chooseRegionEmpty
+    : copy.empty;
 
   host.innerHTML = `
     <section class="mh-community-leaderboard-shell">
@@ -282,8 +358,8 @@ function renderPayload(payload) {
         <div><h2>${escapeHtml(copy.title)}</h2><p>${escapeHtml(copy.subtitle)}</p></div>
         <span class="mh-community-leaderboard-count">${formatNumber(payload.totalCount)}</span>
       </header>
-      ${noticeMarkup(payload)}
       ${controls(payload)}
+      ${noticeMarkup(payload)}
       <div class="mh-community-leaderboard-table-wrap">
         <table class="mh-community-leaderboard-table">
           <thead><tr>
@@ -296,7 +372,7 @@ function renderPayload(payload) {
             <th>${escapeHtml(copy.lessons)}</th>
             <th>${escapeHtml(copy.exams)}</th>
           </tr></thead>
-          <tbody>${payload.rows.length ? payload.rows.map((row) => renderRow(row)).join("") : `<tr><td colspan="8"><div class="mh-community-leaderboard-empty">${escapeHtml(copy.empty)}</div></td></tr>`}</tbody>
+          <tbody>${payload.rows.length ? payload.rows.map((row) => renderRow(row)).join("") : `<tr><td colspan="8"><div class="mh-community-leaderboard-empty">${escapeHtml(emptyText)}</div></td></tr>`}</tbody>
         </table>
       </div>
       ${own}
@@ -315,6 +391,117 @@ function renderState(kind) {
   }
   host.innerHTML = `<div class="mh-ui-state is-error"><p>${escapeHtml(copy.error)}</p><button class="btn small primary" type="button" data-leaderboard-retry>${escapeHtml(copy.retry)}</button></div>`;
   host.querySelector("[data-leaderboard-retry]")?.addEventListener("click", () => void refresh(), { once: true });
+}
+
+function revealActiveSegments() {
+  host?.querySelectorAll(".mh-community-segmented .is-active").forEach((button) => {
+    button.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  });
+}
+
+function setRegionResultsState(list, input, markup, expanded = true) {
+  if (!list || !input) return;
+  list.innerHTML = markup;
+  list.hidden = !expanded;
+  input.setAttribute("aria-expanded", String(expanded));
+}
+
+function regionResultsMarkup(regions) {
+  const copy = t();
+  if (!regions.length) return `<p class="mh-community-region-results-state">${escapeHtml(copy.noRegionResults)}</p>`;
+  return regions.map((region) => {
+    const country = countryLabel(region.countryCode);
+    return `
+      <button type="button" role="option" data-leaderboard-region-code="${escapeHtml(region.code)}">
+        <span><strong>${escapeHtml(region.name)}</strong><small>${escapeHtml(country)}${region.type ? ` · ${escapeHtml(region.type)}` : ""}</small></span>
+        <em>${formatNumber(region.publicMembers)} ${escapeHtml(copy.publicMembers)}</em>
+      </button>
+    `;
+  }).join("");
+}
+
+async function runRegionSearch(input, list) {
+  const serial = ++regionSearchSerial;
+  setRegionResultsState(list, input, `<p class="mh-community-region-results-state">${escapeHtml(t().searchingRegions)}</p>`);
+  try {
+    const regions = await searchLeaderboardRegions(supabase, input.value, 14);
+    if (serial !== regionSearchSerial || !input.isConnected) return;
+    setRegionResultsState(list, input, regionResultsMarkup(regions));
+    list.querySelectorAll("[data-leaderboard-region-code]").forEach((button, index) => {
+      button.addEventListener("click", () => {
+        query = normalizeLeaderboardQuery({
+          ...query,
+          scope: "region",
+          regionCode: button.dataset.leaderboardRegionCode,
+          page: 1
+        });
+        saveQuery();
+        void refresh();
+      });
+      if (index === 0) button.dataset.firstRegionResult = "true";
+    });
+  } catch (error) {
+    console.error("Region search failed:", error);
+    if (serial === regionSearchSerial && input.isConnected) {
+      setRegionResultsState(list, input, `<p class="mh-community-region-results-state">${escapeHtml(t().error)}</p>`);
+    }
+  }
+}
+
+function bindRegionExplorer() {
+  const input = host.querySelector("[data-leaderboard-region-search]");
+  const list = host.querySelector("#mhCommunityRegionResults");
+  if (!input || !list) return;
+
+  const queueSearch = (delay = 220) => {
+    window.clearTimeout(regionSearchTimer);
+    regionSearchTimer = window.setTimeout(() => void runRegionSearch(input, list), delay);
+  };
+
+  input.addEventListener("focus", () => queueSearch(0));
+  input.addEventListener("input", () => queueSearch());
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      list.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      input.blur();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      const first = list.querySelector("[data-first-region-result]");
+      if (first) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
+  input.addEventListener("blur", () => {
+    window.setTimeout(() => {
+      if (!list.contains(document.activeElement)) {
+        list.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+      }
+    }, 100);
+  });
+  list.addEventListener("focusout", () => {
+    window.setTimeout(() => {
+      if (!list.contains(document.activeElement) && document.activeElement !== input) {
+        list.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+      }
+    }, 100);
+  });
+
+  host.querySelector("[data-leaderboard-own-region]")?.addEventListener("click", (event) => {
+    query = normalizeLeaderboardQuery({
+      ...query,
+      scope: "region",
+      regionCode: event.currentTarget.dataset.leaderboardOwnRegion,
+      page: 1
+    });
+    saveQuery();
+    void refresh();
+  });
 }
 
 function bindControls() {
@@ -345,6 +532,8 @@ function bindControls() {
     saveQuery();
     void refresh();
   }));
+  bindRegionExplorer();
+  requestAnimationFrame(revealActiveSegments);
 }
 
 async function refresh() {
@@ -364,6 +553,9 @@ async function refresh() {
     } else if (query.page > payload.totalPages) {
       query = normalizeLeaderboardQuery({ ...query, page: payload.totalPages });
       payload = await loadCommunityLeaderboard(supabase, query);
+    }
+    if (query.scope === "region" && payload.context.targetRegionCode && query.regionCode !== payload.context.targetRegionCode) {
+      query = normalizeLeaderboardQuery({ ...query, regionCode: payload.context.targetRegionCode });
     }
     renderPayload(payload);
     saveQuery();

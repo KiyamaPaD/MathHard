@@ -610,11 +610,11 @@ if (!performanceBootstrapSource.includes('leaderboards: "./community-leaderboard
 if (!communityLeaderboardModelSource.includes("availableLeaderboardScopes") || !communityLeaderboardModelSource.includes("normalizeCommunityLeaderboard")) {
   fail("Phase 4B leaderboard model must centralize scope and payload normalization.");
 }
-if (!communityLeaderboardRepositorySource.includes("mh_get_community_leaderboard") || communityLeaderboardRepositorySource.includes(".from(")) {
-  fail("Phase 4B leaderboard data must use its sanitized RPC contract.");
+if (!communityLeaderboardRepositorySource.includes("mh_get_community_leaderboard") || !communityLeaderboardRepositorySource.includes("mh_search_leaderboard_regions") || communityLeaderboardRepositorySource.includes(".from(")) {
+  fail("Phase 4B leaderboard data must use its sanitized leaderboard and region-search RPC contracts.");
 }
-if (!communityLeaderboardControllerSource.includes("data-leaderboard-scope") || !communityLeaderboardControllerSource.includes("mh-community-own-rank")) {
-  fail("Phase 4B leaderboard workspace is incomplete.");
+if (!communityLeaderboardControllerSource.includes("data-leaderboard-scope") || !communityLeaderboardControllerSource.includes("data-leaderboard-region-search") || !communityLeaderboardControllerSource.includes("mh-community-region-explorer") || !communityLeaderboardControllerSource.includes("mh-community-own-rank")) {
+  fail("Phase 4B leaderboard workspace or region explorer is incomplete.");
 }
 if (/\sonerror\s*=/.test(communityLeaderboardControllerSource)) {
   fail("Phase 4B leaderboard avatars must not use inline event handlers.");

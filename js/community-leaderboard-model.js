@@ -12,6 +12,10 @@ export const COMMUNITY_LEADERBOARD_METRICS = Object.freeze([
 
 const asText = (value, max = 200) => String(value ?? "").trim().slice(0, max);
 const asCount = (value, minimum = 0) => Math.max(minimum, Number(value) || 0);
+const normalizeRegionCode = (value) => {
+  const code = asText(value, 16).toUpperCase();
+  return /^[A-Z0-9]{2,3}-[A-Z0-9]{1,8}$/.test(code) ? code : "";
+};
 
 export function normalizeLeaderboardQuery(query = {}) {
   const scope = COMMUNITY_LEADERBOARD_SCOPES.includes(query.scope) ? query.scope : "global";
@@ -19,7 +23,8 @@ export function normalizeLeaderboardQuery(query = {}) {
   const metric = COMMUNITY_LEADERBOARD_METRICS.includes(query.metric) ? query.metric : "xp";
   const page = Math.max(1, Math.trunc(Number(query.page) || 1));
   const pageSize = Math.min(50, Math.max(10, Math.trunc(Number(query.pageSize ?? query.page_size) || 25)));
-  return { scope, period, metric, page, pageSize };
+  const regionCode = normalizeRegionCode(query.regionCode ?? query.region_code);
+  return { scope, period, metric, page, pageSize, regionCode };
 }
 
 export function normalizeLeaderboardContext(context = {}) {
@@ -32,11 +37,15 @@ export function normalizeLeaderboardContext(context = {}) {
     showLocation: Boolean(context.show_location ?? context.showLocation),
     username: asText(context.username, 24),
     countryCode: asText(context.country_code ?? context.countryCode, 2).toUpperCase(),
-    regionCode: asText(context.region_code ?? context.regionCode, 16).toUpperCase(),
+    regionCode: normalizeRegionCode(context.region_code ?? context.regionCode),
     regionName: asText(context.region_name ?? context.regionName, 140),
     regionType: asText(context.region_type ?? context.regionType, 60),
     continentCode: asText(context.continent_code ?? context.continentCode, 2).toUpperCase(),
-    euMember: Boolean(context.eu_member ?? context.euMember)
+    euMember: Boolean(context.eu_member ?? context.euMember),
+    targetRegionCode: normalizeRegionCode(context.target_region_code ?? context.targetRegionCode),
+    targetRegionName: asText(context.target_region_name ?? context.targetRegionName, 140),
+    targetRegionType: asText(context.target_region_type ?? context.targetRegionType, 60),
+    targetCountryCode: asText(context.target_country_code ?? context.targetCountryCode, 2).toUpperCase()
   };
 }
 
@@ -73,6 +82,22 @@ export function normalizeLeaderboardRow(row = {}) {
   };
 }
 
+export function normalizeLeaderboardRegion(region = {}) {
+  return {
+    code: normalizeRegionCode(region.code),
+    countryCode: asText(region.country_code ?? region.countryCode, 2).toUpperCase(),
+    name: asText(region.name, 140),
+    type: asText(region.type ?? region.region_type ?? region.regionType, 60),
+    publicMembers: asCount(region.public_members ?? region.publicMembers)
+  };
+}
+
+export function normalizeLeaderboardRegionResults(payload = []) {
+  return (Array.isArray(payload) ? payload : [])
+    .map(normalizeLeaderboardRegion)
+    .filter((region) => region.code && region.name);
+}
+
 export function normalizeCommunityLeaderboard(payload = {}, fallbackQuery = {}) {
   const query = normalizeLeaderboardQuery({
     ...fallbackQuery,
@@ -80,7 +105,8 @@ export function normalizeCommunityLeaderboard(payload = {}, fallbackQuery = {}) 
     period: payload.period ?? fallbackQuery.period,
     metric: payload.metric ?? fallbackQuery.metric,
     page: payload.page ?? fallbackQuery.page,
-    pageSize: payload.page_size ?? fallbackQuery.pageSize
+    pageSize: payload.page_size ?? fallbackQuery.pageSize,
+    regionCode: payload.context?.target_region_code ?? fallbackQuery.regionCode
   });
 
   const rows = Array.isArray(payload.rows)
@@ -102,8 +128,7 @@ export function normalizeCommunityLeaderboard(payload = {}, fallbackQuery = {}) 
 
 export function availableLeaderboardScopes(context = {}) {
   const normalized = normalizeLeaderboardContext(context);
-  const scopes = [];
-  if (normalized.showLocation && normalized.regionCode) scopes.push("region");
+  const scopes = ["region"];
   if (normalized.showLocation && normalized.countryCode) scopes.push("country");
   if (normalized.showLocation && normalized.euMember) scopes.push("eu");
   if (normalized.showLocation && normalized.continentCode) scopes.push("continent");

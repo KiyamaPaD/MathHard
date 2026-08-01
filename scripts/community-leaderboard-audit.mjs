@@ -37,8 +37,8 @@ const profileModel = read("js/community-profile-model.js");
 const profileSettings = read("js/community-profile-settings-controller.js");
 const rewards = read("js/gamification-controller.js");
 const css = read("css/community-leaderboard.css");
-const migration = read("local-sql/055_product_phase_04b_geographic_leaderboards.sql");
-const smoke = read("local-sql/055_phase4b_transactional_smoke_test.sql");
+const migration = read("local-sql/056_product_phase_04b_3_region_explorer.sql");
+const smoke = read("local-sql/056_phase4b3_transactional_smoke_test.sql");
 
 requireTokens(indexHtml, "App stylesheet", ["css/community-leaderboard.css"]);
 requireTokens(profileHtml, "Profile integration", [
@@ -62,26 +62,39 @@ requireTokens(model, "Leaderboard model", [
   "COMMUNITY_LEADERBOARD_SCOPES",
   "COMMUNITY_LEADERBOARD_PERIODS",
   "COMMUNITY_LEADERBOARD_METRICS",
+  "regionCode",
+  "targetRegionCode",
+  "normalizeLeaderboardRegionResults",
   "availableLeaderboardScopes",
   "normalizeCommunityLeaderboard"
 ]);
 requireTokens(repository, "Leaderboard repository", [
   "mh_get_community_leaderboard",
+  "mh_search_leaderboard_regions",
+  "p_region_code",
   "p_scope",
   "p_period",
   "p_metric",
   "p_page_size"
 ]);
-if (repository.includes(".from(")) errors.push("Leaderboard repository uses direct table reads instead of the public-safe RPC.");
+if (repository.includes(".from(")) errors.push("Leaderboard repository uses direct table reads instead of public-safe RPCs.");
 requireTokens(controller, "Leaderboard controller", [
   "data-leaderboard-scope",
   "data-leaderboard-period",
   "data-leaderboard-metric",
+  "data-leaderboard-region-search",
+  "data-leaderboard-region-code",
+  "data-leaderboard-own-region",
+  "mh-community-region-explorer",
+  "searchLeaderboardRegions",
   "mh-community-own-rank",
   "mh:community-profile-saved",
-  "data-avatar-fallback"
+  "data-avatar-fallback",
+  "revealActiveSegments",
+  "scrollIntoView"
 ]);
 if (/\sonerror\s*=/.test(controller)) errors.push("Leaderboard controller contains an inline error handler, which conflicts with CSP hardening.");
+if (/\b(?:email|user_id|uuid|provider)\b/i.test(controller)) errors.push("Leaderboard controller references an internal account field.");
 requireTokens(profileModel, "Profile URL model", [
   "normalizeProfileUrl",
   "Public progress is required to join leaderboards",
@@ -101,36 +114,42 @@ if (rewards.includes("renderLeaderboard(") || rewards.includes("gamificationLead
 requireTokens(css, "Leaderboard responsive CSS", [
   ".mh-community-leaderboard-table",
   ".mh-community-own-rank",
+  ".mh-community-region-explorer",
+  ".mh-community-region-results",
   "@media(max-width:680px)",
-  "overflow:visible"
+  "overflow:visible",
+  "touch-action:pan-x",
+  "scrollbar-width:thin",
+  "scroll-snap-type:x proximity"
 ]);
 
-requireTokens(migration, "Phase 4B SQL", [
-  "mh_community_url_normalize",
-  "mh_community_profiles_leaderboard_progress_check",
-  "mh_get_community_leaderboard",
+requireTokens(migration, "Phase 4B.3 SQL", [
+  "mh_geo_search_normalize",
+  "mh_search_leaderboard_regions",
+  "public_members",
+  "p_region_code",
+  "target_region_code",
+  "target_region_name",
+  "v_target_region.code is not null",
   "cp.is_public and cp.leaderboard_opt_in and cp.show_progress",
   "case when cp.show_location then cp.country_code end as country_code",
-  "when 'region'",
-  "when 'country'",
-  "when 'eu'",
-  "when 'continent'",
   "to_jsonb(row) - 'user_id'",
-  "user_weekly_challenge_claims",
+  "grant execute on function public.mh_search_leaderboard_regions",
   "grant execute on function public.mh_get_community_leaderboard"
 ]);
-if (!balancedDollarQuotes(migration)) errors.push("Phase 4B SQL has unbalanced $$ blocks.");
+if (!balancedDollarQuotes(migration)) errors.push("Phase 4B.3 SQL has unbalanced $$ blocks.");
 if (/'user_id'\s*,/.test(migration)) errors.push("Leaderboard SQL appears to expose user_id in a JSON payload.");
-requireTokens(smoke, "Phase 4B smoke test", [
+requireTokens(smoke, "Phase 4B.3 smoke test", [
   "begin;",
-  "ftcprogrammingatlas.com",
-  "javascript:alert(1)",
+  "Bistrita",
+  "RO-BN",
+  "mh_search_leaderboard_regions",
   "mh_get_community_leaderboard",
   "Internal user ID leaked",
-  "Phase 04B smoke test passed",
+  "Phase 04B.3 smoke test passed",
   "rollback;"
 ]);
-if (!balancedDollarQuotes(smoke)) errors.push("Phase 4B smoke test has unbalanced $$ blocks.");
+if (!balancedDollarQuotes(smoke)) errors.push("Phase 4B.3 smoke test has unbalanced $$ blocks.");
 
 const leaderboardModel = await import(pathToFileURL(resolve(root, "js/community-leaderboard-model.js")).href);
 assert.deepEqual(
@@ -144,23 +163,41 @@ assert.deepEqual(
   ["region", "country", "eu", "continent", "global"]
 );
 assert.deepEqual(
-  leaderboardModel.normalizeLeaderboardQuery({ scope: "invalid", period: "invalid", metric: "invalid", page: -3, pageSize: 200 }),
-  { scope: "global", period: "week", metric: "xp", page: 1, pageSize: 50 }
+  leaderboardModel.availableLeaderboardScopes({ show_location: false }),
+  ["region", "global"]
+);
+assert.deepEqual(
+  leaderboardModel.normalizeLeaderboardQuery({
+    scope: "region",
+    period: "invalid",
+    metric: "invalid",
+    page: -3,
+    pageSize: 200,
+    region_code: "ro-bn"
+  }),
+  { scope: "region", period: "week", metric: "xp", page: 1, pageSize: 50, regionCode: "RO-BN" }
+);
+assert.deepEqual(
+  leaderboardModel.normalizeLeaderboardRegionResults([
+    { code: "ro-bn", country_code: "ro", name: "Bistrița-Năsăud", type: "County", public_members: 3 }
+  ]),
+  [{ code: "RO-BN", countryCode: "RO", name: "Bistrița-Năsăud", type: "County", publicMembers: 3 }]
 );
 
 const profileModelModule = await import(pathToFileURL(resolve(root, "js/community-profile-model.js")).href);
 assert.equal(profileModelModule.normalizeProfileUrl("ftcprogrammingatlas.com"), "https://ftcprogrammingatlas.com/");
 assert.equal(profileModelModule.normalizeProfileUrl("javascript:alert(1)"), "");
 
-console.log("MathHard Phase 4B Geographic Leaderboards audit");
+console.log("MathHard Phase 4B.3 Region Explorer audit");
 if (errors.length) {
   errors.forEach((error) => console.error(`ERROR: ${error}`));
   process.exitCode = 1;
 } else {
-  console.log("- saved profile preview and URL normalization: present");
-  console.log("- geographic, EU, continent and global scopes: present");
-  console.log("- weekly, monthly and all-time ranking metrics: present");
+  console.log("- arbitrary region search and selection: present");
+  console.log("- accent-insensitive region lookup contract: present");
+  console.log("- own-region shortcut and persisted selection: present");
   console.log("- public opt-in and location privacy: enforced");
+  console.log("- horizontal scope controls: touch-scrollable");
   console.log("- obsolete Rewards mini leaderboard: removed");
-  console.log("MathHard Phase 4B Geographic Leaderboards audit passed.");
+  console.log("MathHard Phase 4B.3 Region Explorer audit passed.");
 }

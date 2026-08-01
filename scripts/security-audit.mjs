@@ -191,8 +191,8 @@ if (!communityProfileSettings.includes("normalizeLinkInputs")) {
 }
 
 const communityLeaderboardRepository = sources.get("js/community-leaderboard-repository.js") || "";
-if (!communityLeaderboardRepository.includes("mh_get_community_leaderboard")) {
-  fail("Community leaderboards must use the sanitized leaderboard RPC.");
+if (!communityLeaderboardRepository.includes("mh_get_community_leaderboard") || !communityLeaderboardRepository.includes("mh_search_leaderboard_regions")) {
+  fail("Community leaderboards must use the sanitized leaderboard and region-search RPCs.");
 }
 if (communityLeaderboardRepository.includes(".from(")) {
   fail("Community leaderboards must not query progress or profiles directly.");
@@ -223,6 +223,26 @@ if (existsSync(leaderboardSqlPath)) {
   }
 } else {
   warn("Phase 4B SQL is not present in local-sql; database-level leaderboard checks were skipped.");
+}
+
+
+const regionExplorerSqlPath = resolve(root, "local-sql/056_product_phase_04b_3_region_explorer.sql");
+if (existsSync(regionExplorerSqlPath)) {
+  const regionExplorerSql = readFileSync(regionExplorerSqlPath, "utf8");
+  if (!regionExplorerSql.includes("mh_search_leaderboard_regions") || !regionExplorerSql.includes("grant execute on function public.mh_search_leaderboard_regions")) {
+    fail("Region explorer SQL is missing its sanitized public search RPC or grants.");
+  }
+  if (!regionExplorerSql.includes("p_region_code") || !regionExplorerSql.includes("target_region_code")) {
+    fail("Region explorer SQL does not bind leaderboard results to an explicit selected region.");
+  }
+  if (!regionExplorerSql.includes("cp.is_public and cp.leaderboard_opt_in and cp.show_progress")) {
+    fail("Region explorer leaderboard does not fail closed to public, opted-in profiles.");
+  }
+  if (!regionExplorerSql.includes("to_jsonb(row) - 'user_id'")) {
+    fail("Region explorer leaderboard does not strip internal user IDs.");
+  }
+} else {
+  warn("Phase 4B.3 SQL is not present in local-sql; region explorer database checks were skipped.");
 }
 
 const communityAdminController = sources.get("js/community-admin-controller.js") || "";
