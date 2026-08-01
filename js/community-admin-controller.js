@@ -6,7 +6,7 @@ import {
   saveCommunityBadgeDefinition,
   setCommunityUserAccess,
   updateCommunityModerationCase
-} from "./community-profile-repository.js?v=4d4";
+} from "./community-profile-repository.js?v=4d5";
 import {
   normalizeCommunityBadgeDraft,
   normalizeCommunityBadgeStudio,
@@ -259,7 +259,7 @@ export function createCommunityAdminController({ host, supabase }) {
   }
 
   async function saveModerationCase(form = body.querySelector("#mhCommunityCaseForm")) {
-    if (!form || form.id !== "mhCommunityCaseForm" || form.dataset.saving === "1") return;
+    if (!form?.matches?.("#mhCommunityCaseForm") || form.dataset.saving === "1") return;
 
     const value = formValues(form);
     const validationError = validateModerationCaseDraft(value);
@@ -381,9 +381,10 @@ export function createCommunityAdminController({ host, supabase }) {
   host.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.target;
+    const formId = form.getAttribute("id") || "";
     const value = formValues(form);
 
-    if (form.id === "mhCommunityBadgeForm") {
+    if (formId === "mhCommunityBadgeForm") {
       const validation = validateCommunityBadgeDraft(value);
       if (!validation.valid) return setFeedback(validation.errors[0], "error");
       setFeedback("Se salvează...", "loading");
@@ -392,7 +393,7 @@ export function createCommunityAdminController({ host, supabase }) {
       return;
     }
 
-    if (form.id === "mhCommunityAssignmentForm") {
+    if (formId === "mhCommunityAssignmentForm") {
       if (!value.badge_id) return setFeedback("Alege un badge.", "error");
       setFeedback("Se acordă...", "loading");
       try { state.badges = normalizeCommunityBadgeStudio(await assignCommunityBadge(supabase, { user_id: value.user_id, badge_id: value.badge_id, featured: value.featured, note: value.note, expires_at: value.expires_at || null })); render(); setFeedback("Badge acordat.", "success"); }
@@ -400,12 +401,12 @@ export function createCommunityAdminController({ host, supabase }) {
       return;
     }
 
-    if (form.id === "mhCommunityCaseForm") {
+    if (formId === "mhCommunityCaseForm") {
       await saveModerationCase(form);
       return;
     }
 
-    if (form.id === "mhCommunityIntegrityForm") {
+    if (formId === "mhCommunityIntegrityForm") {
       setFeedback("Se salvează...", "loading");
       try {
         await setCommunityUserAccess(supabase, { userId: value.user_id, profileAllowed: value.profile_allowed, leaderboardAllowed: value.leaderboard_allowed, note: value.note });

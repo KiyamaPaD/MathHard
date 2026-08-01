@@ -28,7 +28,7 @@ if (feedbackRepository.includes(".from(") || adminRepository.includes(".from("))
 requireTokens(feedbackController, "Logged-out reporting UX", ["authenticationPrompt", "authTitle", "authAction", "supabase.auth.getSession", "submitCommunityProfileReport"]);
 requireTokens(feedbackCss, "Reporting prompt styles", [".mh-community-feedback-auth", ".mh-community-feedback-modal"]);
 requireTokens(adminController, "Moderation save flow", ["data-community-action=\"save-case\"", "saveModerationCase", "event.preventDefault()", "setFormBusy", "normalizeCommunityCase", "validateModerationCaseDraft", "moderationErrorMessage", "Caz salvat.", "state.status = persisted.status"]);
-requireTokens(appSource, "Community Admin cache bust", ["community-admin-controller.js?v=4d4"]);
+requireTokens(appSource, "Community Admin cache bust", ["community-admin-controller.js?v=4d5"]);
 requireTokens(migration, "Moderation save SQL", [
   "mh_admin_save_community_case", "drop function if exists public.mh_admin_update_community_case", "returns jsonb", "returning feedback.user_id", "case_updated", "grant execute on function public.mh_admin_save_community_case"
 ]);
@@ -36,7 +36,7 @@ requireTokens(smoke, "Moderation smoke test", ["mh_admin_save_community_case", "
 if (!balanced(migration)) errors.push("Phase 4D SQL has unbalanced $$ blocks.");
 if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
 
-requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=4d4", "css/community-admin.css?v=4d4"]);
+requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=4d5", "css/community-admin.css?v=4d5"]);
 requireTokens(adminController, "direct community case save binding", [
   'id="mhCommunityCaseSaveBtn"',
   'type="button"',
@@ -55,6 +55,17 @@ requireTokens(adminCss, "community save button pointer hardening", [
   "#mhCommunityCaseSaveBtn",
   "pointer-events:auto!important",
   "touch-action:manipulation"
+]);
+
+
+if (/\bform\.id\b/.test(adminController)) {
+  throw new Error("Community Admin must not use form.id because controls named id shadow the form property in browsers.");
+}
+requireTokens(adminController, "Named-form collision regression", [
+  'form?.matches?.("#mhCommunityCaseForm")',
+  'const formId = form.getAttribute("id") || ""',
+  'formId === "mhCommunityBadgeForm"',
+  'formId === "mhCommunityCaseForm"'
 ]);
 
 const model = await import(pathToFileURL(resolve(root, "js/community-feedback-model.js")).href);
