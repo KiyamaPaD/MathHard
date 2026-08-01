@@ -71,6 +71,7 @@
             <a id="profileRoadmapBtn" class="btn small" href="/index.html#roadmap">Roadmap</a>
             <a id="profileAnalyticsBtn" class="btn small" href="/index.html#analytics">Analytics</a>
             <a id="profileRewardsBtn" class="btn small" href="/index.html#gamification">Recompense</a>
+            <a id="profileLeaderboardsBtn" class="btn small" href="/index.html#leaderboards">Clasamente</a>
           </div>
         </div>
       </article>
@@ -244,7 +245,7 @@
               <div class="community-form-heading"><h3 data-profile-text-key="community_privacy_title">Confidențialitate</h3><span data-profile-text-key="community_privacy_help">Profilul și clasamentele sunt opt-in.</span></div>
               <div class="community-privacy-grid">
                 <label class="community-switch community-switch-primary"><input id="communityIsPublic" name="is_public" type="checkbox"><span><strong data-profile-text-key="community_public">Profil public</strong><small data-profile-text-key="community_public_help">Permite afișarea paginii tale publice.</small></span></label>
-                <label class="community-switch"><input id="communityLeaderboardOptIn" name="leaderboard_opt_in" type="checkbox"><span><strong data-profile-text-key="community_leaderboard">Participă în clasamente</strong><small data-profile-text-key="community_leaderboard_help">Necesită un profil public.</small></span></label>
+                <label class="community-switch"><input id="communityLeaderboardOptIn" name="leaderboard_opt_in" type="checkbox"><span><strong data-profile-text-key="community_leaderboard">Participă în clasamente</strong><small data-profile-text-key="community_leaderboard_help">Necesită profil public și progres vizibil.</small></span></label>
                 <label class="community-switch"><input name="show_location" type="checkbox"><span><strong data-profile-text-key="community_privacy_location">Locație</strong><small data-profile-text-key="community_privacy_location_help">Țară și regiune.</small></span></label>
                 <label class="community-switch"><input name="show_education" type="checkbox"><span><strong data-profile-text-key="community_privacy_education">Educație</strong><small data-profile-text-key="community_privacy_education_help">Nivel, clasă și obiectiv.</small></span></label>
                 <label class="community-switch"><input name="show_personality" type="checkbox"><span><strong data-profile-text-key="community_privacy_personality">Matematică și personalitate</strong><small data-profile-text-key="community_privacy_personality_help">Preferințe, focus, limbi și citat.</small></span></label>
@@ -267,6 +268,7 @@
               <p class="community-preview-username" id="communityPreviewUsername">@username</p>
               <p id="communityPreviewBio">Adaugă o bio scurtă.</p>
               <div class="community-preview-badges" id="communityPreviewBadges"></div>
+              <div class="community-preview-links" id="communityPreviewLinks" hidden></div>
               <dl class="community-preview-details" id="communityPreviewDetails"></dl>
             </div>
           </aside>

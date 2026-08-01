@@ -3,7 +3,8 @@ let initialized = false;
 
 const ROUTE_MODULES = Object.freeze({
   analytics: "./analytics-controller.js",
-  gamification: "./gamification-controller.js"
+  gamification: "./gamification-controller.js",
+  leaderboards: "./community-leaderboard-controller.js"
 });
 
 function loadModuleOnce(path) {
@@ -34,6 +35,7 @@ function routeFromLocation() {
 function routeHost(route) {
   if (route === "analytics") return document.getElementById("mhShellPanelAnalytics");
   if (route === "gamification") return document.getElementById("mhShellPanelGamification");
+  if (route === "leaderboards") return document.getElementById("mhShellPanelLeaderboards");
   return null;
 }
 
@@ -41,6 +43,7 @@ function routeCopy(route, kind) {
   const english = document.documentElement.lang?.toLowerCase().startsWith("en");
   if (kind === "loading") {
     if (route === "analytics") return english ? "Loading analytics…" : "Se încarcă analytics…";
+    if (route === "leaderboards") return english ? "Loading leaderboard…" : "Se încarcă clasamentul…";
     return english ? "Loading progress…" : "Se încarcă progresul…";
   }
   return english
@@ -107,6 +110,9 @@ function init() {
   });
   window.addEventListener("mh:gamification-route", (event) => {
     if (event.detail?.active) void requestRouteModule("gamification", { showState: true });
+  });
+  window.addEventListener("mh:leaderboards-route", (event) => {
+    if (event.detail?.active) void requestRouteModule("leaderboards", { showState: true });
   });
 
   document.addEventListener("pointerover", (event) => prefetchForTarget(event.target), { passive: true });

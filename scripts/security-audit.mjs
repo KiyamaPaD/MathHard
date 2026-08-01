@@ -58,6 +58,9 @@ const targets = [
   "js/profile.js",
   "js/community-profile-repository.js",
   "js/community-profile-page.js",
+  "js/community-profile-settings-controller.js",
+  "js/community-leaderboard-repository.js",
+  "js/community-leaderboard-controller.js",
   "js/community-admin-controller.js",
   "js/supabase-client.js"
 ];
@@ -177,6 +180,49 @@ if (/email|user_id|uuid|provider/i.test(communityProfilePage)) {
 }
 if (!communityProfilePage.includes("profile.privacy.show_personality") || !communityProfilePage.includes("profile.privacy.show_activity")) {
   fail("Public community profile page must honor privacy switches before rendering optional sections.");
+}
+
+const communityProfileSettings = sources.get("js/community-profile-settings-controller.js") || "";
+if (communityProfileSettings.includes("new FormData(form)")) {
+  fail("Community profile save/preview must not drop disabled controls through FormData.");
+}
+if (!communityProfileSettings.includes("normalizeLinkInputs")) {
+  fail("Community profile links must be normalized before save.");
+}
+
+const communityLeaderboardRepository = sources.get("js/community-leaderboard-repository.js") || "";
+if (!communityLeaderboardRepository.includes("mh_get_community_leaderboard")) {
+  fail("Community leaderboards must use the sanitized leaderboard RPC.");
+}
+if (communityLeaderboardRepository.includes(".from(")) {
+  fail("Community leaderboards must not query progress or profiles directly.");
+}
+
+const communityLeaderboardController = sources.get("js/community-leaderboard-controller.js") || "";
+if (/\b(?:email|user_id|uuid|provider)\b/i.test(communityLeaderboardController)) {
+  fail("Community leaderboard UI references an internal account field.");
+}
+if (/\sonerror\s*=/.test(communityLeaderboardController)) {
+  fail("Community leaderboard UI contains an inline event handler.");
+}
+
+const leaderboardSqlPath = resolve(root, "local-sql/055_product_phase_04b_geographic_leaderboards.sql");
+if (existsSync(leaderboardSqlPath)) {
+  const leaderboardSql = readFileSync(leaderboardSqlPath, "utf8");
+  if (!leaderboardSql.includes("cp.is_public and cp.leaderboard_opt_in and cp.show_progress")) {
+    fail("Leaderboard SQL does not fail closed to public, opted-in profiles with public progress.");
+  }
+  if (!leaderboardSql.includes("to_jsonb(row) - 'user_id'")) {
+    fail("Leaderboard SQL does not strip internal user IDs from returned rows.");
+  }
+  if (!leaderboardSql.includes("grant execute on function public.mh_get_community_leaderboard") || !leaderboardSql.includes("to anon, authenticated")) {
+    fail("Leaderboard SQL grants are incomplete or unexpected.");
+  }
+  if (!leaderboardSql.includes("not v_is_public or not v_show_progress")) {
+    fail("Leaderboard opt-in is not bound to public profile and public progress settings.");
+  }
+} else {
+  warn("Phase 4B SQL is not present in local-sql; database-level leaderboard checks were skipped.");
 }
 
 const communityAdminController = sources.get("js/community-admin-controller.js") || "";

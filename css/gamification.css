@@ -224,64 +224,6 @@
   margin-top: 15px;
 }
 
-.mh-game-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: .84rem;
-  cursor: pointer;
-}
-
-.mh-game-toggle input {
-  accent-color: var(--accent);
-}
-
-.mh-game-current-rank {
-  margin: -4px 0 12px;
-}
-
-.mh-game-leaderboard {
-  display: grid;
-  gap: 7px;
-}
-
-.mh-game-leaderboard-row {
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--bg) 70%, transparent);
-}
-
-.mh-game-leaderboard-row.is-current {
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--accent) 10%, var(--card));
-}
-
-.mh-game-rank {
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.mh-game-leaderboard-row > div {
-  display: grid;
-  min-width: 0;
-}
-
-.mh-game-leaderboard-row strong,
-.mh-game-leaderboard-row small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mh-game-leaderboard-row b {
-  white-space: nowrap;
-}
-
 .mh-game-achievements-section {
   padding-bottom: 20px;
 }
@@ -408,15 +350,12 @@
 
   .mh-game-daily-card { grid-column: auto; }
   .mh-game-card-head { flex-direction: column; }
-  .mh-game-toggle { align-self: flex-start; }
 }
 
 @media (max-width: 500px) {
   .mh-game-level-card,
   .mh-game-card { padding: 14px; border-radius: 18px; }
   .mh-game-level-card { gap: 14px; }
-  .mh-game-leaderboard-row { grid-template-columns: 36px minmax(0, 1fr); }
-  .mh-game-leaderboard-row > b { grid-column: 2; }
   .mh-game-achievement { grid-template-columns: 1fr; }
   .mh-game-achievement-copy > div { align-items: flex-start; }
 }

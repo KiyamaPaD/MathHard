@@ -112,6 +112,8 @@
 .community-preview-username{margin:4px 0 0!important;color:var(--community-accent)!important;font-weight:800}
 .community-preview-content>p{margin:12px 0 0;color:var(--muted);font-size:.82rem;line-height:1.5;overflow-wrap:anywhere}
 .community-preview-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:13px}
+.community-preview-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.community-preview-links a{padding:5px 8px;border:1px solid var(--border);border-radius:999px;color:var(--community-accent);font-size:.68rem;font-weight:800;text-decoration:none}
 .community-preview-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid var(--border);border-radius:999px;font-size:.68rem;background:rgba(148,163,184,.055)}
 .community-preview-details{display:grid;gap:7px;margin:14px 0 0}
 .community-preview-details div{display:flex;justify-content:space-between;gap:12px;padding-top:7px;border-top:1px solid var(--border);font-size:.74rem}

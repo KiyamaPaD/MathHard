@@ -40,15 +40,21 @@ function asText(value, maxLength = 1000) {
   return String(value ?? "").trim().slice(0, maxLength);
 }
 
-function asUrl(value) {
+export function normalizeProfileUrl(value) {
   const raw = asText(value, COMMUNITY_PROFILE_LIMITS.linkMax);
   if (!raw) return "";
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
   try {
-    const parsed = new URL(raw);
-    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+    const parsed = new URL(candidate);
+    if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname) return "";
+    return parsed.href;
   } catch {
     return "";
   }
+}
+
+function asUrl(value) {
+  return normalizeProfileUrl(value);
 }
 
 function asArray(value, maxItems = COMMUNITY_PROFILE_LIMITS.topicsMax) {
@@ -222,6 +228,7 @@ export function validateCommunityProfileDraft(profile = {}, locale = "ro") {
   if ((profile.portfolio_url ?? profile.portfolioUrl) && !normalized.portfolioUrl) errors.push(en ? "The portfolio URL is invalid." : "Linkul de portofoliu trebuie să fie valid.");
   if (normalized.regionCode && !normalized.countryCode) errors.push(en ? "Choose the country before the region." : "Alege țara înaintea regiunii.");
   if (normalized.leaderboardOptIn && !normalized.isPublic) errors.push(en ? "The profile must be public to join leaderboards." : "Profilul trebuie să fie public pentru a participa în clasamente.");
+  if (normalized.leaderboardOptIn && !normalized.privacy.show_progress) errors.push(en ? "Public progress is required to join leaderboards." : "Progresul public este necesar pentru a participa în clasamente.");
 
   return { valid: errors.length === 0, errors, profile: normalized };
 }

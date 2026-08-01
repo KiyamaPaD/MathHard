@@ -28,7 +28,9 @@ const copy = lang === "en" ? {
   locationSeparator: " · ",
   days: "days",
   copied: "Link copied",
-  copyLink: "Copy link"
+  copyLink: "Copy link",
+  leaderboards: "Leaderboards",
+  portfolio: "Portfolio"
 } : {
   missingTitle: "Profil indisponibil",
   missingText: "Profilul este privat, indisponibil sau username-ul nu este valid.",
@@ -48,7 +50,9 @@ const copy = lang === "en" ? {
   locationSeparator: " · ",
   days: "zile",
   copied: "Link copiat",
-  copyLink: "Copiază linkul"
+  copyLink: "Copiază linkul",
+  leaderboards: "Clasamente",
+  portfolio: "Portofoliu"
 };
 
 function setImage(container, url, fallbackText) {
@@ -120,12 +124,14 @@ function render(profile) {
   $("communityAchievementsTitle").textContent = copy.sections.achievements;
   $("communityLinksTitle").textContent = copy.sections.links;
   $("communityActivityTitle").textContent = copy.sections.activity;
+  if ($("communityLeaderboardLink")) $("communityLeaderboardLink").textContent = copy.leaderboards;
 
   $("communityPublicEmpty").hidden = true;
   $("communityPublicContent").hidden = false;
   $("communityPublicName").textContent = profile.displayName;
   $("communityPublicUsername").textContent = `@${profile.username}`;
   $("communityPublicBio").textContent = profile.bio || "";
+  $("communityPublicBio").hidden = !profile.bio;
   setImage($("communityPublicAvatar"), profile.avatarUrl, profile.displayName);
   $("communityPublicBanner").style.backgroundImage = profile.bannerUrl ? `url("${profile.bannerUrl.replaceAll('"', '%22')}")` : "";
 
@@ -217,7 +223,7 @@ function render(profile) {
     const links = [
       ["Website", profile.websiteUrl],
       ["GitHub", profile.githubUrl],
-      ["Portofoliu", profile.portfolioUrl]
+      [copy.portfolio, profile.portfolioUrl]
     ].filter(([, url]) => url);
     $("communityPublicLinks").replaceChildren(...links.map(([label, url]) => {
       const link = document.createElement("a");

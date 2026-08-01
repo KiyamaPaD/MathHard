@@ -7,15 +7,14 @@ import {
 import {
   claimWeeklyChallenge,
   loadGamificationDashboard,
-  saveDailyGoal,
-  saveLeaderboardPreference
+  saveDailyGoal
 } from "./gamification-repository.js";
 import { normalizeUiError, renderUiState, showToast } from "./ui-feedback.js";
 
 const COPY = {
   ro: {
     loading: "Se încarcă progresul…",
-    auth: "Autentifică-te pentru recompense și clasament.",
+    auth: "Autentifică-te pentru recompense.",
     retry: "Reîncearcă",
     refresh: "Actualizează",
     level: "Nivel",
@@ -38,12 +37,6 @@ const COPY = {
     achievementsHint: "Deblocate automat din progresul tău.",
     unlocked: "Deblocat",
     locked: "În progres",
-    leaderboard: "Clasament",
-    leaderboardHint: "Apar doar utilizatorii care aleg să participe.",
-    leaderboardJoin: "Participă la clasament",
-    rank: "Locul tău",
-    noLeaderboard: "Clasamentul este încă gol.",
-    solved: "probleme",
     saving: "Se salvează…",
     saved: "Salvat",
     error: "Operația nu a putut fi finalizată.",
@@ -51,7 +44,7 @@ const COPY = {
   },
   en: {
     loading: "Loading progress…",
-    auth: "Sign in to view rewards and the leaderboard.",
+    auth: "Sign in to view rewards.",
     retry: "Retry",
     refresh: "Refresh",
     level: "Level",
@@ -74,12 +67,6 @@ const COPY = {
     achievementsHint: "Unlocked automatically from your progress.",
     unlocked: "Unlocked",
     locked: "In progress",
-    leaderboard: "Leaderboard",
-    leaderboardHint: "Only users who opt in are displayed.",
-    leaderboardJoin: "Join leaderboard",
-    rank: "Your rank",
-    noLeaderboard: "The leaderboard is empty.",
-    solved: "problems",
     saving: "Saving…",
     saved: "Saved",
     error: "The operation could not be completed.",
@@ -228,32 +215,6 @@ function renderAchievements(data) {
   `;
 }
 
-function renderLeaderboard(data) {
-  const t = copy();
-  const optIn = data.summary.leaderboardOptIn;
-  return `
-    <section class="mh-game-card mh-game-leaderboard-card">
-      <div class="mh-game-card-head">
-        <div><h3>${t.leaderboard}</h3><p>${t.leaderboardHint}</p></div>
-        <label class="mh-game-toggle">
-          <input type="checkbox" data-game-leaderboard ${optIn ? "checked" : ""} />
-          <span>${t.leaderboardJoin}</span>
-        </label>
-      </div>
-      ${optIn && data.currentUserRank ? `<p class="mh-game-current-rank">${t.rank}: <strong>#${data.currentUserRank}</strong></p>` : ""}
-      <div class="mh-game-leaderboard">
-        ${data.leaderboard.map((row) => `
-          <div class="mh-game-leaderboard-row ${row.isCurrentUser ? "is-current" : ""}">
-            <span class="mh-game-rank">#${row.rank}</span>
-            <div><strong>${escapeHtml(row.displayName)}</strong><small>${t.level} ${row.level} · ${row.solvedProblems} ${t.solved}</small></div>
-            <b>${formatNumber(row.totalXp)} XP</b>
-          </div>
-        `).join("") || `<p class="mh-game-empty-copy">${t.noLeaderboard}</p>`}
-      </div>
-    </section>
-  `;
-}
-
 function renderDashboard(data) {
   return `
     <div class="mh-game-shell">
@@ -261,7 +222,6 @@ function renderDashboard(data) {
       ${renderSummary(data)}
       <div class="mh-game-main-grid">
         ${renderChallenge(data)}
-        ${renderLeaderboard(data)}
       </div>
       ${renderAchievements(data)}
       <div class="mh-game-feedback" data-game-feedback aria-live="polite"></div>
@@ -324,24 +284,6 @@ export function createGamificationController({ host }) {
         await load(true);
         feedback(copy().saved, "success");
       } catch (error) {
-        const friendly = normalizeUiError(error, { language: locale() });
-        feedback(friendly.message, "error");
-        showToast(friendly.message, { tone: "error" });
-      } finally {
-        busy = false;
-      }
-    });
-
-    host.querySelector("[data-game-leaderboard]")?.addEventListener("change", async (event) => {
-      if (busy) return;
-      busy = true;
-      feedback(copy().saving);
-      try {
-        await saveLeaderboardPreference(supabase, event.target.checked);
-        await load(true);
-        feedback(copy().saved, "success");
-      } catch (error) {
-        event.target.checked = !event.target.checked;
         const friendly = normalizeUiError(error, { language: locale() });
         feedback(friendly.message, "error");
         showToast(friendly.message, { tone: "error" });

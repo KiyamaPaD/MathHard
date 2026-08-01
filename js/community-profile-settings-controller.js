@@ -4,6 +4,7 @@ import {
   communityProfileDraft,
   countryLabel,
   normalizeCommunityProfile,
+  normalizeProfileUrl,
   normalizeUsername,
   publicProfileUrl,
   validateCommunityProfileDraft,
@@ -87,6 +88,7 @@ if (root && form) {
   const previewBio = $("communityPreviewBio");
   const previewBadges = $("communityPreviewBadges");
   const previewDetails = $("communityPreviewDetails");
+  const previewLinks = $("communityPreviewLinks");
 
   let currentUserId = "";
   let currentUsername = "";
@@ -117,7 +119,11 @@ if (root && form) {
   }
 
   function readDraft() {
-    const raw = Object.fromEntries(new FormData(form).entries());
+    const raw = {};
+    Array.from(form.elements).forEach((element) => {
+      if (!element.name || element.type === "checkbox" || element.type === "button") return;
+      raw[element.name] = element.value;
+    });
     raw.is_public = Boolean(form.elements.is_public?.checked);
     raw.leaderboard_opt_in = Boolean(form.elements.leaderboard_opt_in?.checked);
     raw.favorite_topics = listFromInput("favorite_topics");
@@ -127,6 +133,15 @@ if (root && form) {
       Boolean(form.elements[key]?.checked)
     ]));
     return raw;
+  }
+
+  function normalizeLinkInputs() {
+    ["avatar_url", "banner_url", "website_url", "github_url", "portfolio_url"].forEach((name) => {
+      const element = form.elements[name];
+      if (!element || !element.value.trim()) return;
+      const normalized = normalizeProfileUrl(element.value);
+      if (normalized) element.value = normalized;
+    });
   }
 
   function setValue(name, value = "") {
@@ -166,11 +181,14 @@ if (root && form) {
     setImage(previewAvatar, profile.avatarUrl, profile.displayName);
     previewName.textContent = profile.displayName || copy.defaultName;
     previewUsername.textContent = profile.username ? `@${profile.username}` : copy.defaultUsername;
-    previewBio.textContent = profile.bio || copy.defaultBio;
+    previewBio.textContent = profile.bio;
+    previewBio.hidden = !profile.bio;
     previewState.textContent = profile.isPublic ? copy.publicState : copy.privateState;
     previewState.classList.toggle("is-public", profile.isPublic);
 
-    const visibleBadges = profile.badges.filter((badge) => badge.isPublic).slice(0, 4);
+    const visibleBadges = profile.privacy.show_badges
+      ? profile.badges.filter((badge) => badge.isPublic).slice(0, 4)
+      : [];
     previewBadges.replaceChildren(...visibleBadges.map((badge) => {
       const chip = document.createElement("span");
       chip.className = "community-preview-badge";
@@ -179,9 +197,9 @@ if (root && form) {
     }));
 
     const details = [];
-    if (profile.currentFocus) details.push([copy.learningNow, profile.currentFocus]);
-    if (profile.countryCode) details.push([copy.location, [selectedOptionText(countrySelect), regionSelect.value ? selectedOptionText(regionSelect) : ""].filter(Boolean).join(" · ")]);
-    if (profile.academicGoal) details.push([copy.goal, profile.academicGoal]);
+    if (profile.privacy.show_personality && profile.currentFocus) details.push([copy.learningNow, profile.currentFocus]);
+    if (profile.privacy.show_location && profile.countryCode) details.push([copy.location, [selectedOptionText(countrySelect), regionSelect.value ? selectedOptionText(regionSelect) : ""].filter(Boolean).join(" · ")]);
+    if (profile.privacy.show_education && profile.academicGoal) details.push([copy.goal, profile.academicGoal]);
     previewDetails.replaceChildren(...details.map(([label, value]) => {
       const wrapper = document.createElement("div");
       const dt = document.createElement("dt");
@@ -191,6 +209,21 @@ if (root && form) {
       wrapper.append(dt, dd);
       return wrapper;
     }));
+
+    const links = profile.privacy.show_links ? [
+      ["Website", profile.websiteUrl],
+      ["GitHub", profile.githubUrl],
+      ["Portfolio", profile.portfolioUrl]
+    ].filter(([, url]) => url) : [];
+    previewLinks?.replaceChildren(...links.map(([label, url]) => {
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.textContent = label;
+      return anchor;
+    }));
+    if (previewLinks) previewLinks.hidden = links.length === 0;
   }
 
   function fillBadgeOptions(profile) {
@@ -316,6 +349,7 @@ if (root && form) {
   }
 
   async function save() {
+    normalizeLinkInputs();
     const raw = readDraft();
     raw.username = normalizeUsername(raw.username);
     const validation = validateCommunityProfileDraft(raw, language);
@@ -336,12 +370,25 @@ if (root && form) {
       setStatus(duplicate ? copy.duplicateUsername : copy.saveError, "error");
     } finally {
       setBusy(false);
+      renderPreview();
     }
   }
 
   form.addEventListener("input", renderPreview);
   form.addEventListener("change", renderPreview);
+  ["avatar_url", "banner_url", "website_url", "github_url", "portfolio_url"].forEach((name) => {
+    form.elements[name]?.addEventListener("blur", () => {
+      normalizeLinkInputs();
+      renderPreview();
+    });
+  });
   countrySelect.addEventListener("change", () => void fillRegions(countrySelect.value));
+  form.elements.leaderboard_opt_in?.addEventListener("change", () => {
+    if (!form.elements.leaderboard_opt_in.checked) return;
+    form.elements.is_public.checked = true;
+    form.elements.show_progress.checked = true;
+    renderPreview();
+  });
   usernameInput.addEventListener("input", () => {
     clearTimeout(usernameTimer);
     usernameTimer = setTimeout(() => void verifyUsername(), 420);

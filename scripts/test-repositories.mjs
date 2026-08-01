@@ -1803,6 +1803,7 @@ const {
   COMMUNITY_PRIVACY_KEYS,
   communityProfileDraft,
   normalizeCommunityProfile,
+  normalizeProfileUrl,
   normalizeUsername,
   publicProfileUrl,
   validateCommunityProfileDraft,
@@ -1873,6 +1874,14 @@ assert.deepEqual(communityDraft.favorite_topics, ["Algebră", "Geometrie"]);
 assert.equal(communityDraft.privacy.show_personality, true);
 assert.equal(validateCommunityProfileDraft(communityDraft).valid, true);
 assert.equal(validateCommunityProfileDraft({ ...communityDraft, is_public: false, leaderboard_opt_in: true }).valid, false);
+assert.equal(validateCommunityProfileDraft({
+  ...communityDraft,
+  privacy: { ...communityDraft.privacy, show_progress: false },
+  leaderboard_opt_in: true
+}).valid, false);
+assert.equal(normalizeProfileUrl("ftcprogrammingatlas.com"), "https://ftcprogrammingatlas.com/");
+assert.equal(normalizeProfileUrl("https://github.com/KiyamaPaD"), "https://github.com/KiyamaPaD");
+assert.equal(normalizeProfileUrl("javascript:alert(1)"), "");
 assert.equal(publicProfileUrl("Cristi.Math", "https://mathhard.app/"), "https://mathhard.app/u.html?u=cristi.math");
 
 const manualBadge = validateCommunityBadgeDraft({
@@ -1930,5 +1939,88 @@ assert.deepEqual(communityRpcCalls.map(([name]) => name), [
   "mh_admin_revoke_community_badge"
 ]);
 
+const {
+  availableLeaderboardScopes,
+  leaderboardProfileUrl,
+  normalizeCommunityLeaderboard,
+  normalizeLeaderboardQuery
+} = await importBrowserModule("js/community-leaderboard-model.js");
+const { loadCommunityLeaderboard } = await importBrowserModule("js/community-leaderboard-repository.js");
+
+assert.deepEqual(normalizeLeaderboardQuery({
+  scope: "region",
+  period: "month",
+  metric: "problems",
+  page: 2,
+  page_size: 100
+}), { scope: "region", period: "month", metric: "problems", page: 2, pageSize: 50 });
+assert.deepEqual(availableLeaderboardScopes({
+  show_location: true,
+  region_code: "RO-BN",
+  country_code: "RO",
+  continent_code: "EU",
+  eu_member: true
+}), ["region", "country", "eu", "continent", "global"]);
+assert.equal(leaderboardProfileUrl("cristi.math", "https://mathhard.app/"), "https://mathhard.app/u.html?u=cristi.math");
+
+const leaderboardPayload = normalizeCommunityLeaderboard({
+  scope: "country",
+  period: "week",
+  metric: "xp",
+  page: 1,
+  page_size: 25,
+  total_count: 1,
+  context: {
+    authenticated: true,
+    profile_ready: true,
+    is_public: true,
+    leaderboard_opt_in: true,
+    show_progress: true,
+    show_location: true,
+    country_code: "RO",
+    region_code: "RO-BN",
+    continent_code: "EU",
+    eu_member: true
+  },
+  rows: [{
+    rank: 1,
+    username: "cristi.math",
+    display_name: "Cristi",
+    level: 6,
+    value: 625,
+    total_xp: 625,
+    problems_solved: 20,
+    lessons_learned: 9,
+    exams_passed: 2,
+    is_current_user: true,
+    badge: { id: "tester", title_ro: "Tester", icon: "◆", rarity: "rare" }
+  }]
+});
+assert.equal(leaderboardPayload.context.countryCode, "RO");
+assert.equal(leaderboardPayload.rows[0].isCurrentUser, true);
+assert.equal(leaderboardPayload.rows[0].badge.id, "tester");
+
+const leaderboardRpcCalls = [];
+const leaderboardSupabase = {
+  async rpc(name, payload) {
+    leaderboardRpcCalls.push([name, payload]);
+    return { data: leaderboardPayload, error: null };
+  }
+};
+const loadedLeaderboard = await loadCommunityLeaderboard(leaderboardSupabase, {
+  scope: "country",
+  period: "week",
+  metric: "xp",
+  page: 1,
+  pageSize: 25
+});
+assert.equal(loadedLeaderboard.rows.length, 1);
+assert.deepEqual(leaderboardRpcCalls, [["mh_get_community_leaderboard", {
+  p_scope: "country",
+  p_period: "week",
+  p_metric: "xp",
+  p_page: 1,
+  p_page_size: 25
+}]]);
 
 console.log("MathHard repository tests passed.");

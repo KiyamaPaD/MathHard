@@ -20,6 +20,7 @@ const TEXT = {
     roadmap: "Roadmap",
     analytics: "Analytics",
     rewards: "Recompense",
+    leaderboards: "Clasamente",
     focusTitle: "Următorul pas",
     examTitle: "Recomandare examen",
     noFocus: "Alege un roadmap și începe primul pas.",
@@ -42,6 +43,7 @@ const TEXT = {
     roadmap: "Roadmap",
     analytics: "Analytics",
     rewards: "Rewards",
+    leaderboards: "Leaderboards",
     focusTitle: "Next step",
     examTitle: "Exam recommendation",
     noFocus: "Choose a roadmap and start the first step.",
@@ -109,7 +111,7 @@ function activateTab(tabName, { focus = false } = {}) {
 function refreshContinueLink() {
   const allowed = new Set([
     "dashboard", "roadmap", "lessons", "problems", "exams",
-    "research", "history", "xp", "analytics", "gamification"
+    "research", "history", "xp", "analytics", "gamification", "leaderboards"
   ]);
   const saved = safeStorageGet("mh_active_workspace_v1", "dashboard")
     .replace(/^#/, "")
@@ -135,7 +137,8 @@ function applyTexts() {
     ["profileContinueBtn", copy.continue],
     ["profileRoadmapBtn", copy.roadmap],
     ["profileAnalyticsBtn", copy.analytics],
-    ["profileRewardsBtn", copy.rewards]
+    ["profileRewardsBtn", copy.rewards],
+    ["profileLeaderboardsBtn", copy.leaderboards]
   ];
 
   mappings.forEach(([id, value]) => {

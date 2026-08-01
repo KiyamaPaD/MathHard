@@ -68,6 +68,7 @@ requireTokens(indexHtml, "Admin community workspace", [
 ]);
 requireTokens(model, "Community profile model", [
   "COMMUNITY_PROFILE_LIMITS",
+  "normalizeProfileUrl",
   "COMMUNITY_PRIVACY_KEYS",
   "normalizeUsername",
   "validateUsername",
@@ -96,6 +97,9 @@ requireTokens(profileText, "Community profile translations", [
 ]);
 requireTokens(settings, "Community profile settings", [
   "loadOwnCommunityProfile",
+  "Array.from(form.elements)",
+  "normalizeLinkInputs",
+  "communityPreviewLinks",
   "saveOwnCommunityProfile",
   "checkCommunityUsername",
   "COMMUNITY_PRIVACY_KEYS",
@@ -112,6 +116,8 @@ requireTokens(publicPage, "Public profile renderer", [
 ]);
 if (/\b(?:email|provider|user_id|uuid)\b/i.test(publicPage)) errors.push("Public profile renderer references an internal account field.");
 if (/Phase 4A|server-side|backend/i.test(settings)) errors.push("Community profile settings expose implementation copy to learners.");
+if (settings.includes("new FormData(form)")) errors.push("Community preview still drops disabled values through FormData.");
+if ((settings.match(/setBusy\(true\);/g) || []).length > 2) errors.push("Community profile settings contain duplicate busy-state calls.");
 requireTokens(adminModel, "Badge admin model", [
   "validateCommunityBadgeDraft",
   '"manual"',
@@ -189,6 +195,9 @@ assert.equal(modelModule.validateUsername("cristi.math").valid, true);
 assert.equal(modelModule.validateUsername("admin").valid, false);
 assert.equal(modelModule.COMMUNITY_PRIVACY_KEYS.includes("show_personality"), true);
 assert.equal(modelModule.publicProfileUrl("Cristi.Math", "https://mathhard.app"), "https://mathhard.app/u.html?u=cristi.math");
+assert.equal(modelModule.normalizeProfileUrl("ftcprogrammingatlas.com"), "https://ftcprogrammingatlas.com/");
+assert.equal(modelModule.normalizeProfileUrl("https://github.com/KiyamaPaD"), "https://github.com/KiyamaPaD");
+assert.equal(modelModule.normalizeProfileUrl("javascript:alert(1)"), "");
 
 console.log("MathHard Phase 4A Global Profiles & Badges audit");
 if (errors.length) {

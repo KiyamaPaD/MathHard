@@ -80,6 +80,9 @@ const moduleJsFiles = [
   "js/community-profile-repository.js",
   "js/community-profile-settings-controller.js",
   "js/community-profile-page.js",
+  "js/community-leaderboard-model.js",
+  "js/community-leaderboard-repository.js",
+  "js/community-leaderboard-controller.js",
   "js/community-admin-model.js",
   "js/community-admin-controller.js"
 ];
@@ -114,6 +117,7 @@ const requiredFiles = [
   "css/admin-history.css",
   "css/profile.css",
   "css/community-profile.css",
+  "css/community-leaderboard.css",
   "css/community-admin.css",
   "css/loading-screen.css",
   "css/ui-feedback.css",
@@ -134,6 +138,7 @@ const requiredFiles = [
   "scripts/frontend-experience-audit.mjs",
   "scripts/debug-audit.mjs",
   "scripts/community-profile-audit.mjs",
+  "scripts/community-leaderboard-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
@@ -263,6 +268,10 @@ const publicProfileHtml = readFileSync(resolve(root, "u.html"), "utf8");
 const communityProfileModelSource = readFileSync(resolve(root, "js/community-profile-model.js"), "utf8");
 const communityProfileRepositorySource = readFileSync(resolve(root, "js/community-profile-repository.js"), "utf8");
 const communityProfilePageSource = readFileSync(resolve(root, "js/community-profile-page.js"), "utf8");
+const communityLeaderboardModelSource = readFileSync(resolve(root, "js/community-leaderboard-model.js"), "utf8");
+const communityLeaderboardRepositorySource = readFileSync(resolve(root, "js/community-leaderboard-repository.js"), "utf8");
+const communityLeaderboardControllerSource = readFileSync(resolve(root, "js/community-leaderboard-controller.js"), "utf8");
+const communityProfileSettingsSource = readFileSync(resolve(root, "js/community-profile-settings-controller.js"), "utf8");
 const communityAdminControllerSource = readFileSync(resolve(root, "js/community-admin-controller.js"), "utf8");
 const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
 const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
@@ -578,6 +587,36 @@ if (!communityAdminControllerSource.includes("mhCommunityAssignmentForm") || !co
 }
 if (!indexHtml.includes('data-admin-panel-target="community"') || !indexHtml.includes('id="mhCommunityAdminStudio"')) {
   fail("Phase 4A Community workspace is missing from Admin Studio.");
+}
+if (!indexHtml.includes("css/community-leaderboard.css")) {
+  fail("Phase 4B leaderboard stylesheet is missing from index.html.");
+}
+if (!appShellSource.includes('id="mhShellPanelLeaderboards"') || !appShellSource.includes("mh:leaderboards-route")) {
+  fail("Phase 4B leaderboard route is missing from the app shell.");
+}
+if (!performanceBootstrapSource.includes('leaderboards: "./community-leaderboard-controller.js"')) {
+  fail("Phase 4B leaderboard controller must be lazy-loaded by route.");
+}
+if (!communityLeaderboardModelSource.includes("availableLeaderboardScopes") || !communityLeaderboardModelSource.includes("normalizeCommunityLeaderboard")) {
+  fail("Phase 4B leaderboard model must centralize scope and payload normalization.");
+}
+if (!communityLeaderboardRepositorySource.includes("mh_get_community_leaderboard") || communityLeaderboardRepositorySource.includes(".from(")) {
+  fail("Phase 4B leaderboard data must use its sanitized RPC contract.");
+}
+if (!communityLeaderboardControllerSource.includes("data-leaderboard-scope") || !communityLeaderboardControllerSource.includes("mh-community-own-rank")) {
+  fail("Phase 4B leaderboard workspace is incomplete.");
+}
+if (/\sonerror\s*=/.test(communityLeaderboardControllerSource)) {
+  fail("Phase 4B leaderboard avatars must not use inline event handlers.");
+}
+if (!communityProfileSettingsSource.includes("Array.from(form.elements)") || communityProfileSettingsSource.includes("new FormData(form)")) {
+  fail("Community profile preview must read disabled form controls safely during save.");
+}
+if (!communityProfileSettingsSource.includes("normalizeLinkInputs") || !communityProfileModelSource.includes("normalizeProfileUrl")) {
+  fail("Community profile links must be normalized before validation and save.");
+}
+if (gamificationControllerSource.includes("renderLeaderboard(") || gamificationControllerSource.includes("gamificationLeaderboardOptIn")) {
+  fail("The obsolete Rewards mini leaderboard must be removed after Phase 4B.");
 }
 if (!appProgressSource.includes("export function createAppProgressController")) {
   fail("app-progress.js must own app progress hydration and mutations.");
@@ -1013,13 +1052,14 @@ if (!gamificationModelSource.includes("normalizeGamificationPayload") ||
   fail("gamification-model.js is missing normalization or progress helpers.");
 }
 if (!gamificationControllerSource.includes("mh-game-achievements-grid") ||
-    !gamificationControllerSource.includes("mh-game-leaderboard") ||
     !gamificationControllerSource.includes("supabase.auth.onAuthStateChange")) {
-  fail("gamification-controller.js must render achievements/leaderboard and react to auth changes.");
+  fail("gamification-controller.js must render rewards and react to auth changes.");
+}
+if (gamificationControllerSource.includes("mh-game-leaderboard") || gamificationControllerSource.includes("renderLeaderboard(")) {
+  fail("The obsolete Rewards mini leaderboard must not be rendered after Phase 4B.");
 }
 if (!gamificationCss.includes(".mh-game-level-card") ||
-    !gamificationCss.includes(".mh-game-achievements-grid") ||
-    !gamificationCss.includes(".mh-game-leaderboard-row")) {
+    !gamificationCss.includes(".mh-game-achievements-grid")) {
   fail("Phase 16 gamification visual system is incomplete.");
 }
 
