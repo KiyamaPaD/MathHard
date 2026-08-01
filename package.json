@@ -1,5 +1,11 @@
 {
   "name": "mathhard",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/run-all-audits.mjs",
+    "audit": "node scripts/run-all-audits.mjs",
+    "audit:runtime": "node scripts/runtime-contract-audit.mjs",
+    "test:repositories": "node scripts/test-repositories.mjs"
+  }
 }

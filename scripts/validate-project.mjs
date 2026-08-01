@@ -147,6 +147,8 @@ const requiredFiles = [
   "img/microinteractions-sprite.svg",
   "src/microinteractions/microinteraction-engine.ts",
   "tsconfig.microinteractions.json",
+  "scripts/run-all-audits.mjs",
+  "scripts/runtime-contract-audit.mjs",
   "scripts/test-repositories.mjs",
   "scripts/performance-audit.mjs",
   "scripts/stability-audit.mjs",

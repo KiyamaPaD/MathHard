@@ -1,3 +1,6 @@
+[build]
+  command = "npm test"
+
 [[redirects]]
   from = "/u/:username"
   to = "/u.html?u=:username"
