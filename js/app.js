@@ -6946,7 +6946,22 @@ function openExam(exam){
       activeAttempt = { ...activeAttempt, ...result, status: "submitted" };
       runtimeExam.secure_result = result;
 
-      if (result?.passed) examsPassedSet.add(exam.id);
+      if (result?.passed) {
+        const wasAlreadyPassed = examsPassedSet.has(exam.id);
+        examsPassedSet.add(exam.id);
+        if (!wasAlreadyPassed) {
+          const examTitle = LANG === "en"
+            ? String(exam.title_en || exam.title_ro || exam.title || exam.id || "")
+            : String(exam.title_ro || exam.title_en || exam.title || exam.id || "");
+          window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+            detail: {
+              kind: "exam",
+              title: LANG === "ro" ? "Examen promovat" : "Exam passed",
+              subtitle: examTitle
+            }
+          }));
+        }
+      }
 
       if (examTimer) {
         clearInterval(examTimer);

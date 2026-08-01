@@ -139,7 +139,22 @@ export function createLessonQuizController({
         submitButton.hidden = true;
         retryButton.hidden = false;
         host.querySelectorAll("input").forEach((input) => { input.disabled = true; });
-        if (result?.passed) onLearned(activeLesson, result);
+        if (result?.passed) {
+          onLearned(activeLesson, result);
+          const lang = languageCode(getLanguage);
+          const lessonTitle = String(
+            lang === "en"
+              ? (activeLesson?.title_en || activeLesson?.title_ro || activeLesson?.title || activeLesson?.id || "")
+              : (activeLesson?.title_ro || activeLesson?.title_en || activeLesson?.title || activeLesson?.id || "")
+          );
+          window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+            detail: {
+              kind: "lesson",
+              title: lang === "en" ? "Lesson learned" : "Lecție învățată",
+              subtitle: lessonTitle
+            }
+          }));
+        }
       } catch (error) {
         console.error("Lesson quiz submission failed:", error);
         if (status) status.textContent = text(

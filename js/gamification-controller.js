@@ -238,6 +238,47 @@ export function createGamificationController({ host }) {
   let busy = false;
   let loadPromise = null;
   let reloadAfterCurrent = false;
+  let knownLevel = null;
+  let knownUnlockedAchievements = null;
+
+
+  function announceProgressMilestones(next) {
+    const nextLevel = Number(next?.summary?.level || 1);
+    const unlocked = new Set(
+      (Array.isArray(next?.achievements) ? next.achievements : [])
+        .filter((item) => item?.unlocked)
+        .map((item) => String(item.id || item.title || ""))
+        .filter(Boolean)
+    );
+
+    if (knownLevel !== null && nextLevel > knownLevel) {
+      window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+        detail: {
+          kind: "level",
+          title: locale() === "en" ? `Level ${nextLevel}` : `Nivel ${nextLevel}`,
+          subtitle: locale() === "en" ? "New level reached" : "Ai ajuns la un nivel nou"
+        }
+      }));
+    }
+
+    if (knownUnlockedAchievements instanceof Set) {
+      const newAchievements = (Array.isArray(next?.achievements) ? next.achievements : [])
+        .filter((item) => item?.unlocked && !knownUnlockedAchievements.has(String(item.id || item.title || "")));
+      newAchievements.slice(0, 2).forEach((achievement) => {
+        window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+          detail: {
+            kind: "achievement",
+            title: locale() === "en" ? "Achievement unlocked" : "Achievement deblocat",
+            subtitle: String(achievement.title || ""),
+            xp: Number(achievement.rewardXp || achievement.reward_xp || 0)
+          }
+        }));
+      });
+    }
+
+    knownLevel = nextLevel;
+    knownUnlockedAchievements = unlocked;
+  }
 
   function feedback(message, kind = "") {
     const node = host.querySelector("[data-game-feedback]");
@@ -298,9 +339,17 @@ export function createGamificationController({ host }) {
       event.currentTarget.disabled = true;
       feedback(copy().saving);
       try {
-        await claimWeeklyChallenge(supabase);
+        const claimed = await claimWeeklyChallenge(supabase);
         await load(true);
         feedback(copy().saved, "success");
+        window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+          detail: {
+            kind: "achievement",
+            title: locale() === "en" ? "Weekly challenge completed" : "Challenge săptămânal finalizat",
+            subtitle: locale() === "en" ? "Reward claimed" : "Recompensă colectată",
+            xp: Number(claimed?.rewardXp || claimed?.reward_xp || 0)
+          }
+        }));
       } catch (error) {
         event.currentTarget.disabled = false;
         const friendly = normalizeUiError(error, { language: locale() });
@@ -339,6 +388,7 @@ export function createGamificationController({ host }) {
 
         const next = await loadGamificationDashboard(supabase, { locale: locale() });
         if (request !== epoch) return;
+        announceProgressMilestones(next);
         data = next;
         renderData();
         window.dispatchEvent(new CustomEvent("mh:gamification-data", { detail: next.summary }));

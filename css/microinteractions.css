@@ -1,0 +1,317 @@
+/* MathHard Phase 4H — small, optional motion layers. */
+:root {
+  --mh-motion-fast: 140ms;
+  --mh-motion-normal: 260ms;
+  --mh-motion-slow: 420ms;
+  --mh-motion-ease: cubic-bezier(.2,.78,.2,1);
+}
+
+.mh-confetti-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none;
+  contain: strict;
+}
+
+.mh-celebration-stack {
+  position: fixed;
+  z-index: 99999;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  display: grid;
+  gap: .65rem;
+  width: min(23rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.mh-celebration-card {
+  --mh-celebration-accent: var(--accent, #7c5cff);
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.8rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .8rem;
+  min-width: 0;
+  padding: .85rem .95rem;
+  border: 1px solid color-mix(in srgb, var(--mh-celebration-accent) 48%, var(--border, #2b3350));
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--mh-celebration-accent) 15%, transparent), transparent 48%),
+    color-mix(in srgb, var(--card, #121a2f) 94%, transparent);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, .26), inset 0 1px rgba(255, 255, 255, .06);
+  color: var(--text, #f6f7ff);
+  overflow: hidden;
+  pointer-events: auto;
+  backdrop-filter: blur(15px);
+  animation: mh-celebration-in .42s var(--mh-motion-ease) both;
+}
+
+.mh-celebration-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--mh-celebration-accent), color-mix(in srgb, var(--mh-celebration-accent) 35%, white));
+  animation: mh-celebration-timer var(--mh-celebration-duration, 3200ms) linear both;
+}
+
+.mh-celebration-card[data-kind="problem"] { --mh-celebration-accent: #34d399; }
+.mh-celebration-card[data-kind="lesson"] { --mh-celebration-accent: #60a5fa; }
+.mh-celebration-card[data-kind="exam"] { --mh-celebration-accent: #fbbf24; }
+.mh-celebration-card[data-kind="achievement"] { --mh-celebration-accent: #c084fc; }
+.mh-celebration-card[data-kind="level"] { --mh-celebration-accent: #fb7185; }
+
+.mh-celebration-icon {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  aspect-ratio: 1;
+  border-radius: .86rem;
+  background: color-mix(in srgb, var(--mh-celebration-accent) 18%, transparent);
+  color: var(--mh-celebration-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mh-celebration-accent) 30%, transparent);
+}
+
+.mh-celebration-icon svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  filter: drop-shadow(0 0 .5rem color-mix(in srgb, currentColor 45%, transparent));
+  animation: mh-icon-pop .6s var(--mh-motion-ease) both;
+}
+
+.mh-celebration-copy {
+  min-width: 0;
+}
+
+.mh-celebration-copy strong,
+.mh-celebration-copy span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.mh-celebration-copy strong {
+  font-size: .94rem;
+  line-height: 1.22;
+}
+
+.mh-celebration-copy span {
+  margin-top: .2rem;
+  color: var(--muted, #aeb7d4);
+  font-size: .77rem;
+  line-height: 1.35;
+}
+
+.mh-celebration-xp {
+  align-self: start;
+  padding: .28rem .45rem;
+  border-radius: 999px;
+  color: var(--mh-celebration-accent);
+  background: color-mix(in srgb, var(--mh-celebration-accent) 14%, transparent);
+  font-size: .72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mh-celebration-card.is-leaving {
+  animation: mh-celebration-out .26s ease-in both;
+}
+
+.mh-motion-pressable {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.mh-motion-ripple {
+  --mh-ripple-x: 50%;
+  --mh-ripple-y: 50%;
+  position: absolute;
+  z-index: 0;
+  left: var(--mh-ripple-x);
+  top: var(--mh-ripple-y);
+  width: .6rem;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 24%, transparent);
+  pointer-events: none;
+  animation: mh-ripple .52s ease-out forwards;
+}
+
+.mh-number-pop {
+  animation: mh-number-pop .46s var(--mh-motion-ease);
+}
+
+.mh-motion-ready :where(
+  .btn,
+  button,
+  .card,
+  .mh-game-card,
+  .mh-game-level-card,
+  .mh-roadmap-card,
+  .mh-community-leaderboard-row,
+  .mh-community-profile-card,
+  .mh-problem-card
+) {
+  transition:
+    transform var(--mh-motion-fast) var(--mh-motion-ease),
+    border-color var(--mh-motion-normal) ease,
+    box-shadow var(--mh-motion-normal) ease,
+    background-color var(--mh-motion-normal) ease,
+    filter var(--mh-motion-normal) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mh-motion-ready :where(
+    .card,
+    .mh-game-card,
+    .mh-game-level-card,
+    .mh-roadmap-card,
+    .mh-community-leaderboard-row,
+    .mh-community-profile-card,
+    .mh-problem-card
+  ):not(.admin-studio *):hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent, #7c5cff) 36%, var(--border, #2b3350));
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .13);
+  }
+
+  .mh-motion-ready :where(.btn, button):not(:disabled):hover {
+    filter: brightness(1.055);
+  }
+
+  .mh-motion-ready :where(
+    .mh-game-achievement[data-rarity="rare"],
+    .mh-game-achievement[data-rarity="epic"],
+    .mh-community-badge[data-rarity="rare"],
+    .mh-community-badge[data-rarity="epic"],
+    [data-badge-rarity="rare"],
+    [data-badge-rarity="epic"]
+  ):hover::after {
+    content: "";
+    position: absolute;
+    inset: -40% -80%;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.22) 50%, transparent 58%);
+    transform: translateX(-45%) rotate(8deg);
+    animation: mh-badge-shimmer .8s ease-out;
+  }
+}
+
+.mh-motion-ready :where(
+  .mh-game-progress-track > i,
+  .progress > span,
+  .progress-bar > span,
+  [role="progressbar"] > span
+) {
+  transform-origin: left center;
+  transition: width .52s var(--mh-motion-ease), transform .42s var(--mh-motion-ease), filter .42s ease;
+}
+
+.mh-motion-ready :where(.mh-roadmap-card.active, .mh-roadmap-card.is-active, .mh-roadmap-node.is-current) {
+  animation: mh-roadmap-focus 1.15s var(--mh-motion-ease) 1;
+}
+
+html.mh-celebrating .logo-img {
+  animation: mh-logo-celebrate .68s var(--mh-motion-ease);
+}
+
+.mh-react-fallback {
+  position: fixed;
+  z-index: 99999;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: .8rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent, #7c5cff) 40%, var(--border, #2b3350));
+  border-radius: .9rem;
+  background: var(--card, #121a2f);
+  box-shadow: 0 16px 46px rgba(0,0,0,.24);
+  color: var(--text, #fff);
+  animation: mh-celebration-in .34s var(--mh-motion-ease) both;
+}
+
+@keyframes mh-celebration-in {
+  from { opacity: 0; transform: translate3d(12px, -8px, 0) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes mh-celebration-out {
+  to { opacity: 0; transform: translate3d(10px, -4px, 0) scale(.98); }
+}
+
+@keyframes mh-celebration-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@keyframes mh-icon-pop {
+  0% { opacity: 0; transform: scale(.55) rotate(-14deg); }
+  58% { opacity: 1; transform: scale(1.12) rotate(4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes mh-ripple {
+  from { opacity: .44; transform: scale(0); }
+  to { opacity: 0; transform: scale(34); }
+}
+
+@keyframes mh-number-pop {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.055); filter: brightness(1.15); }
+}
+
+@keyframes mh-badge-shimmer {
+  from { transform: translateX(-45%) rotate(8deg); }
+  to { transform: translateX(45%) rotate(8deg); }
+}
+
+@keyframes mh-roadmap-focus {
+  0%, 100% { box-shadow: inherit; }
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #7c5cff) 20%, transparent), 0 10px 28px rgba(0,0,0,.16); }
+}
+
+@keyframes mh-logo-celebrate {
+  0%, 100% { transform: scale(1) rotate(0); }
+  35% { transform: scale(1.08) rotate(-3deg); }
+  65% { transform: scale(1.04) rotate(2deg); }
+}
+
+@media (max-width: 640px) {
+  .mh-celebration-stack {
+    top: max(.7rem, env(safe-area-inset-top));
+    right: max(.7rem, env(safe-area-inset-right));
+    width: min(100% - 1.4rem, 23rem);
+  }
+
+  .mh-celebration-card {
+    grid-template-columns: 2.45rem minmax(0, 1fr);
+    padding: .72rem .78rem;
+  }
+
+  .mh-celebration-icon {
+    width: 2.45rem;
+  }
+
+  .mh-celebration-xp {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: -.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh-confetti-canvas { display: none !important; }
+  .mh-motion-ready *,
+  .mh-motion-ready *::before,
+  .mh-motion-ready *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .mh-celebration-card { animation: none; }
+  .mh-celebration-card::after { display: none; }
+}

@@ -1,0 +1,33 @@
+{
+  "durations": {
+    "tap": 140,
+    "counter": 420,
+    "reveal": 360,
+    "celebration": 3200
+  },
+  "confetti": {
+    "problem": 18,
+    "lesson": 24,
+    "exam": 38,
+    "achievement": 30,
+    "level": 34
+  },
+  "selectors": {
+    "reveal": [
+      ".card",
+      ".mh-game-card",
+      ".mh-game-level-card",
+      ".mh-community-profile-card",
+      ".mh-community-leaderboard-row",
+      ".mh-roadmap-card",
+      ".mh-problem-card",
+      ".lesson-section"
+    ],
+    "progress": [
+      ".mh-game-progress-track > i",
+      ".progress > span",
+      ".progress-bar > span",
+      "[role='progressbar'] > span"
+    ]
+  }
+}

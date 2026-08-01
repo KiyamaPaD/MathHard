@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="sparkle" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 1.8l1.55 5.1L18.7 8.5l-5.15 1.6L12 15.2l-1.55-5.1L5.3 8.5l5.15-1.6L12 1.8Zm7 10.4.85 2.8 2.85.9-2.85.88L19 19.6l-.85-2.82-2.85-.88 2.85-.9L19 12.2ZM5 14.1l1.05 3.45 3.45 1.05-3.45 1.07L5 23.1l-1.05-3.43L.5 18.6l3.45-1.05L5 14.1Z"/>
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.2 4.2L19.5 6.5"/>
+  </symbol>
+  <symbol id="book" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v16H7.5A3.5 3.5 0 0 0 4 21.5v-16Zm0 0V20m4-13h8m-8 4h8"/>
+  </symbol>
+  <symbol id="trophy" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 3h8v3a4 4 0 0 1-8 0V3Zm4 7v4m-3 7h6m-8 0h10m-5-7a5 5 0 0 0 5 5M8 5H4v1a5 5 0 0 0 5 5m7-6h4v1a5 5 0 0 1-5 5"/>
+  </symbol>
+  <symbol id="bolt" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M13.2 1.5 4.5 13h6.35L9.9 22.5 19.5 9h-6.2l-.1-7.5Z"/>
+  </symbol>
+</svg>

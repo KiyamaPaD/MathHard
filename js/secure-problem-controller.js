@@ -467,6 +467,7 @@ export function createSecureProblemController({
 
       try {
         const wasAlreadySolved = isProblemSolved(problem.id);
+        const previousXp = Number(getXPRecord(problem.id)?.xp || 0);
         const result = await submitProblemAnswer(supabase, problem.id, value, language);
         const ok = Boolean(result?.ok);
         pushLocalAttempt(value, ok);
@@ -474,7 +475,18 @@ export function createSecureProblemController({
 
         if (ok) {
           statusArea.textContent = messageFor(language, result?.message_key === "already_solved" ? "already_solved" : "correct", true);
-          if (!wasAlreadySolved && result?.progress?.solved) incrementTodayProgress("problem");
+          if (!wasAlreadySolved && result?.progress?.solved) {
+            incrementTodayProgress("problem");
+            const earnedXp = Math.max(0, Number(getXPRecord(problem.id)?.xp || 0) - previousXp);
+            window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+              detail: {
+                kind: "problem",
+                title: ro ? "Problemă rezolvată" : "Problem solved",
+                subtitle: translated(problem, language),
+                xp: earnedXp
+              }
+            }));
+          }
         } else {
           statusArea.textContent = messageFor(language, "wrong");
           input.disabled = false;

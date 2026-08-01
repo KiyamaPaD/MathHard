@@ -90,7 +90,10 @@ const moduleJsFiles = [
   "js/community-leaderboard-controller.js",
   "js/community-admin-model.js",
   "js/community-integrity-model.js",
-  "js/community-admin-controller.js"
+  "js/community-admin-controller.js",
+  "js/microinteraction-engine.js",
+  "js/microinteractions-bootstrap.js",
+  "js/microinteractions-react-island.js"
 ];
 
 const classicJsFiles = [
@@ -130,6 +133,7 @@ const requiredFiles = [
   "css/loading-screen.css",
   "css/ui-feedback.css",
   "css/beta-readiness.css",
+  "css/microinteractions.css",
   "css/onboarding.css",
   "css/system-page.css",
   "css/mobile-hardening.css",
@@ -139,6 +143,10 @@ const requiredFiles = [
   "site.webmanifest",
   "robots.txt",
   "sitemap.xml",
+  "data/microinteractions.json",
+  "img/microinteractions-sprite.svg",
+  "src/microinteractions/microinteraction-engine.ts",
+  "tsconfig.microinteractions.json",
   "scripts/test-repositories.mjs",
   "scripts/performance-audit.mjs",
   "scripts/stability-audit.mjs",
@@ -155,6 +163,7 @@ const requiredFiles = [
   "scripts/community-feedback-audit.mjs",
   "scripts/community-safety-integrity-audit.mjs",
   "scripts/beta-readiness-audit.mjs",
+  "scripts/microinteractions-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];

@@ -23,7 +23,7 @@ for (const path of [
 for (const page of ["index.html", "profile.html", "u.html"]) {
   requireText(page, /site\.webmanifest/, `${page} must load the web manifest.`);
   requireText(page, /beta-readiness\.css\?v=4g4/, `${page} must load beta readiness styles.`);
-  requireText(page, /mathhard-build[^>]+4g4/, `${page} must expose the 4g4 build label.`);
+  requireText(page, /mathhard-build[^>]+(?:4g4|4h)/, `${page} must expose the current beta-or-later build label.`);
 }
 requireText("profile.html", /name="robots" content="noindex,nofollow"/, "Private profile editor must be noindex.");
 requireText("js/performance-bootstrap.js", /beta-readiness-controller\.js/, "Index must load beta readiness lazily.");
