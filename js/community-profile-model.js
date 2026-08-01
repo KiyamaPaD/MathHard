@@ -168,7 +168,14 @@ export function normalizeCommunityProfile(payload = {}) {
     stats: normalizePublicStats(payload.stats || {}),
     joinedAt: profile.joined_at || profile.joinedAt || profile.created_at || "",
     lastActiveAt: profile.last_active_at || profile.lastActiveAt || "",
-    updatedAt: profile.updated_at || profile.updatedAt || ""
+    updatedAt: profile.updated_at || profile.updatedAt || "",
+    safety: {
+      usernameChangedAt: payload.safety?.username_changed_at || payload.safety?.usernameChangedAt || "",
+      usernameCooldownUntil: payload.safety?.username_cooldown_until || payload.safety?.usernameCooldownUntil || "",
+      contentReviewStatus: asText(payload.safety?.content_review_status ?? payload.safety?.contentReviewStatus ?? "clear", 24),
+      contentReviewReason: asText(payload.safety?.content_review_reason ?? payload.safety?.contentReviewReason, 1000),
+      flags: Array.isArray(payload.safety?.flags) ? payload.safety.flags : []
+    }
   };
 }
 

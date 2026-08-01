@@ -129,7 +129,7 @@ import {
       import("./admin-history-controller.js"),
       import("./admin-history-repository.js"),
       import("./gamification-admin-controller.js"),
-      import("./community-admin-controller.js?v=4f"),
+      import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
       import("./content-quality-admin-controller.js")
     ]).then(([

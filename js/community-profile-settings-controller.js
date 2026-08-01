@@ -30,7 +30,10 @@ const copy = language === "en" ? {
   usernameDeferred: "Availability will be checked when saving.",
   saving: "Saving...",
   saved: "Profile saved.",
-  duplicateUsername: "This username is already used.",
+  duplicateUsername: "This username is already used or was recently reserved.",
+  usernameCooldown: "The username can be changed once every 30 days.",
+  unsafeLink: "One of the links is not allowed.",
+  reviewPending: "Profile saved. Public content is pending review.",
   saveError: "The profile could not be saved. Check the fields and try again.",
   publicState: "Public",
   privateState: "Private",
@@ -52,7 +55,10 @@ const copy = language === "en" ? {
   usernameDeferred: "Disponibilitatea va fi verificată la salvare.",
   saving: "Se salvează...",
   saved: "Profil salvat.",
-  duplicateUsername: "Username-ul este deja folosit.",
+  duplicateUsername: "Username-ul este folosit sau rezervat temporar.",
+  usernameCooldown: "Username-ul poate fi schimbat o dată la 30 de zile.",
+  unsafeLink: "Unul dintre linkuri nu este permis.",
+  reviewPending: "Profil salvat. Conținutul public a fost trimis la verificare.",
   saveError: "Profilul nu a putut fi salvat. Verifică datele și reîncearcă.",
   publicState: "Public",
   privateState: "Privat",
@@ -303,6 +309,10 @@ if (root && form) {
     currentProfile = profile;
     currentUsername = profile.username;
     setValue("username", profile.username);
+    if (profile.safety.usernameCooldownUntil && new Date(profile.safety.usernameCooldownUntil) > new Date()) {
+      usernameHint.textContent = copy.usernameCooldown;
+      usernameHint.dataset.state = "";
+    }
     setValue("display_name", profile.displayName);
     setValue("avatar_url", profile.avatarUrl);
     setValue("banner_url", profile.bannerUrl);
@@ -400,7 +410,10 @@ if (root && form) {
     try {
       const availability = await checkCommunityUsername(supabase, result.username);
       const available = availability?.available === true;
-      usernameHint.textContent = available ? copy.usernameAvailable : copy.usernameUnavailable;
+      const reason = String(availability?.reason || "");
+      usernameHint.textContent = available
+        ? copy.usernameAvailable
+        : reason === "cooldown" ? copy.usernameCooldown : copy.usernameUnavailable;
       usernameHint.dataset.state = available ? "available" : "error";
       return available;
     } catch (error) {
@@ -425,12 +438,15 @@ if (root && form) {
     try {
       const saved = normalizeCommunityProfile(await saveOwnCommunityProfile(supabase, communityProfileDraft(validation.profile)));
       await fillForm(saved);
-      setStatus(copy.saved, "success");
+      setStatus(saved.safety.contentReviewStatus === "needs_review" ? copy.reviewPending : copy.saved, "success");
       window.dispatchEvent(new CustomEvent("mh:community-profile-saved", { detail: saved }));
     } catch (error) {
       console.error("Community profile save failed:", error);
-      const duplicate = error?.code === "23505" || /username/i.test(error?.message || "");
-      setStatus(duplicate ? copy.duplicateUsername : copy.saveError, "error");
+      const message = String(error?.message || "");
+      const duplicate = error?.code === "23505" || /already used|recently used/i.test(message);
+      const cooldown = /cooldown/i.test(message);
+      const unsafeLink = /unsafe url/i.test(message);
+      setStatus(duplicate ? copy.duplicateUsername : cooldown ? copy.usernameCooldown : unsafeLink ? copy.unsafeLink : copy.saveError, "error");
     } finally {
       setBusy(false);
       renderPreview();

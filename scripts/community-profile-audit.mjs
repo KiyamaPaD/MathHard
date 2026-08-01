@@ -133,7 +133,7 @@ requireTokens(adminController, "Badge Admin Studio", [
   "revokeCommunityBadge"
 ]);
 requireTokens(app, "Admin integration", [
-  'import("./community-admin-controller.js?v=4f")',
+  'import("./community-admin-controller.js?v=4g3")',
   "createCommunityAdminController",
   'panelName === "community"',
   "communityAdminController?.setAdmin"

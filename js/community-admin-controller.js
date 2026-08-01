@@ -2,8 +2,14 @@ import {
   assignCommunityBadge,
   loadCommunityBadgeStudio,
   loadCommunityModerationDashboard,
+  loadCommunityIntegrityDashboard,
+  resetCommunityUsername,
+  reviewCommunityIntegrityFlag,
   revokeCommunityBadge,
+  runCommunityIntegrityScan,
   saveCommunityBadgeDefinition,
+  saveCommunityBlockedDomain,
+  saveCommunityIntegrityUser,
   setCommunityUserAccess,
   updateCommunityModerationCase
 } from "./community-profile-repository.js";
@@ -14,6 +20,10 @@ import {
   validateCommunityBadgeDraft
 } from "./community-admin-model.js";
 import { normalizeCommunityCase } from "./community-feedback-model.js";
+import {
+  communityIntegrityUserDraft,
+  normalizeCommunityIntegrityDashboard
+} from "./community-integrity-model.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -42,6 +52,12 @@ const CATEGORY_LABELS = { suggestion: "Sugestie", bug: "Problemă tehnică", con
 const REASON_LABELS = { impersonation: "Identitate falsă", inappropriate: "Conținut nepotrivit", spam: "Spam", unsafe_link: "Link nesigur", other: "Alt motiv" };
 const BADGE_EVENT_LABELS = { awarded: "Acordat", updated: "Actualizat", revoked: "Retras" };
 const BADGE_SOURCE_LABELS = { automatic: "Automat", admin: "Admin", system: "Sistem", subscription: "Abonament", user_roles: "Rol administrativ", migration: "Migrare", "smoke-test": "Test" };
+
+const INTEGRITY_STATUS_LABELS = { all: "Toți", open: "Deschise", critical: "Critice", held: "Suspendați", new: "Nou", in_review: "În analiză", confirmed: "Confirmat", dismissed: "Respins" };
+const FLAG_STATUS_LABELS = { new: "Nou", in_review: "În analiză", confirmed: "Confirmat", dismissed: "Respins" };
+const FLAG_SEVERITY_LABELS = { low: "Scăzut", medium: "Mediu", high: "Ridicat", critical: "Critic" };
+const ACCOUNT_KIND_LABELS = { member: "Membru", test: "Cont test", internal: "Cont intern" };
+const REVIEW_STATUS_LABELS = { clear: "Curat", needs_review: "Necesită verificare", blocked: "Blocat" };
 
 function badgeEventLabel(value) { return BADGE_EVENT_LABELS[value] || "Actualizat"; }
 function badgeSourceLabel(value) { return BADGE_SOURCE_LABELS[value] || "Sistem"; }
@@ -78,10 +94,13 @@ export function createCommunityAdminController({ host, supabase }) {
     activeTab: "badges",
     query: "",
     status: "open",
+    integrityStatus: "all",
     badgeLoaded: false,
     moderationLoaded: false,
+    integrityLoaded: false,
     badges: { badges: [], users: [] },
     moderation: { counts: {}, feedback: [], reports: [], users: [] },
+    integrity: { counts: {}, users: [], flags: [], domains: [] },
     selectedBadgeId: "",
     selectedUserId: "",
     selectedFeedbackId: "",
@@ -96,7 +115,7 @@ export function createCommunityAdminController({ host, supabase }) {
         <button data-community-tab="assignments" type="button">Acordări</button><button data-community-tab="badge-history" type="button">Istoric badge-uri</button>
         <button data-community-tab="feedback" type="button">Feedback <em data-community-count="feedback"></em></button>
         <button data-community-tab="reports" type="button">Raportări <em data-community-count="reports"></em></button>
-        <button data-community-tab="integrity" type="button">Integritate</button>
+        <button data-community-tab="integrity" type="button">Integritate <em data-community-count="integrity"></em></button>
       </div>
       <button class="btn small" data-community-action="refresh" type="button">Actualizează</button>
     </div>
@@ -129,8 +148,11 @@ export function createCommunityAdminController({ host, supabase }) {
     const reportCount = state.moderation.counts.reportsNew || 0;
     const f = host.querySelector('[data-community-count="feedback"]');
     const r = host.querySelector('[data-community-count="reports"]');
+    const i = host.querySelector('[data-community-count="integrity"]');
+    const integrityCount = state.integrity.counts.openFlags || 0;
     if (f) f.textContent = feedbackCount ? String(feedbackCount) : "";
     if (r) r.textContent = reportCount ? String(reportCount) : "";
+    if (i) i.textContent = integrityCount ? String(integrityCount) : "";
   }
 
   function badgeCard(badge) {
@@ -188,20 +210,34 @@ export function createCommunityAdminController({ host, supabase }) {
   }
 
   function integrityCard(user) {
-    const restricted = !user.profileAllowed || !user.leaderboardAllowed;
-    return `<button class="mh-community-integrity-row ${state.selectedIntegrityUserId === user.userId ? "is-active" : ""}" data-community-integrity-user="${escapeHtml(user.userId)}" type="button"><span><strong>${escapeHtml(user.displayName)}</strong><small>@${escapeHtml(user.username)} · ${escapeHtml(user.email)}</small></span><div>${user.openReports ? `<b>${user.openReports} raportări</b>` : ""}<em data-restricted="${restricted}">${restricted ? "Restricționat" : "Activ"}</em></div></button>`;
+    const restricted = !user.profileAllowed || !user.leaderboardAllowed || user.integrityHold || user.contentReviewStatus === "blocked";
+    const severity = ["", "low", "medium", "high", "critical"][Math.min(4, user.highestSeverity)] || "";
+    return `<button class="mh-community-integrity-row ${state.selectedIntegrityUserId === user.userId ? "is-active" : ""}" data-community-integrity-user="${escapeHtml(user.userId)}" type="button"><span><strong>${escapeHtml(user.displayName)}</strong><small>@${escapeHtml(user.username)} · ${escapeHtml(user.email)}</small></span><div>${user.openFlags ? `<b data-severity="${escapeHtml(severity)}">${user.openFlags} flag-uri</b>` : ""}${user.openReports ? `<b>${user.openReports} raportări</b>` : ""}<em data-restricted="${restricted}">${restricted ? "Restricționat" : ACCOUNT_KIND_LABELS[user.accountKind]}</em></div></button>`;
+  }
+
+  function integrityFlagCard(flag) {
+    return `<article class="mh-community-integrity-flag" data-severity="${escapeHtml(flag.severity)}"><div><strong>${escapeHtml(flag.title)}</strong><small>${escapeHtml(FLAG_SEVERITY_LABELS[flag.severity])} · ${escapeHtml(formatDate(flag.lastDetectedAt))}${flag.autoExclude ? " · exclude automat" : ""}</small></div><pre>${escapeHtml(JSON.stringify(flag.evidence, null, 2))}</pre><form data-community-integrity-flag-form="${escapeHtml(flag.id)}"><select name="status">${Object.entries(FLAG_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${flag.status === value ? "selected" : ""}>${label}</option>`).join("")}</select><input name="note" maxlength="2000" value="${escapeHtml(flag.adminNote)}" placeholder="Notă internă"><button class="btn small" type="submit">Salvează flag-ul</button></form></article>`;
   }
 
   function integrityEditor(user) {
-    if (!user) return '<div class="mh-community-editor-empty"><strong>Selectează un profil</strong><span>Controlează separat profilul public și participarea în clasamente.</span></div>';
-    return `<form class="mh-community-integrity-editor" id="mhCommunityIntegrityForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><div class="mh-community-editor-head"><div><span>Acces comunitate</span><h3>${escapeHtml(user.displayName)}</h3><code>@${escapeHtml(user.username)}</code></div></div><label class="mh-community-check"><input name="profile_allowed" type="checkbox" ${user.profileAllowed ? "checked" : ""}><span>Profil public permis</span></label><label class="mh-community-check"><input name="leaderboard_allowed" type="checkbox" ${user.leaderboardAllowed ? "checked" : ""}><span>Participare în clasamente permisă</span></label><label><span>Notă internă</span><textarea name="note" maxlength="1000">${escapeHtml(user.note)}</textarea></label><p class="legend">O restricție dezactivează imediat vizibilitatea. Ridicarea ei nu republică automat profilul; utilizatorul îl poate reactiva din setări.</p><button class="btn" type="submit">Salvează accesul</button></form>`;
+    if (!user) return '<div class="mh-community-editor-empty"><strong>Selectează un profil</strong><span>Controlează integritatea, vizibilitatea și tipul contului.</span></div>';
+    const flags = state.integrity.flags.filter((flag) => flag.userId === user.userId);
+    const draft = communityIntegrityUserDraft(user);
+    return `<div class="mh-community-integrity-editor"><form id="mhCommunityIntegrityForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><div class="mh-community-editor-head"><div><span>Integritate comunitate</span><h3>${escapeHtml(user.displayName)}</h3><code>@${escapeHtml(user.username)} · ${escapeHtml(user.role)}</code></div><button class="btn small" data-community-action="scan-selected" type="button">Scanează</button></div><div class="mh-community-form-grid"><label><span>Tip cont</span><select name="account_kind">${Object.entries(ACCOUNT_KIND_LABELS).map(([value,label]) => `<option value="${value}" ${draft.account_kind === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Review profil</span><select name="content_review_status">${Object.entries(REVIEW_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${draft.content_review_status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="mh-community-integrity-switches"><label class="mh-community-check"><input name="profile_allowed" type="checkbox" ${draft.profile_allowed ? "checked" : ""}><span>Profil public permis</span></label><label class="mh-community-check"><input name="leaderboard_allowed" type="checkbox" ${draft.leaderboard_allowed ? "checked" : ""}><span>Clasamente permise</span></label><label class="mh-community-check"><input name="bio_allowed" type="checkbox" ${draft.bio_allowed ? "checked" : ""}><span>Bio și headline publice</span></label><label class="mh-community-check"><input name="links_allowed" type="checkbox" ${draft.links_allowed ? "checked" : ""}><span>Linkuri publice</span></label><label class="mh-community-check"><input name="integrity_hold" type="checkbox" ${draft.integrity_hold ? "checked" : ""}><span>Suspendare temporară din clasamente</span></label><label class="mh-community-check"><input name="allow_internal_leaderboard" type="checkbox" ${draft.allow_internal_leaderboard ? "checked" : ""}><span>Permite cont intern în clasamente</span></label></div><label><span>Notă internă</span><textarea name="note" maxlength="1000">${escapeHtml(draft.note)}</textarea></label><button class="btn" type="submit">Salvează integritatea</button></form><form class="mh-community-username-reset" id="mhCommunityUsernameResetForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><label><span>Resetare username</span><input name="username" maxlength="24" value="${escapeHtml(user.username)}"></label><label><span>Motiv</span><input name="note" maxlength="500" placeholder="Motiv intern"></label><button class="btn small" type="submit">Schimbă username-ul</button></form><section class="mh-community-integrity-flags"><div class="mh-community-list-head"><strong>Flag-uri de integritate</strong><span>${flags.length}</span></div>${flags.map(integrityFlagCard).join("") || '<p class="legend">Nu există flag-uri pentru acest utilizator.</p>'}</section></div>`;
+  }
+
+  function integritySearchToolbar() {
+    return `<div class="mh-community-search-row"><input id="mhCommunitySearch" type="search" value="${escapeHtml(state.query)}" placeholder="Username, nume sau email"><select id="mhCommunityIntegrityStatus">${Object.entries(INTEGRITY_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${state.integrityStatus === value ? "selected" : ""}>${label}</option>`).join("")}</select><button class="btn" data-community-action="search-integrity" type="button">Caută</button><button class="btn small" data-community-action="scan-all" type="button">Scanează</button></div>`;
+  }
+
+  function blockedDomainsPanel() {
+    return `<section class="mh-community-blocked-domains"><div class="mh-community-list-head"><strong>Domenii blocate</strong><span>${state.integrity.domains.length}</span></div><form id="mhCommunityBlockedDomainForm"><input name="domain" placeholder="exemplu.ro" required><input name="reason" maxlength="500" placeholder="Motiv"><label class="mh-community-check"><input name="active" type="checkbox" checked><span>Activ</span></label><button class="btn small" type="submit">Salvează domeniul</button></form><div>${state.integrity.domains.map((domain) => `<span><strong>${escapeHtml(domain.domain)}</strong><small>${escapeHtml(domain.reason || "Fără motiv")} · ${domain.active ? "activ" : "inactiv"}</small></span>`).join("")}</div></section>`;
   }
 
   function renderIntegrity() {
-    const selected = state.moderation.users.find((user) => user.userId === state.selectedIntegrityUserId) || null;
-    body.innerHTML = `${searchToolbar("Username, nume sau email", "search-integrity")}<div class="mh-community-admin-layout"><section class="mh-community-admin-list"><div class="mh-community-integrity-list">${state.moderation.users.map(integrityCard).join("") || '<p class="legend">Nu există rezultate.</p>'}</div></section><aside class="mh-community-admin-editor">${integrityEditor(selected)}</aside></div>`;
+    const selected = state.integrity.users.find((user) => user.userId === state.selectedIntegrityUserId) || null;
+    body.innerHTML = `${integritySearchToolbar()}<div class="mh-community-integrity-summary"><span>${state.integrity.counts.openFlags || 0} deschise</span><span>${state.integrity.counts.criticalFlags || 0} critice</span><span>${state.integrity.counts.heldUsers || 0} suspendați</span><span>${state.integrity.counts.internalUsers || 0} interni/test</span></div><div class="mh-community-admin-layout"><section class="mh-community-admin-list"><div class="mh-community-integrity-list">${state.integrity.users.map(integrityCard).join("") || '<p class="legend">Nu există rezultate.</p>'}</div></section><aside class="mh-community-admin-editor">${integrityEditor(selected)}</aside></div>${blockedDomainsPanel()}`;
   }
-
 
 
   function renderBadgeHistory() {
@@ -251,8 +287,25 @@ export function createCommunityAdminController({ host, supabase }) {
     } finally { state.loading = false; }
   }
 
+  async function loadIntegrity({ force = false } = {}) {
+    if (!state.isAdmin || state.loading || (state.integrityLoaded && !force)) return;
+    state.loading = true;
+    setFeedback("Se încarcă...", "loading");
+    try {
+      state.integrity = normalizeCommunityIntegrityDashboard(await loadCommunityIntegrityDashboard(supabase, { status: state.integrityStatus, query: state.query, limit: 120 }));
+      state.integrityLoaded = true;
+      if (state.selectedIntegrityUserId && !state.integrity.users.some((user) => user.userId === state.selectedIntegrityUserId)) state.selectedIntegrityUserId = "";
+      render();
+      setFeedback();
+    } catch (error) {
+      console.error("Community integrity load failed:", error);
+      setFeedback("Integritatea nu a putut fi încărcată. Rulează migrarea 061.", "error");
+    } finally { state.loading = false; }
+  }
+
   function load({ force = false } = {}) {
-    return ["feedback", "reports", "integrity"].includes(state.activeTab) ? loadModeration({ force }) : loadBadges({ force });
+    if (state.activeTab === "integrity") return loadIntegrity({ force });
+    return ["feedback", "reports"].includes(state.activeTab) ? loadModeration({ force }) : loadBadges({ force });
   }
 
   function bindCaseSaveButton() {
@@ -360,14 +413,27 @@ export function createCommunityAdminController({ host, supabase }) {
     if (action === "refresh") {
       state.badgeLoaded = false;
       state.moderationLoaded = false;
+      state.integrityLoaded = false;
       return void load({ force: true });
     }
     if (action === "new-badge") { state.selectedBadgeId = ""; render(); return; }
     if (["search-users", "search-cases", "search-integrity"].includes(action)) {
       state.query = host.querySelector("#mhCommunitySearch")?.value.trim() || "";
       state.status = host.querySelector("#mhCommunityStatusFilter")?.value || state.status;
+      state.integrityStatus = host.querySelector("#mhCommunityIntegrityStatus")?.value || state.integrityStatus;
       if (action === "search-users") return void loadBadges({ force: true });
+      if (action === "search-integrity") return void loadIntegrity({ force: true });
       return void loadModeration({ force: true });
+    }
+    if (action === "scan-all" || action === "scan-selected") {
+      setFeedback("Se scanează...", "loading");
+      try {
+        await runCommunityIntegrityScan(supabase, action === "scan-selected" ? state.selectedIntegrityUserId : null);
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Scanare finalizată.", "success");
+      } catch (error) { console.error("Integrity scan failed:", error); setFeedback("Scanarea nu a putut fi finalizată.", "error"); }
+      return;
     }
 
     const revoke = event.target.closest("[data-community-revoke]");
@@ -428,11 +494,44 @@ export function createCommunityAdminController({ host, supabase }) {
     if (formId === "mhCommunityIntegrityForm") {
       setFeedback("Se salvează...", "loading");
       try {
-        await setCommunityUserAccess(supabase, { userId: value.user_id, profileAllowed: value.profile_allowed, leaderboardAllowed: value.leaderboard_allowed, note: value.note });
-        state.moderationLoaded = false;
-        await loadModeration({ force: true });
-        setFeedback("Acces actualizat.", "success");
-      } catch (error) { console.error("Community access save failed:", error); setFeedback("Accesul nu a putut fi salvat.", "error"); }
+        await saveCommunityIntegrityUser(supabase, value);
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Integritate actualizată.", "success");
+      } catch (error) { console.error("Community integrity save failed:", error); setFeedback("Integritatea nu a putut fi salvată.", "error"); }
+      return;
+    }
+
+    if (formId === "mhCommunityUsernameResetForm") {
+      setFeedback("Se schimbă username-ul...", "loading");
+      try {
+        await resetCommunityUsername(supabase, { userId: value.user_id, username: value.username, note: value.note });
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Username actualizat.", "success");
+      } catch (error) { console.error("Community username reset failed:", error); setFeedback("Username-ul nu a putut fi schimbat.", "error"); }
+      return;
+    }
+
+    if (form.matches("[data-community-integrity-flag-form]")) {
+      setFeedback("Se salvează flag-ul...", "loading");
+      try {
+        await reviewCommunityIntegrityFlag(supabase, { flagId: form.dataset.communityIntegrityFlagForm, status: value.status, note: value.note });
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Flag actualizat.", "success");
+      } catch (error) { console.error("Integrity flag save failed:", error); setFeedback("Flag-ul nu a putut fi salvat.", "error"); }
+      return;
+    }
+
+    if (formId === "mhCommunityBlockedDomainForm") {
+      setFeedback("Se salvează domeniul...", "loading");
+      try {
+        await saveCommunityBlockedDomain(supabase, { domain: value.domain, reason: value.reason, active: value.active });
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Domeniu salvat.", "success");
+      } catch (error) { console.error("Blocked domain save failed:", error); setFeedback("Domeniul nu a putut fi salvat.", "error"); }
     }
   });
 
@@ -447,8 +546,10 @@ export function createCommunityAdminController({ host, supabase }) {
       if (!state.isAdmin) {
         state.badgeLoaded = false;
         state.moderationLoaded = false;
+        state.integrityLoaded = false;
         state.badges = { badges: [], users: [] };
         state.moderation = { counts: {}, feedback: [], reports: [], users: [] };
+        state.integrity = { counts: {}, users: [], flags: [], domains: [] };
         state.selectedBadgeId = "";
         state.selectedUserId = "";
         state.selectedFeedbackId = "";

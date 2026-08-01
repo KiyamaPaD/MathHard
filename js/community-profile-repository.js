@@ -19,32 +19,36 @@ function isMissingRpc(error) {
 
 export async function loadOwnCommunityProfile(supabase) {
   try {
-    return await call(supabase, "mh_get_my_community_profile_v2");
+    return await call(supabase, "mh_get_my_community_profile_v3");
   } catch (error) {
     if (!isMissingRpc(error)) throw error;
-    return call(supabase, "mh_get_my_community_profile");
+    try { return await call(supabase, "mh_get_my_community_profile_v2"); }
+    catch (fallbackError) { if (!isMissingRpc(fallbackError)) throw fallbackError; return call(supabase, "mh_get_my_community_profile"); }
   }
 }
 
 export async function saveOwnCommunityProfile(supabase, profile) {
   try {
-    return await call(supabase, "mh_update_my_community_profile_v2", { p_profile: profile });
+    return await call(supabase, "mh_update_my_community_profile_v3", { p_profile: profile });
   } catch (error) {
     if (!isMissingRpc(error)) throw error;
-    return call(supabase, "mh_update_my_community_profile", { p_profile: profile });
+    try { return await call(supabase, "mh_update_my_community_profile_v2", { p_profile: profile }); }
+    catch (fallbackError) { if (!isMissingRpc(fallbackError)) throw fallbackError; return call(supabase, "mh_update_my_community_profile", { p_profile: profile }); }
   }
 }
 
-export function checkCommunityUsername(supabase, username) {
-  return call(supabase, "mh_check_community_username", { p_username: username });
+export async function checkCommunityUsername(supabase, username) {
+  try { return await call(supabase, "mh_check_community_username_v2", { p_username: username }); }
+  catch (error) { if (!isMissingRpc(error)) throw error; return call(supabase, "mh_check_community_username", { p_username: username }); }
 }
 
 export async function loadPublicCommunityProfile(supabase, username) {
   try {
-    return await call(supabase, "mh_get_public_community_profile_v2", { p_username: username });
+    return await call(supabase, "mh_get_public_community_profile_v3", { p_username: username });
   } catch (error) {
     if (!isMissingRpc(error)) throw error;
-    return call(supabase, "mh_get_public_community_profile", { p_username: username });
+    try { return await call(supabase, "mh_get_public_community_profile_v2", { p_username: username }); }
+    catch (fallbackError) { if (!isMissingRpc(fallbackError)) throw fallbackError; return call(supabase, "mh_get_public_community_profile", { p_username: username }); }
   }
 }
 
@@ -144,5 +148,46 @@ export function setCommunityUserAccess(supabase, value) {
     p_profile_allowed: Boolean(value.profileAllowed),
     p_leaderboard_allowed: Boolean(value.leaderboardAllowed),
     p_note: value.note || null
+  });
+}
+
+
+export function loadCommunityIntegrityDashboard(supabase, filters = {}) {
+  return call(supabase, "mh_admin_get_community_integrity_v2", {
+    p_query: filters.query || "",
+    p_status: filters.status || "all",
+    p_limit: Math.min(200, Math.max(20, Number(filters.limit) || 100))
+  });
+}
+
+export function runCommunityIntegrityScan(supabase, userId = null) {
+  return call(supabase, "mh_admin_run_community_integrity_scan", { p_user_id: userId || null });
+}
+
+export function saveCommunityIntegrityUser(supabase, payload) {
+  return call(supabase, "mh_admin_save_community_integrity_user", { p_payload: payload });
+}
+
+export function reviewCommunityIntegrityFlag(supabase, value) {
+  return call(supabase, "mh_admin_review_community_integrity_flag", {
+    p_flag_id: value.flagId,
+    p_status: value.status,
+    p_note: value.note || null
+  });
+}
+
+export function resetCommunityUsername(supabase, value) {
+  return call(supabase, "mh_admin_reset_community_username", {
+    p_user_id: value.userId,
+    p_username: value.username,
+    p_note: value.note || null
+  });
+}
+
+export function saveCommunityBlockedDomain(supabase, value) {
+  return call(supabase, "mh_admin_upsert_community_blocked_domain", {
+    p_domain: value.domain,
+    p_active: value.active !== false,
+    p_reason: value.reason || null
   });
 }

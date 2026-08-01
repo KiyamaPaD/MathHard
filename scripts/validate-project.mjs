@@ -87,6 +87,7 @@ const moduleJsFiles = [
   "js/community-leaderboard-repository.js",
   "js/community-leaderboard-controller.js",
   "js/community-admin-model.js",
+  "js/community-integrity-model.js",
   "js/community-admin-controller.js"
 ];
 
@@ -145,6 +146,7 @@ const requiredFiles = [
   "scripts/community-profile-audit.mjs",
   "scripts/community-leaderboard-audit.mjs",
   "scripts/community-feedback-audit.mjs",
+  "scripts/community-safety-integrity-audit.mjs",
   ...classicJsFiles,
   ...moduleJsFiles
 ];
@@ -289,6 +291,7 @@ const communityLeaderboardModelSource = readFileSync(resolve(root, "js/community
 const communityLeaderboardRepositorySource = readFileSync(resolve(root, "js/community-leaderboard-repository.js"), "utf8");
 const communityLeaderboardControllerSource = readFileSync(resolve(root, "js/community-leaderboard-controller.js"), "utf8");
 const communityProfileSettingsSource = readFileSync(resolve(root, "js/community-profile-settings-controller.js"), "utf8");
+const communityIntegrityModelSource = readFileSync(resolve(root, "js/community-integrity-model.js"), "utf8");
 const communityAdminControllerSource = readFileSync(resolve(root, "js/community-admin-controller.js"), "utf8");
 const appSource = readFileSync(resolve(root, "js/app.js"), "utf8");
 const profileSource = readFileSync(resolve(root, "js/profile.js"), "utf8");
@@ -631,6 +634,15 @@ if (!communityProfileSettingsSource.includes("Array.from(form.elements)") || com
 }
 if (!communityProfileSettingsSource.includes("normalizeLinkInputs") || !communityProfileModelSource.includes("normalizeProfileUrl")) {
   fail("Community profile links must be normalized before validation and save.");
+}
+if (!communityProfileRepositorySource.includes("mh_get_my_community_profile_v3") || !communityProfileRepositorySource.includes("mh_admin_get_community_integrity_v2")) {
+  fail("Community safety and integrity RPC contracts are missing.");
+}
+if (!communityIntegrityModelSource.includes("normalizeCommunityIntegrityDashboard") || !communityIntegrityModelSource.includes("communityIntegrityUserDraft")) {
+  fail("Community integrity model is incomplete.");
+}
+if (!communityAdminControllerSource.includes('data-community-tab="integrity"') || !communityAdminControllerSource.includes("mhCommunityIntegrityForm")) {
+  fail("Community Integrity Admin workspace is missing.");
 }
 if (gamificationControllerSource.includes("renderLeaderboard(") || gamificationControllerSource.includes("gamificationLeaderboardOptIn")) {
   fail("The obsolete Rewards mini leaderboard must be removed after Phase 4B.");

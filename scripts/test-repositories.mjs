@@ -1818,8 +1818,14 @@ const {
   loadCommunityRegions,
   loadOwnCommunityProfile,
   loadPublicCommunityProfile,
+  loadCommunityIntegrityDashboard,
+  resetCommunityUsername,
+  reviewCommunityIntegrityFlag,
   revokeCommunityBadge,
+  runCommunityIntegrityScan,
   saveCommunityBadgeDefinition,
+  saveCommunityBlockedDomain,
+  saveCommunityIntegrityUser,
   saveOwnCommunityProfile,
   setCommunityUserAccess,
   updateCommunityModerationCase
@@ -1833,6 +1839,10 @@ const {
   validateCommunityFeedbackDraft,
   validateCommunityProfileReportDraft
 } = await importBrowserModule("js/community-feedback-model.js");
+const {
+  communityIntegrityUserDraft,
+  normalizeCommunityIntegrityDashboard
+} = await importBrowserModule("js/community-integrity-model.js");
 const {
   submitCommunityFeedback,
   submitCommunityProfileReport
@@ -1931,10 +1941,10 @@ const communityRpcCalls = [];
 const communitySupabase = {
   async rpc(name, payload = {}) {
     communityRpcCalls.push([name, payload]);
-    if (name === "mh_get_my_community_profile_v2") return { data: { available: true, profile: { username: "cristi" } }, error: null };
-    if (name === "mh_update_my_community_profile_v2") return { data: { available: true, profile: payload.p_profile }, error: null };
-    if (name === "mh_check_community_username") return { data: { available: true, username: payload.p_username }, error: null };
-    if (name === "mh_get_public_community_profile_v2") return { data: { available: true, profile: { username: payload.p_username } }, error: null };
+    if (name === "mh_get_my_community_profile_v3") return { data: { available: true, profile: { username: "cristi" }, safety: {} }, error: null };
+    if (name === "mh_update_my_community_profile_v3") return { data: { available: true, profile: payload.p_profile, safety: {} }, error: null };
+    if (name === "mh_check_community_username_v2") return { data: { available: true, valid: true, username: payload.p_username, reason: "" }, error: null };
+    if (name === "mh_get_public_community_profile_v3") return { data: { available: true, profile: { username: payload.p_username } }, error: null };
     if (name === "mh_get_community_countries") return { data: [{ code: "RO" }], error: null };
     if (name === "mh_get_community_regions") return { data: [{ code: "RO-BN", country_code: payload.p_country_code }], error: null };
     if (name === "mh_admin_get_community_badge_studio_v2") return { data: { badges: [], users: [], history: [], query: payload.p_query }, error: null };
@@ -1947,6 +1957,12 @@ const communitySupabase = {
     if (name === "mh_admin_save_community_case") return { data: { id: payload.p_id, kind: payload.p_kind, status: payload.p_status, priority: payload.p_priority, admin_note: payload.p_note }, error: null };
     if (name === "mh_admin_update_community_case") return { data: { id: payload.p_id, kind: payload.p_kind, status: payload.p_status, priority: payload.p_priority, admin_note: payload.p_note }, error: null };
     if (name === "mh_admin_set_community_access") return { data: true, error: null };
+    if (name === "mh_admin_get_community_integrity_v2") return { data: { counts: { open_flags: 1 }, users: [{ user_id: "u1", username: "cristi" }], flags: [], domains: [] }, error: null };
+    if (name === "mh_admin_run_community_integrity_scan") return { data: { scanned_users: payload.p_user_id ? 1 : 2 }, error: null };
+    if (name === "mh_admin_save_community_integrity_user") return { data: payload.p_payload, error: null };
+    if (name === "mh_admin_review_community_integrity_flag") return { data: { id: payload.p_flag_id, status: payload.p_status }, error: null };
+    if (name === "mh_admin_reset_community_username") return { data: { user_id: payload.p_user_id, username: payload.p_username }, error: null };
+    if (name === "mh_admin_upsert_community_blocked_domain") return { data: { domain: payload.p_domain, active: payload.p_active }, error: null };
     return { data: null, error: new Error(`Unexpected community RPC: ${name}`) };
   }
 };
@@ -1965,11 +1981,19 @@ await submitCommunityProfileReport(communitySupabase, validateCommunityProfileRe
 await loadCommunityModerationDashboard(communitySupabase, { status: "open", query: "demo" });
 await updateCommunityModerationCase(communitySupabase, { kind: "feedback", id: "f1", status: "resolved", priority: "normal", adminNote: "ok" });
 await setCommunityUserAccess(communitySupabase, { userId: "u1", profileAllowed: true, leaderboardAllowed: false, note: "test" });
+const integrityDashboard = normalizeCommunityIntegrityDashboard(await loadCommunityIntegrityDashboard(communitySupabase, { status: "all", query: "cristi" }));
+assert.equal(integrityDashboard.counts.openFlags, 1);
+assert.equal(communityIntegrityUserDraft(integrityDashboard.users[0]).user_id, "u1");
+await runCommunityIntegrityScan(communitySupabase, "u1");
+await saveCommunityIntegrityUser(communitySupabase, { user_id: "u1", account_kind: "test" });
+await reviewCommunityIntegrityFlag(communitySupabase, { flagId: "flag-1", status: "dismissed", note: "ok" });
+await resetCommunityUsername(communitySupabase, { userId: "u1", username: "cristi-new", note: "reset" });
+await saveCommunityBlockedDomain(communitySupabase, { domain: "spam.example", active: true, reason: "spam" });
 assert.deepEqual(communityRpcCalls.map(([name]) => name), [
-  "mh_get_my_community_profile_v2",
-  "mh_update_my_community_profile_v2",
-  "mh_check_community_username",
-  "mh_get_public_community_profile_v2",
+  "mh_get_my_community_profile_v3",
+  "mh_update_my_community_profile_v3",
+  "mh_check_community_username_v2",
+  "mh_get_public_community_profile_v3",
   "mh_get_community_countries",
   "mh_get_community_regions",
   "mh_admin_get_community_badge_studio_v2",
@@ -1980,7 +2004,13 @@ assert.deepEqual(communityRpcCalls.map(([name]) => name), [
   "mh_submit_community_profile_report",
   "mh_admin_get_community_moderation",
   "mh_admin_save_community_case",
-  "mh_admin_set_community_access"
+  "mh_admin_set_community_access",
+  "mh_admin_get_community_integrity_v2",
+  "mh_admin_run_community_integrity_scan",
+  "mh_admin_save_community_integrity_user",
+  "mh_admin_review_community_integrity_flag",
+  "mh_admin_reset_community_username",
+  "mh_admin_upsert_community_blocked_domain"
 ]);
 
 const moderationFallbackCalls = [];

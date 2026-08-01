@@ -59,6 +59,7 @@ const targets = [
   "js/community-profile-repository.js",
   "js/community-profile-page.js",
   "js/community-profile-settings-controller.js",
+  "js/community-integrity-model.js",
   "js/community-feedback-repository.js",
   "js/community-feedback-controller.js",
   "js/community-leaderboard-repository.js",
@@ -184,8 +185,8 @@ if (/innerHTML\s*=\s*[^;]{0,200}\bmessage\b/i.test(communityFeedbackController))
 }
 
 const communityProfileRepository = sources.get("js/community-profile-repository.js") || "";
-if (!communityProfileRepository.includes("mh_get_public_community_profile_v2") || !communityProfileRepository.includes("mh_update_my_community_profile_v2")) {
-  fail("Community profile access must use the Phase 4A RPC contract.");
+if (!communityProfileRepository.includes("mh_get_public_community_profile_v3") || !communityProfileRepository.includes("mh_update_my_community_profile_v3") || !communityProfileRepository.includes("mh_admin_get_community_integrity_v2")) {
+  fail("Community profile access must prefer the Phase 4G.3 safety and integrity RPC contracts.");
 }
 if (communityProfileRepository.includes(".from(")) {
   fail("Community profile repository must not read profile, badge or geography tables directly.");
@@ -322,6 +323,36 @@ if (existsSync(badgePersonalizationSqlPath)) {
 const communityAdminController = sources.get("js/community-admin-controller.js") || "";
 if (!communityAdminController.includes('assignmentMode === "manual"')) {
   fail("Community badge assignment UI must restrict direct grants to manual badges.");
+}
+
+const communitySafetySqlPath = resolve(root, "local-sql/061_product_phase_04g_3_community_safety_integrity.sql");
+if (existsSync(communitySafetySqlPath)) {
+  const communitySafetySql = readFileSync(communitySafetySqlPath, "utf8");
+  const requiredSafetyTokens = [
+    "mh_community_username_history",
+    "mh_community_blocked_domains",
+    "mh_community_integrity_flags",
+    "revoke all on table public.mh_community_integrity_flags",
+    "mh_get_public_community_profile_v3",
+    "mh_admin_get_community_integrity_v2",
+    "mh_admin_review_community_integrity_flag",
+    "security definer",
+    "set search_path = public, pg_temp",
+    "internal_role.role = 'admin'",
+    "integrity_flag.auto_exclude",
+    "cp.content_review_status = 'clear'",
+    "revoke all on function public.mh_get_public_community_profile_v2",
+    "revoke all on function public.mh_update_my_community_profile_v2",
+    "Duplicate feedback"
+  ];
+  for (const token of requiredSafetyTokens) {
+    if (!communitySafetySql.includes(token)) fail(`Phase 4G.3 safety SQL is missing: ${token}`);
+  }
+  if (communitySafetySql.includes("if found and not v_control")) {
+    fail("Phase 4G.3 public profile RPC uses ambiguous PL/pgSQL FOUND state.");
+  }
+} else {
+  warn("Phase 4G.3 SQL is not present in local-sql; community safety checks were skipped.");
 }
 
 const supabaseClient = sources.get("js/supabase-client.js") || "";
