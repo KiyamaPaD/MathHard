@@ -171,7 +171,7 @@ export function createCommunityAdminController({ host, supabase }) {
   function caseEditor(item, kind) {
     if (!item) return `<div class="mh-community-editor-empty"><strong>Selectează un caz</strong><span>Detaliile și acțiunile apar aici.</span></div>`;
     const isReport = kind === "profile_report";
-    return `<form class="mh-community-case-editor" id="mhCommunityCaseForm"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="id" value="${escapeHtml(item.id)}"><div class="mh-community-editor-head"><div><span>${isReport ? "Raportare profil" : "Feedback"}</span><h3>${escapeHtml(isReport ? `@${item.reportedUsername}` : item.subject)}</h3><code>${escapeHtml(formatDate(item.createdAt))}</code></div></div><div class="mh-community-case-meta"><span>${escapeHtml(isReport ? REASON_LABELS[item.reason] : CATEGORY_LABELS[item.category])}</span><span>${escapeHtml(item.reporterLabel || "Utilizator")}</span>${item.pageUrl ? `<a href="${escapeHtml(item.pageUrl)}" target="_blank" rel="noopener noreferrer">Deschide pagina</a>` : ""}</div><p class="mh-community-case-message">${escapeHtml(item.message)}</p>${item.contactEmail ? `<p class="mh-community-case-contact">Contact: ${escapeHtml(item.contactEmail)}</p>` : ""}<div class="mh-community-form-grid"><label><span>Status</span><select name="status">${Object.entries(STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Prioritate</span><select name="priority">${Object.entries(PRIORITY_LABELS).map(([value,label]) => `<option value="${value}" ${item.priority === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="is-wide"><span>Notă internă</span><textarea name="admin_note" maxlength="2000">${escapeHtml(item.adminNote)}</textarea></label></div><div class="mh-community-case-actions"><button class="btn" type="submit">Salvează cazul</button>${isReport ? `<button class="btn small danger" type="button" data-community-restrict-profile="${escapeHtml(item.reportedUserId)}">Ascunde profilul</button><button class="btn small" type="button" data-community-restrict-leaderboard="${escapeHtml(item.reportedUserId)}">Exclude din clasament</button>` : ""}</div></form>`;
+    return `<form class="mh-community-case-editor" id="mhCommunityCaseForm"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="id" value="${escapeHtml(item.id)}"><div class="mh-community-editor-head"><div><span>${isReport ? "Raportare profil" : "Feedback"}</span><h3>${escapeHtml(isReport ? `@${item.reportedUsername}` : item.subject)}</h3><code>${escapeHtml(formatDate(item.createdAt))}</code></div></div><div class="mh-community-case-meta"><span>${escapeHtml(isReport ? REASON_LABELS[item.reason] : CATEGORY_LABELS[item.category])}</span><span>${escapeHtml(item.reporterLabel || "Utilizator")}</span>${item.pageUrl ? `<a href="${escapeHtml(item.pageUrl)}" target="_blank" rel="noopener noreferrer">Deschide pagina</a>` : ""}</div><p class="mh-community-case-message">${escapeHtml(item.message)}</p>${item.contactEmail ? `<p class="mh-community-case-contact">Contact: ${escapeHtml(item.contactEmail)}</p>` : ""}<div class="mh-community-form-grid"><label><span>Status</span><select name="status">${Object.entries(STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Prioritate</span><select name="priority">${Object.entries(PRIORITY_LABELS).map(([value,label]) => `<option value="${value}" ${item.priority === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="is-wide"><span>Notă internă</span><textarea name="admin_note" maxlength="2000">${escapeHtml(item.adminNote)}</textarea></label></div><div class="mh-community-case-actions"><button class="btn" type="submit" data-community-action="save-case">Salvează cazul</button>${isReport ? `<button class="btn small danger" type="button" data-community-restrict-profile="${escapeHtml(item.reportedUserId)}">Ascunde profilul</button><button class="btn small" type="button" data-community-restrict-leaderboard="${escapeHtml(item.reportedUserId)}">Exclude din clasament</button>` : ""}</div></form>`;
   }
 
   function renderCases(kind) {
@@ -241,6 +241,51 @@ export function createCommunityAdminController({ host, supabase }) {
     return ["feedback", "reports", "integrity"].includes(state.activeTab) ? loadModeration({ force }) : loadBadges({ force });
   }
 
+  async function saveModerationCase(form) {
+    if (!form || form.id !== "mhCommunityCaseForm" || form.dataset.saving === "1") return;
+
+    const value = formValues(form);
+    const validationError = validateModerationCaseDraft(value);
+    if (validationError) {
+      setFeedback(validationError, "error");
+      return;
+    }
+
+    form.dataset.saving = "1";
+    setFeedback("Se salvează...", "loading");
+    setFormBusy(form, true);
+
+    try {
+      const persisted = normalizeCommunityCase(await updateCommunityModerationCase(supabase, {
+        kind: value.kind,
+        id: value.id,
+        status: value.status,
+        priority: value.priority,
+        adminNote: value.admin_note
+      }), value.kind);
+
+      if (!persisted.id || persisted.id !== value.id) throw new Error("Invalid moderation save response");
+
+      const collection = value.kind === "feedback" ? "feedback" : "reports";
+      const selectedKey = value.kind === "feedback" ? "selectedFeedbackId" : "selectedReportId";
+      const index = state.moderation[collection].findIndex((item) => item.id === persisted.id);
+      if (index >= 0) state.moderation[collection][index] = { ...state.moderation[collection][index], ...persisted };
+      state[selectedKey] = persisted.id;
+      if (!caseMatchesFilter(persisted.status)) state.status = persisted.status;
+
+      render();
+      setFeedback("Caz salvat.", "success");
+      state.moderationLoaded = false;
+    } catch (error) {
+      console.error("Community case update failed:", error);
+      setFeedback(moderationErrorMessage(error), "error");
+      if (form.isConnected) {
+        delete form.dataset.saving;
+        setFormBusy(form, false);
+      }
+    }
+  }
+
   async function restrictUser(userId, profileAllowed, leaderboardAllowed, message) {
     if (!confirm(message)) return;
     setFeedback("Se salvează...", "loading");
@@ -276,6 +321,13 @@ export function createCommunityAdminController({ host, supabase }) {
     if (integrityRow) { state.selectedIntegrityUserId = integrityRow.dataset.communityIntegrityUser; render(); return; }
 
     const action = event.target.closest("[data-community-action]")?.dataset.communityAction;
+    if (action === "save-case") {
+      event.preventDefault();
+      event.stopPropagation();
+      const form = event.target.closest("#mhCommunityCaseForm") || body.querySelector("#mhCommunityCaseForm");
+      void saveModerationCase(form);
+      return;
+    }
     if (action === "refresh") {
       state.badgeLoaded = false;
       state.moderationLoaded = false;
@@ -333,39 +385,7 @@ export function createCommunityAdminController({ host, supabase }) {
     }
 
     if (form.id === "mhCommunityCaseForm") {
-      const validationError = validateModerationCaseDraft(value);
-      if (validationError) return setFeedback(validationError, "error");
-
-      setFeedback("Se salvează...", "loading");
-      setFormBusy(form, true);
-      try {
-        const persisted = normalizeCommunityCase(await updateCommunityModerationCase(supabase, {
-          kind: value.kind,
-          id: value.id,
-          status: value.status,
-          priority: value.priority,
-          adminNote: value.admin_note
-        }), value.kind);
-
-        if (!persisted.id || persisted.id !== value.id) throw new Error("Invalid moderation save response");
-
-        const collection = value.kind === "feedback" ? "feedback" : "reports";
-        const selectedKey = value.kind === "feedback" ? "selectedFeedbackId" : "selectedReportId";
-        const index = state.moderation[collection].findIndex((item) => item.id === persisted.id);
-        if (index >= 0) state.moderation[collection][index] = { ...state.moderation[collection][index], ...persisted };
-        state[selectedKey] = persisted.id;
-        if (!caseMatchesFilter(persisted.status)) state.status = persisted.status;
-
-        // Render the persisted state immediately. A list refresh is explicit and can no longer
-        // make a successful save look like a failed one when the network is unstable.
-        render();
-        setFeedback("Caz salvat.", "success");
-        state.moderationLoaded = false;
-      } catch (error) {
-        console.error("Community case update failed:", error);
-        setFeedback(moderationErrorMessage(error), "error");
-        setFormBusy(form, false);
-      }
+      await saveModerationCase(form);
       return;
     }
 
