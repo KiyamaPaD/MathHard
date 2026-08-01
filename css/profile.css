@@ -335,9 +335,10 @@
 }
 
 .profile-tabs{
-  position:sticky;
-  top:78px;
-  z-index:50;
+  position:static;
+  top:auto;
+  z-index:auto;
+  align-self:start;
   display:flex;
   gap:6px;
   width:max-content;
@@ -718,7 +719,7 @@
   }
 
   .profile-tabs{
-    top:66px;
+    top:auto;
     width:100%;
   }
 
