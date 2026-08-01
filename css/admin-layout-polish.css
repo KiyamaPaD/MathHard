@@ -297,3 +297,62 @@
     text-align: left;
   }
 }
+
+/* Phase 4F.1 — center and contain the Community workspace.
+   The tab strip and two-column body must shrink inside the Admin viewport
+   instead of contributing their intrinsic width to the page. */
+.mh-admin-workspace[data-admin-panel="community"] {
+  overflow-x: clip;
+}
+
+.mh-admin-workspace[data-admin-panel="community"] > .mh-admin-page-header,
+.mh-admin-workspace[data-admin-panel="community"] > #mhCommunityAdminStudio {
+  width: min(100%, 1380px);
+  max-width: 100%;
+  margin-inline: auto;
+  min-width: 0;
+}
+
+#mhCommunityAdminStudio,
+#mhCommunityAdminStudio .mh-community-admin,
+#mhCommunityAdminStudio #mhCommunityAdminBody,
+#mhCommunityAdminStudio .mh-community-admin-toolbar,
+#mhCommunityAdminStudio .mh-community-admin-tabs,
+#mhCommunityAdminStudio .mh-community-admin-layout {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#mhCommunityAdminStudio,
+#mhCommunityAdminStudio .mh-community-admin,
+#mhCommunityAdminStudio #mhCommunityAdminBody,
+#mhCommunityAdminStudio .mh-community-admin-layout {
+  width: 100%;
+}
+
+#mhCommunityAdminStudio .mh-community-admin-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+#mhCommunityAdminStudio .mh-community-admin-tabs {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#mhCommunityAdminStudio .mh-community-admin-list,
+#mhCommunityAdminStudio .mh-community-admin-editor {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  #mhCommunityAdminStudio .mh-community-admin-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #mhCommunityAdminStudio .mh-community-admin-toolbar > .btn {
+    width: 100%;
+  }
+}
