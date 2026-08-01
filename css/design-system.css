@@ -328,8 +328,7 @@ body.mh-shell-ready > header .header-actions .btn {
 .mh-shell-nav-icon svg,
 .mh-shell-utility-icon svg,
 .mh-shell-mobile-toggle svg,
-.mh-shell-bottom-nav svg,
-.mh-admin-floating-close svg {
+.mh-shell-bottom-nav svg {
   width: 17px;
   height: 17px;
   display: block;
@@ -806,11 +805,6 @@ body.mh-shell-ready .card:hover {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.mh-admin-floating-close {
-  border-color: var(--mh-border-soft);
-  background: var(--mh-surface-glass);
-  box-shadow: var(--mh-shadow-md);
-}
 
 /* System pages */
 .mh-system-page {

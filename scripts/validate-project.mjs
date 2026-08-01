@@ -797,7 +797,7 @@ ${error.stdout?.toString() || ""}${error.stderr?.toString() || error.message}`);
 if (!indexHtml.includes('href="css/quick-nav.css"')) {
   fail("Quick navigation stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/performance-bootstrap.js?v=4j2"') ||
+if (!/src="\/js\/performance-bootstrap\.js(?:\?[^"]*)?"/.test(indexHtml) ||
     !performanceBootstrapSource.includes('./quick-nav-controller.js')) {
   fail("Quick navigation controller must be loaded through the performance bootstrap.");
 }
@@ -817,10 +817,10 @@ if (!indexHtml.includes('href="css/section-layout.css"')) {
 if (!performanceBootstrapSource.includes('./section-layout-controller.js')) {
   fail("Section layout controller must be loaded through the performance bootstrap.");
 }
-if (!indexHtml.includes('href="css/app-shell.css"')) {
+if (!/href="css\/app-shell\.css(?:\?[^"]*)?"/.test(indexHtml)) {
   fail("Phase 14A app shell stylesheet is missing from index.html.");
 }
-if (!indexHtml.includes('src="/js/app-shell-controller.js?v=4j2"')) {
+if (!/src="\/js\/app-shell-controller\.js(?:\?[^"]*)?"/.test(indexHtml)) {
   fail("Phase 14A app shell controller is missing from index.html.");
 }
 if (!appShellSource.includes("normalizeAppRoute") ||
@@ -952,6 +952,12 @@ if (!roadmapRepositorySource.includes("loadEpoch")) {
 if (!secureProblemControllerSource.includes("workspaceSaveChain") || !secureProblemControllerSource.includes("Array.isArray(attempts[problem.id])")) {
   fail("Problem workspace saves and legacy attempt fallbacks must be race-safe.");
 }
+if (!problemWorkspaceCss.includes(".mh-problem-workspace > .mh-problem-hero") ||
+    !problemWorkspaceCss.includes("position: sticky") ||
+    !problemWorkspaceCss.includes("z-index: 20") ||
+    !problemWorkspaceCss.includes("background-color: var(--bg)")) {
+  fail("Problem summary must remain a visible sticky layer above scrolling content.");
+}
 if (indexHtml.includes('/img/preview.png')) {
   fail("Open Graph image points to a removed asset.");
 }
@@ -960,11 +966,11 @@ if (indexHtml.includes('/img/preview.png')) {
 if (!appShellSource.includes('href="${item.href}"') || !appShellSource.includes('{ route: "profile"')) {
   fail("Phase 14A hotfix must expose Profile in the desktop app shell.");
 }
-if (!appShellSource.includes("mhAdminFloatingClose") || !appShellSource.includes("bindAdminClose")) {
-  fail("Phase 14A hotfix must provide a persistent Admin close control.");
+if (appShellSource.includes("mhAdminFloatingClose") || appShellSource.includes("mh-admin-floating-close") || appShellCss.includes(".mh-admin-floating-close")) {
+  fail("The obsolete floating Admin close control must be removed completely.");
 }
-if (!appShellCss.includes(".mh-admin-floating-close") || !appShellCss.includes("border-radius: 18px")) {
-  fail("Phase 14A hotfix must include rounded navigation and Admin close styles.");
+if (!appShellSource.includes("bindAdminDrawerState") || !appShellSource.includes('document.getElementById("closeAdmin")?.addEventListener("click", closeDrawer)')) {
+  fail("The regular Admin drawer close action and state synchronization must remain available.");
 }
 if (!appShellSource.includes("button.hidden === false") ||
     !appShellSource.includes('button.getAttribute("aria-hidden") === "false"') ||
@@ -1407,7 +1413,7 @@ if (!runtimeDiagnosticsSource.includes("collectLayoutDiagnostics") ||
 }
 
 // Phase 18C.3: route-aware lazy loading and duplicate-request guards.
-if (!indexHtml.includes('src="/js/performance-bootstrap.js?v=4j2"') ||
+if (!/src="\/js\/performance-bootstrap\.js(?:\?[^"]*)?"/.test(indexHtml) ||
     indexHtml.includes('src="/js/analytics-controller.js"') ||
     indexHtml.includes('src="/js/gamification-controller.js"') ||
     indexHtml.includes('src="/js/animation-numberline.js"')) {

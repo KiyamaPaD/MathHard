@@ -68,7 +68,6 @@ const TEXT = {
       language: "Limbă",
       collapse: "Compactează meniul",
       expand: "Extinde meniul",
-      closeAdmin: "Închide administrarea",
     },
     continue: "Continuă",
     menu: "Meniu",
@@ -110,7 +109,6 @@ const TEXT = {
       language: "Language",
       collapse: "Collapse menu",
       expand: "Expand menu",
-      closeAdmin: "Close Admin",
     },
     continue: "Continue",
     menu: "Menu",
@@ -244,10 +242,6 @@ function createShellMarkup() {
       <section class="mh-shell-workspace-panel" data-panel="gamification" id="mhShellPanelGamification" hidden></section>
       <section class="mh-shell-workspace-panel" data-panel="leaderboards" id="mhShellPanelLeaderboards" hidden></section>
     </main>
-    <button class="mh-admin-floating-close" id="mhAdminFloatingClose" type="button" hidden>
-      ${iconMarkup("close", "mh-shell-close-icon")}
-      <span data-admin-close-label>Închide administrarea</span>
-    </button>
     <nav class="mh-shell-bottom-nav" id="mhShellBottomNav" aria-label="Mobile navigation">
       <button type="button" data-shell-route="dashboard">${iconMarkup("dashboard", "mh-shell-bottom-icon")}<span data-shell-label="dashboard"></span></button>
       <button type="button" data-shell-route="roadmap">${iconMarkup("roadmap", "mh-shell-bottom-icon")}<span data-shell-label="roadmap"></span></button>
@@ -340,8 +334,6 @@ function applyLanguage() {
     ? text.nav.expand
     : text.nav.collapse;
 
-  const adminCloseLabel = document.querySelector("[data-admin-close-label]");
-  if (adminCloseLabel) adminCloseLabel.textContent = text.nav.closeAdmin;
 
   const route = normalizeAppRoute(location.hash);
   updateWorkspaceCopy(route);
@@ -492,10 +484,9 @@ function bindNavigation() {
   });
 }
 
-function bindAdminClose() {
+function bindAdminDrawerState() {
   const drawer = document.getElementById("adminDrawer");
-  const floatingClose = document.getElementById("mhAdminFloatingClose");
-  if (!drawer || !floatingClose) return;
+  if (!drawer) return;
 
   const closeDrawer = () => {
     drawer.classList.remove("open");
@@ -506,7 +497,6 @@ function bindAdminClose() {
   const sync = () => {
     const authorized = adminVisible();
     const open = authorized && drawer.classList.contains("open");
-    floatingClose.hidden = !open;
     document.body.classList.toggle("mh-admin-drawer-open", open);
 
     // A stale drawer must never remain open after logout or a failed role check.
@@ -515,7 +505,6 @@ function bindAdminClose() {
     }
   };
 
-  floatingClose.addEventListener("click", closeDrawer);
   document.getElementById("closeAdmin")?.addEventListener("click", closeDrawer);
   new MutationObserver(sync).observe(drawer, {
     attributes: true,
@@ -612,7 +601,7 @@ function init() {
   bindNavigation();
   bindContinue();
   watchAdmin();
-  bindAdminClose();
+  bindAdminDrawerState();
   bindExclusiveFullscreenSurfaces();
 
   const languageObserver = new MutationObserver(applyLanguage);

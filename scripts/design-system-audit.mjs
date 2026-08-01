@@ -13,8 +13,8 @@ function requireTokens(source, label, tokens) {
 
 for (const page of ["index.html", "profile.html", "u.html"]) {
   const source = read(page);
-  requireTokens(source, page, ["/css/design-system.css?v=4j2"]);
-  const designIndex = source.indexOf("/css/design-system.css?v=4j2");
+  requireTokens(source, page, ["/css/design-system.css?v=4j3"]);
+  const designIndex = source.indexOf("/css/design-system.css?v=4j3");
   const motionIndex = source.indexOf("/css/microinteractions.css?v=4i");
   if (designIndex < motionIndex) errors.push(`${page}: design-system.css trebuie încărcat după stilurile componentelor.`);
 }
@@ -96,10 +96,21 @@ requireTokens(feedbackCss, "Suggestions dialog header", [
   "backdrop-filter:none",
 ]);
 
-requireTokens(shell, "Admin close behavior", [
+requireTokens(shell, "Admin drawer state", [
+  "function bindAdminDrawerState()",
   "const closeDrawer = () =>",
-  'floatingClose.addEventListener("click", closeDrawer)',
   'document.getElementById("closeAdmin")?.addEventListener("click", closeDrawer)',
+]);
+if (shell.includes("mhAdminFloatingClose") || shell.includes("mh-admin-floating-close")) {
+  errors.push("The obsolete floating Admin close control is still present.");
+}
+
+requireTokens(problemCss, "Problem summary sticky layer", [
+  ".mh-problem-workspace > .mh-problem-hero",
+  "position: sticky",
+  "top: 0",
+  "z-index: 20",
+  "background-color: var(--bg)",
 ]);
 
 requireTokens(shell, "Distinct navigation icons", [
@@ -118,4 +129,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("MathHard 4J.2 visual behavior audit passed.");
+console.log("MathHard 4J.3 sticky problem and Admin cleanup audit passed.");
