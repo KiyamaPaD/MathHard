@@ -29,6 +29,7 @@ function forbidTokens(source, label, tokens) {
 const index = read("index.html");
 const app = read("js/app.js");
 const adminCss = read("css/admin-studio.css");
+const adminPolishCss = read("css/admin-layout-polish.css");
 const adminModel = read("js/admin-content-model.js");
 const quizAdmin = read("js/lesson-quiz-admin-controller.js");
 const quizRepository = read("js/lesson-quiz-repository.js");
@@ -57,6 +58,15 @@ requireTokens(adminCss, "Admin styling", [
   ".mh-admin-language-card",
   ".mh-admin-savebar",
   ".mh-admin-status-dot"
+]);
+
+requireTokens(adminPolishCss, "Admin layout polish", [
+  ".mh-admin-savebar",
+  ".mh-quality-bulk-bar",
+  ".mh-community-admin-layout",
+  ".mh-concept-coverage-section",
+  ".mh-roadmap-admin-head",
+  "position: static !important"
 ]);
 
 requireTokens(adminModel, "Admin form model", ["export function linesFromInput"]);
@@ -123,7 +133,7 @@ if (errors.length) {
 } else {
   console.log("- Admin remains open during transient auth revalidation: present");
   console.log("- transient connection failures preserve verified Admin state: present");
-  console.log("- bilingual/source authoring fields and sticky save actions: present");
+  console.log("- bilingual/source authoring fields and non-overlapping save actions: present");
   console.log("- problem source preservation: present");
   console.log("- student-facing infrastructure copy removed: confirmed");
   console.log("- image alternative text checks: passed");

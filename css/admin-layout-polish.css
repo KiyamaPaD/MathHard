@@ -1,0 +1,253 @@
+/* MathHard Phase 4E — Admin layout and community polish.
+   Admin workspaces own the vertical scroll. Nested sticky elements caused
+   headers, cards and save actions to overlap while the workspace moved. */
+
+.mh-admin-workspace {
+  scroll-padding-block: 18px;
+  overscroll-behavior: contain;
+}
+
+/* Keep editor content in normal document flow. */
+.mh-admin-editor-header,
+.mh-admin-savebar,
+.mh-quality-bulk-bar,
+.mh-roadmap-admin-head,
+.mh-roadmap-admin-form > summary,
+.mh-community-admin-editor,
+.mh-lesson-quiz-admin-footer {
+  position: static !important;
+  inset: auto !important;
+}
+
+.mh-admin-editor-header {
+  padding-block: 0;
+  background: transparent;
+}
+
+.mh-admin-editor-card,
+.mh-admin-editor-card #mhPublish,
+.mh-admin-language-grid,
+.mh-admin-language-card,
+.mh-admin-language-card > header {
+  min-width: 0;
+}
+
+.mh-admin-language-card {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.mh-admin-language-card > header {
+  flex-wrap: wrap;
+}
+
+.mh-admin-language-card > header strong,
+.mh-admin-language-card > header span {
+  overflow-wrap: anywhere;
+}
+
+/* The save action remains visible in the form, without covering fields. */
+.mh-admin-savebar {
+  width: 100%;
+  min-height: 0;
+  margin: 8px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.mh-admin-editor-card #mhPublish {
+  padding-bottom: 2px;
+}
+
+.mh-lesson-quiz-admin-footer {
+  padding-inline: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+/* Publication workspace: the bulk toolbar no longer covers the selected item. */
+.mh-quality-bulk-bar {
+  margin: 0;
+  background: color-mix(in srgb, var(--card) 96%, var(--bg));
+  box-shadow: none;
+}
+
+.mh-quality-layout,
+.mh-quality-layout > aside,
+.mh-quality-layout > main,
+.mh-quality-editor,
+.mh-quality-editor > header,
+.mh-quality-editor-state {
+  min-width: 0;
+}
+
+.mh-quality-editor > header {
+  flex-wrap: wrap;
+}
+
+.mh-quality-editor > header > div:first-child {
+  min-width: 0;
+}
+
+.mh-quality-editor h3,
+.mh-quality-editor code,
+.mh-quality-editor-state {
+  overflow-wrap: anywhere;
+}
+
+/* Community: prevent the list and editor cards from intruding into each other. */
+.mh-community-admin,
+.mh-community-admin-layout,
+.mh-community-admin-list,
+.mh-community-admin-editor,
+.mh-community-case-editor,
+.mh-community-integrity-editor,
+.mh-community-badge-form,
+.mh-community-assignment-editor {
+  min-width: 0;
+}
+
+.mh-community-admin-layout {
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 16px;
+}
+
+.mh-community-admin-list,
+.mh-community-admin-editor {
+  overflow: hidden;
+}
+
+.mh-community-editor-head,
+.mh-community-case-meta,
+.mh-community-case-actions,
+.mh-community-current-badges > div {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.mh-community-editor-head > div,
+.mh-community-case-meta > *,
+.mh-community-current-badges > div > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mh-community-case-message,
+.mh-community-case-contact,
+.mh-community-editor-head h3,
+.mh-community-editor-head code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.mh-community-case-actions .btn {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Concept coverage cards keep their own space and wrap long roadmap labels. */
+.mh-concept-admin-shell,
+.mh-concept-coverage,
+.mh-concept-coverage-section,
+.mh-concept-coverage-roadmaps,
+.mh-concept-coverage-roadmaps article,
+.mh-concept-coverage-roadmaps article > div,
+.mh-concept-coverage-list,
+.mh-concept-coverage-list article {
+  min-width: 0;
+}
+
+.mh-concept-admin-tabs {
+  position: static;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.mh-concept-coverage-section {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.mh-concept-coverage-roadmaps article {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.mh-concept-coverage-roadmaps article > div {
+  flex: 1 1 240px;
+}
+
+.mh-concept-coverage-roadmaps strong,
+.mh-concept-coverage-roadmaps small,
+.mh-concept-coverage-list strong,
+.mh-concept-coverage-list code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* Roadmap Studio stays in the normal flow, above generated stages. */
+.mh-roadmap-admin-dashboard,
+.mh-roadmap-admin-head,
+.mh-roadmap-admin-board,
+.mh-roadmap-admin-section-card,
+.mh-roadmap-admin-section-card > header,
+.mh-roadmap-admin-node-row {
+  min-width: 0;
+}
+
+.mh-roadmap-admin-head {
+  margin-bottom: 4px;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.mh-roadmap-admin-head > div:first-child,
+.mh-roadmap-admin-section-card > header > div:first-child,
+.mh-roadmap-admin-node-row > div:first-child {
+  min-width: 0;
+}
+
+.mh-roadmap-admin-head h3,
+.mh-roadmap-admin-head p,
+.mh-roadmap-admin-section-card h4,
+.mh-roadmap-admin-section-card code,
+.mh-roadmap-admin-node-row strong,
+.mh-roadmap-admin-node-row code {
+  overflow-wrap: anywhere;
+}
+
+.mh-roadmap-admin-form > summary {
+  background: transparent;
+}
+
+@media (max-width: 1180px) {
+  .mh-community-admin-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .mh-admin-savebar,
+  .mh-community-case-actions,
+  .mh-community-current-badges > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mh-admin-savebar .btn,
+  .mh-community-case-actions .btn,
+  .mh-community-current-badges > div .btn {
+    width: 100%;
+  }
+
+  .mh-quality-editor-state {
+    justify-items: start;
+    text-align: left;
+  }
+}
