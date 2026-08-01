@@ -69,6 +69,47 @@
   backdrop-filter: none;
 }
 
+
+/* Publication detail header: keep the selected-content summary in its own row.
+   The previous right-aligned block could collide with the controls below. */
+.mh-quality-editor > header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 12px !important;
+}
+
+.mh-quality-editor-state {
+  position: static !important;
+  inset: auto !important;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  justify-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 96%, var(--bg));
+  text-align: left;
+}
+
+.mh-quality-editor-state .mh-quality-publication-badge {
+  width: auto;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.mh-quality-editor-state small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* Publication workspace: the bulk toolbar no longer covers the selected item. */
 .mh-quality-bulk-bar {
   margin: 0;
