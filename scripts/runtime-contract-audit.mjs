@@ -77,6 +77,15 @@ function auditHtml(relativePath) {
     checkReference(relativePath, value, `${tag.toLowerCase()} ${attribute.toLowerCase()}`);
   }
 
+  for (const match of source.matchAll(/\bpattern\s*=\s*["']([^"']+)["']/gi)) {
+    const pattern = match[1];
+    try {
+      new RegExp(pattern, "v");
+    } catch (error) {
+      fail(`${relativePath}: invalid HTML pattern ${JSON.stringify(pattern)} for browser v-mode: ${error.message}`);
+    }
+  }
+
   for (const match of source.matchAll(/<button\b([^>]*)>/gi)) {
     if (!/\btype\s*=\s*["'](?:button|submit|reset)["']/i.test(match[1])) {
       fail(`${relativePath}: every button must declare an explicit type.`);
