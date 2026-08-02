@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ro" data-mh-build="5a3">
+<html lang="ro" data-mh-build="5a4">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -28,7 +28,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/img/Screenshot_6.png" />
   <meta name="theme-color" content="#0b1020" />
-  <meta name="mathhard-build" content="5a1" />
+  <meta name="mathhard-build" content="5a4" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="icon" href="/img/mathhard-logo.png" type="image/png" />
 
@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="css/gamification-studio.css" />
   <link rel="stylesheet" href="css/concept-studio.css" />
   <link rel="stylesheet" href="css/content-quality-studio.css" />
-  <link rel="stylesheet" href="css/content-authoring.css?v=5a3" />
+  <link rel="stylesheet" href="css/content-authoring.css?v=5a4" />
   <link rel="stylesheet" href="css/community-admin.css?v=4j1" />
   <link rel="stylesheet" href="css/community-leaderboard.css" />
   <link rel="stylesheet" href="css/community-feedback.css?v=4j1" />
@@ -1109,6 +1109,40 @@
   <script type="module" src="/js/community-feedback-controller.js?v=4i"></script>
   <script type="module" src="/js/performance-bootstrap.js"></script>
   <script type="module" src="/js/app-shell-controller.js?v=4j3"></script>
-  <script type="module" src="/js/app.js?v=5a3"></script>
+  <script>
+    (() => {
+      const htmlBuild = document.documentElement.dataset.mhBuild || "unknown";
+      const expose = (payload) => { window.__MH_DEPLOY_STATUS = Object.freeze(payload); };
+      const showMismatch = (message) => {
+        console.error(`[MathHard deploy] ${message}`);
+        let banner = document.getElementById("mhDeployMismatch");
+        if (!banner) {
+          banner = document.createElement("div");
+          banner.id = "mhDeployMismatch";
+          banner.setAttribute("role", "alert");
+          banner.style.cssText = "position:fixed;inset:0 0 auto 0;z-index:2147483647;padding:10px 16px;background:#7f1d1d;color:#fff;font:600 13px/1.4 system-ui,sans-serif;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.35)";
+          document.documentElement.appendChild(banner);
+        }
+        banner.textContent = `MathHard: versiune de deploy inconsistentă. ${message}`;
+      };
+      const appScript = document.querySelector('script[type="module"][src*="/js/app.js"]');
+      let appVersion = "unknown";
+      try { appVersion = new URL(appScript?.src || "", location.href).searchParams.get("v") || "unknown"; } catch {}
+      fetch(`/deploy-manifest.json?t=${Date.now()}`, { cache: "no-store" })
+        .then((response) => { if (!response.ok) throw new Error(`manifest HTTP ${response.status}`); return response.json(); })
+        .then((manifest) => {
+          const deployedBuild = String(manifest?.build || "unknown");
+          const consistent = htmlBuild === appVersion && htmlBuild === deployedBuild;
+          expose({ consistent, htmlBuild, appVersion, deployedBuild, manifest });
+          if (!consistent) showMismatch(`HTML=${htmlBuild}, app.js=${appVersion}, deploy=${deployedBuild}.`);
+          else console.info(`[MathHard deploy] build ${htmlBuild} sincronizat.`);
+        })
+        .catch((error) => {
+          expose({ consistent: false, htmlBuild, appVersion, deployedBuild: "unavailable", error: String(error) });
+          showMismatch(`Manifestul de deploy nu poate fi citit (${error.message}).`);
+        });
+    })();
+  </script>
+  <script type="module" src="/js/app.js?v=5a4"></script>
 </body>
 </html>

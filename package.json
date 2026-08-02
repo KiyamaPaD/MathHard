@@ -6,6 +6,9 @@
     "test": "node scripts/run-all-audits.mjs",
     "audit": "node scripts/run-all-audits.mjs",
     "audit:runtime": "node scripts/runtime-contract-audit.mjs",
-    "test:repositories": "node scripts/test-repositories.mjs"
+    "test:repositories": "node scripts/test-repositories.mjs",
+    "build:manifest": "node scripts/write-deploy-manifest.mjs",
+    "build": "npm test && npm run build:manifest && npm run build:site",
+    "build:site": "node scripts/build-static-site.mjs"
   }
 }

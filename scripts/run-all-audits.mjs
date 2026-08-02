@@ -19,6 +19,8 @@ const auditFiles = readdirSync(scriptsDirectory)
   .filter((name) => name.endsWith(".mjs"))
   .map((name) => resolve(scriptsDirectory, name))
   .filter((absolutePath) => absolutePath !== currentFile)
+  .filter((absolutePath) => !absolutePath.endsWith("write-deploy-manifest.mjs"))
+  .filter((absolutePath) => !absolutePath.endsWith("build-static-site.mjs"))
   .sort((left, right) => {
     const leftName = left.split(/[\\/]/).at(-1);
     const rightName = right.split(/[\\/]/).at(-1);

@@ -129,7 +129,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5a3")
+      import("./content-quality-admin-controller.js?v=5a4")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -3123,7 +3123,7 @@ ${details}`);
   }
 
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a3");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a4");
   }
 
   async function mountContentAuthoringController({ reportError = false } = {}) {

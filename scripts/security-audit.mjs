@@ -13,7 +13,7 @@ const warnings = [];
 const rpcNames = new Set();
 const tableNames = new Set();
 const allowedExtensions = new Set([".js", ".mjs", ".html", ".json", ".md"]);
-const ignoredDirectories = new Set([".git", "node_modules", ".netlify", "dist", "build", "coverage"]);
+const ignoredDirectories = new Set([".git", "node_modules", ".netlify", ".netlify-dist", "dist", "build", "coverage"]);
 
 function fail(message) {
   failures.push(message);

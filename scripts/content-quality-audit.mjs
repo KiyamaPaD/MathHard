@@ -43,7 +43,7 @@ for (const token of [
   if (!index.includes(token)) errors.push(`Admin quality UI is missing ${token}.`);
 }
 
-if (!app.includes('import("./content-quality-admin-controller.js?v=5a3")') ||
+if (!app.includes('import("./content-quality-admin-controller.js?v=5a4")') ||
     app.includes('from "./content-quality-admin-controller.js"')) {
   errors.push("Content Quality controller must be loaded dynamically.");
 }
