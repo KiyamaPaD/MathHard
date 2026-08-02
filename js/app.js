@@ -98,10 +98,8 @@ import {
   let roadmapController = null;
   let roadmapAdminController = null;
   let conceptAdminController = null;
-  let contentQualityAdminController = null;
-  let contentAuthoringController = null;
-  let contentAuthoringRuntimePromise = null;
-  let adminStudioController = null;
+  let contentQualityAdminController = null, contentAuthoringController = null;
+  let contentBatchImportController = null, contentAuthoringRuntimePromise = null, adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
   let communityAdminController = null;
@@ -129,7 +127,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5a4")
+      import("./content-quality-admin-controller.js?v=5a5"), import("./content-batch-import-controller.js?v=5a5")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -140,7 +138,7 @@ import {
       gamificationAdminModule,
       communityAdminModule,
       conceptAdminModule,
-      contentQualityAdminModule
+      contentQualityAdminModule, contentBatchImportModule
     ]) => {
       adminRuntime = {
         ...lessonQuizModule,
@@ -152,7 +150,7 @@ import {
         ...gamificationAdminModule,
         ...communityAdminModule,
         ...conceptAdminModule,
-        ...contentQualityAdminModule
+        ...contentQualityAdminModule, ...contentBatchImportModule
       };
       return adminRuntime;
     }).catch((error) => {
@@ -2038,6 +2036,7 @@ import {
   roadmapController?.render();
   roadmapAdminController?.render();
   contentAuthoringController?.refresh();
+  contentBatchImportController?.refreshLanguage();
   const adminSubmit = document.getElementById("mhSubmitBtn");
   if (adminSubmit) {
     adminSubmit.textContent = MH_ADMIN_STATE.mode === "edit"
@@ -3123,7 +3122,7 @@ ${details}`);
   }
 
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a4");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a5");
   }
 
   async function mountContentAuthoringController({ reportError = false } = {}) {
@@ -3371,6 +3370,11 @@ ${details}`);
       if (!contentAuthoringController) {
         await mountContentAuthoringController({ reportError: true });
       }
+
+      if (!contentBatchImportController) contentBatchImportController = runtime.createContentBatchImportController({
+        host: document.getElementById("mhContentBatchImport"), supabase, getLanguage: () => LANG, getCatalog: () => DATA,
+        onImported: async () => { await reloadAllContentFromSupabase(true); await refreshConceptCatalog(true); mhRenderAdminList(); contentQualityAdminController?.invalidate(); }
+      });
 
       if (!adminStudioController) {
         adminStudioController = runtime.createAdminStudioController({
@@ -7637,6 +7641,7 @@ function openExam(exam){
       conceptAdminController?.setAdmin(false);
       contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
+      contentBatchImportController?.reset();
       if (adminDraftController) {
         mhClearAdminForm({
           saveCurrent: false,

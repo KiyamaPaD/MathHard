@@ -43,8 +43,8 @@ const numberLine = read("js/animation-numberline.js");
 const secureProblem = read("js/secure-problem-controller.js");
 
 requireTokens(index, "Main page localization bootstrap", [
-  'meta name="mathhard-build" content="5a4"',
-  '/js/app.js?v=5a4',
+  'meta name="mathhard-build" content="5a5"',
+  '/js/app.js?v=5a5',
   '>Sugestii</button>',
   '>🛠 Administrare</button>',
   'data-i18n="roadmap_title">Planul tău de studiu</span>'
@@ -173,7 +173,7 @@ requireTokens(profile, "Profile localization hooks", [
 ]);
 
 requireTokens(publicProfile, "Public profile localization", [
-  'meta name="mathhard-build" content="5a4"',
+  'meta name="mathhard-build" content="5a5"',
   '>Insigne</h2>',
   '>Realizări</h2>',
   '>Adrese</h2>',
