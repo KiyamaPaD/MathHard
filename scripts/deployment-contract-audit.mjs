@@ -25,6 +25,12 @@ if (!build || build !== appVersion || build !== cssVersion) {
   throw new Error(`Top-level build mismatch: html=${build}, app=${appVersion}, css=${cssVersion}.`);
 }
 if (!index.includes("window.__MH_DEPLOY_STATUS") || !index.includes("/deploy-manifest.json?t=")) throw new Error("Inline deploy integrity guard is missing.");
+if (!index.includes('document.addEventListener("DOMContentLoaded", verifyDeploy, { once: true })')) {
+  throw new Error("Deploy integrity guard runs before the app script tag is parsed.");
+}
+if (!index.includes('[...document.scripts].find') || !index.includes('.pathname.endsWith("/js/app.js")')) {
+  throw new Error("Deploy integrity guard does not discover app.js robustly.");
+}
 if (!netlify.includes('base = "."') || !netlify.includes('publish = ".netlify-dist"')) throw new Error("Netlify base/publish root is not explicit.");
 if (!netlify.includes('command = "npm run build"')) throw new Error("Netlify does not run the full build contract.");
 if (packageJson.scripts?.build !== "npm test && npm run build:manifest && npm run build:site") throw new Error("package.json build script is stale.");
