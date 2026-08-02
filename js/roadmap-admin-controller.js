@@ -298,7 +298,7 @@ export function createRoadmapAdminController({
       <div class="mh-roadmap-admin-dashboard">
         <div class="mh-roadmap-admin-head">
           <div>
-            <h3>🧭 Roadmap Studio v2</h3>
+            <h3>🧭 Plan de studiu</h3>
             <p>Adaugi conținut din catalog, îl muți între etape și îl reordonezi fără ID-uri scrise manual.</p>
           </div>
           <div class="mh-roadmap-admin-head-actions">

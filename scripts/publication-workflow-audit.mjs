@@ -99,5 +99,13 @@ if (errors.length) {
   console.log("- catalogue refresh, cache invalidation and editor navigation: present");
   console.log("- live search focus preservation: present");
   console.log("- SQL kept outside Git: confirmed");
-  console.log("MathHard Phase 02B/02C Publication Workflow audit passed.");
+  for (const token of [
+    "scheduleReviewAutosave",
+    "filterChanged",
+    "selectContent(contentType, contentId"
+  ]) {
+    if (!controller.includes(token)) errors.push(`Review control persistence is missing ${token}.`);
+  }
+
+console.log("MathHard Phase 02B/02C Publication Workflow audit passed.");
 }

@@ -750,7 +750,7 @@ if (!roadmapModelSource.includes("export function buildRoadmapView")) {
 if (!roadmapControllerSource.includes("data-roadmap-next") || !roadmapControllerSource.includes("unmetPrerequisites")) {
   fail("The user roadmap controller must expose next-step and prerequisite UI.");
 }
-if (!roadmapAdminControllerSource.includes("Roadmap Studio") || !roadmapAdminControllerSource.includes("replaceNodePrerequisites")) {
+if (!roadmapAdminControllerSource.includes("Plan de studiu") || !roadmapAdminControllerSource.includes("replaceNodePrerequisites")) {
   fail("The Admin roadmap editor must support graph nodes and prerequisites.");
 }
 if (!roadmapCss.includes(".mh-roadmap-node.is-locked") || !roadmapCss.includes(".mh-roadmap-progress-ring")) {
@@ -871,13 +871,13 @@ if (!appSource.includes('from "./learning-workspace-controller.js"')) {
   fail("app.js must use the Phase 13A learning workspace controller.");
 }
 if (!appSource.includes("getContentCatalog: () => DATA")) {
-  fail("Roadmap Studio v2 must receive the authenticated content catalog.");
+  fail("Plan de studiu Studio must receive the authenticated content catalog.");
 }
 if (!roadmapAdminControllerSource.includes("data-roadmap-quick-add") || !roadmapAdminControllerSource.includes("data-roadmap-drag-node")) {
-  fail("Roadmap Studio v2 must support quick catalog insertion and visual node movement.");
+  fail("Plan de studiu Studio must support quick catalog insertion and visual node movement.");
 }
 if (!roadmapAdminControllerSource.includes("patchRoadmapEntity") || !roadmapAdminControllerSource.includes("saveRoadmapPositions")) {
-  fail("Roadmap Studio v2 must persist inline edits and ordering through roadmap-repository.js.");
+  fail("Plan de studiu Studio must persist inline edits and ordering through roadmap-repository.js.");
 }
 if (!roadmapAdminModelSource.includes("createRoadmapNodeId") || !roadmapAdminModelSource.includes("filterRoadmapContent")) {
   fail("roadmap-admin-model.js must own ID generation and catalog filtering.");
@@ -886,7 +886,7 @@ if (!learningWorkspaceControllerSource.includes("findNodeByContent") || !learnin
   fail("Phase 13A workspace must integrate with the current roadmap and full-screen layout.");
 }
 if (!roadmapStudioCss.includes("mh-roadmap-admin-quick-add")) {
-  fail("Roadmap Studio v2 styling is incomplete.");
+  fail("Plan de studiu styling is incomplete.");
 }
 
 

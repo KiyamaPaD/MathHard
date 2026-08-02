@@ -129,7 +129,7 @@ import {
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
       import("./content-quality-admin-controller.js"),
-      import("./content-authoring-controller.js?v=5a1")
+      import("./content-authoring-controller.js?v=5a2")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -3131,6 +3131,7 @@ ${details}`);
 
     const status = document.getElementById("mhPublishStatus");
     const type = document.getElementById("mh_type").value;
+    const isNewDraft = MH_ADMIN_STATE.mode !== "edit";
 
     try {
       if (status) status.textContent = LANG === "ro" ? "Se salvează draftul..." : "Saving draft...";
@@ -3187,6 +3188,11 @@ ${details}`);
       const { error } = await query;
       if (error) throw error;
 
+      let editorialDraftError = null;
+      if (isNewDraft) try {
+        await contentAuthoringController?.ensureEditorialDraft?.({ type, payload });
+      } catch (error) { editorialDraftError = error; console.warn("Editorial draft initialization failed:", error); }
+
       let conceptMappingError = null;
       if (type !== "exam") {
         const contentType = type === "problem" ? "problem" : "lesson";
@@ -3221,8 +3227,12 @@ ${details}`);
 
       adminDraftController?.clearCurrent();
       mhClearAdminForm({ saveCurrent: false, restoreDraft: true });
-      adminStudioController?.openContent(type);
-      if (status) status.textContent = LANG === "ro" ? "Draft salvat cu succes." : "Draft saved successfully.";
+
+      const editorialType = ["problem", "exam"].includes(type) ? type : "lesson"; adminStudioController?.showPanel("quality");
+      const draftMessage = LANG === "ro" ? "Draft salvat și deschis ca nepublicat." : "Draft saved and opened as unpublished.";
+      await contentQualityAdminController?.selectContent?.(editorialType, payload.id, { force: true, message: draftMessage });
+      if (status) status.textContent = draftMessage;
+      if (editorialDraftError) alert((LANG === "ro" ? "Starea editorială nu a putut fi inițializată: " : "The editorial state could not be initialized: ") + (editorialDraftError.message || editorialDraftError));
     } catch (err) {
       console.error(err);
       if (status) status.textContent = "Eroare: " + (err.message || err);
@@ -3356,6 +3366,7 @@ ${details}`);
         contentAuthoringController = runtime.createContentAuthoringController({
           host: document.getElementById("mhContentAuthoringPreflight"),
           form: document.getElementById("mhPublish"),
+          supabase,
           getLanguage: () => LANG,
           getType: () => document.getElementById("mh_type")?.value || "lesson",
           getPayload: (type) => {

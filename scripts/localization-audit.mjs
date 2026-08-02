@@ -44,7 +44,7 @@ const secureProblem = read("js/secure-problem-controller.js");
 
 requireTokens(index, "Main page localization bootstrap", [
   'meta name="mathhard-build" content="5a1"',
-  '/js/app.js?v=5a1',
+  '/js/app.js?v=5a2',
   '>Sugestii</button>',
   '>🛠 Administrare</button>',
   'data-i18n="roadmap_title">Planul tău de studiu</span>'

@@ -48,7 +48,7 @@ requireTokens(smoke, "Moderation smoke test", ["mh_admin_save_community_case", "
 if (!balanced(migration)) errors.push("Phase 4D SQL has unbalanced $$ blocks.");
 if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
 
-requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=5a1", "css/community-admin.css?v=4j1"]);
+requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=5a2", "css/community-admin.css?v=4j1"]);
 requireTokens(adminController, "direct community case save binding", [
   'id="mhCommunityCaseSaveBtn"',
   'type="button"',

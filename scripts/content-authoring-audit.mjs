@@ -30,12 +30,15 @@ const css = read("css/content-authoring.css");
 
 for (const token of [
   'id="mhContentAuthoringPreflight"',
-  'css/content-authoring.css?v=5a1',
+  'css/content-authoring.css?v=5a2',
   'id="mhSubmitBtn" type="submit">Salvează draftul'
 ]) requireToken(index, token, "Admin authoring markup");
+if (index.indexOf('id="mhContentAuthoringPreflight"') > index.indexOf('id="block-common"')) {
+  errors.push("Draft readiness must appear at the top of the editor, before the content fields.");
+}
 
 for (const token of [
-  'import("./content-authoring-controller.js?v=5a1")',
+  'import("./content-authoring-controller.js?v=5a2")',
   "createContentAuthoringController",
   "contentAuthoringController?.refresh()",
   '"Salvează draftul"',
@@ -126,5 +129,16 @@ if (errors.length) {
   console.log("- bilingual pre-save preview: present");
   console.log("- lesson, problem and exam preflight rules: verified");
   console.log("- draft save remains separate from review/publication: verified");
-  console.log("MathHard Phase 5A.1 Content Authoring audit passed.");
+  for (const token of [
+    "ensureEditorialDraft",
+    'adminStudioController?.showPanel("quality")',
+    "contentQualityAdminController?.selectContent"
+  ]) requireToken(app, token, "Editorial draft initialization");
+  for (const token of [
+    "saveContentQualityReview",
+    'status: "draft"',
+    "ensureEditorialDraft"
+  ]) requireToken(controller, token, "Explicit editorial draft record");
+
+console.log("MathHard Phase 5A.1 Content Authoring audit passed.");
 }

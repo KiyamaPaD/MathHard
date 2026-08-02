@@ -1,6 +1,6 @@
 const STORAGE_KEY = "mh_runtime_diagnostics_v1";
 const MAX_EVENTS = 120;
-const BUILD_LABEL = "phase-5a1-content-authoring";
+const BUILD_LABEL = "phase-5a2-editorial-draft-workflow";
 
 function getStorage() {
   try {

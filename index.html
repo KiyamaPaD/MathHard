@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="css/gamification-studio.css" />
   <link rel="stylesheet" href="css/concept-studio.css" />
   <link rel="stylesheet" href="css/content-quality-studio.css" />
-  <link rel="stylesheet" href="css/content-authoring.css?v=5a1" />
+  <link rel="stylesheet" href="css/content-authoring.css?v=5a2" />
   <link rel="stylesheet" href="css/community-admin.css?v=4j1" />
   <link rel="stylesheet" href="css/community-leaderboard.css" />
   <link rel="stylesheet" href="css/community-feedback.css?v=4j1" />
@@ -693,6 +693,9 @@
 <option data-i18n="admin_type_history" value="history">🕰 Istoria matematicii</option>
 </select>
 </label>
+<section class="mh-authoring-preflight" id="mhContentAuthoringPreflight" aria-live="polite">
+  <div class="mh-authoring-loading">Se pregătește verificarea draftului…</div>
+</section>
 <!-- bloc comun -->
 <div class="mh-admin-form-grid mh-admin-identity-grid" id="block-identity"><label>
 <span data-i18n="admin_id_label">ID / slug (unic):</span>
@@ -930,7 +933,6 @@
 <input id="mh_exam_credit" name="exam_credit" value=""/>
 </label>
 </div>
-<section class="mh-authoring-preflight" id="mhContentAuthoringPreflight" aria-live="polite"></section>
 <div class="mh-admin-savebar">
 <span class="legend" id="mhPublishStatus" role="status" aria-live="polite"></span>
 <button class="btn" data-i18n="admin_save_supabase" id="mhSubmitBtn" type="submit">Salvează draftul</button>
@@ -1107,6 +1109,6 @@
   <script type="module" src="/js/community-feedback-controller.js?v=4i"></script>
   <script type="module" src="/js/performance-bootstrap.js"></script>
   <script type="module" src="/js/app-shell-controller.js?v=4j3"></script>
-  <script type="module" src="/js/app.js?v=5a1"></script>
+  <script type="module" src="/js/app.js?v=5a2"></script>
 </body>
 </html>

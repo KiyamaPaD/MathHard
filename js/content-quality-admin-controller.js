@@ -116,6 +116,7 @@ export function createContentQualityAdminController({
     history: [],
     modalOpen: false
   };
+  let reviewAutosaveTimer = null;
 
   function language() {
     return String(getLanguage?.() || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
@@ -395,7 +396,7 @@ export function createContentQualityAdminController({
     await load(true);
   }
 
-  async function saveReview() {
+  async function saveReview({ automatic = false } = {}) {
     const item = selectedItem();
     const form = host.querySelector("[data-quality-form]");
     if (!item || !form) return;
@@ -411,15 +412,31 @@ export function createContentQualityAdminController({
 
     state.busy = true;
     state.error = "";
-    render();
+    if (automatic) {
+      const submit = form.querySelector('button[type="submit"]');
+      if (submit) submit.textContent = text("Se salvează…", "Saving…");
+    } else {
+      render();
+    }
     try {
       await saveContentQualityReview(supabase, { contentType: item.content_type, contentId: item.content_id, payload });
-      await afterMutation(text("Review salvat.", "Review saved."));
+      await afterMutation(automatic ? text("Verificările au fost salvate automat.", "Review checks saved automatically.") : text("Review salvat.", "Review saved."));
     } catch (error) {
       state.error = error?.message || String(error);
       state.busy = false;
       render();
     }
+  }
+
+  function scheduleReviewAutosave() {
+    window.clearTimeout(reviewAutosaveTimer);
+    const form = host.querySelector("[data-quality-form]");
+    const submit = form?.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = text("Se salvează…", "Saving…");
+    reviewAutosaveTimer = window.setTimeout(() => {
+      reviewAutosaveTimer = null;
+      void saveReview({ automatic: true });
+    }, 350);
   }
 
   async function resetReview() {
@@ -579,9 +596,17 @@ export function createContentQualityAdminController({
       render();
       return;
     }
-    if (event.target.matches("[data-quality-type]")) state.filters.contentType = event.target.value;
-    if (event.target.matches("[data-quality-status]")) state.filters.status = event.target.value;
-    if (event.target.matches("[data-quality-publication]")) state.filters.publication = event.target.value;
+
+    if (event.target.matches('[data-quality-form] [name="bilingual_checked"], [data-quality-form] [name="math_checked"], [data-quality-form] [name="source_checked"], [data-quality-form] [name="status"]')) {
+      scheduleReviewAutosave();
+      return;
+    }
+
+    let filterChanged = false;
+    if (event.target.matches("[data-quality-type]")) { state.filters.contentType = event.target.value; filterChanged = true; }
+    if (event.target.matches("[data-quality-status]")) { state.filters.status = event.target.value; filterChanged = true; }
+    if (event.target.matches("[data-quality-publication]")) { state.filters.publication = event.target.value; filterChanged = true; }
+    if (!filterChanged) return;
     state.selectedKey = "";
     render();
   });
@@ -589,6 +614,8 @@ export function createContentQualityAdminController({
   host.addEventListener("submit", (event) => {
     if (!event.target.matches("[data-quality-form]")) return;
     event.preventDefault();
+    window.clearTimeout(reviewAutosaveTimer);
+    reviewAutosaveTimer = null;
     void saveReview();
   });
 
@@ -596,11 +623,32 @@ export function createContentQualityAdminController({
 
   return {
     async load(force = false) { return load(force); },
+    async selectContent(contentType, contentId, { force = false, message = "" } = {}) {
+      const normalizedType = String(contentType || "lesson").trim().toLowerCase();
+      const normalizedId = String(contentId || "").trim();
+      if (!normalizedId) return false;
+
+      state.filters.query = "";
+      state.filters.status = "all";
+      state.filters.contentType = normalizedType;
+      state.filters.publication = "all";
+      if (force || !state.loaded) await load(true);
+
+      const key = `${normalizedType}:${normalizedId}`;
+      if (!state.dashboard.items.some((item) => itemKey(item) === key)) return false;
+      state.selectedKey = key;
+      if (message) state.statusMessage = String(message);
+      await loadHistoryForSelected();
+      render();
+      return true;
+    },
     render,
     invalidate() { state.loaded = false; },
     setAdmin(enabled) {
       state.enabled = Boolean(enabled);
       if (!state.enabled) {
+        window.clearTimeout(reviewAutosaveTimer);
+        reviewAutosaveTimer = null;
         state.loaded = false;
         state.selectedKey = "";
         state.selectedKeys.clear();
