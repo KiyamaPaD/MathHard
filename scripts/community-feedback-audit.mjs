@@ -53,7 +53,7 @@ if (externalSqlAvailable) {
   if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
 }
 
-requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=5a5", "css/community-admin.css?v=4j1"]);
+requireTokens(indexSource, "top-level app cache bust", ["/js/app.js?v=5a6", "css/community-admin.css?v=4j1"]);
 requireTokens(adminController, "direct community case save binding", [
   'id="mhCommunityCaseSaveBtn"',
   'type="button"',

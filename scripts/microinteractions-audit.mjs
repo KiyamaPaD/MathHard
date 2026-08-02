@@ -64,7 +64,7 @@ const svg = source("img/microinteractions-sprite.svg");
 
 for (const [name, html] of [["index.html", index], ["profile.html", profile], ["u.html", publicProfile]]) {
   if (!html.includes("/css/microinteractions.css?v=4i")) fail(`${name} must load microinteraction styles.`);
-  if (!html.includes('name="mathhard-build" content="5a5"')) fail(`${name} must expose build 5a5.`);
+  if (!html.includes('name="mathhard-build" content="5a6"')) fail(`${name} must expose build 5a6.`);
 }
 if (!performanceBootstrap.includes('safelyLoadModule("./microinteractions-bootstrap.js?v=4j2")')) {
   fail("Main-page microinteractions must be lazy-loaded by performance-bootstrap.js.");

@@ -8,15 +8,17 @@ function requireSupabase(supabase) {
   }
 }
 
-export async function importContentBatchItem(supabase, item) {
+export async function importContentBatchItem(supabase, item, { skipInsert = false } = {}) {
   requireSupabase(supabase);
   const id = String(item?.payload?.id || "").trim();
   const type = String(item?.type || "").trim();
   if (!id || !type || item?.valid === false) throw new TypeError("A valid batch item is required.");
 
   const table = contentTableForType(type);
-  const { error } = await supabase.from(table).insert(item.payload);
-  if (error) throw error;
+  if (!skipInsert) {
+    const { error } = await supabase.from(table).insert(item.payload);
+    if (error) throw error;
+  }
 
   try {
     await saveEditorialDraft(supabase, { type, payload: item.payload });
@@ -27,28 +29,32 @@ export async function importContentBatchItem(supabase, item) {
         conceptIds: item.conceptIds
       });
     }
-    return { ok: true, id, type, table, contentInserted: true };
+    return { ok: true, id, type, table, contentInserted: true, recoveredExisting: skipInsert };
   } catch (error) {
     error.contentInserted = true;
     throw error;
   }
 }
 
-export async function importContentBatchItems(supabase, items = []) {
+export async function importContentBatchItems(supabase, items = [], { skipInsert = () => false, onResult = null } = {}) {
   requireSupabase(supabase);
   const results = [];
-  for (const item of Array.isArray(items) ? items : []) {
+  for (const [position, item] of (Array.isArray(items) ? items : []).entries()) {
     try {
-      const result = await importContentBatchItem(supabase, item);
-      results.push({ ...result, message: "draft_created" });
+      const result = await importContentBatchItem(supabase, item, { skipInsert: Boolean(skipInsert?.(item, position)) });
+      const normalized = { ...result, message: result.recoveredExisting ? "draft_recovered" : "draft_created" };
+      results.push(normalized);
+      await onResult?.(normalized, position);
     } catch (error) {
-      results.push({
+      const normalized = {
         ok: false,
         id: String(item?.payload?.id || "").trim() || "unknown",
         type: String(item?.type || "").trim(),
         contentInserted: Boolean(error?.contentInserted),
         message: String(error?.message || error)
-      });
+      };
+      results.push(normalized);
+      await onResult?.(normalized, position);
     }
   }
   return results;

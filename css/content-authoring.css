@@ -328,3 +328,25 @@
 .mh-batch-results li.is-fail>span:first-child{color:#ef4444}
 @media(max-width:900px){.mh-batch-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.mh-content-batch-body{padding:12px}.mh-batch-summary{grid-template-columns:1fr}.mh-batch-actions .btn{width:100%}.mh-batch-results li{grid-template-columns:auto 1fr}.mh-batch-results li>span:last-child{grid-column:2}}
+
+/* Phase 5A.6 — batch import history and safe recovery */
+.mh-batch-history{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--border)}
+.mh-batch-history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.mh-batch-history-head h4{margin:0 0 3px}
+.mh-batch-history-head p,.mh-batch-history-empty{margin:0;color:var(--muted);font-size:.86rem}
+.mh-batch-history-card{border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--panel) 88%,transparent);overflow:hidden}
+.mh-batch-history-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px}
+.mh-batch-history-card>summary::-webkit-details-marker{display:none}
+.mh-batch-history-card>summary>span:first-child{display:grid;gap:2px}
+.mh-batch-history-card>summary small{color:var(--muted)}
+.mh-batch-history-counts{white-space:nowrap;color:var(--muted);font:700 .78rem/1.3 ui-monospace,SFMono-Regular,Consolas,monospace}
+.mh-batch-history-body{display:grid;gap:10px;padding:12px 13px;border-top:1px solid var(--border)}
+.mh-batch-history-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.8rem}
+.mh-batch-history-items{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:260px;overflow:auto}
+.mh-batch-history-items li{display:grid;grid-template-columns:auto minmax(120px,.45fr) minmax(0,1fr);gap:8px;align-items:start;padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-size:.82rem}
+.mh-batch-history-items li.is-ok>span:first-child{color:#22c55e}
+.mh-batch-history-items li.is-fail>span:first-child{color:#ef4444}
+.mh-batch-history-items li.is-pending>span:first-child{color:#f59e0b}
+.mh-batch-history-actions{display:flex;gap:8px;flex-wrap:wrap}
+.mh-batch-history-actions .danger{border-color:color-mix(in srgb,#ef4444 48%,var(--border));color:#ef4444}
+@media(max-width:640px){.mh-batch-history-head,.mh-batch-history-card>summary,.mh-batch-history-meta{align-items:stretch;flex-direction:column}.mh-batch-history-items li{grid-template-columns:auto 1fr}.mh-batch-history-items li>span:last-child{grid-column:2}.mh-batch-history-actions .btn{width:100%}}

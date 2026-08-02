@@ -127,7 +127,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5a5"), import("./content-batch-import-controller.js?v=5a5")
+      import("./content-quality-admin-controller.js?v=5a6"), import("./content-batch-import-controller.js?v=5a6")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -3122,7 +3122,7 @@ ${details}`);
   }
 
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a5");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a6");
   }
 
   async function mountContentAuthoringController({ reportError = false } = {}) {
@@ -3372,7 +3372,7 @@ ${details}`);
       }
 
       if (!contentBatchImportController) contentBatchImportController = runtime.createContentBatchImportController({
-        host: document.getElementById("mhContentBatchImport"), supabase, getLanguage: () => LANG, getCatalog: () => DATA,
+        host: document.getElementById("mhContentBatchImport"), supabase, getLanguage: () => LANG, getCatalog: () => DATA, getUserId: () => MH_AUTH_USER?.id || "",
         onImported: async () => { await reloadAllContentFromSupabase(true); await refreshConceptCatalog(true); mhRenderAdminList(); contentQualityAdminController?.invalidate(); }
       });
 

@@ -1,6 +1,6 @@
 const STORAGE_KEY = "mh_runtime_diagnostics_v1";
 const MAX_EVENTS = 120;
-const BUILD_LABEL = "phase-5a5-batch-content-intake";
+const BUILD_LABEL = "phase-5a6-import-history-recovery";
 
 function getStorage() {
   try {
