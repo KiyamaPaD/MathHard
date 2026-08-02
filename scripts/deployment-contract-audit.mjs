@@ -10,6 +10,14 @@ const packageJson = JSON.parse(read("package.json"));
 const app = read("js/app.js");
 const staticBuilder = read("scripts/build-static-site.mjs");
 
+const externalSqlAuditPaths = [
+  "scripts/community-badge-personalization-audit.mjs",
+  "scripts/community-feedback-audit.mjs",
+  "scripts/community-leaderboard-audit.mjs",
+  "scripts/community-profile-audit.mjs",
+  "scripts/community-safety-integrity-audit.mjs"
+];
+
 const build = index.match(/data-mh-build="([^"]+)"/)?.[1];
 const appVersion = index.match(/\/js\/app\.js\?v=([^"&]+)/)?.[1];
 const cssVersion = index.match(/css\/content-authoring\.css\?v=([^"&]+)/)?.[1];
@@ -21,6 +29,13 @@ if (!netlify.includes('base = "."') || !netlify.includes('publish = ".netlify-di
 if (!netlify.includes('command = "npm run build"')) throw new Error("Netlify does not run the full build contract.");
 if (packageJson.scripts?.build !== "npm test && npm run build:manifest && npm run build:site") throw new Error("package.json build script is stale.");
 if (!staticBuilder.includes(".netlify-dist") || !staticBuilder.includes("runtimeEntries")) throw new Error("Static site builder contract is missing.");
+
+for (const auditPath of externalSqlAuditPaths) {
+  const auditSource = read(auditPath);
+  if (!auditSource.includes("externalSqlAvailable") || !auditSource.includes("database contract checks skipped")) {
+    throw new Error(`${auditPath} does not preserve frontend checks when external SQL artifacts are absent.`);
+  }
+}
 if (app.includes('content-authoring-bootstrap.js?v=5a3') || app.includes('content-quality-admin-controller.js?v=5a3')) {
   throw new Error("Editorial runtime imports still point to build 5a3.");
 }

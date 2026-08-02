@@ -6,6 +6,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
 const read = (path) => existsSync(resolve(root, path)) ? readFileSync(resolve(root, path), "utf8") : (errors.push(`Missing file: ${path}`), "");
+const externalSqlPaths = ["local-sql/058_product_phase_04d_global_discovery_moderation_fixes.sql", "local-sql/058_phase4d_transactional_smoke_test.sql"];
+const externalSqlAvailable = externalSqlPaths.every((path) => existsSync(resolve(root, path)));
+const readExternalSql = (path) => externalSqlAvailable ? readFileSync(resolve(root, path), "utf8") : "";
 const requireTokens = (source, label, tokens) => tokens.forEach((token) => { if (!source.includes(token)) errors.push(`${label} is missing: ${token}`); });
 const balanced = (source) => (source.match(/\$\$/g) || []).length % 2 === 0;
 
@@ -13,8 +16,8 @@ const modelSource = read("js/community-leaderboard-model.js");
 const repositorySource = read("js/community-leaderboard-repository.js");
 const controllerSource = read("js/community-leaderboard-controller.js");
 const css = read("css/community-leaderboard.css");
-const migration = read("local-sql/058_product_phase_04d_global_discovery_moderation_fixes.sql");
-const smoke = read("local-sql/058_phase4d_transactional_smoke_test.sql");
+const migration = readExternalSql("local-sql/058_product_phase_04d_global_discovery_moderation_fixes.sql");
+const smoke = readExternalSql("local-sql/058_phase4d_transactional_smoke_test.sql");
 const rewards = read("js/gamification-controller.js");
 
 requireTokens(modelSource, "Leaderboard model", [
@@ -35,14 +38,16 @@ if (/\sonerror\s*=/.test(controllerSource)) errors.push("Leaderboard controller 
 if (/\b(?:email|user_id|uuid|provider)\b/i.test(controllerSource)) errors.push("Leaderboard UI references internal account data.");
 requireTokens(css, "Leaderboard responsive CSS", ["touch-action:pan-x", "scrollbar-width:thin", ".mh-community-region-results", "@media(max-width:680px)"]);
 if (rewards.includes("renderLeaderboard(") || rewards.includes("gamificationLeaderboardOptIn")) errors.push("Obsolete Rewards mini leaderboard is still present.");
-requireTokens(migration, "Phase 4D SQL", [
-  "mh_get_leaderboard_geography_options", "p_country_code", "p_continent_code", "target_country_code", "target_continent_code",
-  "coalesce(control.profile_allowed, true)", "coalesce(control.leaderboard_allowed, true)", "to_jsonb(row) - 'user_id'",
-  "grant execute on function public.mh_get_community_leaderboard"
-]);
-requireTokens(smoke, "Phase 4D smoke test", ["mh_get_leaderboard_geography_options", "'country'", "'continent'", "target_country_code", "target_continent_code", "Phase 04D smoke test passed", "rollback;"]);
-if (!balanced(migration)) errors.push("Phase 4D SQL has unbalanced $$ blocks.");
-if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
+if (externalSqlAvailable) {
+  requireTokens(migration, "Phase 4D SQL", [
+    "mh_get_leaderboard_geography_options", "p_country_code", "p_continent_code", "target_country_code", "target_continent_code",
+    "coalesce(control.profile_allowed, true)", "coalesce(control.leaderboard_allowed, true)", "to_jsonb(row) - 'user_id'",
+    "grant execute on function public.mh_get_community_leaderboard"
+  ]);
+  requireTokens(smoke, "Phase 4D smoke test", ["mh_get_leaderboard_geography_options", "'country'", "'continent'", "target_country_code", "target_continent_code", "Phase 04D smoke test passed", "rollback;"]);
+  if (!balanced(migration)) errors.push("Phase 4D SQL has unbalanced $$ blocks.");
+  if (!balanced(smoke)) errors.push("Phase 4D smoke test has unbalanced $$ blocks.");
+}
 
 const model = await import(pathToFileURL(resolve(root, "js/community-leaderboard-model.js")).href);
 assert.deepEqual(model.availableLeaderboardScopes({ show_location: false }), ["region", "country", "eu", "continent", "global"]);
@@ -66,6 +71,7 @@ if (errors.length) {
   errors.forEach((error) => console.error(`ERROR: ${error}`));
   process.exitCode = 1;
 } else {
+  if (!externalSqlAvailable) console.log("- external SQL artifacts are not stored in Git; database contract checks skipped.");
   console.log("- region, country and continent exploration: present");
   console.log("- viewer location remains independent from selected area: present");
   console.log("- public opt-in, moderation and privacy filters: enforced");
