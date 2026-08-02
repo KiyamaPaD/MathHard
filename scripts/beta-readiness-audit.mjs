@@ -23,7 +23,7 @@ for (const path of [
 for (const page of ["index.html", "profile.html", "u.html"]) {
   requireText(page, /site\.webmanifest/, `${page} must load the web manifest.`);
   requireText(page, /beta-readiness\.css\?v=4g4/, `${page} must load beta readiness styles.`);
-  requireText(page, /mathhard-build[^>]+(?:4g4|4h|4i|4j|4k1)/, `${page} must expose the current beta-or-later build label.`);
+  requireText(page, /mathhard-build[^>]+(?:4g4|4h|4i|4j|4k1|5a1)/, `${page} must expose the current beta-or-later build label.`);
 }
 requireText("profile.html", /name="robots" content="noindex,nofollow"/, "Private profile editor must be noindex.");
 requireText("js/performance-bootstrap.js", /beta-readiness-controller\.js/, "Index must load beta readiness lazily.");
@@ -34,7 +34,7 @@ requireText("js/beta-readiness-controller.js", /unhandledrejection/, "Unhandled 
 requireText("js/community-feedback-controller.js", /communityFeedbackContentType/, "Feedback context type is missing.");
 requireText("js/community-feedback-controller.js", /communityFeedbackContentId/, "Feedback context id is missing.");
 requireText("js/community-feedback-controller.js", /communityFeedbackSubject/, "Contextual feedback subject is missing.");
-requireText("js/runtime-diagnostics.js", /phase-4k1-release-gate/, "Runtime diagnostics build label is stale.");
+requireText("js/runtime-diagnostics.js", /phase-5a1-content-authoring/, "Runtime diagnostics build label is stale.");
 requireText("netlify.toml", /X-Content-Type-Options\s*=\s*"nosniff"/, "Netlify nosniff header is missing.");
 requireText("netlify.toml", /X-Frame-Options\s*=\s*"DENY"/, "Netlify frame protection is missing.");
 requireText("netlify.toml", /Cache-Control\s*=\s*"no-cache, no-store, must-revalidate"/, "HTML no-cache policy is missing.");

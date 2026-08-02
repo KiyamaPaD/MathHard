@@ -99,6 +99,7 @@ import {
   let roadmapAdminController = null;
   let conceptAdminController = null;
   let contentQualityAdminController = null;
+  let contentAuthoringController = null;
   let adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
@@ -127,7 +128,8 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js")
+      import("./content-quality-admin-controller.js"),
+      import("./content-authoring-controller.js?v=5a1")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -138,7 +140,8 @@ import {
       gamificationAdminModule,
       communityAdminModule,
       conceptAdminModule,
-      contentQualityAdminModule
+      contentQualityAdminModule,
+      contentAuthoringModule
     ]) => {
       adminRuntime = {
         ...lessonQuizModule,
@@ -150,7 +153,8 @@ import {
         ...gamificationAdminModule,
         ...communityAdminModule,
         ...conceptAdminModule,
-        ...contentQualityAdminModule
+        ...contentQualityAdminModule,
+        ...contentAuthoringModule
       };
       return adminRuntime;
     }).catch((error) => {
@@ -373,7 +377,6 @@ import {
         body: `
           <h4>Lecții</h4>
           <p>O lecție devine <b>Citită</b> după parcurgere și <b>Învățată</b> după verificare.</p>
-
           <h4>Probleme</h4>
           <ul>
             <li><b>Nedeschisă</b> — nu ai intrat încă.</li>
@@ -381,13 +384,11 @@ import {
             <li><b>Încercată</b> — ai trimis cel puțin un răspuns.</li>
             <li><b>Rezolvată</b> — ai răspuns corect.</li>
           </ul>
-
           <h4>XP</h4>
           <p>O problemă acordă până la <b>10 XP</b>. Răspunsurile greșite și indiciile reduc punctajul disponibil.</p>
         `
       }
     },
-
     en: {
       header: {
         info_btn: "Help",
@@ -403,7 +404,6 @@ import {
           "XP earned"
         ]
       },
-
       progress_cards: {
         solved_title: "✅ Problems solved",
         solved_sub: "Open list",
@@ -414,7 +414,6 @@ import {
         passed_title: "🏆 Exams passed",
         passed_sub: "Open list"
       },
-
       about: {
         title: "About MathHard",
         subtitle: "Lessons, problems, and study paths in one place.",
@@ -476,13 +475,11 @@ import {
           }
         }
       },
-
       info_modal: {
         title: "Help",
         body: `
           <h4>Lessons</h4>
           <p>A lesson becomes <b>Read</b> after completion and <b>Learned</b> after passing its check.</p>
-
           <h4>Problems</h4>
           <ul>
             <li><b>Not opened</b> — you have not viewed it yet.</li>
@@ -490,18 +487,14 @@ import {
             <li><b>Attempted</b> — you submitted at least one answer.</li>
             <li><b>Solved</b> — you answered correctly.</li>
           </ul>
-
           <h4>XP</h4>
           <p>A problem awards up to <b>10 XP</b>. Wrong answers and hints reduce the available score.</p>
         `
       }
     }
   };
-
-
   function applyMainStaticTexts(){
     const ui = MAIN_UI_TEXT[LANG] || MAIN_UI_TEXT.ro;
-
     // ===== header buttons =====
     const infoBtn = document.getElementById("infoBtn");
     const aboutBtn = document.getElementById("aboutBtn");
@@ -509,14 +502,12 @@ import {
     const adminBtn = document.getElementById("adminBtn");
     const closeModalBtn = document.getElementById("closeModal");
     const aboutCloseBtn = document.getElementById("aboutCloseBtn");
-
     if (infoBtn) infoBtn.textContent = ui.header.info_btn;
     if (aboutBtn) aboutBtn.textContent = ui.header.about_btn;
     if (profileBtn) profileBtn.textContent = ui.header.profile_btn;
     if (adminBtn) adminBtn.textContent = ui.header.admin_btn;
     if (closeModalBtn) closeModalBtn.textContent = ui.header.modal_close;
     if (aboutCloseBtn) aboutCloseBtn.textContent = ui.header.modal_close;
-
     // ===== top counters titles =====
     const topCounters = document.querySelectorAll(".header-stats .counter");
     if (topCounters[0]) topCounters[0].title = ui.header.stats_titles[0];
@@ -524,7 +515,6 @@ import {
     if (topCounters[2]) topCounters[2].title = ui.header.stats_titles[2];
     if (topCounters[3]) topCounters[3].title = ui.header.stats_titles[3];
     if (topCounters[4]) topCounters[4].title = ui.header.stats_titles[4];
-
     // ===== progress cards =====
     const solvedTitle = document.querySelector("#openSolved .title");
     const solvedSub = document.querySelector("#openSolved .legend");
@@ -534,7 +524,6 @@ import {
     const learnedSub = document.querySelector("#openLearned .legend");
     const passedTitle = document.querySelector("#openPassed .title");
     const passedSub = document.querySelector("#openPassed .legend");
-
     if (solvedTitle) solvedTitle.textContent = ui.progress_cards.solved_title;
     if (solvedSub) solvedSub.textContent = ui.progress_cards.solved_sub;
     if (readTitle) readTitle.textContent = ui.progress_cards.read_title;
@@ -543,37 +532,30 @@ import {
     if (learnedSub) learnedSub.textContent = ui.progress_cards.learned_sub;
     if (passedTitle) passedTitle.textContent = ui.progress_cards.passed_title;
     if (passedSub) passedSub.textContent = ui.progress_cards.passed_sub;
-
     // ===== about modal =====
     const aboutTitle = document.querySelector("#aboutModal .about-title");
     const aboutSubtitle = document.querySelector("#aboutModal .about-subtitle");
     const aboutPills = document.querySelectorAll("#aboutModal .about-pill");
     const aboutBullets = document.querySelectorAll("#aboutModal .story-bullet");
-
     if (aboutTitle) aboutTitle.textContent = ui.about.title;
     if (aboutSubtitle) aboutSubtitle.innerHTML = ui.about.subtitle;
-
     ui.about.pills.forEach((text, i) => {
       if (aboutPills[i]) aboutPills[i].textContent = text;
     });
-
     ui.about.bullets.forEach((text, i) => {
       if (aboutBullets[i]) aboutBullets[i].textContent = text;
     });
-
     const secWhat = document.getElementById("about-what");
     const secHow = document.getElementById("about-how");
     const secTabs = document.getElementById("about-tabs");
     const secWho = document.getElementById("about-who");
     const secMe = document.getElementById("about-me");
-
     if (secWhat) secWhat.innerHTML = `<h3>${ui.about.sections.what.title}</h3>${ui.about.sections.what.body}`;
     if (secHow) secHow.innerHTML = `<h3>${ui.about.sections.how.title}</h3>${ui.about.sections.how.body}`;
     if (secTabs) secTabs.innerHTML = `<h3>${ui.about.sections.tabs.title}</h3>${ui.about.sections.tabs.body}`;
     if (secWho) secWho.innerHTML = `<h3>${ui.about.sections.who.title}</h3>${ui.about.sections.who.body}`;
     if (secMe) secMe.innerHTML = `<h3>${ui.about.sections.me.title}</h3>${ui.about.sections.me.body}`;
   }
-
   const MH_MATH_INPUT_GROUPS = [
     {
       title: "Bază",
@@ -669,109 +651,86 @@ import {
       ]
     }
   ];
-
   function mhInsertAtCursor(input, template) {
     if (!input) return;
-
     const marker = "¦";
     const start = input.selectionStart ?? input.value.length;
     const end = input.selectionEnd ?? input.value.length;
     const selected = input.value.slice(start, end);
-
     let insertText = String(template || "");
     let cursorPos = null;
-
     const markerIndex = insertText.indexOf(marker);
     if (markerIndex !== -1) {
       insertText = insertText.replace(marker, selected || "");
       cursorPos = start + markerIndex + (selected ? selected.length : 0);
     }
-
     const before = input.value.slice(0, start);
     const after = input.value.slice(end);
-
     input.value = before + insertText + after;
-
     const finalPos = cursorPos ?? (start + insertText.length);
     input.focus();
     input.setSelectionRange(finalPos, finalPos);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
-
   function mhSplitTopLevel(str, separator = ",") {
     const out = [];
     let cur = "";
     let par = 0;
     let sq = 0;
     let br = 0;
-
     for (let i = 0; i < str.length; i++) {
       const ch = str[i];
-
       if (ch === "(") par++;
       else if (ch === ")") par--;
       else if (ch === "[") sq++;
       else if (ch === "]") sq--;
       else if (ch === "{") br++;
       else if (ch === "}") br--;
-
       if (ch === separator && par === 0 && sq === 0 && br === 0) {
         out.push(cur.trim());
         cur = "";
         continue;
       }
-
       cur += ch;
     }
-
     if (cur.trim() || out.length) out.push(cur.trim());
     return out.filter(Boolean);
   }
-
   function mhIsWrappedBy(str, open, close) {
     str = String(str || "").trim();
     if (!str.startsWith(open) || !str.endsWith(close)) return false;
-
     let depth = 0;
     for (let i = 0; i < str.length; i++) {
       const ch = str[i];
       if (ch === open) depth++;
       if (ch === close) depth--;
-
       if (depth === 0 && i < str.length - 1) {
         return false;
       }
     }
-
     return true;
   }
-
   function mhTryFunctionCall(str) {
     const s = String(str || "").trim();
     const m = s.match(/^([A-Za-z][A-Za-z0-9_]*)\(/);
     if (!m) return null;
-
     const name = m[1];
     const rest = s.slice(name.length);
     if (!mhIsWrappedBy(rest, "(", ")")) return null;
-
     const inner = rest.slice(1, -1);
     return {
       name: name.toLowerCase(),
       args: mhSplitTopLevel(inner)
     };
   }
-
   function mhApplySimpleSymbolLatex(s) {
     let out = String(s || "");
-
     out = out.replace(/<=>/g, "\\Leftrightarrow ");
     out = out.replace(/<=/g, "\\le ");
     out = out.replace(/>=/g, "\\ge ");
     out = out.replace(/!=/g, "\\ne ");
     out = out.replace(/->/g, "\\to ");
     out = out.replace(/≈/g, "\\approx ");
-
     out = out.replace(/∪/g, "\\cup ");
     out = out.replace(/∩/g, "\\cap ");
     out = out.replace(/∈/g, "\\in ");
@@ -2080,6 +2039,13 @@ import {
   updateHubNumbers();
   roadmapController?.render();
   roadmapAdminController?.render();
+  contentAuthoringController?.refresh();
+  const adminSubmit = document.getElementById("mhSubmitBtn");
+  if (adminSubmit) {
+    adminSubmit.textContent = MH_ADMIN_STATE.mode === "edit"
+      ? (LANG === "ro" ? "Actualizează draftul" : "Update draft")
+      : (LANG === "ro" ? "Salvează draftul" : "Save draft");
+  }
   drawFilterBar();
   };
 
@@ -2632,6 +2598,8 @@ import {
         item.options[optIdx].is_correct = !!input.checked;
       });
     });
+
+    contentAuthoringController?.refresh();
   }
 
   mhAddOpenItemBtn?.addEventListener("click", () => {
@@ -2830,6 +2798,7 @@ import {
       { mode: "edit", type, id: item.id },
       { savePrevious: false, restoreDraft: true }
     );
+    contentAuthoringController?.refresh();
   }
 
   const mhTypeSelect = document.getElementById("mh_type");
@@ -2867,7 +2836,7 @@ import {
     const status = document.getElementById("mhPublishStatus");
 
     if (badge) badge.textContent = "Creare";
-    if (submitBtn) submitBtn.textContent = "Salvează";
+    if (submitBtn) submitBtn.textContent = LANG === "ro" ? "Salvează draftul" : "Save draft";
     if (idInput) idInput.disabled = false;
     if (status) status.textContent = "";
   }
@@ -2882,7 +2851,7 @@ import {
     const idInput = document.getElementById("mh_id");
 
     if (badge) badge.textContent = `Editare · ${type} · ${id}`;
-    if (submitBtn) submitBtn.textContent = "Actualizează";
+    if (submitBtn) submitBtn.textContent = LANG === "ro" ? "Actualizează draftul" : "Update draft";
     if (idInput) idInput.disabled = true;
   }
 
@@ -2928,6 +2897,7 @@ import {
         { savePrevious: false, restoreDraft }
       );
     }
+    contentAuthoringController?.refresh();
   }
 
   function mhGetAdminItems() {
@@ -3163,7 +3133,7 @@ ${details}`);
     const type = document.getElementById("mh_type").value;
 
     try {
-      if (status) status.textContent = "Se salvează...";
+      if (status) status.textContent = LANG === "ro" ? "Se salvează draftul..." : "Saving draft...";
 
       let payload;
       let query;
@@ -3240,6 +3210,7 @@ ${details}`);
       mhRenderAdminList();
       adminHistoryController?.invalidate();
       contentQualityAdminController?.invalidate();
+      contentAuthoringController?.refresh();
 
       if (conceptMappingError) {
         const warning = `Conținutul a fost salvat, dar maparea conceptelor a eșuat: ${conceptMappingError.message || conceptMappingError}`;
@@ -3251,7 +3222,7 @@ ${details}`);
       adminDraftController?.clearCurrent();
       mhClearAdminForm({ saveCurrent: false, restoreDraft: true });
       adminStudioController?.openContent(type);
-      if (status) status.textContent = "Salvat cu succes.";
+      if (status) status.textContent = LANG === "ro" ? "Draft salvat cu succes." : "Draft saved successfully.";
     } catch (err) {
       console.error(err);
       if (status) status.textContent = "Eroare: " + (err.message || err);
@@ -3381,6 +3352,22 @@ ${details}`);
         });
       }
 
+      if (!contentAuthoringController) {
+        contentAuthoringController = runtime.createContentAuthoringController({
+          host: document.getElementById("mhContentAuthoringPreflight"),
+          form: document.getElementById("mhPublish"),
+          getLanguage: () => LANG,
+          getType: () => document.getElementById("mh_type")?.value || "lesson",
+          getPayload: (type) => {
+            if (type === "problem") return mhBuildProblemPayload();
+            if (type === "exam") return mhBuildExamPayload();
+            return mhBuildLessonPayload(type);
+          },
+          getConceptIds: () => mhTagsFromInput(document.getElementById("mh_concept_ids")?.value || ""),
+          getExamErrors: (payload) => mhValidateExamPayload(payload)
+        });
+      }
+
       if (!adminStudioController) {
         adminStudioController = runtime.createAdminStudioController({
           root: document.getElementById("mhAdminStudio"),
@@ -3434,7 +3421,8 @@ ${details}`);
               lessonQuizAdminController?.setContext("lesson", MH_ADMIN_STATE.editId, true);
             }
             const status = document.getElementById("mhPublishStatus");
-            if (status) status.textContent = "Draft local restaurat.";
+            if (status) status.textContent = LANG === "ro" ? "Draft local restaurat." : "Local draft restored.";
+            contentAuthoringController?.refresh();
           }
         });
       }
@@ -3464,7 +3452,8 @@ ${details}`);
         adminDraftController,
         roadmapAdminController,
         conceptAdminController,
-        contentQualityAdminController
+        contentQualityAdminController,
+        contentAuthoringController
       };
     })().catch((error) => {
       adminControllersPromise = null;
