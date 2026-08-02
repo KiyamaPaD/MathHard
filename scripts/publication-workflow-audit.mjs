@@ -88,6 +88,15 @@ if (!conceptRepository.includes("CACHE_VERSION = 2")) {
 const sqlFiles = findSqlFiles(root);
 if (sqlFiles.length) errors.push(`SQL files must stay outside the repository: ${sqlFiles.join(", ")}`);
 
+for (const token of [
+  "scheduleReviewAutosave",
+  "filterChanged",
+  "selectContent(contentType, contentId",
+  "event.target.matches('[data-quality-form]"
+]) {
+  if (!controller.includes(token)) errors.push(`Review control persistence is missing ${token}.`);
+}
+
 console.log("MathHard Phase 02B/02C Publication Workflow audit");
 if (errors.length) {
   for (const error of errors) console.error(`ERROR: ${error}`);
@@ -99,13 +108,5 @@ if (errors.length) {
   console.log("- catalogue refresh, cache invalidation and editor navigation: present");
   console.log("- live search focus preservation: present");
   console.log("- SQL kept outside Git: confirmed");
-  for (const token of [
-    "scheduleReviewAutosave",
-    "filterChanged",
-    "selectContent(contentType, contentId"
-  ]) {
-    if (!controller.includes(token)) errors.push(`Review control persistence is missing ${token}.`);
-  }
-
-console.log("MathHard Phase 02B/02C Publication Workflow audit passed.");
+  console.log("MathHard Phase 02B/02C Publication Workflow audit passed.");
 }

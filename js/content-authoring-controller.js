@@ -4,7 +4,6 @@ import {
   evaluateContentDraft,
   localizedCheckText
 } from "./content-authoring-model.js";
-import { saveContentQualityReview } from "./content-quality-repository.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -74,27 +73,9 @@ function previewHtml(type, payload, locale) {
     :root{color-scheme:light}*{box-sizing:border-box}body{margin:0;padding:28px;font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#172033;background:#f7f9fc}main{max-width:900px;margin:auto;background:#fff;border:1px solid #dce3ee;border-radius:18px;padding:28px;box-shadow:0 18px 45px rgba(25,38,67,.09)}h1{margin:0 0 24px;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.15}h2{margin:24px 0 8px;font-size:1.1rem}section+section{margin-top:22px}.meta{display:flex;gap:16px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:#f2f5fa}img{max-width:100%;height:auto}table{width:100%;border-collapse:collapse}td,th{border:1px solid #dce3ee;padding:8px}code,pre{white-space:pre-wrap;overflow-wrap:anywhere}li+li{margin-top:16px}small{color:#64748b}</style></head><body><main><h1>${escapeHtml(title)}</h1>${body}</main></body></html>`;
 }
 
-function editorialContentType(type) {
-  const normalized = String(type || "lesson").trim().toLowerCase();
-  if (normalized === "problem" || normalized === "exam") return normalized;
-  return "lesson";
-}
-
-function draftSourceUrls(type, payload) {
-  const normalized = editorialContentType(type);
-  if (normalized === "lesson") {
-    return Array.isArray(payload?.sources)
-      ? payload.sources.map((entry) => String(entry || "").trim()).filter(Boolean)
-      : [];
-  }
-  const single = normalized === "problem" ? payload?.source : payload?.credit_html;
-  return String(single || "").trim() ? [String(single).trim()] : [];
-}
-
 export function createContentAuthoringController({
   host,
   form,
-  supabase = null,
   getLanguage = () => "ro",
   getType = () => "lesson",
   getPayload = () => ({}),
@@ -205,29 +186,6 @@ export function createContentAuthoringController({
     modal.hidden = false;
   }
 
-  async function ensureEditorialDraft({ type = null, payload = null } = {}) {
-    if (!supabase) throw new Error("Supabase is required to create the editorial draft record.");
-    const snapshotType = String(type || getType?.() || "lesson").toLowerCase();
-    const snapshotPayload = payload && typeof payload === "object"
-      ? payload
-      : (getPayload?.(snapshotType) || {});
-    const contentId = String(snapshotPayload?.id || "").trim();
-    if (!contentId) throw new Error("Content ID is required to create the editorial draft record.");
-
-    return saveContentQualityReview(supabase, {
-      contentType: editorialContentType(snapshotType),
-      contentId,
-      payload: {
-        status: "draft",
-        bilingual_checked: false,
-        math_checked: false,
-        source_checked: false,
-        reviewer_notes: "",
-        source_urls: draftSourceUrls(snapshotType, snapshotPayload)
-      }
-    });
-  }
-
   const onInput = () => refresh();
   const onClick = (event) => {
     const previewButton = event.target.closest("[data-authoring-preview]");
@@ -250,7 +208,6 @@ export function createContentAuthoringController({
   return {
     refresh,
     render,
-    ensureEditorialDraft,
     result: () => currentResult,
     destroy() {
       window.clearTimeout(refreshTimer);

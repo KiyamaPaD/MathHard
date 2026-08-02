@@ -100,6 +100,7 @@ import {
   let conceptAdminController = null;
   let contentQualityAdminController = null;
   let contentAuthoringController = null;
+  let contentAuthoringRuntimePromise = null;
   let adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
@@ -128,8 +129,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js"),
-      import("./content-authoring-controller.js?v=5a2")
+      import("./content-quality-admin-controller.js?v=5a3")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -140,8 +140,7 @@ import {
       gamificationAdminModule,
       communityAdminModule,
       conceptAdminModule,
-      contentQualityAdminModule,
-      contentAuthoringModule
+      contentQualityAdminModule
     ]) => {
       adminRuntime = {
         ...lessonQuizModule,
@@ -153,8 +152,7 @@ import {
         ...gamificationAdminModule,
         ...communityAdminModule,
         ...conceptAdminModule,
-        ...contentQualityAdminModule,
-        ...contentAuthoringModule
+        ...contentQualityAdminModule
       };
       return adminRuntime;
     }).catch((error) => {
@@ -3124,75 +3122,84 @@ ${details}`);
     };
   }
 
+  async function loadContentAuthoringRuntime() {
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a3");
+  }
 
+  async function mountContentAuthoringController({ reportError = false } = {}) {
+    if (contentAuthoringController) return contentAuthoringController;
+    const host = document.getElementById("mhContentAuthoringPreflight");
+    const form = document.getElementById("mhPublish");
+    if (!host || !form) return null;
+    try {
+      const runtime = await loadContentAuthoringRuntime();
+      const options = { host, form, getLanguage: () => LANG,
+        getType: () => document.getElementById("mh_type")?.value || "lesson",
+        getPayload: (type) => type === "problem" ? mhBuildProblemPayload() : type === "exam" ? mhBuildExamPayload() : mhBuildLessonPayload(type),
+        getConceptIds: () => mhTagsFromInput(document.getElementById("mh_concept_ids")?.value || ""),
+        getExamErrors: (payload) => mhValidateExamPayload(payload) };
+      return contentAuthoringController = runtime.mountContentAuthoringPreflight(options);
+    } catch (error) {
+      console.error("Content authoring bootstrap failed:", error);
+      if (reportError) alert(`${LANG === "ro" ? "Eroare la inițializarea editorului de draft: " : "Could not initialize the draft editor: "}${error?.message || error}`);
+      return null;
+    }
+  }
 
   async function mhHandleAdminSubmit(e) {
     e.preventDefault();
-
     const status = document.getElementById("mhPublishStatus");
     const type = document.getElementById("mh_type").value;
-    const isNewDraft = MH_ADMIN_STATE.mode !== "edit";
-
     try {
       if (status) status.textContent = LANG === "ro" ? "Se salvează draftul..." : "Saving draft...";
-
       let payload;
       let query;
-
       if (type === "lesson" || type === "research" || type === "history") {
         payload = mhBuildLessonPayload(type);
-
         if (!payload.id) throw new Error("Lipsește ID-ul.");
         if (!/^[A-Za-z0-9][A-Za-z0-9_-]{1,199}$/.test(payload.id)) throw new Error("ID-ul trebuie să înceapă cu o literă sau cifră și să conțină doar litere, cifre, _ sau -.");
         if (!payload.title_ro && !payload.title_en) throw new Error("Lipsește titlul.");
-
         if (MH_ADMIN_STATE.mode === "edit") {
           query = supabase.from("mh_lessons").upsert(payload, { onConflict: "id" });
         } else {
           query = supabase.from("mh_lessons").insert(payload);
         }
       }
-
       if (type === "problem") {
         payload = mhBuildProblemPayload();
-
         if (!payload.id) throw new Error("Lipsește ID-ul.");
         if (!/^[A-Za-z0-9][A-Za-z0-9_-]{1,199}$/.test(payload.id)) throw new Error("ID-ul trebuie să înceapă cu o literă sau cifră și să conțină doar litere, cifre, _ sau -.");
         if (!payload.lesson_id) throw new Error("Lipsește ID-ul lecției asociate.");
         if (!payload.answer) throw new Error("Lipsește răspunsul canonic.");
-
         if (MH_ADMIN_STATE.mode === "edit") {
           query = supabase.from("mh_problems").upsert(payload, { onConflict: "id" });
         } else {
           query = supabase.from("mh_problems").insert(payload);
         }
       }
-
       if (type === "exam") {
         payload = mhBuildExamPayload();
-
         const examErrors = mhValidateExamPayload(payload);
         if (examErrors.length) {
           throw new Error(examErrors.join("\n"));
         }
-
         if (MH_ADMIN_STATE.mode === "edit") {
           query = supabase.from("mh_exams").upsert(payload, { onConflict: "id" });
         } else {
           query = supabase.from("mh_exams").insert(payload);
         }
       }
-
       if (!query) throw new Error("Nu s-a putut construi query-ul.");
-
       const { error } = await query;
       if (error) throw error;
-
       let editorialDraftError = null;
-      if (isNewDraft) try {
-        await contentAuthoringController?.ensureEditorialDraft?.({ type, payload });
-      } catch (error) { editorialDraftError = error; console.warn("Editorial draft initialization failed:", error); }
-
+      try {
+        const runtime = await loadContentAuthoringRuntime();
+        await runtime.saveEditorialDraft(supabase, { type, payload });
+      } catch (error) {
+        editorialDraftError = error;
+        console.error("Editorial draft initialization failed:", error);
+      }
       let conceptMappingError = null;
       if (type !== "exam") {
         const contentType = type === "problem" ? "problem" : "lesson";
@@ -3211,28 +3218,27 @@ ${details}`);
           }
         }
       }
-
       await reloadAllContentFromSupabase(true);
       mhRenderAdminList();
       adminHistoryController?.invalidate();
       contentQualityAdminController?.invalidate();
       contentAuthoringController?.refresh();
-
       if (conceptMappingError) {
         const warning = `Conținutul a fost salvat, dar maparea conceptelor a eșuat: ${conceptMappingError.message || conceptMappingError}`;
         if (status) status.textContent = warning;
         alert(warning);
         return;
       }
-
       adminDraftController?.clearCurrent();
       mhClearAdminForm({ saveCurrent: false, restoreDraft: true });
-
-      const editorialType = ["problem", "exam"].includes(type) ? type : "lesson"; adminStudioController?.showPanel("quality");
-      const draftMessage = LANG === "ro" ? "Draft salvat și deschis ca nepublicat." : "Draft saved and opened as unpublished.";
-      await contentQualityAdminController?.selectContent?.(editorialType, payload.id, { force: true, message: draftMessage });
-      if (status) status.textContent = draftMessage;
-      if (editorialDraftError) alert((LANG === "ro" ? "Starea editorială nu a putut fi inițializată: " : "The editorial state could not be initialized: ") + (editorialDraftError.message || editorialDraftError));
+      await ensureAdminControllers();
+      const runtime = await loadContentAuthoringRuntime();
+      const outcome = await runtime.revealEditorialDraft({
+        controller: contentQualityAdminController, studio: adminStudioController,
+        type, contentId: payload.id, language: LANG, draftError: editorialDraftError
+      });
+      if (status) status.textContent = outcome.message;
+      if (!outcome.ok) alert(outcome.message);
     } catch (err) {
       console.error(err);
       if (status) status.textContent = "Eroare: " + (err.message || err);
@@ -3363,20 +3369,7 @@ ${details}`);
       }
 
       if (!contentAuthoringController) {
-        contentAuthoringController = runtime.createContentAuthoringController({
-          host: document.getElementById("mhContentAuthoringPreflight"),
-          form: document.getElementById("mhPublish"),
-          supabase,
-          getLanguage: () => LANG,
-          getType: () => document.getElementById("mh_type")?.value || "lesson",
-          getPayload: (type) => {
-            if (type === "problem") return mhBuildProblemPayload();
-            if (type === "exam") return mhBuildExamPayload();
-            return mhBuildLessonPayload(type);
-          },
-          getConceptIds: () => mhTagsFromInput(document.getElementById("mh_concept_ids")?.value || ""),
-          getExamErrors: (payload) => mhValidateExamPayload(payload)
-        });
+        await mountContentAuthoringController({ reportError: true });
       }
 
       if (!adminStudioController) {
@@ -7708,6 +7701,8 @@ function openExam(exam){
       });
     }
   }
+
+  void mountContentAuthoringController();
 
   const authUiController = createAuthUiController({
     supabase,

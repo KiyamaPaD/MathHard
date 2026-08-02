@@ -34,7 +34,7 @@ requireText("js/beta-readiness-controller.js", /unhandledrejection/, "Unhandled 
 requireText("js/community-feedback-controller.js", /communityFeedbackContentType/, "Feedback context type is missing.");
 requireText("js/community-feedback-controller.js", /communityFeedbackContentId/, "Feedback context id is missing.");
 requireText("js/community-feedback-controller.js", /communityFeedbackSubject/, "Contextual feedback subject is missing.");
-requireText("js/runtime-diagnostics.js", /phase-5a2-editorial-draft-workflow/, "Runtime diagnostics build label is stale.");
+requireText("js/runtime-diagnostics.js", /phase-5a3-editorial-runtime-bootstrap/, "Runtime diagnostics build label is stale.");
 requireText("netlify.toml", /X-Content-Type-Options\s*=\s*"nosniff"/, "Netlify nosniff header is missing.");
 requireText("netlify.toml", /X-Frame-Options\s*=\s*"DENY"/, "Netlify frame protection is missing.");
 requireText("netlify.toml", /Cache-Control\s*=\s*"no-cache, no-store, must-revalidate"/, "HTML no-cache policy is missing.");

@@ -3,6 +3,26 @@
   font-size: .84rem;
 }
 
+.mh-authoring-runtime-error {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, #ef4444 52%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #ef4444 10%, var(--card));
+  color: var(--text);
+}
+
+.mh-authoring-runtime-error strong {
+  color: #ef4444;
+}
+
+.mh-authoring-runtime-error span {
+  color: var(--muted);
+  font-size: .82rem;
+  overflow-wrap: anywhere;
+}
+
 .mh-authoring-preflight {
   margin-top: 22px;
   padding: clamp(18px, 2vw, 24px);
