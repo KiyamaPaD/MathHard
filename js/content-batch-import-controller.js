@@ -62,7 +62,8 @@ export function createContentBatchImportController({
     status: "",
     history: [],
     historyLoading: false,
-    historyError: ""
+    historyError: "",
+    expandedHistoryId: ""
   };
 
   function language() {
@@ -182,6 +183,10 @@ export function createContentBatchImportController({
     </li>`;
   }
 
+  function historyPanelId(recordId) {
+    return `mhBatchHistoryPanel-${String(recordId || "batch").replace(/[^A-Za-z0-9_-]/g, "-")}`;
+  }
+
   function historyHtml() {
     const disabled = state.busy || Boolean(state.busyAction);
     const body = state.historyLoading
@@ -193,12 +198,17 @@ export function createContentBatchImportController({
           : state.history.map((record) => {
               const retryCount = recoverableBatchItems(record).length;
               const rollbackCount = rollbackCandidateItems(record).length;
-              return `<details class="mh-batch-history-card" data-history-id="${escapeHtml(record.id)}">
-                <summary>
+              const expanded = state.expandedHistoryId === record.id;
+              const panelId = historyPanelId(record.id);
+              return `<article class="mh-batch-history-card${expanded ? " is-open" : ""}" data-history-id="${escapeHtml(record.id)}">
+                <button class="mh-batch-history-toggle" type="button" data-history-toggle="${escapeHtml(record.id)}" aria-expanded="${expanded}" aria-controls="${escapeHtml(panelId)}">
                   <span><strong>${escapeHtml(batchHistoryStatusLabel(record.status, language()))}</strong><small>${escapeHtml(formatDate(record.createdAt))}</small></span>
-                  <span class="mh-batch-history-counts">${record.summary?.imported || 0} ✓ · ${record.summary?.failed || 0} × · ${record.summary?.rolledBack || 0} ↶</span>
-                </summary>
-                <div class="mh-batch-history-body">
+                  <span class="mh-batch-history-summary">
+                    <span class="mh-batch-history-counts">${record.summary?.imported || 0} ✓ · ${record.summary?.failed || 0} × · ${record.summary?.rolledBack || 0} ↶</span>
+                    <span class="mh-batch-history-chevron" aria-hidden="true">⌄</span>
+                  </span>
+                </button>
+                <div class="mh-batch-history-body" id="${escapeHtml(panelId)}"${expanded ? "" : " hidden"}>
                   <div class="mh-batch-history-meta"><code>${escapeHtml(record.id)}</code><span>${text("Lot", "Batch")}: ${record.summary?.attempted || 0}</span></div>
                   <ul class="mh-batch-history-items">${(record.items || []).map(historyItemHtml).join("")}</ul>
                   <div class="mh-batch-history-actions">
@@ -207,11 +217,24 @@ export function createContentBatchImportController({
                     <button class="btn small" type="button" data-history-remove="${escapeHtml(record.id)}"${disabled ? " disabled" : ""}>${text("Șterge istoricul", "Remove history")}</button>
                   </div>
                 </div>
-              </details>`;
+              </article>`;
             }).join("");
     return `<section class="mh-batch-history">
       <div class="mh-batch-history-head"><div><h4>${text("Istoric și recuperare", "History and recovery")}</h4><p>${text("Păstrat local, separat pentru contul curent. Rollback-ul este permis doar pentru Draft + Nepublicat.", "Stored locally for the current account. Rollback is allowed only for Draft + Unpublished items.")}</p></div>
       <button class="btn small" type="button" data-history-refresh${disabled ? " disabled" : ""}>${text("Actualizează", "Refresh")}</button></div>${body}</section>`;
+  }
+
+  function toggleHistoryCard(batchId) {
+    const nextId = state.expandedHistoryId === batchId ? "" : batchId;
+    state.expandedHistoryId = nextId;
+    host.querySelectorAll("[data-history-toggle]").forEach((button) => {
+      const expanded = button.dataset.historyToggle === nextId;
+      button.setAttribute("aria-expanded", String(expanded));
+      const card = button.closest(".mh-batch-history-card");
+      card?.classList.toggle("is-open", expanded);
+      const panel = card?.querySelector(".mh-batch-history-body");
+      if (panel) panel.hidden = !expanded;
+    });
   }
 
   function render() {
@@ -258,6 +281,9 @@ export function createContentBatchImportController({
           && new Date(record.updatedAt || record.createdAt || 0).getTime() < staleBefore;
         return stale ? { ...record, status: record.status === "importing" ? "interrupted" : "rollback_partial" } : record;
       });
+      if (state.expandedHistoryId && !state.history.some((record) => record.id === state.expandedHistoryId)) {
+        state.expandedHistoryId = "";
+      }
       for (const record of state.history) {
         if (loaded.find((entry) => entry.id === record.id)?.status !== record.status) {
           try { await historyRepository.save(currentUser, record); } catch {}
@@ -454,6 +480,7 @@ export function createContentBatchImportController({
       render();
     });
     host.querySelector("[data-history-refresh]")?.addEventListener("click", () => loadHistory());
+    host.querySelectorAll("[data-history-toggle]").forEach((button) => button.addEventListener("click", () => toggleHistoryCard(button.dataset.historyToggle || "")));
     host.querySelectorAll("[data-history-retry]").forEach((button) => button.addEventListener("click", () => retryHistoryBatch(button.dataset.historyRetry)));
     host.querySelectorAll("[data-history-rollback]").forEach((button) => button.addEventListener("click", () => rollbackHistoryBatch(button.dataset.historyRollback)));
     host.querySelectorAll("[data-history-remove]").forEach((button) => button.addEventListener("click", () => removeHistoryBatch(button.dataset.historyRemove)));
@@ -470,6 +497,7 @@ export function createContentBatchImportController({
     state.status = "";
     state.history = [];
     state.historyError = "";
+    state.expandedHistoryId = "";
     render();
     await loadHistory();
   }

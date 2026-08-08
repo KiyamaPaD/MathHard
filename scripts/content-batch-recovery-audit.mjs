@@ -38,6 +38,10 @@ requireToken(controller, "fingerprintBatchSource", "Repeated batch protection is
 requireToken(controller, "retryHistoryBatch", "Failed-item retry action is missing");
 requireToken(controller, "rollbackHistoryBatch", "Safe rollback action is missing");
 requireToken(controller, "Draft și Nepublicat", "Rollback safety warning is missing");
+requireToken(controller, "expandedHistoryId", "Controlled history-card state is missing");
+requireToken(controller, "toggleHistoryCard", "Single-click history-card toggle is missing");
+requireToken(controller, "data-history-toggle", "Accessible history-card toggle button is missing");
+if (controller.includes('<details class="mh-batch-history-card"')) errors.push("History cards still use native details and may lose open state during rerenders.");
 requireToken(importRepository, "skipInsert", "Editorial recovery cannot skip an existing content insert");
 requireToken(importRepository, "onResult", "Per-item crash recovery checkpoint is missing");
 requireToken(historyRepository, "indexedDB.open", "IndexedDB history storage is missing");
@@ -47,6 +51,8 @@ requireToken(recovery, 'quality.publication_state !== "unpublished"', "Rollback 
 requireToken(recovery, "deleteAdminContentSafely", "Rollback does not use the safe deletion RPC");
 requireToken(css, ".mh-batch-history", "History layout is missing");
 requireToken(css, ".mh-batch-history-actions", "Recovery action styles are missing");
+requireToken(css, ".mh-batch-history-toggle", "Controlled history-card button styles are missing");
+requireToken(css, "user-select:none", "History-card text selection hardening is missing");
 
 const source = JSON.stringify({ items: [
   { type: "lesson", id: "batch-ok", title_ro: "OK" },
@@ -129,5 +135,6 @@ if (errors.length) {
   console.log("- failed-item retry without duplicate insertion: present");
   console.log("- Draft + Unpublished rollback gate: present");
   console.log("- safe deletion RPC and rollback reporting: present");
+  console.log("- one-click controlled history-card interaction: present");
   console.log("MathHard Phase 5A.6 Import History & Recovery audit passed.");
 }
