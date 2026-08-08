@@ -47,6 +47,7 @@ export function createAdminHistoryController({
     entries: [],
     selectedId: 0,
     versions: [],
+    versionsLoading: false,
     filters: { query: "", tableName: "all", operation: "all" },
     error: "",
     status: ""
@@ -76,17 +77,23 @@ export function createAdminHistoryController({
       const active = entry.id === state.selectedId;
       const fields = changedFields(entry);
       return `
-        <button class="mh-admin-history-row${active ? " is-active" : ""}" type="button" data-admin-audit-id="${entry.id}">
-          <span class="mh-admin-history-operation is-${escapeHtml(entry.operation)}">${escapeHtml(operationLabel(entry.operation, language()))}</span>
-          <strong>${escapeHtml(adminEntityLabel(entry.tableName, language()))} · ${escapeHtml(entry.entityId)}</strong>
-          <small>${escapeHtml(fields.slice(0, 4).join(", ") || "—")}</small>
-          <time>${escapeHtml(formatAdminTimestamp(entry.createdAt, language()))}</time>
-        </button>`;
+        <div class="mh-admin-history-item${active ? " is-active" : ""}">
+          <button class="mh-admin-history-row${active ? " is-active" : ""}" type="button" data-admin-audit-id="${entry.id}" aria-expanded="${active}">
+            <span class="mh-admin-history-operation is-${escapeHtml(entry.operation)}">${escapeHtml(operationLabel(entry.operation, language()))}</span>
+            <strong>${escapeHtml(adminEntityLabel(entry.tableName, language()))} · ${escapeHtml(entry.entityId)}</strong>
+            <small>${escapeHtml(fields.slice(0, 4).join(", ") || "—")}</small>
+            <time>${escapeHtml(formatAdminTimestamp(entry.createdAt, language()))}</time>
+          </button>
+          ${active ? `<div class="mh-admin-history-inline-detail">${renderDetails(entry)}</div>` : ""}
+        </div>`;
     }).join("");
   }
 
   function renderVersions(entry) {
     if (!entry) return "";
+    if (state.versionsLoading) {
+      return `<div class="mh-admin-history-empty">${language() === "en" ? "Loading versions…" : "Se încarcă versiunile…"}</div>`;
+    }
     if (!state.versions.length) {
       return `<div class="mh-admin-history-empty">${language() === "en" ? "No saved versions." : "Nu există versiuni salvate."}</div>`;
     }
@@ -135,7 +142,7 @@ export function createAdminHistoryController({
     root.hidden = !state.enabled;
     if (!state.enabled) return;
     const entries = filterAuditEntries(state.entries, state.filters);
-    const entry = selectedEntry();
+    const entry = entries.find((candidate) => candidate.id === state.selectedId) || null;
     root.innerHTML = `
       <div class="mh-admin-history-toolbar">
         <label><span>${language() === "en" ? "Search" : "Caută"}</span><input type="search" data-admin-history-query value="${escapeHtml(state.filters.query)}" placeholder="${language() === "en" ? "ID, entity, field..." : "ID, entitate, câmp..."}"></label>
@@ -157,18 +164,42 @@ export function createAdminHistoryController({
     bind();
   }
 
+  let versionsRequestEpoch = 0;
+
   async function loadVersions(entry) {
+    const requestEpoch = ++versionsRequestEpoch;
     if (!entry) {
       state.versions = [];
+      state.versionsLoading = false;
       return;
     }
+    const selectedId = entry.id;
+    state.versionsLoading = true;
     try {
       const payload = await loadAdminEntityVersions(supabase, entry.tableName, entry.entityId);
+      if (requestEpoch !== versionsRequestEpoch || state.selectedId !== selectedId) return;
       state.versions = (payload?.versions || []).map(normalizeVersionEntry);
     } catch (error) {
+      if (requestEpoch !== versionsRequestEpoch || state.selectedId !== selectedId) return;
       state.versions = [];
       state.error = error?.message || String(error);
+    } finally {
+      if (requestEpoch === versionsRequestEpoch && state.selectedId === selectedId) {
+        state.versionsLoading = false;
+      }
     }
+  }
+
+  async function selectEntry(entryId) {
+    const nextId = Number(entryId || 0);
+    if (!nextId) return;
+    state.selectedId = nextId;
+    state.error = "";
+    state.versions = [];
+    state.versionsLoading = true;
+    render();
+    await loadVersions(selectedEntry());
+    if (state.selectedId === nextId) render();
   }
 
   async function load({ preserveSelection = true } = {}) {
@@ -182,6 +213,8 @@ export function createAdminHistoryController({
       if (!preserveSelection || !state.entries.some((entry) => entry.id === state.selectedId)) {
         state.selectedId = state.entries[0]?.id || 0;
       }
+      state.versions = [];
+      state.versionsLoading = Boolean(state.selectedId);
       await loadVersions(selectedEntry());
     } catch (error) {
       state.error = error?.message || String(error);
@@ -231,12 +264,7 @@ export function createAdminHistoryController({
     });
     root.querySelector("[data-admin-history-refresh]")?.addEventListener("click", () => void load());
     for (const button of root.querySelectorAll("[data-admin-audit-id]")) {
-      button.addEventListener("click", async () => {
-        state.selectedId = Number(button.dataset.adminAuditId || 0);
-        state.error = "";
-        await loadVersions(selectedEntry());
-        render();
-      });
+      button.addEventListener("click", () => void selectEntry(button.dataset.adminAuditId));
     }
     for (const button of root.querySelectorAll("[data-admin-restore-version]")) {
       button.addEventListener("click", () => void restore(button.dataset.adminRestoreVersion));
@@ -249,6 +277,7 @@ export function createAdminHistoryController({
       if (!state.enabled) {
         state.entries = [];
         state.versions = [];
+        state.versionsLoading = false;
         state.selectedId = 0;
         state.error = "";
         state.status = "";
@@ -259,6 +288,7 @@ export function createAdminHistoryController({
     invalidate() {
       state.entries = [];
       state.versions = [];
+      state.versionsLoading = false;
       state.selectedId = 0;
     },
     render

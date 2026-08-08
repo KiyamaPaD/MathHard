@@ -71,6 +71,17 @@
   gap: 6px;
 }
 
+
+.mh-admin-history-item {
+  min-width: 0;
+  display: grid;
+  gap: 0;
+}
+
+.mh-admin-history-inline-detail {
+  display: none;
+}
+
 .mh-admin-history-row {
   width: 100%;
   padding: 11px;
@@ -216,8 +227,26 @@
 @media (max-width: 980px) {
   .mh-admin-history-toolbar { grid-template-columns: 1fr 1fr; }
   .mh-admin-history-layout { grid-template-columns: 1fr; }
-  .mh-admin-history-list,
-  .mh-admin-history-detail { max-height: none; }
+  .mh-admin-history-list { max-height: none; overflow: visible; }
+  .mh-admin-history-detail { display: none; }
+  .mh-admin-history-item.is-active {
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    border-radius: 14px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--accent) 5%, var(--card));
+  }
+  .mh-admin-history-item.is-active > .mh-admin-history-row {
+    border-color: transparent;
+    border-radius: 0;
+    background: transparent;
+  }
+  .mh-admin-history-inline-detail {
+    display: block;
+    padding: 14px;
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 96%, transparent);
+  }
+  .mh-admin-history-inline-detail .mh-admin-history-detail-head { padding-bottom: 12px; }
 }
 
 @media (max-width: 620px) {
