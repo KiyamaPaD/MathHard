@@ -141,7 +141,7 @@ requireTokens(adminCss, "Integrity Admin styling", [
   ".mh-community-blocked-domains"
 ]);
 requireTokens(app, "Community Admin cache version", ['community-admin-controller.js?v=4g3']);
-requireTokens(index, "Phase 4G.3 index cache", ["css/community-admin.css?v=4j1", "/js/app.js?v=5a6"]);
+requireTokens(index, "Phase 4G.3 index cache", ["css/community-admin.css?v=4j1", "/js/app.js?v=5a7"]);
 requireTokens(profile, "Phase 4G.3 profile cache", ["community-profile.css?v=4g3", "community-profile-settings-controller.js?v=4i"]);
 
 const integrityModule = await import(pathToFileURL(resolve(root, "js/community-integrity-model.js")).href);

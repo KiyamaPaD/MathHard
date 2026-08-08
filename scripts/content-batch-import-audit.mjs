@@ -23,10 +23,10 @@ const requireToken = (source, token, label) => {
   if (!source.includes(token)) errors.push(`${label}: ${token}`);
 };
 
-requireToken(index, 'data-mh-build="5a6"', "Current build marker is missing");
+requireToken(index, 'data-mh-build="5a7"', "Current build marker is missing");
 requireToken(index, 'id="mhContentBatchImport"', "Batch intake host is missing");
-requireToken(index, 'css/content-authoring.css?v=5a6', "Batch intake CSS cache version is stale");
-requireToken(app, 'import("./content-batch-import-controller.js?v=5a6")', "Batch intake controller is not lazy-loaded");
+requireToken(index, 'css/content-authoring.css?v=5a7', "Batch intake CSS cache version is stale");
+requireToken(app, 'import("./content-batch-import-controller.js?v=5a7")', "Batch intake controller is not lazy-loaded");
 requireToken(app, "createContentBatchImportController", "Batch intake controller is not mounted");
 requireToken(app, "getCatalog: () => DATA", "Current catalog is not supplied to batch validation");
 requireToken(app, "contentBatchImportController?.reset()", "Batch source is not cleared across account changes");

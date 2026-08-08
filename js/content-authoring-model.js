@@ -1,7 +1,9 @@
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{1,199}$/;
+const TEMPLATE_PLACEHOLDER_PATTERN = /\[\[[^\[\]]+\]\]/;
 
 function textPresent(value) {
-  return String(value ?? "").trim().length > 0;
+  const text = String(value ?? "").trim();
+  return text.length > 0 && !TEMPLATE_PLACEHOLDER_PATTERN.test(text);
 }
 
 function listPresent(value) {
@@ -169,4 +171,4 @@ export function localizedCheckText(check, language = "ro") {
   };
 }
 
-export { ID_PATTERN };
+export { ID_PATTERN, TEMPLATE_PLACEHOLDER_PATTERN };

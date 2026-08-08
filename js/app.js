@@ -99,7 +99,7 @@ import {
   let roadmapAdminController = null;
   let conceptAdminController = null;
   let contentQualityAdminController = null, contentAuthoringController = null;
-  let contentBatchImportController = null, contentAuthoringRuntimePromise = null, adminStudioController = null;
+  let contentBatchImportController = null, contentTemplateController = null, contentAuthoringRuntimePromise = null, adminStudioController = null;
   let adminDraftController = null;
   let gamificationAdminController = null;
   let communityAdminController = null;
@@ -127,7 +127,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5a6"), import("./content-batch-import-controller.js?v=5a6")
+      import("./content-quality-admin-controller.js?v=5a7"), import("./content-batch-import-controller.js?v=5a7")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -2036,6 +2036,7 @@ import {
   roadmapController?.render();
   roadmapAdminController?.render();
   contentAuthoringController?.refresh();
+  contentTemplateController?.refreshLanguage();
   contentBatchImportController?.refreshLanguage();
   const adminSubmit = document.getElementById("mhSubmitBtn");
   if (adminSubmit) {
@@ -3035,7 +3036,6 @@ ${details}`);
   }
 
 
-
   function mhBuildLessonPayload(formType) {
     const chapterRaw = document.getElementById("mh_chapter")?.value?.trim() || "";
 
@@ -3120,11 +3120,9 @@ ${details}`);
       credit_html: document.getElementById("mh_exam_credit").value.trim()
     };
   }
-
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a6");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a7");
   }
-
   async function mountContentAuthoringController({ reportError = false } = {}) {
     if (contentAuthoringController) return contentAuthoringController;
     const host = document.getElementById("mhContentAuthoringPreflight");
@@ -3137,14 +3135,15 @@ ${details}`);
         getPayload: (type) => type === "problem" ? mhBuildProblemPayload() : type === "exam" ? mhBuildExamPayload() : mhBuildLessonPayload(type),
         getConceptIds: () => mhTagsFromInput(document.getElementById("mh_concept_ids")?.value || ""),
         getExamErrors: (payload) => mhValidateExamPayload(payload) };
-      return contentAuthoringController = runtime.mountContentAuthoringPreflight(options);
+      contentAuthoringController = runtime.mountContentAuthoringPreflight(options);
+      contentTemplateController ||= runtime.mountContentTemplates({ host: document.getElementById("mhContentTemplateStudio"), form, getLanguage: () => LANG, getType: () => document.getElementById("mh_type")?.value || "lesson" });
+      return contentAuthoringController;
     } catch (error) {
       console.error("Content authoring bootstrap failed:", error);
       if (reportError) alert(`${LANG === "ro" ? "Eroare la inițializarea editorului de draft: " : "Could not initialize the draft editor: "}${error?.message || error}`);
       return null;
     }
   }
-
   async function mhHandleAdminSubmit(e) {
     e.preventDefault();
     const status = document.getElementById("mhPublishStatus");

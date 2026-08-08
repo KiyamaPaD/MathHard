@@ -1,4 +1,5 @@
 import { createContentAuthoringController } from "./content-authoring-controller.js";
+import { createContentTemplateController } from "./content-template-controller.js";
 import { saveContentQualityReview } from "./content-quality-repository.js";
 
 function editorialContentType(type) {
@@ -45,6 +46,18 @@ export function mountContentAuthoringPreflight({
     host.innerHTML = `<div class="mh-authoring-runtime-error"><strong>${language.startsWith("en") ? "Draft readiness could not load." : "Pregătirea draftului nu s-a putut încărca."}</strong><span>${String(error?.message || error)}</span></div>`;
     throw error;
   }
+}
+
+
+export function mountContentTemplates({
+  host,
+  form,
+  getLanguage = () => "ro",
+  getType = () => "lesson",
+  onApplied = () => {}
+} = {}) {
+  if (!host || !form) return null;
+  return createContentTemplateController({ host, form, getLanguage, getType, onApplied });
 }
 
 export async function saveEditorialDraft(supabase, { type, payload } = {}) {
