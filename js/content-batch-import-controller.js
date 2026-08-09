@@ -299,7 +299,7 @@ export function createContentBatchImportController({
   }
 
   function analyze() {
-    state.analysis = analyzeContentBatch(state.source, { existingIds: existingIds() });
+    state.analysis = analyzeContentBatch(state.source, { existingIds: existingIds(), contentCatalog: getCatalog?.() || {} });
     state.results = [];
     state.status = state.analysis.canImport
       ? text(
@@ -312,7 +312,7 @@ export function createContentBatchImportController({
   }
 
   async function importBatch() {
-    const analysis = analyzeContentBatch(state.source, { existingIds: existingIds() });
+    const analysis = analyzeContentBatch(state.source, { existingIds: existingIds(), contentCatalog: getCatalog?.() || {} });
     state.analysis = analysis;
     if (!analysis.canImport || state.busy || state.busyAction) {
       state.status = text("Corectează erorile înainte de import.", "Fix the errors before importing.");
@@ -366,7 +366,7 @@ export function createContentBatchImportController({
       ? text(`${imported} importate, ${failed} eșuate.`, `${imported} imported, ${failed} failed.`)
       : text(`${imported} drafturi au fost create.`, `${imported} drafts were created.`);
     await onImported?.({ imported, failed, results: [...importedResults] });
-    state.analysis = analyzeContentBatch(state.source, { existingIds: existingIds() });
+    state.analysis = analyzeContentBatch(state.source, { existingIds: existingIds(), contentCatalog: getCatalog?.() || {} });
     await loadHistory({ renderAfter: false });
     render();
   }

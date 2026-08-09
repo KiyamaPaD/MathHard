@@ -23,9 +23,9 @@ const css = read("css/content-authoring.css");
 const errors = [];
 const requireToken = (source, token, label) => { if (!source.includes(token)) errors.push(`${label}: ${token}`); };
 
-requireToken(index, 'data-mh-build="5a7"', "Build marker is stale");
+requireToken(index, 'data-mh-build="5b1"', "Build marker is stale");
 requireToken(index, 'id="mhContentTemplateStudio"', "Template host is missing");
-requireToken(index, 'css/content-authoring.css?v=5a7', "Template CSS cache version is stale");
+requireToken(index, 'css/content-authoring.css?v=5b1', "Template CSS cache version is stale");
 requireToken(app, "contentTemplateController", "Template controller state is not mounted");
 requireToken(app, "runtime.mountContentTemplates", "Template runtime is not connected to the Editor");
 requireToken(app, "contentTemplateController?.refreshLanguage()", "Template localization refresh is missing");

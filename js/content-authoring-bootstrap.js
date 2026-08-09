@@ -25,7 +25,10 @@ export function mountContentAuthoringPreflight({
   getType,
   getPayload,
   getConceptIds,
-  getExamErrors
+  getExamErrors,
+  getCatalog,
+  getAdminMode,
+  getEditId
 } = {}) {
   if (!host || !form) return null;
   try {
@@ -36,7 +39,10 @@ export function mountContentAuthoringPreflight({
       getType,
       getPayload,
       getConceptIds,
-      getExamErrors
+      getExamErrors,
+      getCatalog,
+      getAdminMode,
+      getEditId
     });
     host.dataset.authoringRuntime = "ready";
     return controller;

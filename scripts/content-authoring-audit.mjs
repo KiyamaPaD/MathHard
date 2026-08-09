@@ -22,17 +22,17 @@ const bootstrap = read("js/content-authoring-bootstrap.js");
 const css = read("css/content-authoring.css");
 
 requireTokens(index, "Admin authoring markup", [
-  'data-mh-build="5a7"', 'id="mhContentAuthoringPreflight"',
-  'css/content-authoring.css?v=5a7', 'id="mhSubmitBtn" type="submit">Salvează draftul'
+  'data-mh-build="5b1"', 'id="mhContentAuthoringPreflight"',
+  'css/content-authoring.css?v=5b1', 'id="mhSubmitBtn" type="submit">Salvează draftul'
 ]);
 if (index.indexOf('id="mhContentAuthoringPreflight"') > index.indexOf('id="block-common"')) {
   errors.push("Draft readiness must appear before the content fields.");
 }
 requireTokens(app, "Independent authoring runtime", [
-  'import("./content-authoring-bootstrap.js?v=5a7")',
+  'import("./content-authoring-bootstrap.js?v=5b1")',
   "void mountContentAuthoringController()", "runtime.saveEditorialDraft",
   "runtime.revealEditorialDraft", "await ensureAdminControllers()",
-  'import("./content-quality-admin-controller.js?v=5a7")'
+  'import("./content-quality-admin-controller.js?v=5b1")'
 ]);
 if (app.includes("contentAuthoringController?.ensureEditorialDraft")) {
   errors.push("Draft persistence must not depend on an optional UI controller call.");

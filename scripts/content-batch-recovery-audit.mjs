@@ -29,9 +29,9 @@ const requireToken = (source, token, label) => {
   if (!source.includes(token)) errors.push(`${label}: ${token}`);
 };
 
-requireToken(index, 'data-mh-build="5a7"', "Current build marker is missing");
-requireToken(index, '/js/app.js?v=5a7', "Top-level app cache version is stale");
-requireToken(app, 'content-batch-import-controller.js?v=5a7', "Batch controller cache version is stale");
+requireToken(index, 'data-mh-build="5b1"', "Current build marker is missing");
+requireToken(index, '/js/app.js?v=5b1', "Top-level app cache version is stale");
+requireToken(app, 'content-batch-import-controller.js?v=5b1', "Batch controller cache version is stale");
 requireToken(app, 'getUserId: () => MH_AUTH_USER?.id || ""', "Import history is not scoped to the current account");
 requireToken(controller, "createContentBatchHistoryRepository", "Persistent history repository is not mounted");
 requireToken(controller, "fingerprintBatchSource", "Repeated batch protection is missing");

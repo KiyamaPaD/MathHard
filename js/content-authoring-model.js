@@ -83,7 +83,7 @@ function problemChecks(payload) {
   ];
 }
 
-function examChecks(payload, examErrors = []) {
+function examChecks(payload, examErrors = [], examIndependence = null) {
   const hasItems = Array.isArray(payload?.items) && payload.items.length > 0;
   const hasProblems = Array.isArray(payload?.problems) && payload.problems.some((id) => textPresent(id));
   const year = Number(payload?.year);
@@ -104,17 +104,21 @@ function examChecks(payload, examErrors = []) {
       detailRo: structuralErrors[0] || "",
       detailEn: structuralErrors[0] || ""
     }),
+    makeCheck("independent_exam_bank", !examIndependence || examIndependence.blockingIssues?.length === 0, "Bancă de examen independentă", "Independent exam bank", {
+      detailRo: examIndependence?.blockingIssues?.length ? "Există un duplicat sau o legătură legacy cu banca de Probleme." : "Itemii nu reutilizează problemele de practică.",
+      detailEn: examIndependence?.blockingIssues?.length ? "A duplicate or legacy practice-bank link exists." : "Exam items do not reuse practice problems."
+    }),
     makeCheck("source", textPresent(payload?.credit_html), "Credit sau sursă", "Credit or source"),
     makeCheck("scoring", textPresent(payload?.scoring_profile), "Regulă de punctare selectată", "Scoring rule selected", { required: false })
   ];
 }
 
-export function evaluateContentDraft({ type = "lesson", payload = {}, examErrors = [] } = {}) {
+export function evaluateContentDraft({ type = "lesson", payload = {}, examErrors = [], examIndependence = null } = {}) {
   const normalizedType = normalizeType(type);
   const checks = normalizedType === "problem"
     ? problemChecks(payload)
     : normalizedType === "exam"
-      ? examChecks(payload, examErrors)
+      ? examChecks(payload, examErrors, examIndependence)
       : lessonChecks(normalizedType, payload);
 
   const required = checks.filter((check) => check.required);

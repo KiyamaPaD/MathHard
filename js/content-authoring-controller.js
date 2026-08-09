@@ -4,6 +4,7 @@ import {
   evaluateContentDraft,
   localizedCheckText
 } from "./content-authoring-model.js";
+import { analyzeExamIndependence, examIndependenceIssueLabel } from "./admin-content-model.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -80,7 +81,10 @@ export function createContentAuthoringController({
   getType = () => "lesson",
   getPayload = () => ({}),
   getConceptIds = () => [],
-  getExamErrors = () => []
+  getExamErrors = () => [],
+  getCatalog = () => ({}),
+  getAdminMode = () => "create",
+  getEditId = () => ""
 } = {}) {
   if (!host) throw new Error("createContentAuthoringController requires a host element.");
   if (!form) throw new Error("createContentAuthoringController requires the editor form.");
@@ -102,8 +106,18 @@ export function createContentAuthoringController({
       ...(getPayload?.(type) || {}),
       concept_ids: getConceptIds?.() || []
     };
-    const examErrors = type === "exam" ? (getExamErrors?.(payload) || []) : [];
-    return { type, payload, examErrors };
+    const catalog = getCatalog?.() || {};
+    const currentExam = type === "exam" && String(getAdminMode?.() || "create") === "edit"
+      ? (catalog.exams || []).find((exam) => String(exam?.id || "") === String(getEditId?.() || payload?.id || ""))
+      : null;
+    const allowLegacyProblemLinks = Boolean(currentExam?.problems?.length && !currentExam?.items?.length);
+    const examIndependence = type === "exam" ? analyzeExamIndependence(payload, {
+      problems: catalog.problems || [], exams: catalog.exams || [], currentExamId: getEditId?.() || payload?.id || "", allowLegacyProblemLinks
+    }) : null;
+    const examErrors = type === "exam" ? (getExamErrors?.(payload, {
+      problems: catalog.problems || [], exams: catalog.exams || [], currentExamId: getEditId?.() || payload?.id || "", allowLegacyProblemLinks
+    }) || []) : [];
+    return { type, payload, examErrors, examIndependence };
   }
 
   function checksHtml(checks) {
@@ -113,9 +127,23 @@ export function createContentAuthoringController({
     }).join("");
   }
 
+  function examIndependenceHtml(analysis) {
+    if (!analysis) return "";
+    const blockers = analysis.blockingIssues || [];
+    const warnings = analysis.warnings || [];
+    const cls = blockers.length ? "is-blocked" : warnings.length ? "is-warning" : "is-ready";
+    const title = blockers.length
+      ? text("Banca examenului are conflicte", "Exam bank has conflicts")
+      : warnings.length
+        ? text("Verifică similitudinile", "Review similarities")
+        : text("Bancă de examen independentă", "Independent exam bank");
+    const entries = blockers.length ? blockers : warnings;
+    return `<section class="mh-exam-independence ${cls}"><div><strong>${escapeHtml(title)}</strong><small>${text("Problemele de practică și itemii altor examene nu sunt reutilizați.", "Practice problems and items from other exams are not reused.")}</small></div>${entries.length ? `<ul>${entries.slice(0, 8).map((entry) => `<li>${escapeHtml(examIndependenceIssueLabel(entry, language()))}</li>`).join("")}</ul>` : ""}</section>`;
+  }
+
   function render() {
-    const { type, payload, examErrors } = snapshot();
-    currentResult = evaluateContentDraft({ type, payload, examErrors });
+    const { type, payload, examErrors, examIndependence } = snapshot();
+    currentResult = evaluateContentDraft({ type, payload, examErrors, examIndependence });
     const status = draftStatusLabel(currentResult, language());
     const pending = currentResult.pendingRecommendations;
 
@@ -132,6 +160,7 @@ export function createContentAuthoringController({
         <div class="mh-authoring-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${currentResult.score}"><span style="width:${currentResult.score}%"></span></div>
         <strong>${currentResult.score}%</strong>
       </div>
+      ${type === "exam" ? examIndependenceHtml(examIndependence) : ""}
       <div class="mh-authoring-summary">
         <span><strong>${currentResult.counts.passedRequired}/${currentResult.counts.required}</strong>${text("cerințe obligatorii", "required checks")}</span>
         <span><strong>${currentResult.counts.blockers}</strong>${text("blocaje", "blockers")}</span>

@@ -127,7 +127,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5a7"), import("./content-batch-import-controller.js?v=5a7")
+      import("./content-quality-admin-controller.js?v=5b1"), import("./content-batch-import-controller.js?v=5b1")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -3111,9 +3111,7 @@ ${details}`);
       title_ro: document.getElementById("mh_exam_title_ro").value.trim(),
       title_en: document.getElementById("mh_exam_title_en").value.trim(),
       default_hours: Number(document.getElementById("mh_exam_hours").value || 2),
-      problems: mhProblemsArrayFromInput(
-        document.getElementById("mh_exam_problems").value
-      ),
+      problems: normalizedItems.length ? [] : mhProblemsArrayFromInput(document.getElementById("mh_exam_problems").value),
       items: normalizedItems,
       scoring_profile: mhExamScoringProfile?.value || "default_exact_v1",
       scoring_config: null,
@@ -3121,7 +3119,7 @@ ${details}`);
     };
   }
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5a7");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5b1");
   }
   async function mountContentAuthoringController({ reportError = false } = {}) {
     if (contentAuthoringController) return contentAuthoringController;
@@ -3134,7 +3132,7 @@ ${details}`);
         getType: () => document.getElementById("mh_type")?.value || "lesson",
         getPayload: (type) => type === "problem" ? mhBuildProblemPayload() : type === "exam" ? mhBuildExamPayload() : mhBuildLessonPayload(type),
         getConceptIds: () => mhTagsFromInput(document.getElementById("mh_concept_ids")?.value || ""),
-        getExamErrors: (payload) => mhValidateExamPayload(payload) };
+        getExamErrors: (payload, context) => mhValidateExamPayload(payload, context), getCatalog: () => DATA, getAdminMode: () => MH_ADMIN_STATE.mode, getEditId: () => MH_ADMIN_STATE.editId || "" };
       contentAuthoringController = runtime.mountContentAuthoringPreflight(options);
       contentTemplateController ||= runtime.mountContentTemplates({ host: document.getElementById("mhContentTemplateStudio"), form, getLanguage: () => LANG, getType: () => document.getElementById("mh_type")?.value || "lesson" });
       return contentAuthoringController;
@@ -3177,7 +3175,7 @@ ${details}`);
       }
       if (type === "exam") {
         payload = mhBuildExamPayload();
-        const examErrors = mhValidateExamPayload(payload);
+        const examErrors = mhValidateExamPayload(payload, { problems: DATA.problems, exams: DATA.exams, currentExamId: MH_ADMIN_STATE.editId || payload.id, allowLegacyProblemLinks: MH_ADMIN_STATE.mode === "edit" && Boolean(DATA.exams.find((exam) => exam.id === MH_ADMIN_STATE.editId)?.problems?.length) && !DATA.exams.find((exam) => exam.id === MH_ADMIN_STATE.editId)?.items?.length });
         if (examErrors.length) {
           throw new Error(examErrors.join("\n"));
         }

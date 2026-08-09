@@ -1,4 +1,4 @@
-import { normalizeDraftExamItem, validateExamPayload } from "./admin-content-model.js";
+import { analyzeExamIndependence, normalizeDraftExamItem, validateExamPayload } from "./admin-content-model.js";
 import { evaluateContentDraft, ID_PATTERN } from "./content-authoring-model.js";
 
 export const CONTENT_BATCH_LIMIT = 100;
@@ -118,7 +118,7 @@ export function contentTableForType(type) {
   return storageType === "problem" ? "mh_problems" : storageType === "exam" ? "mh_exams" : "mh_lessons";
 }
 
-export function normalizeContentBatchItem(raw, index = 0) {
+export function normalizeContentBatchItem(raw, index = 0, { examContext = {} } = {}) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return { index, type: "", payload: {}, conceptIds: [], errors: ["invalid_item"] };
   }
@@ -139,8 +139,9 @@ export function normalizeContentBatchItem(raw, index = 0) {
     : type === "exam"
       ? normalizeExam(source)
       : normalizeLesson(type, source);
-  const examErrors = type === "exam" ? validateExamPayload(payload) : [];
-  const readiness = evaluateContentDraft({ type, payload: { ...payload, concept_ids: conceptIds }, examErrors });
+  const examIndependence = type === "exam" ? analyzeExamIndependence(payload, { ...examContext, allowLegacyProblemLinks: false }) : null;
+  const examErrors = type === "exam" ? validateExamPayload(payload, { ...examContext, allowLegacyProblemLinks: false }) : [];
+  const readiness = evaluateContentDraft({ type, payload: { ...payload, concept_ids: conceptIds }, examErrors, examIndependence });
   return {
     index,
     type,
@@ -149,7 +150,7 @@ export function normalizeContentBatchItem(raw, index = 0) {
     payload,
     conceptIds,
     readiness,
-    errors: hardValidation(type, payload),
+    errors: type === "exam" ? examErrors.map((message) => `exam:${message}`) : hardValidation(type, payload),
     warnings: readiness.blockers.map((check) => check.id)
   };
 }
@@ -178,7 +179,7 @@ export function parseContentBatchJson(source) {
   return items;
 }
 
-export function analyzeContentBatch(source, { existingIds = {} } = {}) {
+export function analyzeContentBatch(source, { existingIds = {}, contentCatalog = {} } = {}) {
   const globalErrors = [];
   let rawItems = [];
   try {
@@ -189,7 +190,7 @@ export function analyzeContentBatch(source, { existingIds = {} } = {}) {
   const existing = normalizeExisting(existingIds);
   const seen = { lesson: new Set(), problem: new Set(), exam: new Set() };
   const items = rawItems.map((raw, index) => {
-    const item = normalizeContentBatchItem(raw, index);
+    const item = normalizeContentBatchItem(raw, index, { examContext: { problems: contentCatalog.problems || [], exams: contentCatalog.exams || [] } });
     if (!item.type) return item;
     const id = item.payload.id;
     if (id && existing[item.storageType].has(id)) item.errors.push("existing_id");

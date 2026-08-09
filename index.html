@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ro" data-mh-build="5a7">
+<html lang="ro" data-mh-build="5b1">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -28,7 +28,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/img/Screenshot_6.png" />
   <meta name="theme-color" content="#0b1020" />
-  <meta name="mathhard-build" content="5a7" />
+  <meta name="mathhard-build" content="5b1" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="icon" href="/img/mathhard-logo.png" type="image/png" />
 
@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="css/gamification-studio.css" />
   <link rel="stylesheet" href="css/concept-studio.css" />
   <link rel="stylesheet" href="css/content-quality-studio.css" />
-  <link rel="stylesheet" href="css/content-authoring.css?v=5a7" />
+  <link rel="stylesheet" href="css/content-authoring.css?v=5b1" />
   <link rel="stylesheet" href="css/community-admin.css?v=4j1" />
   <link rel="stylesheet" href="css/community-leaderboard.css" />
   <link rel="stylesheet" href="css/community-feedback.css?v=4j1" />
@@ -905,10 +905,11 @@
 <span data-i18n="admin_exam_title_en_label">Titlu examen EN:</span>
 <input id="mh_exam_title_en" name="exam_title_en" value="New exam"/>
 </label>
-<label>
-<span data-i18n="admin_exam_problem_ids">ID-urile problemelor (virgulă):</span>
-<textarea data-i18n-placeholder="admin_exam_problem_ids_placeholder" id="mh_exam_problems" name="exam_problems" placeholder="ex: v-cit-00,v-cit-01,bac25-1" rows="3"></textarea>
-</label>
+<input id="mh_exam_problems" name="exam_problems" type="hidden" value=""/>
+<section class="mh-exam-bank-policy" aria-live="polite">
+<strong>Bancă de examen independentă</strong>
+<span>Itemii de examen se scriu separat. Problemele din banca de practică nu sunt reutilizate.</span>
+</section>
 <div id="mh_exam_items_editor" style="margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
 <h4 data-i18n="admin_exam_items_title" style="margin:0;">Itemi examen</h4>
@@ -1161,6 +1162,6 @@
       }
     })();
   </script>
-  <script type="module" src="/js/app.js?v=5a7"></script>
+  <script type="module" src="/js/app.js?v=5b1"></script>
 </body>
 </html>
