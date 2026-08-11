@@ -115,6 +115,17 @@
 .mh-concept-admin-prerequisites small { opacity: .65; }
 .mh-concept-admin-meta { display: flex; gap: 12px; flex-wrap: wrap; opacity: .7; font-size: .82rem; }
 .mh-concept-admin-actions { display: flex; justify-content: flex-end; }
+.mh-concept-admin-notation-preview {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+.mh-concept-admin-notation-preview:empty { display: none; }
+.mh-concept-admin-notation-preview .katex { font-size: 1.08em; }
 .mh-concept-admin-empty { padding: 16px; text-align: center; opacity: .65; }
 
 @media (max-width: 900px) {

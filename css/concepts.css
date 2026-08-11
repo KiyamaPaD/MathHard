@@ -59,12 +59,17 @@
   gap: 4px;
 }
 
-.mh-concept-detail-head code {
+.mh-concept-notation-math {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 4px 7px;
+  padding: 4px 8px;
   white-space: nowrap;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
 }
+.mh-concept-notation-math .katex { font-size: 1.04em; }
 
 .mh-concept-type {
   width: fit-content;

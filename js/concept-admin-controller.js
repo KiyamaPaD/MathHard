@@ -294,7 +294,8 @@ export function createConceptAdminController({
 
         <div class="mh-concept-admin-grid">
           <label>Notație
-            <input name="notation" value="${escapeHtml(draft.notation)}" placeholder="ex: ax + b = 0">
+            <input name="notation" value="${escapeHtml(draft.notation)}" placeholder="ex: x^2 + y^2 = z^2">
+            <span class="mh-concept-admin-notation-preview" data-concept-notation-preview></span>
           </label>
           <label>Tag-uri
             <input name="tags" value="${escapeHtml((draft.tags || []).join(", "))}" placeholder="ecuații, algebră, bază">
@@ -318,6 +319,28 @@ export function createConceptAdminController({
         </div>
       </form>
     `;
+  }
+
+  function renderNotationPreview() {
+    const input = host.querySelector('input[name="notation"]');
+    const preview = host.querySelector("[data-concept-notation-preview]");
+    if (!input || !preview) return;
+
+    const source = String(input.value || "").trim();
+    preview.replaceChildren();
+    if (!source) return;
+
+    if (globalThis.katex?.render) {
+      globalThis.katex.render(source, preview, {
+        throwOnError: false,
+        displayMode: false,
+        strict: "ignore",
+        trust: false
+      });
+      return;
+    }
+
+    preview.textContent = source;
   }
 
   function render() {
@@ -352,6 +375,7 @@ export function createConceptAdminController({
         `}
       </div>
     `;
+    renderNotationPreview();
   }
 
   function readForm() {
@@ -503,6 +527,10 @@ export function createConceptAdminController({
       state.query = event.target.value;
       const list = host.querySelector(".mh-concept-admin-list");
       if (list) list.innerHTML = renderList();
+      return;
+    }
+    if (event.target.matches('input[name="notation"]')) {
+      renderNotationPreview();
     }
   });
 

@@ -8,9 +8,10 @@ const GRADE_ROMANS = new Set(["V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"])
 
 let chapterRows = [];
 let treeObserver = null;
-let conceptObserver = null;
+let adminObserver = null;
 let scheduled = false;
 let applying = false;
+let moveInFlight = false;
 let authUserId = "";
 let loadRevision = 0;
 
@@ -74,26 +75,6 @@ function injectStyles() {
       opacity:.28;
       cursor:default;
     }
-    .mh-concept-notation-math{
-      display:inline-flex;
-      align-items:center;
-      min-height:30px;
-      padding:3px 8px;
-      border:1px solid var(--border);
-      border-radius:8px;
-      background:rgba(255,255,255,.035);
-    }
-    .mh-concept-notation-math .katex{font-size:1.04em}
-    .mh-concept-notation-preview{
-      display:block;
-      min-height:34px;
-      margin-top:6px;
-      padding:7px 9px;
-      border:1px dashed var(--border);
-      border-radius:9px;
-      background:rgba(255,255,255,.025);
-    }
-    .mh-concept-notation-preview:empty{display:none}
   `;
   document.head.appendChild(style);
 }
@@ -153,27 +134,25 @@ function replaceGradeRows(grade, nextRows) {
   ));
 }
 
-async function moveChapter(grade, chapter, direction) {
-  if (!isAdminUiGranted() || ![-1, 1].includes(direction)) return;
-
-  const buttons = [...document.querySelectorAll(".mh-chapter-order-btn")];
-  buttons.forEach((button) => { button.disabled = true; });
-
-  try {
-    const { data, error } = await supabase.rpc(MOVE_RPC, {
-      p_grade: grade,
-      p_chapter: chapter,
-      p_direction: direction
+function observeTree() {
+  const root = document.getElementById("treeNested");
+  if (!root) return;
+  if (!treeObserver) {
+    treeObserver = new MutationObserver(() => {
+      if (!applying) scheduleApply();
     });
-    if (error) throw error;
-    replaceGradeRows(grade, data);
-    applyChapterOrder();
-  } catch (error) {
-    console.error("Chapter reorder failed:", error);
-    alert(`Ordinea capitolelor nu a putut fi salvată: ${error?.message || error}`);
-  } finally {
-    scheduleApply();
   }
+  treeObserver.observe(root, { childList: true, subtree: true });
+}
+
+function setActionState(actions, { grade, chapter, index, total }) {
+  actions.dataset.grade = grade;
+  actions.dataset.chapter = chapter;
+  const up = actions.querySelector('[data-chapter-direction="-1"]');
+  const down = actions.querySelector('[data-chapter-direction="1"]');
+  const busy = moveInFlight;
+  if (up) up.disabled = busy || index <= 0;
+  if (down) down.disabled = busy || index >= total - 1;
 }
 
 function ensureChapterButtons(summary, grade, chapter, index, total) {
@@ -183,36 +162,23 @@ function ensureChapterButtons(summary, grade, chapter, index, total) {
     return;
   }
 
-  const actions = existing || document.createElement("span");
-  actions.className = "mh-chapter-order-actions";
-  actions.setAttribute("aria-label", "Ordine capitol");
-  actions.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  });
+  let actions = existing;
+  if (!actions) {
+    actions = document.createElement("span");
+    actions.className = "mh-chapter-order-actions";
+    actions.setAttribute("aria-label", "Ordine capitol");
+    actions.innerHTML = `
+      <button class="mh-chapter-order-btn" type="button" data-chapter-direction="-1" aria-label="Mută capitolul mai sus" title="Mută capitolul mai sus">↑</button>
+      <button class="mh-chapter-order-btn" type="button" data-chapter-direction="1" aria-label="Mută capitolul mai jos" title="Mută capitolul mai jos">↓</button>
+    `;
+    summary.appendChild(actions);
+  }
 
-  const makeButton = (direction, label, title, disabled) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "mh-chapter-order-btn";
-    button.textContent = label;
-    button.title = title;
-    button.setAttribute("aria-label", title);
-    button.disabled = disabled;
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      void moveChapter(grade, chapter, direction);
-    });
-    return button;
-  };
+  setActionState(actions, { grade, chapter, index, total });
+}
 
-  actions.replaceChildren(
-    makeButton(-1, "↑", "Mută capitolul mai sus", index <= 0),
-    makeButton(1, "↓", "Mută capitolul mai jos", index >= total - 1)
-  );
-
-  if (!existing) summary.appendChild(actions);
+function sameNodeOrder(current, desired) {
+  return current.length === desired.length && current.every((node, index) => node === desired[index]);
 }
 
 function applyChapterOrder() {
@@ -220,6 +186,7 @@ function applyChapterOrder() {
   if (!root || !chapterRows.length || applying) return;
 
   applying = true;
+  treeObserver?.disconnect();
   try {
     root.querySelectorAll("details").forEach((gradeDetails) => {
       const summary = gradeDetails.querySelector(":scope > summary");
@@ -241,7 +208,7 @@ function applyChapterOrder() {
         };
       });
 
-      mapped.sort((left, right) => {
+      const desired = [...mapped].sort((left, right) => {
         const diff = chapterPosition(grade, left.chapter) - chapterPosition(grade, right.chapter);
         if (diff !== 0) return diff;
         return normalizeText(left.summary?.textContent).localeCompare(
@@ -250,86 +217,27 @@ function applyChapterOrder() {
         );
       });
 
-      mapped.forEach(({ details }) => branch.appendChild(details));
+      const desiredNodes = desired.map((entry) => entry.details);
+      if (!sameNodeOrder(chapterDetails, desiredNodes)) {
+        branch.append(...desiredNodes);
+      }
 
       const orderedRows = rowsForGrade(grade);
-      mapped.forEach(({ summary, chapter }, index) => {
-        if (!summary || !chapter) return;
+      desired.forEach(({ summary: chapterSummary, chapter }, index) => {
+        if (!chapterSummary || !chapter) return;
         const orderedIndex = orderedRows.findIndex((row) => row.chapter === chapter);
         ensureChapterButtons(
-          summary,
+          chapterSummary,
           grade,
           chapter,
           orderedIndex >= 0 ? orderedIndex : index,
-          Math.max(orderedRows.length, mapped.length)
+          Math.max(orderedRows.length, desired.length)
         );
       });
     });
   } finally {
     applying = false;
-  }
-}
-
-function renderNotationElement(code) {
-  if (!code || code.dataset.mhKatexNotation === "1") return;
-  const raw = String(code.textContent || "").trim();
-  if (!raw) return;
-
-  const host = document.createElement("span");
-  host.className = "mh-concept-notation-math";
-  host.dataset.mhKatexNotation = "1";
-  host.dataset.rawNotation = raw;
-  code.replaceWith(host);
-
-  if (globalThis.katex?.render) {
-    globalThis.katex.render(raw, host, {
-      throwOnError: false,
-      displayMode: false,
-      strict: "ignore",
-      trust: false
-    });
-  } else {
-    host.textContent = raw;
-  }
-}
-
-function renderConceptNotation(root = document) {
-  root.querySelectorAll?.(".mh-concept-detail-head code").forEach(renderNotationElement);
-
-  const adminHost = document.getElementById("mhConceptAdminStudio");
-  const notationInput = adminHost?.querySelector('input[name="notation"]');
-  if (notationInput) {
-    const label = notationInput.closest("label");
-    let preview = label?.querySelector(".mh-concept-notation-preview");
-    if (label && !preview) {
-      preview = document.createElement("span");
-      preview.className = "mh-concept-notation-preview";
-      preview.setAttribute("aria-label", "Preview KaTeX");
-      label.appendChild(preview);
-    }
-
-    const raw = String(notationInput.value || "").trim();
-    if (preview) {
-      preview.replaceChildren();
-      if (raw) {
-        if (globalThis.katex?.render) {
-          globalThis.katex.render(raw, preview, {
-            throwOnError: false,
-            displayMode: false,
-            strict: "ignore",
-            trust: false
-          });
-        } else {
-          preview.textContent = raw;
-        }
-      }
-    }
-  }
-
-  if (typeof globalThis.MH_render === "function") {
-    const conceptDetails = document.querySelector(".mh-concept-disclosure")?.parentElement;
-    if (conceptDetails) globalThis.MH_render(conceptDetails);
-    if (adminHost && !adminHost.hidden) globalThis.MH_render(adminHost);
+    observeTree();
   }
 }
 
@@ -339,8 +247,29 @@ function scheduleApply() {
   requestAnimationFrame(() => {
     scheduled = false;
     applyChapterOrder();
-    renderConceptNotation(document);
   });
+}
+
+async function moveChapter(grade, chapter, direction) {
+  if (!isAdminUiGranted() || moveInFlight || ![-1, 1].includes(direction)) return;
+
+  moveInFlight = true;
+  applyChapterOrder();
+  try {
+    const { data, error } = await supabase.rpc(MOVE_RPC, {
+      p_grade: grade,
+      p_chapter: chapter,
+      p_direction: direction
+    });
+    if (error) throw error;
+    replaceGradeRows(grade, data);
+  } catch (error) {
+    console.error("Chapter reorder failed:", error);
+    alert(`Ordinea capitolelor nu a putut fi salvată: ${error?.message || error}`);
+  } finally {
+    moveInFlight = false;
+    applyChapterOrder();
+  }
 }
 
 async function loadChapterOrder() {
@@ -365,43 +294,45 @@ async function loadChapterOrder() {
   scheduleApply();
 }
 
-function observeUi() {
-  const tree = document.getElementById("treeNested");
-  if (tree && !treeObserver) {
-    treeObserver = new MutationObserver(() => {
-      if (!applying) scheduleApply();
-    });
-    treeObserver.observe(tree, { childList: true, subtree: true });
-  }
-
-  if (!conceptObserver) {
-    conceptObserver = new MutationObserver(() => scheduleApply());
-    ["cards", "viewContent", "mhConceptAdminStudio"].forEach((id) => {
-      const target = document.getElementById(id);
-      if (target) conceptObserver.observe(target, { childList: true, subtree: true });
-    });
-  }
-
+function observeAdminState() {
   const adminBtn = document.getElementById("adminBtn");
-  if (adminBtn) {
-    new MutationObserver(() => scheduleApply())
-      .observe(adminBtn, { attributes: true, attributeFilter: ["data-access-state", "hidden", "style"] });
-  }
-
-  document.addEventListener("input", (event) => {
-    if (event.target?.matches?.('#mhConceptAdminStudio input[name="notation"]')) {
-      renderConceptNotation(document);
-    }
+  if (!adminBtn || adminObserver) return;
+  adminObserver = new MutationObserver(() => scheduleApply());
+  adminObserver.observe(adminBtn, {
+    attributes: true,
+    attributeFilter: ["data-access-state", "hidden", "style"]
   });
+}
 
-  window.addEventListener("load", scheduleApply, { once: true });
+function bindChapterActions() {
+  const root = document.getElementById("treeNested");
+  if (!root || root.dataset.mhChapterOrderBound === "1") return;
+  root.dataset.mhChapterOrderBound = "1";
+
+  root.addEventListener("click", (event) => {
+    const button = event.target.closest?.(".mh-chapter-order-btn");
+    if (!button || !root.contains(button)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const actions = button.closest(".mh-chapter-order-actions");
+    const grade = String(actions?.dataset?.grade || "");
+    const chapter = String(actions?.dataset?.chapter || "");
+    const direction = Number(button.dataset.chapterDirection || 0);
+    if (!grade || !chapter || ![-1, 1].includes(direction)) return;
+    void moveChapter(grade, chapter, direction);
+  });
 }
 
 async function init() {
   injectStyles();
-  observeUi();
+  bindChapterActions();
+  observeTree();
+  observeAdminState();
   await loadChapterOrder();
-  renderConceptNotation(document);
+
+  window.addEventListener("load", scheduleApply, { once: true });
 
   supabase.auth.onAuthStateChange((event, session) => {
     const nextUserId = session?.user?.id || "";

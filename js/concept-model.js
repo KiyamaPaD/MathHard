@@ -353,7 +353,7 @@ export function renderContentConceptDetails({
                   <span class="mh-concept-type">${escapeHtml(conceptTypeLabel(concept.concept_type, language))}</span>
                   <strong>${escapeHtml(conceptLabel(concept, language))}</strong>
                 </div>
-                ${concept.notation ? `<code>${escapeHtml(concept.notation)}</code>` : ""}
+                ${concept.notation ? `<span class="mh-concept-notation-math">\\(${escapeHtml(concept.notation)}\\)</span>` : ""}
               </div>
               ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
               ${details ? `<div class="mh-concept-detail-text">${escapeHtml(details).replaceAll("\n", "<br>")}</div>` : ""}
