@@ -1716,7 +1716,7 @@ import {
 
       const tA = (A.title_ro || A.title_en || "");
       const tB = (B.title_ro || B.title_en || "");
-      return tA.localeCompare(tB, "ro");
+      return globalThis.MH_CurriculumOrder?.compareLessons?.(A,B) ?? tA.localeCompare(tB, "ro");
     });
   }
 
@@ -4532,6 +4532,7 @@ ${details}`);
     return i === -1 ? 998 : i;
   }
   function chapterCompare(gr, a, b){
+    const external = globalThis.MH_CurriculumOrder?.compareChapters?.(gr, a, b); if (Number.isFinite(external)) return external;
     const ia = chapterOrderIndex(gr, a);
     const ib = chapterOrderIndex(gr, b);
     if(ia !== ib) return ia - ib;
@@ -4966,9 +4967,9 @@ ${details}`);
             const b2 = document.createElement("div");
             b2.className = "branch";
 
-            (byGrade[gr][ch] || []).forEach(lesson => {
+            (byGrade[gr][ch] || []).slice().sort((A,B)=>globalThis.MH_CurriculumOrder?.compareLessons?.(A,B) ?? 0).forEach(lesson => {
               const a = document.createElement("a");
-              a.className = "leaf";
+              a.className = "leaf"; a.dataset.lessonId = lesson.id;
 
               const title = (LANG === "ro")
                 ? (lesson.title_ro || lesson.title_en)
@@ -5180,6 +5181,8 @@ ${details}`);
 
     wireGlobalExamClickGuards();
   }
+
+  window.addEventListener("mh:curriculum-order-changed", () => { buildNestedTree(); buildTagPanel(); renderCards(); });
 
   /* ===== Super-categoria: Tag-uri ===== */
   function buildTagPanel(){
@@ -5685,7 +5688,7 @@ ${details}`);
         if(cc !== 0) return cc;
         const tA = (A.title_ro||A.title_en||"");
         const tB = (B.title_ro||B.title_en||"");
-        return tA.localeCompare(tB,'ro');
+        return globalThis.MH_CurriculumOrder?.compareLessons?.(A,B) ?? tA.localeCompare(tB,'ro');
       });
     }
 

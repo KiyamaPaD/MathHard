@@ -126,7 +126,7 @@ function init() {
   scheduleIdle(() => void safelyLoadModule("./microinteractions-bootstrap.js?v=4j2"), 380);
   scheduleIdle(() => void safelyLoadModule("./ui-language-guard.js?v=4i"), 620);
   scheduleIdle(() => void safelyLoadModule("./section-layout-controller.js"), 500);
-  scheduleIdle(() => void safelyLoadModule("./curriculum-ui-runtime.js?v=5b3"), 700);
+  scheduleIdle(() => void safelyLoadModule("./curriculum-ui-runtime.js?v=5b4"), 700);
   scheduleIdle(() => void safelyLoadModule("./quick-nav-controller.js"), 900);
   scheduleIdle(() => void safelyLoadModule("./onboarding-controller.js"), 1300);
   scheduleIdle(() => void safelyLoadModule("./runtime-diagnostics.js"), 2200);
