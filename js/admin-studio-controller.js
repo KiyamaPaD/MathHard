@@ -1,3 +1,5 @@
+import { installAdminPerspectivePreviewUi } from "./admin-perspective-preview.js";
+
 const TYPE_LABELS = {
   ro: {
     all: "Tot conținutul",
@@ -192,6 +194,7 @@ export function createAdminStudioController({
   getUserId = () => ""
 } = {}) {
   if (!root) throw new Error("createAdminStudioController requires a root element.");
+  installAdminPerspectivePreviewUi();
 
   const state = {
     items: [],
