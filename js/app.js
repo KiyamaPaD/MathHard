@@ -204,10 +204,6 @@ import {
     return CONCEPT_CATALOG;
   }
   async function refreshConceptCatalog(forceRefresh = false) {
-    if (!MH_AUTH_USER?.id) {
-      invalidateConceptCatalogCache();
-      return applyConceptCatalog({});
-    }
     try {
       const payload = await loadConceptCatalog({
         supabase,
@@ -240,18 +236,15 @@ import {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
     if (initialAuthError) throw initialAuthError;
     MH_AUTH_USER = initialAuthData?.session?.user || null;
-    if (MH_AUTH_USER?.id) {
-      const [initialCatalog] = await Promise.all([
-        loadContentCatalog({ supabase, user: MH_AUTH_USER }),
-        refreshLessonQuizAvailability(),
-        refreshConceptCatalog()
-      ]);
-      DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
-      DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
-      DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
-    } else {
-      invalidateContentCatalogCache();
-    }
+    if (MH_AUTH_USER?.id) await import("./admin-shell-loader.js").then((module) => module.ensureAdminShellForUser({ supabase, user: MH_AUTH_USER })).catch((error) => console.warn("Admin shell bootstrap failed:", error));
+    const [initialCatalog] = await Promise.all([
+      loadContentCatalog({ supabase, user: MH_AUTH_USER }),
+      refreshLessonQuizAvailability(),
+      refreshConceptCatalog()
+    ]);
+    DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
+    DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
+    DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
   } catch (error) {
     if (!isContentAuthRequiredError(error)) {
       CONTENT_BOOT_ERROR = error;
@@ -2067,12 +2060,6 @@ import {
   }
 
   async function reloadAllContentFromSupabase(forceRefresh = false) {
-    if (!MH_AUTH_USER?.id) {
-      clearRuntimeCatalog();
-      invalidateContentCatalogCache();
-      throw new Error("Authentication is required before loading content.");
-    }
-
     const catalog = await loadContentCatalog({
       supabase,
       forceRefresh,
@@ -3680,6 +3667,12 @@ ${details}`);
             ? "Contul autentificat nu are rolul admin."
             : "The signed-in account does not have the admin role."
         );
+        return;
+      }
+
+      if (!adminDrawer) {
+        await (await import("./admin-shell-loader.js")).ensureAdminShellForUser({ supabase, user: activeUser });
+        location.reload();
         return;
       }
 
@@ -6504,7 +6497,7 @@ ${details}`);
     renderMath: MH_render,
     bindMathInputEnhancements: mhBindMathInputEnhancements,
     attachMathToolbar: mhAttachMathToolbar,
-    renderConceptDetails: (problemId) => conceptDetailsHtml("problem", problemId),
+    renderConceptDetails: () => "",
     escapeHtml: esc
   });
 
@@ -7655,22 +7648,25 @@ function openExam(exam){
     }
 
     if (!nextUserId) {
-      clearRuntimeCatalog();
       invalidateContentCatalogCache();
       invalidateConceptCatalogCache();
       invalidateRoadmapCache();
-      roadmapController?.clear();
       clearLocalExamArtifactsOnLogout();
       setAdminButtonVisibility(false, { closeSurfaces: true });
       adminExamRecoveryController?.setAdmin(false);
       roadmapAdminController?.setAdmin(false);
       adminDrawer?.classList.remove("open");
-      mhRemoveContentStatusBanner();
-      buildNestedTree();
-      buildTagPanel();
-      renderCards();
-      drawFilterBar();
-      updateRadarUI();
+      try {
+        await reloadAllContentFromSupabase(true);
+        await roadmapController?.load(true);
+      } catch (error) {
+        CONTENT_BOOT_ERROR = error;
+        mhShowContentStatusBanner({
+          message: LANG === "ro" ? "Conținutul public nu a putut fi încărcat. Reîncearcă." : "Public content could not be loaded. Try again.",
+          isError: true,
+          retry: true
+        });
+      }
       refreshExamLockUi();
       adminExamRecoveryController?.refresh();
       return;
@@ -7721,13 +7717,9 @@ function openExam(exam){
   });
 
   authUiController.start();
-  if (MH_AUTH_USER?.id) {
-    void roadmapController?.load(false).catch((error) => {
-      console.warn("Initial roadmap load failed:", error);
-    });
-  } else {
-    roadmapController?.render();
-  }
+  void roadmapController?.load(false).catch((error) => {
+    console.warn("Initial roadmap load failed:", error);
+  });
   
   /* ===== BOOT SITE IMPORTANT ===== */
   mhUpdateSidebarStaticTexts();

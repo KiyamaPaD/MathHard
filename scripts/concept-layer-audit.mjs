@@ -38,6 +38,7 @@ const gitignore = read(".gitignore");
 
 for (const rpc of [
   "mh_get_concept_catalog",
+  "mh_get_public_concept_catalog",
   "mh_admin_save_concept",
   "mh_admin_replace_concept_prerequisites",
   "mh_admin_replace_content_concepts",

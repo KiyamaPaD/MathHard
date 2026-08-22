@@ -483,18 +483,15 @@ async function moveLesson(lessonId, direction) {
 async function loadChapterOrder() {
   const revision = ++loadRevision;
   const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData?.user?.id) {
-    authUserId = "";
-    chapterRows = [];
-    lessonRows = [];
-    exposeCurriculumOrder();
-    return;
+  if (userError && userError.name !== "AuthSessionMissingError") {
+    console.warn("Could not resolve curriculum-order auth state:", userError);
   }
 
-  authUserId = userData.user.id;
+  authUserId = userData?.user?.id || "__guest__";
+  const guest = authUserId === "__guest__";
   const [chapterResult, lessonResult] = await Promise.all([
-    supabase.rpc(CHAPTER_RPC),
-    supabase.rpc(LESSON_ORDER_RPC)
+    supabase.rpc(guest ? "mh_get_public_chapter_order" : CHAPTER_RPC),
+    supabase.rpc(guest ? "mh_get_public_lesson_order" : LESSON_ORDER_RPC)
   ]);
   if (revision !== loadRevision) return;
 

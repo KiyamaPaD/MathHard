@@ -1,5 +1,7 @@
 import { normalizeRoadmapCatalog } from "./roadmap-model.js";
 
+const GUEST_SCOPE = "__guest__";
+
 let memoryCatalog = null;
 let memoryUserId = "";
 let inFlight = null;
@@ -15,16 +17,18 @@ function requireClient(supabase) {
   }
 }
 
-async function resolveUser(supabase, userOverride = undefined) {
+async function resolveUser(supabase, userOverride = undefined, { allowGuest = false } = {}) {
   requireClient(supabase);
   if (userOverride !== undefined) {
-    if (!userOverride?.id) throw new Error("Authentication is required to load roadmaps.");
-    return userOverride;
+    if (userOverride?.id) return userOverride;
+    if (allowGuest) return null;
+    throw new Error("Authentication is required for this roadmap operation.");
   }
   const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  if (!data?.user?.id) throw new Error("Authentication is required to load roadmaps.");
-  return data.user;
+  if (error && error.name !== "AuthSessionMissingError") throw error;
+  if (data?.user?.id) return data.user;
+  if (allowGuest) return null;
+  throw new Error("Authentication is required for this roadmap operation.");
 }
 
 export function invalidateRoadmapCache() {
@@ -35,9 +39,10 @@ export function invalidateRoadmapCache() {
 }
 
 export async function loadRoadmapCatalog({ supabase, forceRefresh = false, user = undefined } = {}) {
-  user = await resolveUser(supabase, user);
+  user = await resolveUser(supabase, user, { allowGuest: true });
+  const userId = user?.id || GUEST_SCOPE;
 
-  if (memoryUserId && memoryUserId !== user.id) {
+  if (memoryUserId && memoryUserId !== userId) {
     invalidateRoadmapCache();
   }
 
@@ -47,35 +52,36 @@ export async function loadRoadmapCatalog({ supabase, forceRefresh = false, user 
     inFlight = null;
   }
 
-  if (!forceRefresh && memoryCatalog && memoryUserId === user.id) {
+  if (!forceRefresh && memoryCatalog && memoryUserId === userId) {
     return memoryCatalog;
   }
 
-  if (!forceRefresh && inFlight?.userId === user.id) return inFlight.promise;
+  if (!forceRefresh && inFlight?.userId === userId) return inFlight.promise;
 
   const requestEpoch = loadEpoch;
   const promise = (async () => {
-    const { data, error } = await supabase.rpc("mh_get_roadmap_catalog");
+    const rpcName = userId === GUEST_SCOPE ? "mh_get_public_roadmap_catalog" : "mh_get_roadmap_catalog";
+    const { data, error } = await supabase.rpc(rpcName);
     if (error) throw error;
 
     const catalog = normalizeRoadmapCatalog(unwrapRpc(data));
     if (requestEpoch !== loadEpoch) {
-      const newerLoad = inFlight?.userId === user.id && inFlight.epoch > requestEpoch
+      const newerLoad = inFlight?.userId === userId && inFlight.epoch > requestEpoch
         ? inFlight.promise
         : null;
       if (newerLoad) return newerLoad;
-      if (memoryCatalog && memoryUserId === user.id) return memoryCatalog;
+      if (memoryCatalog && memoryUserId === userId) return memoryCatalog;
       return catalog;
     }
 
     memoryCatalog = catalog;
-    memoryUserId = user.id;
+    memoryUserId = userId;
     return catalog;
   })().finally(() => {
     if (inFlight?.promise === promise) inFlight = null;
   });
 
-  inFlight = { userId: user.id, epoch: requestEpoch, promise };
+  inFlight = { userId, epoch: requestEpoch, promise };
   return promise;
 }
 

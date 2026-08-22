@@ -98,7 +98,7 @@ function renderNode(state, language, conceptCatalog) {
   const optional = !node.required
     ? `<span class="mh-roadmap-node-optional">${textFor(language, "opțional", "optional")}</span>`
     : "";
-  const concepts = conceptsForRoadmapNode(conceptCatalog, node);
+  const concepts = node.node_type === "lesson" ? conceptsForRoadmapNode(conceptCatalog, node) : [];
   const conceptChips = concepts.length ? `
     <span class="mh-roadmap-node-concepts" aria-label="${escapeHtml(textFor(language, "Concepte", "Concepts"))}">
       ${concepts.slice(0, 3).map((concept) => `<b>${escapeHtml(conceptLabel(concept, language))}</b>`).join("")}
@@ -203,7 +203,7 @@ export function createRoadmapController({
       if (!nextId || nextId === selectedRoadmapId) return;
       event.target.disabled = true;
       try {
-        await selectRoadmap(supabase, nextId, { user: getUser?.() });
+        if (getUser?.()?.id) await selectRoadmap(supabase, nextId, { user: getUser?.() });
         selectedRoadmapId = nextId;
         render();
       } catch (selectionError) {
@@ -228,10 +228,6 @@ export function createRoadmapController({
 
   function render() {
     const language = currentLanguage();
-    if (!getUser?.()?.id) {
-      root.innerHTML = renderAuthGate(language);
-      return;
-    }
 
     if (loading) {
       root.innerHTML = `
@@ -314,15 +310,6 @@ export function createRoadmapController({
   }
 
   async function load(forceRefresh = false) {
-    if (!getUser?.()?.id) {
-      catalog = { roadmaps: [], selectedRoadmapId: "" };
-      selectedRoadmapId = "";
-      error = null;
-      loading = false;
-      render();
-      return catalog;
-    }
-
     loading = true;
     error = null;
     render();

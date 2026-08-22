@@ -2,6 +2,7 @@ const CACHE_VERSION = 2;
 const CACHE_PREFIX = `mh_concept_catalog_v${CACHE_VERSION}`;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHE_BYTES = 1024 * 1024;
+const GUEST_SCOPE = "__guest__";
 
 let memoryCatalog = null;
 let memoryUserId = "";
@@ -86,16 +87,18 @@ function requireClient(supabase) {
   }
 }
 
-async function resolveUser(supabase, userOverride = undefined) {
+async function resolveUser(supabase, userOverride = undefined, { allowGuest = false } = {}) {
   requireClient(supabase);
   if (userOverride !== undefined) {
-    if (!userOverride?.id) throw new Error("Authentication is required to load concepts.");
-    return userOverride;
+    if (userOverride?.id) return userOverride;
+    if (allowGuest) return null;
+    throw new Error("Authentication is required for this concept operation.");
   }
   const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  if (!data?.user?.id) throw new Error("Authentication is required to load concepts.");
-  return data.user;
+  if (error && error.name !== "AuthSessionMissingError") throw error;
+  if (data?.user?.id) return data.user;
+  if (allowGuest) return null;
+  throw new Error("Authentication is required for this concept operation.");
 }
 
 export function invalidateConceptCatalogCache() {
@@ -118,8 +121,8 @@ export async function loadConceptCatalog({
   forceRefresh = false,
   user = undefined
 } = {}) {
-  const activeUser = await resolveUser(supabase, user);
-  const userId = activeUser.id;
+  const activeUser = await resolveUser(supabase, user, { allowGuest: true });
+  const userId = activeUser?.id || GUEST_SCOPE;
 
   if (memoryUserId && memoryUserId !== userId) invalidateConceptCatalogCache();
   if (forceRefresh) {
@@ -141,7 +144,8 @@ export async function loadConceptCatalog({
 
   const requestEpoch = loadEpoch;
   const promise = (async () => {
-    const { data, error } = await supabase.rpc("mh_get_concept_catalog");
+    const rpcName = userId === GUEST_SCOPE ? "mh_get_public_concept_catalog" : "mh_get_concept_catalog";
+    const { data, error } = await supabase.rpc(rpcName);
     if (error) throw error;
     const catalog = sanitizeCatalog(unwrapRpc(data) || emptyCatalog());
 

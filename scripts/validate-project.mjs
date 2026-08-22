@@ -393,9 +393,15 @@ const adminHistoryControllerSource = readFileSync(resolve(root, "js/admin-histor
 const adminHistoryCss = readFileSync(resolve(root, "css/admin-history.css"), "utf8");
 const gamificationStudioCss = readFileSync(resolve(root, "css/gamification-studio.css"), "utf8");
 const adminStudioCss = readFileSync(resolve(root, "css/admin-studio.css"), "utf8");
+const buildStaticSiteSource = readFileSync(resolve(root, "scripts/build-static-site.mjs"), "utf8");
 
 if (!/id=["']adminBtn["'][^>]*\bhidden\b/i.test(indexHtml)) {
   fail("Admin button must be hidden by default in index.html.");
+}
+if (!buildStaticSiteSource.includes('admin-studio.html') ||
+    !buildStaticSiteSource.includes('id="mhAdminMount"') ||
+    !buildStaticSiteSource.includes("Admin Studio removed from the public HTML")) {
+  fail("Production build must extract Admin Studio from the public index HTML.");
 }
 if (!appSource.includes('from "./content-repository.js"')) {
   fail("app.js must use content-repository.js.");
@@ -409,9 +415,10 @@ if (!appSource.includes('from "./concept-repository.js"') ||
     !appSource.includes("renderContentConceptDetails")) {
   fail("app.js must integrate the canonical Concept Layer without replacing the content catalog.");
 }
-if (!conceptRepositorySource.includes('supabase.rpc("mh_get_concept_catalog")') ||
+if (!conceptRepositorySource.includes('"mh_get_concept_catalog"') ||
+    !conceptRepositorySource.includes('"mh_get_public_concept_catalog"') ||
     !conceptRepositorySource.includes('supabase.rpc("mh_admin_replace_content_concepts"')) {
-  fail("Concept repository is missing the canonical read or mapping RPC.");
+  fail("Concept repository is missing the authenticated/public read contract or mapping RPC.");
 }
 if (!conceptModelSource.includes("normalizeConceptCatalog") ||
     !conceptModelSource.includes("renderContentConceptDetails") ||
@@ -512,11 +519,10 @@ if (!profileCss.includes(".profile-completion-ring") ||
     !profileCss.includes(".profile-focus-card")) {
   fail("Phase 17D profile visual system is incomplete.");
 }
-if (!contentRepositorySource.includes('supabase.rpc("mh_get_content_catalog")')) {
-  fail("content-repository.js must load the authenticated catalog through mh_get_content_catalog().");
-}
-if (!contentRepositorySource.includes("MathHardAuthRequiredError")) {
-  fail("content-repository.js must fail closed when no authenticated session exists.");
+if (!contentRepositorySource.includes('"mh_get_content_catalog"') ||
+    !contentRepositorySource.includes('"mh_get_public_content_catalog"') ||
+    !contentRepositorySource.includes('const GUEST_SCOPE = "__guest__"')) {
+  fail("content-repository.js must separate authenticated and student-safe guest catalog RPCs.");
 }
 if (/supabase\.from\(["']mh_(lessons|problems|exams)["']\)/.test(contentRepositorySource)) {
   fail("Normal catalog loading must not query content tables directly after Phase 10.");
@@ -738,8 +744,9 @@ if (!appSource.includes('from "./roadmap-controller.js"') || !appSource.includes
 if (!appSource.includes("roadmapController?.refreshProgress()")) {
   fail("Roadmap progress must refresh when canonical lesson/problem/exam progress changes.");
 }
-if (!roadmapRepositorySource.includes('supabase.rpc("mh_get_roadmap_catalog")')) {
-  fail("roadmap-repository.js must load the graph through mh_get_roadmap_catalog().");
+if (!roadmapRepositorySource.includes('"mh_get_roadmap_catalog"') ||
+    !roadmapRepositorySource.includes('"mh_get_public_roadmap_catalog"')) {
+  fail("roadmap-repository.js must separate authenticated and public read-only roadmap RPCs.");
 }
 if (!roadmapRepositorySource.includes('supabase.rpc("mh_select_roadmap"')) {
   fail("roadmap selection must persist through mh_select_roadmap().");

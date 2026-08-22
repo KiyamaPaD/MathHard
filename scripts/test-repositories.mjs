@@ -511,7 +511,7 @@ function makeContentClient({ rpcError = null, authenticated = true } = {}) {
       }
     },
     async rpc(name) {
-      assert.equal(name, "mh_get_content_catalog");
+      assert.equal(name, authenticated ? "mh_get_content_catalog" : "mh_get_public_content_catalog");
       if (rpcError) return { data: null, error: new Error(rpcError) };
       return { data: catalog, error: null };
     }
@@ -547,12 +547,16 @@ await assert.rejects(
   /offline/i
 );
 
-await assert.rejects(
-  () => loadContentCatalog({
-    supabase: makeContentClient({ authenticated: false })
-  }),
-  /Authentication is required/i
-);
+invalidateContentCatalogCache();
+const guestCatalog = await loadContentCatalog({
+  supabase: makeContentClient({ authenticated: false })
+});
+assert.deepEqual(catalogTotals(guestCatalog), {
+  lessonsTotal: 1,
+  problemsTotal: 1,
+  examsTotal: 1
+});
+assert.equal(getContentCatalogDiagnostics().userId, "");
 
 // Fresh memory cache expires after the configured TTL.
 invalidateContentCatalogCache();

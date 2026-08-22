@@ -4,6 +4,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_CACHE_BYTES = 4 * 1024 * 1024;
 const MAX_USER_ID_LENGTH = 160;
+const GUEST_SCOPE = "__guest__";
 const SENSITIVE_CATALOG_KEY = /^(?:answer|answers|answer_key|correct_answer|expected_answer|is_correct|hint(?:1|2)?(?:_ro|_en)?|solution(?:_ro|_en)?|explanation_(?:simple|boss|academic)(?:_ro|_en)?|access_token|refresh_token|password|secret)$/i;
 
 let memorySnapshot = null;
@@ -214,22 +215,17 @@ function writeStoredSnapshot(snapshot) {
   }
 }
 
-async function resolveAuthenticatedUser(supabase, userOverride = undefined) {
-  if (userOverride !== undefined) {
-    if (!userOverride?.id) throw new MathHardAuthRequiredError();
-    return userOverride;
-  }
-
+async function resolveCatalogScope(supabase, userOverride = undefined) {
   if (!supabase?.auth) {
     throw new Error("Supabase client is required to load the MathHard catalog.");
+  }
+  if (userOverride !== undefined) {
+    return userOverride?.id ? String(userOverride.id) : GUEST_SCOPE;
   }
 
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
-
-  const user = data?.session?.user || null;
-  if (!user?.id) throw new MathHardAuthRequiredError();
-  return user;
+  return data?.session?.user?.id ? String(data.session.user.id) : GUEST_SCOPE;
 }
 
 function unwrapCatalogRpcPayload(data) {
@@ -241,7 +237,8 @@ function unwrapCatalogRpcPayload(data) {
 }
 
 async function fetchCatalogRpc(supabase, userId) {
-  const { data, error } = await supabase.rpc("mh_get_content_catalog");
+  const rpcName = userId === GUEST_SCOPE ? "mh_get_public_content_catalog" : "mh_get_content_catalog";
+  const { data, error } = await supabase.rpc(rpcName);
   if (error) throw error;
 
   const catalog = sanitizeCatalog(unwrapCatalogRpcPayload(data));
@@ -286,7 +283,7 @@ export function getContentCatalogDiagnostics() {
   const snapshot = memorySnapshot || makeSnapshot(emptyCatalog(), { status: "empty" });
   return {
     totals: catalogTotals(snapshot.catalog),
-    userId: snapshot.userId ? "[authenticated]" : "",
+    userId: snapshot.userId && snapshot.userId !== GUEST_SCOPE ? "[authenticated]" : "",
     createdAt: Number(snapshot.createdAt || 0),
     status: snapshot.status,
     staleGroups: snapshot.status === "degraded"
@@ -301,8 +298,7 @@ export async function loadContentCatalog({
   forceRefresh = false,
   user = undefined
 } = {}) {
-  const authenticatedUser = await resolveAuthenticatedUser(supabase, user);
-  const userId = authenticatedUser.id;
+  const userId = await resolveCatalogScope(supabase, user);
 
   if (memorySnapshot?.userId && memorySnapshot.userId !== userId) {
     loadEpoch += 1;
