@@ -7071,8 +7071,8 @@ function openExam(exam){
   function activateAttemptUi() {
     renderExamItems(false);
     setLocked(false);
-    hoursSel.disabled = true;
-    startBtn.disabled = true;
+    hoursSel.disabled = true; hoursSel.style.display = "none";
+    startBtn.disabled = true; startBtn.style.display = "none";
     submitBtn.style.display = "inline-flex";
     submitBtn.disabled = false;
     updateExamProgress();
@@ -7100,14 +7100,14 @@ function openExam(exam){
       clearExamItemResults(exam.id);
       renderHiddenUntilStart();
       setStatus("");
-      startBtn.disabled = false;
-      hoursSel.disabled = false;
+      startBtn.disabled = false; startBtn.style.display = "";
+      hoursSel.disabled = false; hoursSel.style.display = "";
     } catch (error) {
       console.error("Secure exam resume failed:", error);
       renderHiddenUntilStart();
       setStatus(LANG === "ro" ? "Nu s-a putut verifica tentativa activă. Reîncearcă după reîncărcarea paginii." : "The active attempt could not be checked. Retry after reloading the page.", "bad");
-      startBtn.disabled = false;
-      hoursSel.disabled = false;
+      startBtn.disabled = false; startBtn.style.display = "";
+      hoursSel.disabled = false; hoursSel.style.display = "";
     }
   }
 

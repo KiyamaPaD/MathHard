@@ -270,7 +270,13 @@ function buildPreviewUrl(mode) {
 function openPerspective(mode) {
   const safe = safeMode(mode);
   if (!safe || typeof window === "undefined") return;
-  window.open(buildPreviewUrl(safe), "_blank", "noopener,noreferrer");
+
+  const previewUrl = buildPreviewUrl(safe);
+  const previewWindow = window.open(previewUrl, "_blank");
+
+  // Mobile browsers may block a new tab. Falling back to the current tab keeps
+  // Preview usable, and the ribbon can still restore the normal session.
+  if (!previewWindow) window.location.assign(previewUrl);
 }
 
 function injectAdminControls() {
@@ -344,10 +350,17 @@ function installRibbon(mode) {
     const clean = new URL(window.location.href);
     clean.searchParams.delete(PREVIEW_PARAM);
 
-    window.close();
+    const opener = window.opener;
+    if (opener && !opener.closed) {
+      try { opener.focus(); } catch {}
+      window.close();
+    }
+
+    // Some mobile browsers keep script-opened tabs alive even after close().
+    // Always provide a deterministic way out of Preview in the current tab.
     setTimeout(() => {
       if (!window.closed) window.location.replace(clean.href);
-    }, 80);
+    }, 120);
   });
 
   const observer = new MutationObserver(refreshLabels);
