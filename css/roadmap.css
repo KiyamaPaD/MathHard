@@ -572,3 +572,61 @@
     width: max-content;
   }
 }
+
+/* 091 — collapsible roadmap stages */
+.mh-roadmap-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.mh-roadmap-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color .16s ease, color .16s ease, background .16s ease;
+}
+
+.mh-roadmap-section-toggle:hover,
+.mh-roadmap-section-toggle:focus-visible {
+  color: var(--text);
+  border-color: rgba(99,102,241,.5);
+  background: rgba(99,102,241,.07);
+}
+
+.mh-roadmap-section-body[hidden] {
+  display: none !important;
+}
+
+.mh-roadmap-section-card.is-collapsed .mh-roadmap-section-head {
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .mh-roadmap-section-head {
+    align-items: flex-start;
+  }
+
+  .mh-roadmap-section-actions {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .mh-roadmap-section-toggle {
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: .74rem;
+  }
+}

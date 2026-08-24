@@ -151,23 +151,41 @@ function renderMathHardCurriculumNotice(roadmap, language) {
   `;
 }
 
-function renderSection(section, language, conceptCatalog) {
+function renderSection(section, language, conceptCatalog, { collapsed = false, collapseKey = "", bodyId = "" } = {}) {
   const stats = section.progress;
+  const toggleLabel = collapsed
+    ? textFor(language, "Deschide", "Expand")
+    : textFor(language, "Închide", "Collapse");
   return `
-    <section class="mh-roadmap-section-card">
+    <section class="mh-roadmap-section-card ${collapsed ? "is-collapsed" : ""}">
       <header class="mh-roadmap-section-head">
         <div>
           <span class="mh-roadmap-section-kicker">${textFor(language, "Etapă", "Stage")} ${Number(section.position || 0) + 1}</span>
           <h3>${escapeHtml(section.title || section.section_key)}</h3>
           ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
         </div>
-        <div class="mh-roadmap-section-score">${stats.done}/${stats.total}</div>
+        <div class="mh-roadmap-section-actions">
+          <div class="mh-roadmap-section-score">${stats.done}/${stats.total}</div>
+          <button
+            class="mh-roadmap-section-toggle"
+            type="button"
+            data-roadmap-section-toggle="${escapeHtml(collapseKey)}"
+            aria-expanded="${collapsed ? "false" : "true"}"
+            aria-controls="${escapeHtml(bodyId)}"
+            title="${escapeHtml(toggleLabel)}"
+          >
+            <span aria-hidden="true">${collapsed ? "⌄" : "⌃"}</span>
+            <span>${escapeHtml(toggleLabel)}</span>
+          </button>
+        </div>
       </header>
-      <div class="mh-roadmap-section-progress" aria-label="${stats.percent}%">
-        <i style="width:${Math.max(0, Math.min(100, stats.percent))}%"></i>
-      </div>
-      <div class="mh-roadmap-node-list">
-        ${section.nodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}
+      <div class="mh-roadmap-section-body" id="${escapeHtml(bodyId)}" ${collapsed ? "hidden" : ""}>
+        <div class="mh-roadmap-section-progress" aria-label="${stats.percent}%">
+          <i style="width:${Math.max(0, Math.min(100, stats.percent))}%"></i>
+        </div>
+        <div class="mh-roadmap-node-list">
+          ${section.nodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}
+        </div>
       </div>
     </section>
   `;
@@ -190,6 +208,11 @@ export function createRoadmapController({
   let selectedRoadmapId = "";
   let loading = false;
   let error = null;
+  const collapsedSections = new Set();
+
+  function sectionCollapseKey(section) {
+    return `${selectedRoadmapId}:${section.id || section.section_key || section.position || 0}`;
+  }
 
   function currentLanguage() {
     return getLanguage?.() === "en" ? "en" : "ro";
@@ -237,6 +260,16 @@ export function createRoadmapController({
     root.querySelector("[data-roadmap-next]")?.addEventListener("click", () => {
       if (view.nextNode) onOpenContent(view.nextNode.node, view.nextNode);
     });
+
+    for (const button of root.querySelectorAll("[data-roadmap-section-toggle]")) {
+      button.addEventListener("click", () => {
+        const key = String(button.dataset.roadmapSectionToggle || "");
+        if (!key) return;
+        if (collapsedSections.has(key)) collapsedSections.delete(key);
+        else collapsedSections.add(key);
+        render();
+      });
+    }
 
     for (const button of root.querySelectorAll("[data-roadmap-node-id]")) {
       button.addEventListener("click", () => {
@@ -325,7 +358,14 @@ export function createRoadmapController({
       </div>
 
       <div class="mh-roadmap-sections">
-        ${view.sections.map((section) => renderSection(section, language, conceptCatalog)).join("")}
+        ${view.sections.map((section, index) => {
+          const collapseKey = sectionCollapseKey(section);
+          return renderSection(section, language, conceptCatalog, {
+            collapsed: collapsedSections.has(collapseKey),
+            collapseKey,
+            bodyId: `mh-roadmap-section-body-${index}`
+          });
+        }).join("")}
       </div>
     `;
 
