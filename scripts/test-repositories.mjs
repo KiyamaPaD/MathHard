@@ -76,6 +76,15 @@ const {
   submitSecureExamAttempt
 } = await importBrowserModule("js/secure-exam-repository.js");
 const {
+  loadPracticeReplayAnalytics,
+  loadProblemReplayState,
+  requestProblemReplayHint,
+  revealProblemReplayAnswer,
+  startProblemReplay,
+  submitProblemReplayAnswer
+} = await importBrowserModule("js/practice-replay-repository.js");
+const { applyTagCatalog, normalizeTagCatalog } = await importBrowserModule("js/tag-repository.js");
+const {
   getChapterLabel,
   getTagLabel,
   normalizeExam,
@@ -706,17 +715,17 @@ const secureExamCalls = [];
 const secureExamClient = {
   async rpc(name, args) {
     secureExamCalls.push({ name, args });
-    if (name === "mh_start_secure_exam_attempt") {
-      return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id, status: "active" }, error: null };
+    if (name === "mh_start_exam_session") {
+      return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id, status: "active", practice_replay: false }, error: null };
     }
-    if (name === "mh_get_active_exam_attempt") {
-      return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id || "exam-1", status: "active" }, error: null };
+    if (name === "mh_get_active_exam_session") {
+      return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id || "exam-1", status: "active", practice_replay: false }, error: null };
     }
-    if (name === "mh_save_secure_exam_answer") {
-      return { data: { saved: true, saved_at: "2026-07-26T10:00:00Z" }, error: null };
+    if (name === "mh_save_exam_session_answer") {
+      return { data: { saved: true, saved_at: "2026-07-26T10:00:00Z", practice_replay: false }, error: null };
     }
-    if (name === "mh_submit_secure_exam_attempt") {
-      return { data: { attempt_id: args.p_attempt_id, score: 80, total_points: 100, passed: true }, error: null };
+    if (name === "mh_submit_exam_session") {
+      return { data: { attempt_id: args.p_attempt_id, score: 80, total_points: 100, passed: true, practice_replay: false }, error: null };
     }
     return { data: { attempt_id: args.p_attempt_id, cancelled: true }, error: null };
   }
@@ -729,12 +738,59 @@ await submitSecureExamAttempt(secureExamClient, "attempt-1");
 await cancelSecureExamAttempt(secureExamClient, "attempt-1");
 
 assert.deepEqual(secureExamCalls.map((call) => call.name), [
-  "mh_start_secure_exam_attempt",
-  "mh_get_active_exam_attempt",
-  "mh_save_secure_exam_answer",
-  "mh_submit_secure_exam_attempt",
+  "mh_start_exam_session",
+  "mh_get_active_exam_session",
+  "mh_save_exam_session_answer",
+  "mh_submit_exam_session",
   "mh_cancel_secure_exam_attempt"
 ]);
+
+const replayCalls = [];
+const replayClient = {
+  async rpc(name, args) {
+    replayCalls.push({ name, args });
+    if (name === "mh_get_problem_replay_state") return { data: { eligible: true, replay_count: 2 }, error: null };
+    if (name === "mh_start_problem_replay") return { data: { replay_id: "replay-1", status: "active" }, error: null };
+    if (name === "mh_submit_problem_replay_answer") return { data: { ok: true, xp_earned: 0 }, error: null };
+    if (name === "mh_get_problem_replay_hint") return { data: { available: true, hint_number: args.p_hint_number, xp_earned: 0 }, error: null };
+    if (name === "mh_reveal_problem_replay_answer") return { data: { answer: "42", xp_earned: 0 }, error: null };
+    return { data: { problem_replays: 2, exam_replays: 1, total_replays: 3, recent: [] }, error: null };
+  }
+};
+await loadProblemReplayState(replayClient, "problem-replay");
+await startProblemReplay(replayClient, "problem-replay");
+assert.equal((await submitProblemReplayAnswer(replayClient, "replay-1", "42")).xp_earned, 0);
+assert.equal((await requestProblemReplayHint(replayClient, "replay-1", 1, "ro")).xp_earned, 0);
+assert.equal((await revealProblemReplayAnswer(replayClient, "replay-1")).xp_earned, 0);
+assert.equal((await loadPracticeReplayAnalytics(replayClient, 12)).total_replays, 3);
+assert.deepEqual(replayCalls.map((call) => call.name), [
+  "mh_get_problem_replay_state",
+  "mh_start_problem_replay",
+  "mh_submit_problem_replay_answer",
+  "mh_get_problem_replay_hint",
+  "mh_reveal_problem_replay_answer",
+  "mh_get_practice_replay_analytics"
+]);
+
+const tagData = {
+  lessons: [{ id: "lesson-a", tags: ["legacy-one"] }],
+  problems: [{ id: "problem-a", tags: [] }],
+  exams: [{ id: "exam-a", tags: [] }]
+};
+const normalizedTags = normalizeTagCatalog({
+  tags: [{ id: "algebra", label_ro: "Algebră", label_en: "Algebra", position: 0, active: true }],
+  mappings: [
+    { content_type: "lesson", content_id: "lesson-a", tag_id: "algebra", position: 0 },
+    { content_type: "problem", content_id: "problem-a", tag_id: "algebra", position: 0 },
+    { content_type: "exam", content_id: "exam-a", tag_id: "algebra", position: 0 }
+  ]
+});
+applyTagCatalog(tagData, normalizedTags);
+assert.deepEqual(tagData.lessons[0].legacy_tags, ["legacy-one"]);
+assert.deepEqual(tagData.lessons[0].tags, ["algebra"]);
+assert.deepEqual(tagData.problems[0].tags, ["algebra"]);
+assert.deepEqual(tagData.exams[0].tags, ["algebra"]);
+assert.deepEqual(tagData.problems[0].tag_labels, ["Algebră", "Algebra"]);
 
 const examStorage = new SessionStorageMock();
 let examNow = 1_000;

@@ -113,7 +113,7 @@ function renderRow(row, { own = false } = {}) {
   const profileUrl = leaderboardProfileUrl(row.username, location.origin);
   return `<tr class="${row.isCurrentUser || own ? "is-current" : ""}">
     <td data-label="${escapeHtml(t().position)}"><strong class="mh-community-rank-position">#${formatNumber(row.rank)}</strong></td>
-    <td data-label="${escapeHtml(t().profile)}"><a class="mh-community-rank-user" href="${escapeHtml(profileUrl)}">${avatarMarkup(row)}<span class="mh-community-rank-identity"><strong>${escapeHtml(row.displayName || row.username)}</strong><small>@${escapeHtml(row.username)}</small>${badgeMarkup(row)}</span></a></td>
+    <td data-label="${escapeHtml(t().profile)}"><a class="mh-community-rank-user" href="${escapeHtml(profileUrl)}">${avatarMarkup(row)}<span class="mh-community-rank-identity"><strong>${escapeHtml(row.displayName || row.username)}</strong><small>@${escapeHtml(row.username)}</small>${badgeMarkup(row)}<span class="mh-community-full-profile">${language() === "en" ? "Full Profile" : "Profil complet"}</span></span></a></td>
     <td data-label="${escapeHtml(t().level)}"><span class="mh-community-rank-level">${formatNumber(row.level)}</span></td>
     <td data-label="${escapeHtml(metricLabel(query.metric))}"><strong>${formatNumber(row.value)}</strong></td>
     <td data-label="${escapeHtml(t().xp)}">${formatNumber(row.totalXp)}</td><td data-label="${escapeHtml(t().problems)}">${formatNumber(row.problemsSolved)}</td>

@@ -103,7 +103,7 @@ import {
   let adminDraftController = null;
   let gamificationAdminController = null;
   let communityAdminController = null;
-  let adminHistoryController = null;
+  let adminHistoryController = null, tagAdminController = null;
   let learningWorkspaceController = null;
   let lessonQuizAdminController = null;
   let adminRuntime = null;
@@ -126,7 +126,7 @@ import {
       import("./admin-history-repository.js"),
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
-      import("./concept-admin-controller.js"),
+      import("./concept-admin-controller.js"), import("./tag-admin-controller.js"),
       import("./content-quality-admin-controller.js?v=5b1"), import("./content-batch-import-controller.js?v=5b1")
     ]).then(([
       lessonQuizModule,
@@ -137,7 +137,7 @@ import {
       adminHistoryRepositoryModule,
       gamificationAdminModule,
       communityAdminModule,
-      conceptAdminModule,
+      conceptAdminModule, tagAdminModule,
       contentQualityAdminModule, contentBatchImportModule
     ]) => {
       adminRuntime = {
@@ -149,7 +149,7 @@ import {
         ...adminHistoryRepositoryModule,
         ...gamificationAdminModule,
         ...communityAdminModule,
-        ...conceptAdminModule,
+        ...conceptAdminModule, ...tagAdminModule,
         ...contentQualityAdminModule, ...contentBatchImportModule
       };
       return adminRuntime;
@@ -232,6 +232,8 @@ import {
       escapeHtml: esc
     });
   }
+  async function refreshTagCatalog(){ try{ const runtime=await import("./tag-repository.js"); return await runtime.hydrateTagCatalog(supabase,DATA); }catch(error){ console.warn("Tag catalogue unavailable:",error); return null; } }
+  function mhTagLabel(tag){ const row=DATA.tagCatalog?.tags?.find((x)=>x.id===tag); return row ? (LANG==="en"?row.label_en:row.label_ro) : getTagLabel(tag,LANG); }
   try {
     const { data: initialAuthData, error: initialAuthError } = await supabase.auth.getSession();
     if (initialAuthError) throw initialAuthError;
@@ -245,6 +247,7 @@ import {
     DATA.lessons.push(...(initialCatalog.lessons || []).map(normalizeLesson));
     DATA.problems.push(...(initialCatalog.problems || []).map(normalizeProblem));
     DATA.exams.push(...(initialCatalog.exams || []).map(normalizeExam));
+    await refreshTagCatalog();
   } catch (error) {
     if (!isContentAuthRequiredError(error)) {
       CONTENT_BOOT_ERROR = error;
@@ -1591,6 +1594,7 @@ import {
     q: "",
     minDiff: 0,
     maxDiff: 5,
+    exactStars: null,
     byLessonId: null,
     tag: null,
     problemSort: "easy-asc",
@@ -1607,6 +1611,7 @@ import {
     const qEl = document.getElementById("q");
     const minEl = document.getElementById("minDiff");
     const maxEl = document.getElementById("maxDiff");
+    const exactEl = document.getElementById("exactStars");
     const sortEl = document.getElementById("problemSort");
     const olympBadge = document.getElementById("olympOnlyState");
     const olympLevelEl = document.getElementById("olympLevel");
@@ -1614,6 +1619,7 @@ import {
     if (qEl) qEl.value = filter.q || "";
     if (minEl) minEl.value = filter.minDiff;
     if (maxEl) maxEl.value = filter.maxDiff;
+    if (exactEl) exactEl.value = filter.exactStars ?? "";
     if (sortEl) sortEl.value = filter.problemSort || "easy-asc";
     if (olympBadge) olympBadge.textContent = filter.olympOnly ? "ON" : "OFF";
     if (olympLevelEl) olympLevelEl.value = filter.olympLevel || "";
@@ -1635,6 +1641,7 @@ import {
     if (!keepDifficulty) {
       filter.minDiff = 0;
       filter.maxDiff = 5;
+      filter.exactStars = null;
     }
 
     mhSyncFilterInputs();
@@ -1686,15 +1693,13 @@ import {
     const fakeSearchItem = {
       title_ro: E.title_ro || "",
       title_en: E.title_en || "",
-      tags: [E.type || "", String(E.year || "")]
+      tags: [E.type || "", String(E.year || ""), ...(E.tags || []), ...(E.tag_labels || [])]
     };
 
     if (!searchMatch(fakeSearchItem)) return false;
 
-    if (filter.examType && String(E.type || "").toUpperCase() !== String(filter.examType).toUpperCase()) {
-      return false;
-    }
-
+    if (filter.examType && String(E.type || "").toUpperCase() !== String(filter.examType).toUpperCase()) return false;
+    if (filter.tag && !hasTag(E)) return false;
     return true;
   }
 
@@ -2069,6 +2074,7 @@ import {
     replaceCatalogTarget(DATA.lessons, catalog.lessons, normalizeLesson);
     replaceCatalogTarget(DATA.problems, catalog.problems, normalizeProblem);
     replaceCatalogTarget(DATA.exams, catalog.exams, normalizeExam);
+    await refreshTagCatalog();
     await Promise.all([
       refreshLessonQuizAvailability(),
       refreshConceptCatalog(forceRefresh)
@@ -2714,7 +2720,8 @@ import {
     setVal("mh_id", item.id);
     setVal("mh_grade", item.grade);
     setVal("mh_chapter", item.chapter_ro ?? item.chapter_en ?? item.chapter);
-    setVal("mh_tags", Array.isArray(item.tags) ? item.tags.join(", ") : "");
+    const editorTags = type === "lesson" && Array.isArray(item.legacy_tags) ? item.legacy_tags : item.tags;
+    setVal("mh_tags", Array.isArray(editorTags) ? editorTags.join(", ") : "");
     setVal("mh_concept_ids", conceptIdsForItem(item, type).join(", "));
 
     setVal("mh_title_ro", item.title_ro);
@@ -3320,6 +3327,8 @@ ${details}`);
         });
       }
 
+      if (!tagAdminController) tagAdminController = runtime.createTagAdminController({ host: document.getElementById("mhTagAdminStudio"), supabase, getCatalog:()=>DATA, onChanged:async()=>{ await refreshTagCatalog(); buildTagPanel(); renderCards(); mhRenderAdminList(); } });
+
       if (!contentQualityAdminController) {
         contentQualityAdminController = runtime.createContentQualityAdminController({
           host: document.getElementById("mhContentQualityAdminStudio"),
@@ -3381,6 +3390,7 @@ ${details}`);
             if (panelName === "gamification") void gamificationAdminController?.load();
             if (panelName === "community") void communityAdminController?.load();
             if (panelName === "concepts") void conceptAdminController?.load();
+            if (panelName === "tags") void tagAdminController?.load();
             if (panelName === "quality") void contentQualityAdminController?.load();
             if (panelName === "history") void adminHistoryController?.load();
           },
@@ -3525,7 +3535,7 @@ ${details}`);
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
       communityAdminController?.setAdmin(false);
-      conceptAdminController?.setAdmin(false);
+      conceptAdminController?.setAdmin(false); tagAdminController?.setAdmin(false);
       contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
     }
@@ -3617,7 +3627,7 @@ ${details}`);
     roadmapAdminController?.setAdmin(isAdmin);
     gamificationAdminController?.setAdmin(isAdmin);
     communityAdminController?.setAdmin(isAdmin);
-    conceptAdminController?.setAdmin(isAdmin);
+    conceptAdminController?.setAdmin(isAdmin); tagAdminController?.setAdmin(isAdmin);
     contentQualityAdminController?.setAdmin(isAdmin);
     adminHistoryController?.setAdmin(isAdmin);
     return isAdmin;
@@ -3685,7 +3695,7 @@ ${details}`);
       roadmapAdminController?.setAdmin(true);
       gamificationAdminController?.setAdmin(true);
       communityAdminController?.setAdmin(true);
-      conceptAdminController?.setAdmin(true);
+      conceptAdminController?.setAdmin(true); tagAdminController?.setAdmin(true);
       contentQualityAdminController?.setAdmin(true);
       adminHistoryController?.setAdmin(true);
       adminDrawer?.classList.add("open");
@@ -3711,7 +3721,7 @@ ${details}`);
     roadmapAdminController?.setAdmin(false);
     gamificationAdminController?.setAdmin(false);
     communityAdminController?.setAdmin(false);
-    conceptAdminController?.setAdmin(false);
+    conceptAdminController?.setAdmin(false); tagAdminController?.setAdmin(false);
     contentQualityAdminController?.setAdmin(false);
     invalidateContentCatalogCache();
     invalidateConceptCatalogCache();
@@ -4156,7 +4166,7 @@ ${details}`);
   /* ===== Olimpiadă — detecție & nivel ===== */
   function isOlympiad(P){
     const L = DATA.lessons.find(x=>x.id===P.lessonId) || {};
-    const blob = ((P.source||"")+" "+(P.title_ro||"")+" "+(P.title_en||"")+" "+(L.tags||[]).join(" ")).toLowerCase();
+    const blob = ((P.source||"")+" "+(P.title_ro||"")+" "+(P.title_en||"")+" "+[...(P.tags||[]),...(P.tag_labels||[]),...(L.tags||[]),...(L.tag_labels||[])].join(" ")).toLowerCase();
     const bySource = /(olimpiad|olymp|onm|imo|jbmo|bmo|concurs|shortlist)/i.test(blob);
     const byGrade = /^ol-/.test((L.grade||"").toLowerCase());
     const byTag   = (L.tags||[]).some(t=>/olimpiad/i.test(t));
@@ -4919,15 +4929,6 @@ ${details}`);
     const root = document.getElementById("treeNested");
     root.innerHTML = "";
 
-    if (isGuestContentLocked()) {
-      root.innerHTML = `
-        <div class="leaf" style="cursor:default; opacity:.9; border:1px dashed var(--border); border-radius:12px; padding:10px;">
-          ${mhUi("login_structure")}
-        </div>
-      `;
-      return;
-    }
-
     const byGrade = {};
     DATA.lessons.forEach(L => {
       if (!byGrade[L.grade]) byGrade[L.grade] = {};
@@ -5182,20 +5183,6 @@ ${details}`);
     const host = document.getElementById("tagPanel");
     host.innerHTML = "";
 
-    if (isGuestContentLocked()) {
-      host.innerHTML = `
-        <details open>
-          <summary>🏷️ <b>${mhUi("tags")}</b></summary>
-          <div class="branch">
-            <div class="leaf" style="cursor:default; opacity:.9;">
-              ${mhUi("login_tags")}
-            </div>
-          </div>
-        </details>
-      `;
-      return;
-    }
-
     const box = document.createElement("details");
     box.open = false;
     box.innerHTML = `<summary>🏷️ <b>${mhUi("tags")}</b></summary>`;
@@ -5204,7 +5191,7 @@ ${details}`);
     br.className = "branch";
 
     const allTags = new Set();
-    DATA.lessons.forEach(L => (L.tags || []).forEach(t => allTags.add(t)));
+    [...DATA.lessons,...DATA.problems,...DATA.exams].forEach(item => (item.tags || []).forEach(t => allTags.add(t)));
 
     // globale
     const detG = document.createElement("details");
@@ -5219,7 +5206,7 @@ ${details}`);
       .forEach(tag => {
         const a = document.createElement("a");
         a.className = "leaf";
-        a.textContent = `#${getTagLabel(tag, LANG)}`;
+        a.textContent = `#${mhTagLabel(tag)}`;
         a.onclick = () => {
           filter.tag = tag;
           TAB = "problems";
@@ -5283,7 +5270,7 @@ ${details}`);
               (L.tags || []).forEach(tag => {
                 const a = document.createElement("a");
                 a.className = "leaf";
-                a.textContent = `#${getTagLabel(tag, LANG)}`;
+                a.textContent = `#${mhTagLabel(tag)}`;
                 a.onclick = () => {
                   filter.tag = tag;
                   filter.byLessonId = L.id;
@@ -5328,7 +5315,7 @@ ${details}`);
     const text = (
       (item.title_ro || "") + " " +
       (item.title_en || "") + " " +
-      getTagSearchBlob(item.tags || [])
+      getTagSearchBlob([...(item.tags || []), ...(item.tag_labels || [])])
     ).toLowerCase();
     return text.includes(q);
   }
@@ -5356,6 +5343,7 @@ ${details}`);
 
   function passProblem(P){
     if(P.difficulty < filter.minDiff || P.difficulty > filter.maxDiff) return false;
+    if(filter.exactStars !== null && Number(P.difficulty) !== filter.exactStars) return false;
 
     const L = DATA.lessons.find(x => x.id === P.lessonId) || {};
     const src = (P.source || "");
@@ -5378,7 +5366,7 @@ ${details}`);
     }
 
     if(filter.byLessonId && P.lessonId !== filter.byLessonId) return false;
-    if(filter.tag && !hasTag(L)) return false;
+    if(filter.tag && !hasTag(P) && !hasTag(L)) return false;
 
     if(filter.q.trim()){
       const text = (
@@ -5386,7 +5374,7 @@ ${details}`);
         (P.title_en || "") + " " +
         (P.statement_ro || "") + " " +
         (P.statement_en || "") + " " +
-        getTagSearchBlob(L.tags || [])
+        getTagSearchBlob([...(P.tags || []), ...(P.tag_labels || []), ...(L.tags || []), ...(L.tag_labels || [])])
       ).toLowerCase();
 
       return text.includes(filter.q.trim().toLowerCase());
@@ -5397,7 +5385,7 @@ ${details}`);
 
   function lessonMeta(L){
     const chips = (L.tags || [])
-      .map(t => `<span class="tag">#${esc(getTagLabel(t, LANG))}</span>`)
+      .map(t => `<span class="tag">#${esc(mhTagLabel(t))}</span>`)
       .join("");
 
     return `<div class="meta">${chips}</div>`;
@@ -5635,24 +5623,6 @@ ${details}`);
     const progressRow = document.getElementById("progressRow");
     const pagWrap = document.querySelector(".paginate");
 
-    if (isGuestContentLocked()) {
-      box.innerHTML = getGuestLockCardHTML();
-
-      if (progressRow) progressRow.style.display = "none";
-      if (pagWrap) pagWrap.style.display = "none";
-
-      const filterBar = document.getElementById("filterBar");
-      if (filterBar) {
-        filterBar.innerHTML = "";
-        filterBar.style.display = "none";
-      }
-
-      const sortBox = document.getElementById("problemSortBox");
-      if (sortBox) sortBox.style.display = "none";
-
-      return;
-    }
-
     // tab special: XP
     if (TAB === "xp"){
       if (progressRow) progressRow.style.display = "none";
@@ -5818,6 +5788,10 @@ ${details}`);
       chips.push(`<span class="chipbtn">🎓 ${esc(filter.gradeSet.join(", "))}</span>`);
     }
 
+    if (filter.exactStars !== null){
+      chips.push(`<span class="chipbtn">★ ${LANG === "ro" ? "Exact" : "Exact"}: <b>${filter.exactStars}★</b></span>`);
+    }
+
     if (filter.examType){
       chips.push(`<span class="chipbtn">📑 ${LANG === "ro" ? "Examene" : "Exams"}: <b>${esc(filter.examType)}</b></span>`);
     }
@@ -5831,7 +5805,7 @@ ${details}`);
     }
 
     if (filter.tag){
-      chips.push(`<span class="chipbtn">🏷️ #${esc(getTagLabel(filter.tag, LANG))}</span>`);
+      chips.push(`<span class="chipbtn">🏷️ #${esc(mhTagLabel(filter.tag))}</span>`);
     }
 
     if (filter.q.trim()){
@@ -6721,14 +6695,6 @@ function openExam(exam){
     return;
   }
 
-  void logLearningEvent(
-    supabase,
-    "exam_opened",
-    "exam",
-    exam.id,
-    { language: LANG }
-  ).catch((error) => console.warn("exam_opened event failed:", error));
-
   const title = (LANG === "ro" ? exam.title_ro : exam.title_en) || exam.title_ro || exam.title_en || exam.id;
   let runtimeExam = {
     ...exam,
@@ -6857,12 +6823,13 @@ function openExam(exam){
     if (prog) prog.textContent = `${answered}/${totalItems}`;
     if (bar) bar.style.width = `${totalItems ? Math.round(100 * answered / totalItems) : 0}%`;
 
+    const replaySuffix = activeAttempt?.practice_replay ? " • ↻ Replay · 0 XP" : "";
     if (runtimeExam.secure_result) {
       const score = mhFormatExamScoreValue(runtimeExam.secure_result.score);
       const total = mhFormatExamScoreValue(runtimeExam.secure_result.total_points);
-      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • 🏁 ${score}/${total}`;
+      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • 🏁 ${score}/${total}${replaySuffix}`;
     } else {
-      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • ${answered}/${totalItems}`;
+      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • ${answered}/${totalItems}${replaySuffix}`;
     }
   }
 
@@ -6896,7 +6863,7 @@ function openExam(exam){
 
     const items = getExamRenderableItems(runtimeExam);
     if (meta) {
-      meta.innerHTML = `${LANG === "ro" ? "Itemi examen" : "Exam items"}: <b>${items.length}</b> • ${LANG === "ro" ? "Punctaj maxim" : "Maximum score"}: <b>${mhFormatExamScoreValue(runtimeExam.total_points)}</b>${exam.credit_html ? ` • ${exam.credit_html}` : ""}`;
+      meta.innerHTML = `${LANG === "ro" ? "Itemi examen" : "Exam items"}: <b>${items.length}</b> • ${LANG === "ro" ? "Punctaj maxim" : "Maximum score"}: <b>${mhFormatExamScoreValue(runtimeExam.total_points)}</b>${payload.practice_replay ? " • <b>↻ Replay · 0 XP</b>" : ""}${exam.credit_html ? ` • ${exam.credit_html}` : ""}`;
     }
 
     return true;
@@ -6933,7 +6900,8 @@ function openExam(exam){
       activeAttempt = { ...activeAttempt, ...result, status: "submitted" };
       runtimeExam.secure_result = result;
 
-      if (result?.passed) {
+      const practiceReplay = Boolean(result?.practice_replay || activeAttempt?.practice_replay);
+      if (!practiceReplay && result?.passed) {
         const wasAlreadyPassed = examsPassedSet.has(exam.id);
         examsPassedSet.add(exam.id);
         if (!wasAlreadyPassed) {
@@ -6962,22 +6930,21 @@ function openExam(exam){
 
       submitBtn.style.display = "none";
       leftEl.style.display = "inline-block";
-      leftEl.textContent = timedOut
+      leftEl.textContent = practiceReplay ? (LANG === "ro" ? "↻ Replay corectat · 0 XP" : "↻ Replay graded · 0 XP") : timedOut
         ? (LANG === "ro" ? "⛔ Timp expirat — corectat" : "⛔ Time up — graded")
         : (result?.passed
           ? (LANG === "ro" ? "✅ Promovat" : "✅ Passed")
           : (LANG === "ro" ? "📨 Examen predat" : "📨 Exam submitted"));
 
       setStatus(
-        `${result?.passed ? "🏆" : "📊"} ${LANG === "ro" ? "Rezultat" : "Result"}: ${mhFormatExamScoreValue(result?.score)}/${mhFormatExamScoreValue(result?.total_points)} • ${LANG === "ro" ? "prag" : "pass mark"}: ${mhFormatExamScoreValue(result?.pass_threshold ?? PASS_THRESHOLD)}`,
+        `${practiceReplay ? "↻ Replay · 0 XP •" : (result?.passed ? "🏆" : "📊")} ${LANG === "ro" ? "Rezultat" : "Result"}: ${mhFormatExamScoreValue(result?.score)}/${mhFormatExamScoreValue(result?.total_points)} • ${LANG === "ro" ? "prag" : "pass mark"}: ${mhFormatExamScoreValue(result?.pass_threshold ?? PASS_THRESHOLD)}`,
         result?.passed ? "ok" : "legend"
       );
 
       renderExamItems(true);
       updateExamProgress();
-      updateCounters();
+      if (!practiceReplay) { updateCounters(); await loadAppProgressFromDb(MH_AUTH_USER); }
       renderCards();
-      await loadAppProgressFromDb(MH_AUTH_USER);
     } catch (error) {
       console.error("Secure exam submit failed:", error);
       setStatus(
@@ -7084,7 +7051,7 @@ function openExam(exam){
       const payload = await getActiveSecureExamAttempt(supabase, exam.id, LANG);
       if (payload?.attempt_id && payload?.status === "active") {
         applySecureAttempt(payload);
-        setStatus(LANG === "ro" ? "Tentativă reluată." : "Attempt resumed.", "ok");
+        setStatus(payload.practice_replay ? (LANG === "ro" ? "Replay reluat · 0 XP." : "Replay resumed · 0 XP.") : (LANG === "ro" ? "Tentativă reluată." : "Attempt resumed."), "ok");
         activateAttemptUi();
         return;
       }
@@ -7120,7 +7087,7 @@ function openExam(exam){
         LANG
       );
       if (!applySecureAttempt(payload)) throw new Error("Invalid secure exam payload.");
-      setStatus(LANG === "ro" ? "Examen pornit. Răspunsurile se salvează automat." : "Exam started. Answers are saved automatically.", "ok");
+      setStatus(payload.practice_replay ? (LANG === "ro" ? "Replay pornit · 0 XP. Răspunsurile se salvează automat." : "Replay started · 0 XP. Answers are saved automatically.") : (LANG === "ro" ? "Examen pornit. Răspunsurile se salvează automat." : "Exam started. Answers are saved automatically."), "ok");
       activateAttemptUi();
     } catch (error) {
       console.error("Secure exam start failed:", error);
@@ -7153,9 +7120,10 @@ function openExam(exam){
   /* ===== Inputs & Tabs ===== */
   document.getElementById("q").addEventListener("input", e=>{ filter.q=e.target.value; page=1; renderCards(); drawFilterBar(); });
   document.getElementById("loadMore").onclick=()=>{ page++; renderCards(); };
-  const minD=document.getElementById("minDiff"), maxD=document.getElementById("maxDiff");
+  const minD=document.getElementById("minDiff"), maxD=document.getElementById("maxDiff"), exactStars=document.getElementById("exactStars");
   minD.onchange=()=>{ let v=Math.max(0,Math.min(5,Number(minD.value)||0)); if(v>maxD.value) maxD.value=v; minD.value=v; filter.minDiff=v; page=1; renderCards(); };
   maxD.onchange=()=>{ let v=Math.max(0,Math.min(5,Number(maxD.value)||5)); if(v<minD.value) minD.value=v; maxD.value=v; filter.maxDiff=v; page=1; renderCards(); };
+  exactStars.onchange=()=>{ filter.exactStars=exactStars.value === "" ? null : Number(exactStars.value); page=1; renderCards(); drawFilterBar(); };
 
   function selectTab(nextTab = TAB){
     if (hasActiveExamLock() && nextTab !== "exams") {
@@ -7199,7 +7167,8 @@ function openExam(exam){
     if(btn && badge){
       btn.onclick = ()=>{
         filter.olympOnly = !filter.olympOnly;
-        badge.textContent = filter.olympOnly ? "ON" : "OFF";
+        const liveBadge = document.getElementById("olympOnlyState");
+        if (liveBadge) liveBadge.textContent = filter.olympOnly ? "ON" : "OFF";
         page=1; renderCards(); drawFilterBar();
       };
     }
@@ -7631,7 +7600,7 @@ function openExam(exam){
       roadmapAdminController?.setAdmin(false);
       gamificationAdminController?.setAdmin(false);
       communityAdminController?.setAdmin(false);
-      conceptAdminController?.setAdmin(false);
+      conceptAdminController?.setAdmin(false); tagAdminController?.setAdmin(false);
       contentQualityAdminController?.setAdmin(false);
       adminHistoryController?.setAdmin(false);
       contentBatchImportController?.reset();

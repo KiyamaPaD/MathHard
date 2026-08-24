@@ -112,6 +112,12 @@ const COPY = {
     noStrengths: "Rezolvă mai mult pentru a identifica punctele forte.",
     noWeaknesses: "Nu există încă suficiente date.",
     examsTitle: "Rezultate la examene",
+    replaysTitle: "Recapitulări",
+    replaysHint: "Replay-urile au 0 XP și nu schimbă progresul oficial.",
+    problemReplays: "probleme reluate",
+    examReplays: "examene reluate",
+    lastReplay: "ultima reluare",
+    noReplays: "Nu ai reluat încă probleme sau examene.",
     recent: "Activitate recentă",
     empty: "Nu există încă suficient progres pentru analiză.",
     emptyHint: "Finalizează o lecție sau rezolvă o problemă.",
@@ -229,6 +235,12 @@ const COPY = {
     noStrengths: "Complete more work to identify strengths.",
     noWeaknesses: "There is not enough data yet.",
     examsTitle: "Exam results",
+    replaysTitle: "Reviews",
+    replaysHint: "Replays award 0 XP and do not change official progress.",
+    problemReplays: "problem replays",
+    examReplays: "exam replays",
+    lastReplay: "last replay",
+    noReplays: "You have not replayed any problems or exams yet.",
     recent: "Recent activity",
     empty: "There is not enough progress for analytics yet.",
     emptyHint: "Complete a lesson or solve a problem.",
@@ -646,6 +658,35 @@ function renderExamTypes(rows) {
   `;
 }
 
+function renderPracticeReplays(payload = {}) {
+  const t = copy();
+  const recent = Array.isArray(payload.recent) ? payload.recent : [];
+  const problemCount = Number(payload.problem_replays || 0);
+  const examCount = Number(payload.exam_replays || 0);
+  const total = Number(payload.total_replays || problemCount + examCount);
+  return `
+    <section class="mh-analytics-card mh-analytics-span-2">
+      <div class="mh-analytics-card-head"><div><h3>${t.replaysTitle}</h3><p>${t.replaysHint}</p></div></div>
+      ${total > 0 ? `
+        <div class="mh-analytics-exam-types">
+          <div><strong>${problemCount}</strong><span>${t.problemReplays}</span></div>
+          <div><strong>${examCount}</strong><span>${t.examReplays}</span></div>
+          <div><strong>${payload.last_replay_at ? formatDateTime(payload.last_replay_at) : "—"}</strong><span>${t.lastReplay}</span></div>
+        </div>
+        <div class="mh-analytics-recent">
+          ${recent.slice(0, 6).map((row) => `
+            <div class="mh-analytics-recent-row">
+              <span class="mh-analytics-event-dot"></span>
+              <div><strong>${escapeHtml(row.content_type === "exam" ? t.examReplays : t.problemReplays)}</strong><span>${escapeHtml(row.content_id || "—")}</span></div>
+              <time datetime="${escapeHtml(row.created_at || "")}">${formatDateTime(row.created_at)}</time>
+            </div>
+          `).join("")}
+        </div>
+      ` : `<p class="mh-analytics-muted">${t.noReplays}</p>`}
+    </section>
+  `;
+}
+
 function renderRecent(rows) {
   const t = copy();
   return `
@@ -710,6 +751,7 @@ function renderDashboard(data) {
       ${renderInsightList(t.strengths, insights.strengths, t.noStrengths, "strength")}
       ${renderInsightList(t.weaknesses, insights.weaknesses, t.noWeaknesses, "weakness")}
       ${renderExamTypes(data.examTypes)}
+      ${renderPracticeReplays(data.practiceReplays)}
       ${renderRecent(data.recentActivity)}
     </div>
   `;

@@ -107,6 +107,9 @@ if (root && form) {
   let regions = [];
   let usernameTimer = null;
   let loadEpoch = 0;
+  let busy = false;
+  let draftBaseline = "";
+  let dirty = false;
 
   function setStatus(message = "", stateName = "") {
     if (!status) return;
@@ -114,11 +117,16 @@ if (root && form) {
     status.dataset.state = stateName;
   }
 
+  function syncSaveState() {
+    if (saveButton) saveButton.disabled = busy || !dirty;
+  }
+
   function setBusy(value) {
-    if (saveButton) saveButton.disabled = value;
+    busy = Boolean(value);
     form.querySelectorAll("input,select,textarea,button").forEach((element) => {
-      if (element !== saveButton) element.disabled = value;
+      if (element !== saveButton) element.disabled = busy;
     });
+    syncSaveState();
   }
 
   function listFromInput(name) {
@@ -147,6 +155,13 @@ if (root && form) {
       Boolean(form.elements[key]?.checked)
     ]));
     return raw;
+  }
+
+  function refreshDirtyState({ reset = false } = {}) {
+    const snapshot = JSON.stringify(readDraft());
+    if (reset) draftBaseline = snapshot;
+    dirty = snapshot !== draftBaseline;
+    syncSaveState();
   }
 
   function normalizeLinkInputs() {
@@ -359,6 +374,7 @@ if (root && form) {
     openButton.href = publicProfileUrl(profile.username, location.origin);
     openButton.hidden = !profile.isPublic;
     renderPreview();
+    refreshDirtyState({ reset: true });
   }
 
   async function loadCountries() {
@@ -425,6 +441,7 @@ if (root && form) {
   }
 
   async function save() {
+    if (!dirty || busy) return;
     normalizeLinkInputs();
     const raw = readDraft();
     raw.username = normalizeUsername(raw.username);
@@ -453,7 +470,7 @@ if (root && form) {
     }
   }
 
-  form.addEventListener("input", renderPreview);
+  form.addEventListener("input", () => { renderPreview(); refreshDirtyState(); });
   form.addEventListener("change", (event) => {
     if (event.target?.name === "featured_stat_keys") {
       const checked = Array.from(form.querySelectorAll('input[name="featured_stat_keys"]:checked'));
@@ -475,11 +492,13 @@ if (root && form) {
       setStatus(language === "en" ? "The featured badge must remain public." : "Badge-ul principal trebuie să rămână public.", "error");
     }
     renderPreview();
+    refreshDirtyState();
   });
   ["avatar_url", "banner_url", "website_url", "github_url", "portfolio_url"].forEach((name) => {
     form.elements[name]?.addEventListener("blur", () => {
       normalizeLinkInputs();
       renderPreview();
+      refreshDirtyState();
     });
   });
   countrySelect.addEventListener("change", () => void fillRegions(countrySelect.value));
@@ -488,6 +507,7 @@ if (root && form) {
     form.elements.is_public.checked = true;
     form.elements.show_progress.checked = true;
     renderPreview();
+    refreshDirtyState();
   });
   usernameInput.addEventListener("input", () => {
     clearTimeout(usernameTimer);

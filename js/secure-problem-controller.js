@@ -96,6 +96,7 @@ export function createSecureProblemController({
     const lesson = getLessons().find((item) => item.id === problem.lessonId) || {};
     const isExam = isExamProblem(problem);
     const record = getXPRecord(problem.id);
+    const replayEligible = Boolean(record.solved && !isExam);
     const hasHint1 = Boolean(problem.has_hint1 ?? (problem.hint1_ro || problem.hint1_en));
     const hasHint2 = Boolean(problem.has_hint2 ?? (problem.hint2_ro || problem.hint2_en));
     const title = translated(problem, language);
@@ -117,6 +118,7 @@ export function createSecureProblemController({
             </div>
           </div>
           <div class="mh-problem-hero-actions">
+            ${replayEligible ? `<button class="btn small" id="startProblemReplayBtn" type="button">↻ ${ro ? "Reia problema" : "Replay problem"} · 0 XP</button><span class="legend" id="problemReplaySummary"></span>` : ""}
             <button class="btn small mh-bookmark-btn" id="problemBookmarkBtn" type="button" aria-pressed="false">
               ☆ ${ro ? "Salvează" : "Bookmark"}
             </button>
@@ -138,9 +140,9 @@ export function createSecureProblemController({
           <main class="mh-problem-main">
             <section class="mh-problem-card">
               <div class="legend mh-secure-caption">
-                ${ro
-                  ? "Rezolvă fără soluție pentru a păstra XP-ul disponibil."
-                  : "Solve it without revealing the solution to keep the available XP."}
+                ${replayEligible
+                  ? (ro ? "Problema este rezolvată oficial. Reluările sunt practică: 0 XP și fără schimbarea progresului." : "The official solve stays fixed. Replays are practice only: 0 XP and no progress changes.")
+                  : (ro ? "Rezolvă fără soluție pentru a păstra XP-ul disponibil." : "Solve it without revealing the solution to keep the available XP.")}
               </div>
               <div class="problem-statement">${statement}</div>
               ${renderConceptDetails(problem.id)}
@@ -240,9 +242,10 @@ export function createSecureProblemController({
     `;
 
     renderMath(host);
-    if (!isExam) onProblemOpened(problem.id);
-    void logLearningEvent(supabase, "problem_opened", "problem", problem.id, { language })
-      .catch((error) => console.warn("problem_opened event failed:", error));
+    if (!isExam && !replayEligible) {
+      onProblemOpened(problem.id);
+      void logLearningEvent(supabase, "problem_opened", "problem", problem.id, { language }).catch((error) => console.warn("problem_opened event failed:", error));
+    }
 
     const attemptsList = host.querySelector("#attemptsList");
     const attemptCount = host.querySelector("#attemptCount");
@@ -257,6 +260,8 @@ export function createSecureProblemController({
     const bookmarkButton = host.querySelector("#problemBookmarkBtn");
     const noteInput = host.querySelector("#problemNote");
     const noteStatus = host.querySelector("#problemNoteStatus");
+    const replayButton = host.querySelector("#startProblemReplayBtn");
+    const replaySummary = host.querySelector("#problemReplaySummary");
     const solutionLocked = host.querySelector("#solutionLocked");
     const solutionContent = host.querySelector("#solutionContent");
     const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
@@ -274,7 +279,14 @@ export function createSecureProblemController({
     let workspaceRevision = 0;
     let workspaceLoadEpoch = 0;
     let workspaceSaveChain = Promise.resolve();
-    let noteDirty = false;
+    let noteDirty = false, replayMode = false, replay = null, replayApi = null, revealedAnswer = "";
+
+    const replayRows = () => (replay?.attempts || []).map((row) => ({ id: row.id, answer: row.answer, correct: Boolean(row.correct), createdAt: row.created_at }));
+    function paintReplaySummary(state = replay) {
+      if (!replaySummary) return;
+      const count = Number(state?.replay_count || 0), last = state?.last_replay_at;
+      replaySummary.textContent = `${ro ? "Reluări" : "Replays"}: ${count}${last ? ` · ${new Date(last).toLocaleDateString(ro ? "ro-RO" : "en-US")}` : ""}`;
+    }
 
     function renderAttempts(rows) {
       attemptsList.innerHTML = "";
@@ -294,28 +306,27 @@ export function createSecureProblemController({
       const current = getXPRecord(problem.id);
       feedbackText.textContent = feedbackForAttempt({
         language,
-        wrongAttempts: current.wrong,
+        wrongAttempts: replayMode ? Number(replay?.wrong_count || 0) : current.wrong,
         hasHint1,
         hasHint2
       });
     }
 
     function refreshHints() {
-      const current = getXPRecord(problem.id);
-      if (hintWrap1) hintWrap1.style.display = current.wrong >= 2 || current.usedHint1 ? "block" : "none";
-      if (hintWrap2) hintWrap2.style.display = current.wrong >= 4 || current.usedHint2 ? "block" : "none";
+      const current = getXPRecord(problem.id), wrong = replayMode ? Number(replay?.wrong_count || 0) : current.wrong;
+      const used1 = replayMode ? Boolean(replay?.hint1_used) : current.usedHint1, used2 = replayMode ? Boolean(replay?.hint2_used) : current.usedHint2;
+      if (hintWrap1) hintWrap1.style.display = wrong >= 2 || used1 ? "block" : "none";
+      if (hintWrap2) hintWrap2.style.display = wrong >= 4 || used2 ? "block" : "none";
       renderFeedback();
     }
 
     function refreshXp() {
       if (isExam) return;
-      const current = getXPRecord(problem.id);
-      const value = host.querySelector("#probXpValue");
-      const stats = host.querySelector("#probXpStats");
-      if (value) value.textContent = `${current.xp || 0} / 10 XP`;
-      if (stats) {
-        stats.innerHTML = `<span>${ro ? "Greșeli" : "Mistakes"}: ${current.wrong || 0}</span><span>${ro ? "Hinturi" : "Hints"}: ${current.hints || 0}</span>`;
-      }
+      const current = getXPRecord(problem.id), value = host.querySelector("#probXpValue"), stats = host.querySelector("#probXpStats");
+      if (value) value.textContent = replayMode ? "Replay · 0 XP" : `${current.xp || 0} / 10 XP`;
+      if (stats) stats.innerHTML = replayMode
+        ? `<span>${ro ? "Greșeli replay" : "Replay mistakes"}: ${Number(replay?.wrong_count || 0)}</span><span>${ro ? "Hinturi replay" : "Replay hints"}: ${Number(replay?.hint_count || 0)}</span>`
+        : `<span>${ro ? "Greșeli" : "Mistakes"}: ${current.wrong || 0}</span><span>${ro ? "Hinturi" : "Hints"}: ${current.hints || 0}</span>`;
     }
 
     function renderWorkspace({ syncNote = true } = {}) {
@@ -334,7 +345,7 @@ export function createSecureProblemController({
       }
       modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.explanationMode === workspace.explanationMode));
 
-      const unlocked = workspace.canViewSolution && workspace.solution;
+      const unlocked = !replayMode && workspace.canViewSolution && workspace.solution;
       if (solutionLocked) solutionLocked.hidden = Boolean(unlocked);
       if (solutionContent) {
         solutionContent.hidden = !unlocked;
@@ -343,7 +354,7 @@ export function createSecureProblemController({
           : "";
         if (unlocked) renderMath(solutionContent);
       }
-      renderAttempts(workspace.attempts);
+      if (!replayMode) renderAttempts(workspace.attempts);
     }
 
     async function reloadWorkspace() {
@@ -460,12 +471,19 @@ export function createSecureProblemController({
       }
 
       submitting = true;
-      if (!isExam) onProblemAttempted(problem.id);
+      if (!isExam && !replayMode) onProblemAttempted(problem.id);
       checkButton.disabled = true;
       input.disabled = true;
       statusArea.textContent = messageFor(language, "checking");
 
       try {
+        if (replayMode && replay?.replay_id) {
+          const result = await replayApi.submitProblemReplayAnswer(supabase, replay.replay_id, value);
+          replay = result?.replay || replay; renderAttempts(replayRows()); paintReplaySummary(replay); refreshHints(); refreshXp();
+          if (result?.ok) { statusArea.textContent = messageFor(language, "correct", true) + " · Replay 0 XP"; input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false; }
+          else { statusArea.textContent = messageFor(language, "wrong"); input.disabled = false; checkButton.disabled = false; input.focus(); }
+          return;
+        }
         const wasAlreadySolved = isProblemSolved(problem.id);
         const previousXp = Number(getXPRecord(problem.id)?.xp || 0);
         const result = await submitProblemAnswer(supabase, problem.id, value, language);
@@ -496,7 +514,7 @@ export function createSecureProblemController({
 
         refreshHints();
         refreshXp();
-        await reloadWorkspace();
+        if (!replayMode) await reloadWorkspace();
       } catch (error) {
         console.error("Secure problem submission failed:", error);
         statusArea.textContent = messageFor(language, "unavailable");
@@ -514,18 +532,22 @@ export function createSecureProblemController({
       if (content) content.textContent = ro ? "Se încarcă…" : "Loading…";
 
       try {
-        const result = await requestProblemHint(supabase, problem.id, number, language);
+        const result = replayMode && replay?.replay_id
+          ? await replayApi.requestProblemReplayHint(supabase, replay.replay_id, number, language)
+          : await requestProblemHint(supabase, problem.id, number, language);
+        if (replayMode && result?.replay) replay = result.replay;
         if (!result?.available) {
           const needed = Number(result?.required_wrong_attempts || (number === 1 ? 2 : 4));
           const current = Number(result?.wrong_attempts || 0);
           if (content) content.textContent = `${messageFor(language, "hint_locked")} (${current}/${needed})`;
           return;
         }
-        if (result?.progress) applyProblemProgressResult(problem.id, result.progress, `hint${number}`);
+        if (!replayMode && result?.progress) applyProblemProgressResult(problem.id, result.progress, `hint${number}`);
         if (content) content.textContent = result?.hint || messageFor(language, "hint_missing");
         if (number === 1) hint1Loaded = true;
         if (number === 2) hint2Loaded = true;
         refreshXp();
+        if (replayMode) { paintReplaySummary(replay); renderAttempts(replayRows()); }
         renderFeedback();
       } catch (error) {
         console.error(`Secure hint ${number} failed:`, error);
@@ -560,7 +582,6 @@ export function createSecureProblemController({
 
     const revealButton = host.querySelector("#revealBtn");
     const revealText = host.querySelector("#revealText");
-    let revealedAnswer = "";
     revealButton?.addEventListener("click", async () => {
       if (revealedAnswer) {
         revealText.hidden = !revealText.hidden;
@@ -568,13 +589,16 @@ export function createSecureProblemController({
       }
       revealButton.disabled = true;
       try {
-        const result = await revealProblemAnswer(supabase, problem.id, language);
+        const result = replayMode && replay?.replay_id
+          ? await replayApi.revealProblemReplayAnswer(supabase, replay.replay_id)
+          : await revealProblemAnswer(supabase, problem.id, language);
         revealedAnswer = String(result?.answer || "");
-        if (result?.progress) applyProblemProgressResult(problem.id, result.progress, "reveal");
+        if (replayMode && result?.replay) { replay = result.replay; paintReplaySummary(replay); renderAttempts(replayRows()); input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false; }
+        if (!replayMode && result?.progress) applyProblemProgressResult(problem.id, result.progress, "reveal");
         revealText.textContent = `${ro ? "Răspuns corect:" : "Correct answer:"} ${revealedAnswer}`;
         revealText.hidden = false;
         refreshXp();
-        await reloadWorkspace();
+        if (!replayMode) await reloadWorkspace();
       } catch (error) {
         console.error("Secure answer reveal failed:", error);
         revealText.textContent = messageFor(language, "reveal_failed");
@@ -583,6 +607,15 @@ export function createSecureProblemController({
         revealButton.disabled = false;
       }
     });
+
+    replayButton?.addEventListener("click", async () => {
+      replayButton.disabled = true; statusArea.textContent = ro ? "Se pornește reluarea…" : "Starting replay…";
+      try {
+        replayApi ||= await import("./practice-replay-repository.js"); replay = await replayApi.startProblemReplay(supabase, problem.id); replayMode = true; revealedAnswer = ""; hint1Loaded = false; hint2Loaded = false;
+        input.value = ""; input.disabled = false; checkButton.disabled = false; statusArea.textContent = `${ro ? "Replay activ" : "Replay active"} · 0 XP`; renderAttempts(replayRows()); paintReplaySummary(replay); refreshHints(); refreshXp(); renderWorkspace({syncNote:false}); input.focus();
+      } catch (error) { console.error("Problem replay start failed:", error); statusArea.textContent = messageFor(language, "unavailable"); replayButton.disabled = false; }
+    });
+    if (replayEligible) void import("./practice-replay-repository.js").then(async (api) => { replayApi = api; const state = await api.loadProblemReplayState(supabase, problem.id); paintReplaySummary(state); if (state?.active_replay) { replay = state.active_replay; replayMode = true; replayButton?.click(); } }).catch(() => undefined);
 
     const recommendations = buildProblemRecommendations({
       currentProblem: problem,

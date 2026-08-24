@@ -143,7 +143,7 @@ export async function startSecureExamAttempt(
 
   return runSingleFlight(`start:${id}:${safeHours}:${safeLocale}`, () => executeRpc(
     supabase,
-    "mh_start_secure_exam_attempt",
+    "mh_start_exam_session",
     { p_exam_id: id, p_hours: safeHours, p_locale: safeLocale }
   ));
 }
@@ -158,7 +158,7 @@ export async function getActiveSecureExamAttempt(
 
   return runSingleFlight(`active:${id || "any"}:${safeLocale}`, () => executeRpc(
     supabase,
-    "mh_get_active_exam_attempt",
+    "mh_get_active_exam_session",
     { p_exam_id: id, p_locale: safeLocale }
   ));
 }
@@ -177,7 +177,7 @@ export async function saveSecureExamAnswer(
   return enqueueAttemptMutation(
     safeAttemptId,
     `save:${safeItemId}:${payloadFingerprint}`,
-    () => executeRpc(supabase, "mh_save_secure_exam_answer", {
+    () => executeRpc(supabase, "mh_save_exam_session_answer", {
       p_attempt_id: safeAttemptId,
       p_item_id: safeItemId,
       p_answer: payload
@@ -190,7 +190,7 @@ export async function submitSecureExamAttempt(supabase, attemptId) {
   return enqueueAttemptMutation(
     safeAttemptId,
     "submit",
-    () => executeRpc(supabase, "mh_submit_secure_exam_attempt", {
+    () => executeRpc(supabase, "mh_submit_exam_session", {
       p_attempt_id: safeAttemptId
     })
   );

@@ -32,6 +32,7 @@
   <script defer src="/js/loading-screen.js"></script>
 </head>
 <body class="mh-app profile-v2-body">
+  <script>if(localStorage.getItem("mh_theme")==="light")document.body.classList.add("light");</script>
   <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
     <div class="mh-loading-panel">
       <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true" />
@@ -65,8 +66,8 @@
 
         <div class="profile-identity-copy">
           <div class="profile-kicker" data-profile-text-key="account_kicker">Profil MathHard</div>
-          <h1 class="profile-name" id="profileName">Vizitator</h1>
-          <p class="profile-email" id="profileEmail">Nu ești logat.</p>
+          <h1 class="profile-name" id="profileName">Se încarcă…</h1>
+          <p class="profile-email" id="profileEmail">MathHard</p>
 
           <div class="profile-badges" aria-label="Rezumat cont">
             <span class="profile-badge"><span id="profileLevelPrefix">Nivel</span> <strong id="profileLevelValue">1</strong></span>

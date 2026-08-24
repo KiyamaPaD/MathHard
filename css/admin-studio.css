@@ -787,3 +787,4 @@
     width: 100%;
   }
 }
+.mh-tag-studio-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.mh-tag-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.mh-tag-form input{min-width:0}.mh-tag-list{display:grid;gap:8px}.mh-tag-list article{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px}.mh-tag-list small{display:block;opacity:.7;margin-top:3px}.mh-tag-mapping{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.mh-tag-mapping label{display:flex;gap:7px;align-items:center}@media(max-width:800px){.mh-tag-studio-grid{grid-template-columns:1fr}.mh-tag-form,.mh-tag-mapping{grid-template-columns:1fr}}

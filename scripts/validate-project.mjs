@@ -442,14 +442,17 @@ if (!appSource.includes('from "./secure-problem-controller.js?v=4j5"')) {
 if (!appSource.includes('from "./secure-exam-repository.js"')) {
   fail("app.js must use the Phase 11B secure exam repository.");
 }
-if (!secureExamRepositorySource.includes('"mh_start_secure_exam_attempt"')) {
-  fail("secure-exam-repository.js must start exams through mh_start_secure_exam_attempt().");
+if (!secureExamRepositorySource.includes('"mh_start_exam_session"')) {
+  fail("secure-exam-repository.js must start official/replay exams through mh_start_exam_session().");
 }
-if (!secureExamRepositorySource.includes('"mh_save_secure_exam_answer"')) {
-  fail("secure-exam-repository.js must autosave answers through mh_save_secure_exam_answer().");
+if (!secureExamRepositorySource.includes('"mh_get_active_exam_session"')) {
+  fail("secure-exam-repository.js must restore official/replay exams through mh_get_active_exam_session().");
 }
-if (!secureExamRepositorySource.includes('"mh_submit_secure_exam_attempt"')) {
-  fail("secure-exam-repository.js must submit exams through mh_submit_secure_exam_attempt().");
+if (!secureExamRepositorySource.includes('"mh_save_exam_session_answer"')) {
+  fail("secure-exam-repository.js must autosave official/replay answers through mh_save_exam_session_answer().");
+}
+if (!secureExamRepositorySource.includes('"mh_submit_exam_session"')) {
+  fail("secure-exam-repository.js must submit official/replay exams through mh_submit_exam_session().");
 }
 if (!secureExamRepositorySource.includes('"mh_cancel_secure_exam_attempt"')) {
   fail("secure-exam-repository.js must cancel admin test attempts through mh_cancel_secure_exam_attempt().");

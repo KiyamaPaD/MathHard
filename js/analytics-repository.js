@@ -12,7 +12,11 @@ export async function loadUserAnalytics(supabase, {
   const safeDays = clampAnalyticsRange(days);
   const safeLocale = String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
 
-  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy] = await Promise.all([
+  const replayAnalyticsPromise = import("./practice-replay-repository.js")
+    .then((module) => module.loadPracticeReplayAnalytics(supabase, 12))
+    .catch(() => ({ problem_replays: 0, exam_replays: 0, total_replays: 0, last_replay_at: "", recent: [] }));
+
+  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy, practiceReplays] = await Promise.all([
     supabase.rpc("mh_get_user_analytics", {
       p_days: safeDays,
       p_locale: safeLocale
@@ -25,7 +29,8 @@ export async function loadUserAnalytics(supabase, {
       limit: 8,
       locale: safeLocale
     }),
-    loadProgressTaxonomy(supabase)
+    loadProgressTaxonomy(supabase),
+    replayAnalyticsPromise
   ]);
 
   if (analyticsResult.error) {
@@ -41,6 +46,7 @@ export async function loadUserAnalytics(supabase, {
     ...normalizeAnalyticsPayload(analyticsResult.data || {}),
     conceptMastery,
     conceptRetention,
-    progressTaxonomy
+    progressTaxonomy,
+    practiceReplays
   };
 }

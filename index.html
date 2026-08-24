@@ -396,6 +396,14 @@
             <input type="number" id="minDiff" min="0" max="5" value="0" />
             <input type="number" id="maxDiff" min="0" max="5" value="5" />
           </div>
+          <label class="range-row" for="exactStars">
+            <span class="legend">★ Exact</span>
+            <select class="select" id="exactStars">
+              <option value="">Oricare</option>
+              <option value="0">0★</option><option value="1">1★</option><option value="2">2★</option>
+              <option value="3">3★</option><option value="4">4★</option><option value="5">5★</option>
+            </select>
+          </label>
         </div>
       </details>
 
@@ -570,6 +578,7 @@
 <button class="mh-admin-nav-button" data-admin-panel-target="editor" type="button"><span aria-hidden="true">✎</span><span>Editor</span></button>
 <button class="mh-admin-nav-button" data-admin-panel-target="roadmaps" type="button"><span aria-hidden="true">◇</span><span>Planuri de studiu</span></button>
 <button class="mh-admin-nav-button" data-admin-panel-target="concepts" type="button"><span aria-hidden="true">◈</span><span>Concepte</span></button>
+<button class="mh-admin-nav-button" data-admin-panel-target="tags" type="button"><span aria-hidden="true">#</span><span>Tag-uri</span></button>
 <button class="mh-admin-nav-button" data-admin-panel-target="quality" type="button"><span aria-hidden="true">✓</span><span>Publicare</span></button>
 <button class="mh-admin-nav-button" data-admin-panel-target="gamification" type="button"><span aria-hidden="true">✦</span><span>Recompense</span></button>
 <button class="mh-admin-nav-button" data-admin-panel-target="community" type="button"><span aria-hidden="true">◎</span><span>Comunitate</span></button>
@@ -959,6 +968,10 @@
 </div>
 </div>
 <section id="mhConceptAdminStudio" hidden></section>
+</section>
+<section class="mh-admin-workspace" data-admin-panel="tags" hidden="" tabindex="-1">
+<div class="mh-admin-page-header"><div><span class="mh-admin-eyebrow">Catalog</span><h2>Tag Studio</h2></div></div>
+<section id="mhTagAdminStudio" hidden></section>
 </section>
 <section class="mh-admin-workspace" data-admin-panel="quality" hidden="" tabindex="-1">
 <div class="mh-admin-page-header">

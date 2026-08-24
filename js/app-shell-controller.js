@@ -257,6 +257,7 @@ function setMobileMenu(open) {
   const toggle = document.getElementById("mhShellMobileToggle");
   const backdrop = document.getElementById("mhShellMobileBackdrop");
   toggle?.setAttribute("aria-expanded", String(open));
+  if (toggle) toggle.hidden = open;
   if (backdrop) backdrop.hidden = !open;
 }
 
@@ -344,8 +345,10 @@ function updateWorkspaceCopy(route) {
   const [title, description] = text.routes[route] || text.routes.dashboard;
   const titleNode = document.getElementById("mhShellTitle");
   const descriptionNode = document.getElementById("mhShellDescription");
+  const continueButton = document.getElementById("mhShellContinue");
   if (titleNode) titleNode.textContent = title;
   if (descriptionNode) descriptionNode.textContent = description;
+  if (continueButton) continueButton.hidden = !new Set(["dashboard", "roadmap"]).has(route);
 }
 
 function moveExistingContent() {
@@ -458,6 +461,7 @@ function bindNavigation() {
   });
 
   document.getElementById("mhShellSidebarToggle")?.addEventListener("click", () => {
+    if (window.matchMedia("(max-width: 900px)").matches) return setMobileMenu(false);
     const compact = !document.body.classList.contains("mh-sidebar-compact");
     document.body.classList.toggle("mh-sidebar-compact", compact);
     writeStorage(SIDEBAR_KEY, compact ? "1" : "0");

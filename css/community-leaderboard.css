@@ -106,3 +106,5 @@
   .mh-community-region-own{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mh-community-region-results{max-height:250px}
 }
+
+.mh-community-full-profile{display:inline-block;margin-top:3px;color:var(--accent2,#8aa8ff);font-size:.72rem;font-weight:800}
