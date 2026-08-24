@@ -196,6 +196,16 @@ export async function submitSecureExamAttempt(supabase, attemptId) {
   );
 }
 
+export async function getExamReplayHistory(supabase, examId, limit = 20) {
+  const id = cleanId(examId, "exam id");
+  const safeLimit = Math.max(1, Math.min(50, Number(limit) || 20));
+  return runSingleFlight(`history:${id}:${safeLimit}`, () => executeRpc(
+    supabase,
+    "mh_get_exam_replay_history",
+    { p_exam_id: id, p_limit: safeLimit }
+  ));
+}
+
 export async function cancelSecureExamAttempt(supabase, attemptId) {
   const safeAttemptId = cleanId(attemptId, "attempt id");
   return enqueueAttemptMutation(

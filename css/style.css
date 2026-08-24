@@ -2213,3 +2213,12 @@ code {
     font-size: 13px;
   }
 }
+/* 089: secure exam replay history / best-time summary. */
+.mh-exam-replay-history[hidden]{display:none!important}
+.mh-exam-replay-history{margin:10px 0 14px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--card) 94%,transparent)}
+.mh-exam-replay-history details>summary{cursor:pointer;font-weight:800}
+.mh-exam-history-note{margin:8px 0;color:var(--muted);font-size:.78rem}
+.mh-exam-replay-history ul{display:grid;gap:7px;margin:10px 0 0;padding:0;list-style:none}
+.mh-exam-replay-history li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:11px;background:var(--bg)}
+.mh-exam-replay-history li>span:last-child{color:var(--muted);font-size:.75rem;text-align:right}
+@media(max-width:620px){.mh-exam-replay-history li{align-items:flex-start;flex-direction:column}.mh-exam-replay-history li>span:last-child{text-align:left}}

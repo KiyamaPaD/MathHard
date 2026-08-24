@@ -701,7 +701,7 @@ function renderRecent(rows) {
     <section class="mh-analytics-card mh-analytics-span-2">
       <div class="mh-analytics-card-head"><div><h3>${t.recent}</h3></div>${safe.length>initial?`<button class="btn small" type="button" data-analytics-full>${t.fullAnalysis}</button>`:""}</div>
       <div class="mh-analytics-recent">
-        ${safe.slice(0,24).map((row,index)=>`<div class="mh-analytics-recent-row" ${index>=initial?"data-analytics-extra hidden":""}><span class="mh-analytics-event-dot ${escapeHtml(row.eventType)}"></span><div><strong>${escapeHtml(t.event[row.eventType]||row.eventType)}</strong><span>${escapeHtml(row.title)}</span></div><time datetime="${escapeHtml(row.createdAt)}">${formatDateTime(row.createdAt)}</time></div>`).join("")||`<p class="mh-analytics-muted">${t.empty}</p>`}
+        ${safe.map((row,index)=>`<div class="mh-analytics-recent-row" ${index>=initial?"data-analytics-extra hidden":""}><span class="mh-analytics-event-dot ${escapeHtml(row.eventType)}"></span><div><strong>${escapeHtml(t.event[row.eventType]||row.eventType)}</strong><span>${escapeHtml(row.title)}</span></div><time datetime="${escapeHtml(row.createdAt)}">${formatDateTime(row.createdAt)}</time></div>`).join("")||`<p class="mh-analytics-muted">${t.empty}</p>`}
       </div>
     </section>`;
 }

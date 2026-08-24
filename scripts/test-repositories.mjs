@@ -71,6 +71,7 @@ const {
 const {
   cancelSecureExamAttempt,
   getActiveSecureExamAttempt,
+  getExamReplayHistory,
   saveSecureExamAnswer,
   startSecureExamAttempt,
   submitSecureExamAttempt
@@ -721,6 +722,9 @@ const secureExamClient = {
     if (name === "mh_get_active_exam_session") {
       return { data: { attempt_id: "attempt-1", exam_id: args.p_exam_id || "exam-1", status: "active", practice_replay: false }, error: null };
     }
+    if (name === "mh_get_exam_replay_history") {
+      return { data: { exam_id: args.p_exam_id, official: { passed: true }, replays: [], replay_count: 0 }, error: null };
+    }
     if (name === "mh_save_exam_session_answer") {
       return { data: { saved: true, saved_at: "2026-07-26T10:00:00Z", practice_replay: false }, error: null };
     }
@@ -733,6 +737,7 @@ const secureExamClient = {
 
 await startSecureExamAttempt(secureExamClient, "exam-1", 2, "ro");
 await getActiveSecureExamAttempt(secureExamClient, "exam-1", "ro");
+await getExamReplayHistory(secureExamClient, "exam-1", 24);
 await saveSecureExamAnswer(secureExamClient, "attempt-1", "item-1", { type: "open", answer_text: "42" });
 await submitSecureExamAttempt(secureExamClient, "attempt-1");
 await cancelSecureExamAttempt(secureExamClient, "attempt-1");
@@ -740,6 +745,7 @@ await cancelSecureExamAttempt(secureExamClient, "attempt-1");
 assert.deepEqual(secureExamCalls.map((call) => call.name), [
   "mh_start_exam_session",
   "mh_get_active_exam_session",
+  "mh_get_exam_replay_history",
   "mh_save_exam_session_answer",
   "mh_submit_exam_session",
   "mh_cancel_secure_exam_attempt"

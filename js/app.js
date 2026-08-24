@@ -33,6 +33,7 @@ import { logLearningEvent } from "./secure-evaluation-repository.js";
 import {
   cancelSecureExamAttempt,
   getActiveSecureExamAttempt,
+  getExamReplayHistory,
   saveSecureExamAnswer,
   startSecureExamAttempt,
   submitSecureExamAttempt
@@ -1034,7 +1035,7 @@ import {
     if (!inputEl || !hostEl) return;
 
     hostEl.innerHTML = `
-      <details class="mh-math-toolbar-master" open>
+      <details class="mh-math-toolbar-master">
         <summary>
           <span>⌨️ ${LANG === "ro" ? "Operații matematice" : "Math operations"}</span>
           <small>${LANG === "ro" ? "Apasă un simbol pentru a insera sintaxa" : "Choose a symbol to insert its syntax"}</small>
@@ -4630,7 +4631,6 @@ ${details}`);
         faculty_courses: "Cursuri și capitole",
         research: "🔬 CERCETARE",
         history: "🕰 Istoria matematicii",
-        exam_problems: "📚 Probleme date la examene",
         exam_sets: "📑 Seturi de examene",
         exam_tips: "🧠 Sfaturi pentru examen",
         no_tags: "(fără etichete)",
@@ -4640,7 +4640,6 @@ ${details}`);
         olymp_class_label: "Olimp. clasa",
         olymp_lessons: "🏅 Lecții de Olimpiadă",
         olymp_problems: "🏅 Probleme de Olimpiadă",
-        exam_linked_problems: "📚 Probleme la examene",
         exam_sets_chip: "📑 Seturi de examene",
         faculty_chip: "🏛 Facultate și cursuri",
         admit_chip: "🎓 Admitere (RO)",
@@ -4661,7 +4660,6 @@ ${details}`);
         faculty_courses: "Courses & chapters",
         research: "🔬 RESEARCH",
         history: "🕰 History of mathematics",
-        exam_problems: "📚 Problems from exams",
         exam_sets: "📑 Exam sets",
         exam_tips: "🧠 Exam tips & tricks",
         no_tags: "(no tags)",
@@ -4671,7 +4669,6 @@ ${details}`);
         olymp_class_label: "Olympiad class",
         olymp_lessons: "🏅 Olympiad lessons",
         olymp_problems: "🏅 Olympiad problems",
-        exam_linked_problems: "📚 Exam problems",
         exam_sets_chip: "📑 Exam sets",
         faculty_chip: "🏛 University (courses)",
         admit_chip: "🎓 Admissions (RO)",
@@ -4700,7 +4697,7 @@ ${details}`);
     if (advancedTitle) advancedTitle.textContent = mhUi("advanced_filters");
     const specialSummary = document.querySelector('[data-i18n-html="aside_special_summary"]');
     if (specialSummary) specialSummary.innerHTML = `⭐ <b>${mhUi("special_categories")}</b>`;
-    const chipTexts = { olympL:mhUi("olymp_lessons"), olymp:mhUi("olymp_problems"), exams:mhUi("exam_linked_problems"), examsets:mhUi("exam_sets_chip"), en:LANG==="ro"?"📝 Evaluarea Națională":"📝 National Evaluation", bac:LANG==="ro"?"🎓 Bacalaureat":"🎓 Baccalaureate", ubb:LANG==="ro"?"🏛 Admitere UBB":"🏛 UBB admission", utcn:LANG==="ro"?"⚙️ Admitere UTCN":"⚙️ UTCN admission", "olymp-national":LANG==="ro"?"🥇 Olimpiadă națională":"🥇 National Olympiad", faculty:mhUi("faculty_chip"), admit:LANG==="ro"?"🎓 Alte admiteri":"🎓 Other admissions", research:mhUi("research_chip"), history:mhUi("history_chip") };
+    const chipTexts = { olympL:mhUi("olymp_lessons"), olymp:mhUi("olymp_problems"), examsets:mhUi("exam_sets_chip"), "exam-tips":mhUi("exam_tips"), en:LANG==="ro"?"📝 Evaluarea Națională":"📝 National Evaluation", bac:LANG==="ro"?"🎓 Bacalaureat":"🎓 Baccalaureate", ubb:LANG==="ro"?"🏛 Admitere UBB":"🏛 UBB admission", utcn:LANG==="ro"?"⚙️ Admitere UTCN":"⚙️ UTCN admission", "olymp-national":LANG==="ro"?"🥇 Olimpiadă națională":"🥇 National Olympiad", faculty:mhUi("faculty_chip"), admit:LANG==="ro"?"🎓 Alte admiteri":"🎓 Other admissions", research:mhUi("research_chip"), history:mhUi("history_chip") };
     document.querySelectorAll("[data-chip]").forEach(el => { const key=el.dataset.chip; if(chipTexts[key]) el.textContent=chipTexts[key]; });
   }
 
@@ -5110,31 +5107,6 @@ ${details}`);
       }
     }
 
-    // Probleme la examene
-    {
-      const top = document.createElement("details");
-      top.open = false;
-      top.innerHTML = `<summary><b>${mhUi("exam_problems")}</b></summary>`;
-
-      const br = document.createElement("div");
-      br.className = "branch";
-
-      const a1 = document.createElement("a");
-      a1.className = "leaf";
-      a1.textContent = mhUi("exam_sets");
-      a1.onclick = () => { TAB = "exams"; selectTab(); };
-
-      const a2 = document.createElement("a");
-      a2.className = "leaf";
-      a2.textContent = mhUi("exam_tips");
-      a2.onclick = () => openTips();
-
-      br.appendChild(a1);
-      br.appendChild(a2);
-
-      top.appendChild(br);
-      root.appendChild(top);
-    }
 
     document.querySelectorAll("[data-chip]").forEach(el => {
       el.onclick = () => {
@@ -5145,7 +5117,8 @@ ${details}`);
         if (chip === "history") return mhApplyHomePreset("open-history");
         if (chip === "faculty") return mhApplyHomePreset("open-faculty");
         if (chip === "admit") return mhApplyHomePreset("open-admit");
-        if (chip === "examsets" || chip === "exams") return mhApplyHomePreset("open-exams");
+        if (chip === "examsets") return mhApplyHomePreset("open-exams");
+        if (chip === "exam-tips") return openTips();
         if (chip === "olympL") return mhApplyHomePreset("open-olymp-lessons");
         if (["en","bac","ubb","utcn"].includes(chip)) { mhResetContentFilters(); filter.examCategory=chip; mhSyncFilterInputs(); selectTab("exams"); if(typeof mhScrollToMain==="function")mhScrollToMain(); return; }
         if (chip === "olymp-national") { mhResetContentFilters(); filter.examCategory="olympiad"; filter.examOlympLevel="nationala"; mhSyncFilterInputs(); selectTab("exams"); if(typeof mhScrollToMain==="function")mhScrollToMain(); return; }
@@ -5169,7 +5142,7 @@ ${details}`);
     const groups={topic:LANG==="ro"?"Domenii matematice":"Math topics",method:LANG==="ro"?"Metode și competențe":"Methods & skills",context:LANG==="ro"?"Context și sursă":"Context & source"};
     const box=document.createElement("details");box.innerHTML=`<summary>🏷️ <b>${mhUi("tags")}</b></summary>`;
     const branch=document.createElement("div");branch.className="branch";
-    for(const [key,title] of Object.entries(groups)){const rows=tags.filter(t=>(t.group_key||"topic")===key).sort((a,b)=>(a.position||0)-(b.position||0)||mhTagLabel(a.id).localeCompare(mhTagLabel(b.id),LANG==="ro"?"ro":"en"));if(!rows.length)continue;const det=document.createElement("details");det.innerHTML=`<summary>${esc(title)}</summary>`;const body=document.createElement("div");body.className="branch";rows.forEach(tag=>{const a=document.createElement("a");a.className="leaf";a.textContent=mhTagLabel(tag.id);a.onclick=()=>{filter.tag=tag.id;filter.byLessonId=null;if(!["lessons","problems","exams"].includes(TAB))TAB="lessons";page=1;renderCards();drawFilterBar();};body.appendChild(a)});det.appendChild(body);branch.appendChild(det)}
+    for(const [key,title] of Object.entries(groups)){const rows=tags.filter(t=>(t.group_key||"topic")===key).sort((a,b)=>(a.position||0)-(b.position||0)||mhTagLabel(a.id).localeCompare(mhTagLabel(b.id),LANG==="ro"?"ro":"en"));if(!rows.length)continue;const det=document.createElement("details");det.innerHTML=`<summary>${esc(title)}</summary>`;const body=document.createElement("div");body.className="branch";rows.forEach(tag=>{const a=document.createElement("a");a.className="leaf";a.textContent=mhTagLabel(tag.id);a.onclick=()=>{filter.tag=tag.id;filter.byLessonId=null;if(!["lessons","problems","xp","exams"].includes(TAB)){selectTab("lessons");return;}page=1;renderCards();drawFilterBar();mhSyncContextFilterVisibility();};body.appendChild(a)});det.appendChild(body);branch.appendChild(det)}
     box.appendChild(branch);host.appendChild(box);wireGlobalExamClickGuards();
   }
 
@@ -5343,7 +5316,7 @@ ${details}`);
     if (pagWrap) pagWrap.style.display = "none";
 
     const problemById = new Map(DATA.problems.map((problem) => [problem.id, problem]));
-    const regularProblems = DATA.problems.filter((problem) => !isExamProblem(problem));
+    const regularProblems = sortProblems(DATA.problems.filter((problem) => !isExamProblem(problem)).filter(passProblem));
     const groups = {
       solved: [],
       attempted: [],
@@ -5362,15 +5335,6 @@ ${details}`);
       groups[status].push([problem.id, record]);
     });
 
-    groups.solved.sort(([, left], [, right]) => Number(right.xp || 0) - Number(left.xp || 0));
-    for (const status of ["attempted", "opened", "unopened"]) {
-      groups[status].sort(([leftId], [rightId]) => {
-        const left = problemById.get(leftId);
-        const right = problemById.get(rightId);
-        return String((left && (left.title_ro || left.title_en)) || leftId)
-          .localeCompare(String((right && (right.title_ro || right.title_en)) || rightId), LANG === "ro" ? "ro" : "en");
-      });
-    }
 
     const summary = document.createElement("div");
     summary.className = "xp-summary-card mh-problem-progress-summary";
@@ -6596,6 +6560,7 @@ function openExam(exam){
     </select>
     <button class="btn" id="startExam" type="button">🚀 Start</button>
     <button class="btn" id="submitSecureExam" style="display:none;border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.14)" type="button">📨 ${LANG === "ro" ? "Predă examenul" : "Submit exam"}</button>
+    <button class="btn" id="examReplayBtn" style="display:none" type="button">↻ ${LANG === "ro" ? "Reia examenul" : "Replay exam"} · 0 XP</button>
     <span class="examBadge examTimer" id="examLeft" style="display:none">--:--</span>
     <div class="progressRow">
       <span class="legend">${LANG === "ro" ? "Răspunsuri salvate" : "Saved answers"}:</span>
@@ -6615,6 +6580,11 @@ function openExam(exam){
   statusBox.style.margin = "12px 0";
   content.appendChild(statusBox);
 
+  const historyBox = document.createElement("section");
+  historyBox.className = "mh-exam-replay-history";
+  historyBox.hidden = true;
+  content.appendChild(historyBox);
+
   const list = document.createElement("div");
   content.appendChild(list);
   setLessonOnlyActionsVisible(false);
@@ -6622,6 +6592,7 @@ function openExam(exam){
   const hoursSel = top.querySelector("#examHours");
   const startBtn = top.querySelector("#startExam");
   const submitBtn = top.querySelector("#submitSecureExam");
+  const replayBtn = top.querySelector("#examReplayBtn");
   const leftEl = top.querySelector("#examLeft");
   const prog = top.querySelector("#examProg");
   const bar = top.querySelector("#examBar");
@@ -6632,6 +6603,25 @@ function openExam(exam){
   function setStatus(message, kind = "legend") {
     statusBox.className = kind;
     statusBox.textContent = message || "";
+  }
+
+  async function renderExamReplayHistory() {
+    try {
+      const payload = await getExamReplayHistory(supabase, exam.id, 50);
+      const official = payload?.official || null, rows = Array.isArray(payload?.replays) ? payload.replays : [];
+      if (!official && !rows.length) { historyBox.hidden = true; return payload; }
+      const line = (row, officialRow = false) => {
+        const passed = Boolean(row?.passed), best = Boolean(row?.is_best);
+        return `<li><span>${officialRow ? "🏁" : "↻"} <b>${passed ? (LANG === "ro" ? "Promovat" : "Passed") : (LANG === "ro" ? "Nepromovat" : "Not passed")}</b>${best ? ` · 🏆 ${LANG === "ro" ? "Record personal" : "Personal best"}` : ""}</span><span>${mhFormatExamScoreValue(row?.score)}/${mhFormatExamScoreValue(row?.total_points)} · ⏱ ${mhFormatExamDuration(row?.duration_seconds)} · ${esc(new Date((officialRow ? row?.passed_at : row?.submitted_at) || row?.submitted_at || Date.now()).toLocaleString(LANG === "ro" ? "ro-RO" : "en-GB"))}</span></li>`;
+      };
+      historyBox.innerHTML = `<details open><summary>🕘 ${LANG === "ro" ? "Istoric examen" : "Exam history"}</summary><div class="mh-exam-history-note">${LANG === "ro" ? "Tentativa oficială rămâne fixă. Replay-urile au 0 XP și nu cresc contorul de examene promovate." : "The official attempt stays fixed. Replays award 0 XP and do not increase the passed-exam counter."}</div><ul>${official ? line(official, true) : ""}${rows.map((row) => line(row)).join("")}</ul></details>`;
+      historyBox.hidden = false;
+      return payload;
+    } catch (error) {
+      console.warn("Exam replay history could not be loaded:", error);
+      historyBox.hidden = true;
+      return null;
+    }
   }
 
   function setLocked(lock){
@@ -6651,6 +6641,10 @@ function openExam(exam){
         </div>
       </div>
     `;
+  }
+
+  function renderReplayReady(){
+    list.innerHTML = `<div class="problem"><div class="title">↻ ${LANG === "ro" ? "Examen oficial încheiat" : "Official exam completed"}</div><div class="legend" style="margin-top:8px;">${LANG === "ro" ? "Alege durata și folosește Reia examenul pentru o sesiune de practică. Rezultatul oficial rămâne neschimbat." : "Choose the duration and use Replay exam for practice. Your official result stays unchanged."}</div></div>`;
   }
 
   const examAnswerMutationQueue = createKeyedMutationQueue();
@@ -6800,6 +6794,10 @@ function openExam(exam){
       adminExamRecoveryController?.refresh();
 
       submitBtn.style.display = "none";
+      replayBtn.style.display = "inline-flex";
+      replayBtn.disabled = false;
+      hoursSel.style.display = "";
+      hoursSel.disabled = false;
       leftEl.style.display = "inline-block";
       const passText=result?.passed?(LANG==="ro"?"✅ Promovat":"✅ Passed"):(LANG==="ro"?"❌ Nepromovat":"❌ Not passed");
       leftEl.textContent=practiceReplay?`↻ ${passText} · 0 XP`:(timedOut?`${LANG==="ro"?"⛔ Timp expirat":"⛔ Time up"} · ${passText}`:passText);
@@ -6812,6 +6810,7 @@ function openExam(exam){
       renderExamItems(true);
       updateExamProgress();
       if (!practiceReplay) { updateCounters(); await loadAppProgressFromDb(MH_AUTH_USER); }
+      await renderExamReplayHistory();
       renderCards();
     } catch (error) {
       console.error("Secure exam submit failed:", error);
@@ -6903,6 +6902,8 @@ function openExam(exam){
     startBtn.disabled = true; startBtn.style.display = "none";
     submitBtn.style.display = "inline-flex";
     submitBtn.disabled = false;
+    replayBtn.style.display = "none";
+    historyBox.hidden = true;
     updateExamProgress();
     refreshExamLockUi();
     adminExamRecoveryController?.refresh();
@@ -6928,8 +6929,12 @@ function openExam(exam){
       clearExamItemResults(exam.id);
       renderHiddenUntilStart();
       setStatus("");
-      startBtn.disabled = false; startBtn.style.display = "";
+      const history = await renderExamReplayHistory();
+      const hasOfficial = Boolean(history?.official);
+      startBtn.disabled = hasOfficial; startBtn.style.display = hasOfficial ? "none" : "";
+      replayBtn.disabled = false; replayBtn.style.display = hasOfficial ? "inline-flex" : "none";
       hoursSel.disabled = false; hoursSel.style.display = "";
+      if (hasOfficial) { renderReplayReady(); setStatus(LANG === "ro" ? "Examenul oficial este deja încheiat. Poți porni o reluare de practică." : "The official exam is already complete. You can start a practice replay.", "ok"); }
     } catch (error) {
       console.error("Secure exam resume failed:", error);
       renderHiddenUntilStart();
@@ -6939,32 +6944,29 @@ function openExam(exam){
     }
   }
 
-  startBtn.addEventListener("click", async () => {
+  async function startExamSession(expectReplay = false) {
     if (actionRunning) return;
-    actionRunning = true;
-    startBtn.disabled = true;
-    hoursSel.disabled = true;
+    actionRunning = true; examFinished = false; startBtn.disabled = true; replayBtn.disabled = true; hoursSel.disabled = true;
     setStatus(LANG === "ro" ? "Se pregătește examenul…" : "Preparing the exam…");
-
     try {
-      clearExamItemResults(exam.id);
-      const payload = await startSecureExamAttempt(
-        supabase,
-        exam.id,
-        Number(hoursSel.value || exam.defaultHours || 2),
-        LANG
-      );
-      if (!applySecureAttempt(payload)) throw new Error("Invalid secure exam payload.");
+      clearExamItemResults(exam.id); runtimeExam.secure_result = null;
+      const payload = await startSecureExamAttempt(supabase, exam.id, Number(hoursSel.value || exam.defaultHours || 2), LANG);
+      if (!applySecureAttempt(payload) || (expectReplay && !payload.practice_replay)) throw new Error("Invalid secure exam replay payload.");
       setStatus(payload.practice_replay ? (LANG === "ro" ? "Replay pornit · 0 XP. Răspunsurile se salvează automat." : "Replay started · 0 XP. Answers are saved automatically.") : (LANG === "ro" ? "Examen pornit. Răspunsurile se salvează automat." : "Exam started. Answers are saved automatically."), "ok");
       activateAttemptUi();
     } catch (error) {
       console.error("Secure exam start failed:", error);
       setStatus(LANG === "ro" ? "Examenul nu a putut fi pornit. Reîncearcă." : "The exam could not be started. Try again.", "bad");
-      startBtn.disabled = false;
-      hoursSel.disabled = false;
-    } finally {
-      actionRunning = false;
-    }
+      startBtn.disabled = false; replayBtn.disabled = false; hoursSel.disabled = false;
+    } finally { actionRunning = false; }
+  }
+
+  startBtn.addEventListener("click", () => void startExamSession(false));
+  replayBtn.addEventListener("click", () => {
+    const message = LANG === "ro"
+      ? "Reluarea este practică: promovarea și data promovării oficiale rămân neschimbate, contorul de examene promovate nu crește, iar XP-ul este 0. Dacă promovezi mai rapid, timpul poate deveni un nou record personal; toate reluările rămân în istoric. Continui?"
+      : "Replay is practice only: your official pass and pass date stay unchanged, the passed-exam counter does not increase, and XP is 0. A faster passed replay can become a new personal best; all replays remain in history. Continue?";
+    if (confirm(message)) void startExamSession(true);
   });
 
   submitBtn.addEventListener("click", () => {
@@ -7014,7 +7016,7 @@ function openExam(exam){
     const lessonStage=TAB==="lessons"&&filter.lessonCategory==="olympiad";
     const lessonOlymp=document.getElementById("lessonOlympLevel"), lessonOlympLabel=document.getElementById("lessonOlympLevelLabel");
     if(lessonOlymp)lessonOlymp.style.display=lessonStage?"":"none"; if(lessonOlympLabel)lessonOlympLabel.style.display=lessonStage?"":"none";
-    if (problemBox) problemBox.style.display = TAB === "problems" ? "flex" : "none";
+    if (problemBox) problemBox.style.display = ["problems", "xp"].includes(TAB) ? "flex" : "none";
     if (examBox) examBox.style.display = TAB === "exams" ? "flex" : "none";
     const olymp = filter.examCategory === "olympiad";
     const examOlymp = document.getElementById("examOlympLevel");

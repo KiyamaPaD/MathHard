@@ -154,9 +154,12 @@ function render(profile) {
   $("communityPublicContent").hidden = false;
   const reportButton = $("communityReportProfile");
   if (reportButton) {
-    reportButton.textContent = copy.report;
-    reportButton.hidden = profile.isOwner;
-    reportButton.dataset.communityReportUsername = profile.username;
+    if (profile.isOwner) reportButton.remove();
+    else {
+      reportButton.textContent = copy.report;
+      reportButton.hidden = false;
+      reportButton.dataset.communityReportUsername = profile.username;
+    }
   }
 
   $("communityPublicName").textContent = profile.displayName;

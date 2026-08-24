@@ -224,3 +224,6 @@
 #communitySaveProfile.is-unsaved-danger {
   border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.18);background:rgba(239,68,68,.14);color:var(--text);
 }
+
+/* 089: hidden owner-only/public actions must not be revived by .btn display rules. */
+.community-public-actions [hidden]{display:none!important}

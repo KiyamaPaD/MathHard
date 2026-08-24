@@ -266,6 +266,7 @@ export function createSecureProblemController({
     let workspaceLoadEpoch = 0;
     let workspaceSaveChain = Promise.resolve();
     let noteDirty=false,replayMode=false,replay=null,replayApi=null,revealedAnswer="",replaySolution=null,revealTimer=0;
+    let solutionAccessGranted=Boolean(record.solved);
     const openExplanationModes = new Set();
     function paintReplaySummary(state = replay) {
       if (!replaySummary) return;
@@ -327,9 +328,10 @@ export function createSecureProblemController({
       ) {
         noteInput.value = workspace.note;
       }
+      solutionAccessGranted = solutionAccessGranted || Boolean(workspace.canViewSolution);
       const visibleSolution = replayMode
-        ? (replaySolution || (workspace.canViewSolution ? workspace.solution : null))
-        : (workspace.canViewSolution ? workspace.solution : null);
+        ? (replaySolution || (solutionAccessGranted ? workspace.solution : null))
+        : (solutionAccessGranted ? workspace.solution : null);
       const unlocked = Boolean(visibleSolution);
       if (solutionLocked) solutionLocked.hidden = unlocked;
       if (unlocked && !openExplanationModes.size) openExplanationModes.add(workspace.explanationMode || "simple");
@@ -363,7 +365,7 @@ export function createSecureProblemController({
 
     function refreshRevealGate(){
       const btn=host.querySelector("#revealBtn"); if(!btn)return; window.clearInterval(revealTimer);
-      if(workspace.canViewSolution){btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
+      if(solutionAccessGranted||workspace.canViewSolution){solutionAccessGranted=true;btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
       const seconds=Math.max(0,Number(replayMode?replay?.reveal_seconds_remaining:workspace.revealGate?.secondsRemaining)||0);
       const hintsReady=replayMode?Boolean(replay?.hint1_used&&replay?.hint2_used):Boolean(workspace.revealGate?.hint1Used&&workspace.revealGate?.hint2Used);
       const paint=()=>{const left=Math.max(0,Math.ceil((Number(btn.dataset.readyAt||0)-Date.now())/1000));btn.disabled=!hintsReady||left>0;btn.textContent=!hintsReady?(ro?"Folosește ambele hinturi":"Use both hints"):(left>0?(ro?`Soluție în ${left}s`:`Solution in ${left}s`):(ro?"Arată răspunsul și soluția":"Show answer and solution"));if(left<=0)window.clearInterval(revealTimer)};
@@ -431,6 +433,7 @@ export function createSecureProblemController({
               workspace = normalizeProblemWorkspace({
                 ...workspace,
                 ...payload,
+                canViewSolution: solutionAccessGranted || workspace.canViewSolution || payload?.canViewSolution,
                 attempts: workspace.attempts,
                 solution: workspace.solution
               });
@@ -617,6 +620,7 @@ export function createSecureProblemController({
           ? await replayApi.revealProblemReplayAnswer(supabase, replay.replay_id, language)
           : await revealProblemAnswer(supabase, problem.id, language);
         revealedAnswer = String(result?.answer || "");
+        solutionAccessGranted = true;
         if(replayMode){
           replaySolution=result?.solution&&typeof result.solution==="object"?result.solution:null;
           if(result?.replay)replay=result.replay;

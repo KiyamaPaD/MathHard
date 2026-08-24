@@ -808,3 +808,6 @@
     padding: 14px;
   }
 }
+
+/* 089: Recent Activity overflow is genuinely hidden until Full Analysis. */
+.mh-analytics-recent-row[data-analytics-extra][hidden]{display:none!important}
