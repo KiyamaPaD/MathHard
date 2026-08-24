@@ -1598,6 +1598,7 @@ import {
     byLessonId: null,
     tag: null,
     problemSort: "easy-asc",
+    exactDifficulty: "",
     olympOnly: false,
     olympLevel: "",
     lessonCategory: "",
@@ -1614,6 +1615,7 @@ import {
   function mhSyncFilterInputs() {
     const qEl = document.getElementById("q");
     const sortEl = document.getElementById("problemSort");
+    const starsEl = document.getElementById("problemStars");
     const olympBadge = document.getElementById("olympOnlyState");
     const olympLevelEl = document.getElementById("olympLevel");
     const lessonCategoryEl = document.getElementById("lessonCategory");
@@ -1623,6 +1625,7 @@ import {
 
     if (qEl) qEl.value = filter.q || "";
     if (sortEl) sortEl.value = filter.problemSort || "easy-asc";
+    if (starsEl) starsEl.value = filter.exactDifficulty === "" ? "" : String(filter.exactDifficulty);
     if (olympBadge) olympBadge.textContent = filter.olympOnly ? "ON" : "OFF";
     if (olympLevelEl) olympLevelEl.value = filter.olympLevel || "";
     if (lessonCategoryEl) lessonCategoryEl.value = filter.lessonCategory || "";
@@ -1641,6 +1644,7 @@ import {
     filter.examType = "";
     filter.topicPreset = "";
     filter.unsolvedOnly = false;
+    filter.exactDifficulty = "";
     filter.olympOnly = false;
     filter.olympLevel = "";
     filter.lessonCategory = "";
@@ -4743,7 +4747,10 @@ ${details}`);
     for(const id of ["olympLevel","examOlympLevel","lessonOlympLevel"]) setOptions(id,[["",mhOlympLevelLabel("")],["locala",mhOlympLevelLabel("locala")],["judeteana",mhOlympLevelLabel("judeteana")],["regionala",mhOlympLevelLabel("regionala")],["nationala",mhOlympLevelLabel("nationala")],["balcaniada",mhOlympLevelLabel("balcaniada")],["internationala",mhOlympLevelLabel("internationala")],["mondiala",mhOlympLevelLabel("mondiala")]]);
     const sortLabel=document.querySelector("#problemSortBox .legend"); if(sortLabel) sortLabel.textContent=LANG==="ro"?"Sortare:":"Sort:";
     setOptions("problemSort",[["easy-asc",LANG==="ro"?"⭐ Ușor → Greu (implicit)":"⭐ Easy → Hard (default)"],["easy-desc",LANG==="ro"?"⭐ Greu → Ușor":"⭐ Hard → Easy"],["newest",LANG==="ro"?"🆕 Cele mai noi":"🆕 Newest first"]]);
-    const olympLabel=document.querySelector("#problemSortBox .legend:nth-of-type(2)"); if(olympLabel) olympLabel.textContent=LANG==="ro"?"Nivel olimpiadă:":"Olympiad level:";
+    const starsLabel=document.getElementById("problemStarsLabel"); if(starsLabel) starsLabel.textContent=LANG==="ro"?"Stele:":"Stars:";
+    setOptions("problemStars",[["",LANG==="ro"?"Toate":"All"],["0","0★"],["1","1★"],["2","2★"],["3","3★"],["4","4★"],["5","5★"]]);
+    const starsSelect=document.getElementById("problemStars"); if(starsSelect) starsSelect.title=LANG==="ro"?"Afișează doar problemele cu dificultatea aleasă":"Show only problems with the selected difficulty";
+    const olympLabel=document.querySelector("#problemSortBox .legend:nth-of-type(3)"); if(olympLabel) olympLabel.textContent=LANG==="ro"?"Nivel olimpiadă:":"Olympiad level:";
     const olympBtn=document.getElementById("olympOnlyBtn"); if(olympBtn){const span=olympBtn.querySelector("span");if(span)span.textContent=LANG==="ro"?"🏅 Doar olimpiadă:":"🏅 Olympiad only:";olympBtn.title=LANG==="ro"?"Afișează doar probleme de olimpiadă":"Show only olympiad problems";}
     const olympState=document.getElementById("olympOnlyState");if(olympState)olympState.textContent=filter.olympOnly?"ON":"OFF";
     mhSyncContextFilterVisibility();
@@ -5189,6 +5196,7 @@ ${details}`);
   const PROBLEM_INDEX = new Map(DATA.problems.map((p,i)=>[p.id,i]));
 
   function passProblem(P){
+    if (filter.exactDifficulty !== "" && Number(P.difficulty) !== Number(filter.exactDifficulty)) return false;
     if(P.difficulty < filter.minDiff || P.difficulty > filter.maxDiff) return false;
 
     const L = DATA.lessons.find(x => x.id === P.lessonId) || {};
@@ -7057,6 +7065,10 @@ function openExam(exam){
   });
   /* sort select */
   document.getElementById("problemSort").onchange=(e)=>{ filter.problemSort=e.target.value; page=1; renderCards(); };
+  document.getElementById("problemStars")?.addEventListener("change",(e)=>{
+    filter.exactDifficulty=e.target.value === "" ? "" : Number(e.target.value);
+    page=1; renderCards(); drawFilterBar();
+  });
 
   /* wire butoane olimpiada */
   function wireOlympControls(){

@@ -36,6 +36,7 @@ const layout = read("js/section-layout-controller.js");
 const allHtml = ["index.html", "profile.html", "u.html", "404.html", "offline.html"].map(read).join("\n");
 
 if (html.includes('id="exactStars"') || html.includes('id="minDiff"') || html.includes('id="maxDiff"')) errors.push("Legacy advanced difficulty controls must stay removed.");
+if (!html.includes('id="problemStars"') || !app.includes('filter.exactDifficulty') || !app.includes('Number(P.difficulty) !== Number(filter.exactDifficulty)')) errors.push("Contextual exact 0–5 star filtering must be available for Problems and Problem Progress.");
 if (app.includes('difficulty_range:') || app.includes('global_tags:') || app.includes('structural_tags:')) errors.push("Removed difficulty/structural/global filter copy must not return.");
 if (!html.includes('id="problemSort"') || !app.includes('filter.problemSort')) errors.push("Problem star/difficulty sorting must stay in the contextual toolbar.");
 if (!app.includes('["problems", "xp"].includes(TAB)') || !app.includes('filter(passProblem)')) errors.push("Problem Progress must share active problem filters and contextual star/Olympiad sorting.");
@@ -77,7 +78,7 @@ if (errors.length) {
   errors.forEach((error) => console.error(`ERROR: ${error}`));
   process.exitCode = 1;
 } else {
-  console.log("- compact tags/categories + contextual star sorting: present");
+  console.log("- compact tags/categories + contextual star sorting + exact 0–5★ filter: present");
   console.log("- Problem Progress shares problem tags/search/star/Olympiad filters without tab mismatch: present");
   console.log("- redundant exam-problems sidebar entry removed; Exam tips moved to Special categories: present");
   console.log("- replay answer privacy + solved-state solution access + multi-view explanations: present");
