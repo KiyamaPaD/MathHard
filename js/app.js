@@ -4750,7 +4750,7 @@ ${details}`);
     const starsLabel=document.getElementById("problemStarsLabel"); if(starsLabel) starsLabel.textContent=LANG==="ro"?"Stele:":"Stars:";
     setOptions("problemStars",[["",LANG==="ro"?"Toate":"All"],["0","0★"],["1","1★"],["2","2★"],["3","3★"],["4","4★"],["5","5★"]]);
     const starsSelect=document.getElementById("problemStars"); if(starsSelect) starsSelect.title=LANG==="ro"?"Afișează doar problemele cu dificultatea aleasă":"Show only problems with the selected difficulty";
-    const olympLabel=document.querySelector("#problemSortBox .legend:nth-of-type(3)"); if(olympLabel) olympLabel.textContent=LANG==="ro"?"Nivel olimpiadă:":"Olympiad level:";
+    const olympLabel=document.getElementById("olympLevelLabel"); if(olympLabel) olympLabel.textContent=LANG==="ro"?"Nivel olimpiadă:":"Olympiad level:";
     const olympBtn=document.getElementById("olympOnlyBtn"); if(olympBtn){const span=olympBtn.querySelector("span");if(span)span.textContent=LANG==="ro"?"🏅 Doar olimpiadă:":"🏅 Olympiad only:";olympBtn.title=LANG==="ro"?"Afișează doar probleme de olimpiadă":"Show only olympiad problems";}
     const olympState=document.getElementById("olympOnlyState");if(olympState)olympState.textContent=filter.olympOnly?"ON":"OFF";
     mhSyncContextFilterVisibility();
@@ -5214,7 +5214,7 @@ ${details}`);
     if (filter.topicPreset && !mhMatchesProblemTopic(P, filter.topicPreset)) return false;
 
     if(filter.olympOnly && !isOlympiad(P)) return false;
-    if(filter.olympLevel){
+    if(filter.olympOnly && filter.olympLevel){
       const lev = getOlympLevel(P);
       if(lev !== filter.olympLevel) return false;
     }
@@ -7025,6 +7025,11 @@ function openExam(exam){
     const lessonOlymp=document.getElementById("lessonOlympLevel"), lessonOlympLabel=document.getElementById("lessonOlympLevelLabel");
     if(lessonOlymp)lessonOlymp.style.display=lessonStage?"":"none"; if(lessonOlympLabel)lessonOlympLabel.style.display=lessonStage?"":"none";
     if (problemBox) problemBox.style.display = ["problems", "xp"].includes(TAB) ? "flex" : "none";
+    const problemOlympStage = ["problems", "xp"].includes(TAB) && filter.olympOnly;
+    const problemOlympLevel = document.getElementById("olympLevel");
+    const problemOlympLevelLabel = document.getElementById("olympLevelLabel");
+    if (problemOlympLevel) problemOlympLevel.style.display = problemOlympStage ? "" : "none";
+    if (problemOlympLevelLabel) problemOlympLevelLabel.style.display = problemOlympStage ? "" : "none";
     if (examBox) examBox.style.display = TAB === "exams" ? "flex" : "none";
     const olymp = filter.examCategory === "olympiad";
     const examOlymp = document.getElementById("examOlympLevel");
@@ -7079,8 +7084,11 @@ function openExam(exam){
     if(btn && badge){
       btn.onclick = ()=>{
         filter.olympOnly = !filter.olympOnly;
+        if (!filter.olympOnly) filter.olympLevel = "";
         const liveBadge = document.getElementById("olympOnlyState");
         if (liveBadge) liveBadge.textContent = filter.olympOnly ? "ON" : "OFF";
+        mhSyncContextFilterVisibility();
+        if (levelSel) levelSel.value = filter.olympLevel || "";
         page=1; renderCards(); drawFilterBar();
       };
     }
