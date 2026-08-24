@@ -5214,7 +5214,8 @@ ${details}`);
     if (filter.topicPreset && !mhMatchesProblemTopic(P, filter.topicPreset)) return false;
 
     if(filter.olympOnly && !isOlympiad(P)) return false;
-    if(filter.olympOnly && filter.olympLevel){
+    if(filter.olympLevel){
+      if(!isOlympiad(P)) return false;
       const lev = getOlympLevel(P);
       if(lev !== filter.olympLevel) return false;
     }
@@ -7016,6 +7017,12 @@ function openExam(exam){
     filter.examOlympLevel = event.target.value || ""; page = 1; renderCards(); drawFilterBar();
   });
 
+  function mhHasProblemOlympiadContext({ includeLevel = true } = {}){
+    const olympTag = filter.tag ? `${filter.tag} ${mhTagLabel(filter.tag)}` : "";
+    const hasOlympGrade = Array.isArray(filter.gradeSet) && filter.gradeSet.some((grade)=>/^OL-/i.test(String(grade || "")));
+    return filter.olympOnly || filter.topicPreset === "olymp" || (includeLevel && Boolean(filter.olympLevel)) || hasOlympGrade || /(olimpiad|olymp|onm|imo|jbmo|bmo|shortlist)/i.test(olympTag);
+  }
+
   function mhSyncContextFilterVisibility(){
     const lessonBox = document.getElementById("lessonSortBox");
     const problemBox = document.getElementById("problemSortBox");
@@ -7025,7 +7032,7 @@ function openExam(exam){
     const lessonOlymp=document.getElementById("lessonOlympLevel"), lessonOlympLabel=document.getElementById("lessonOlympLevelLabel");
     if(lessonOlymp)lessonOlymp.style.display=lessonStage?"":"none"; if(lessonOlympLabel)lessonOlympLabel.style.display=lessonStage?"":"none";
     if (problemBox) problemBox.style.display = ["problems", "xp"].includes(TAB) ? "flex" : "none";
-    const problemOlympStage = ["problems", "xp"].includes(TAB) && filter.olympOnly;
+    const problemOlympStage = ["problems", "xp"].includes(TAB) && mhHasProblemOlympiadContext();
     const problemOlympLevel = document.getElementById("olympLevel");
     const problemOlympLevelLabel = document.getElementById("olympLevelLabel");
     if (problemOlympLevel) problemOlympLevel.style.display = problemOlympStage ? "" : "none";
@@ -7084,7 +7091,7 @@ function openExam(exam){
     if(btn && badge){
       btn.onclick = ()=>{
         filter.olympOnly = !filter.olympOnly;
-        if (!filter.olympOnly) filter.olympLevel = "";
+        if (!filter.olympOnly && !mhHasProblemOlympiadContext({ includeLevel: false })) filter.olympLevel = "";
         const liveBadge = document.getElementById("olympOnlyState");
         if (liveBadge) liveBadge.textContent = filter.olympOnly ? "ON" : "OFF";
         mhSyncContextFilterVisibility();

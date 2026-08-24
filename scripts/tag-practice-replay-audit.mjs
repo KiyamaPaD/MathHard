@@ -39,7 +39,7 @@ if (html.includes('id="exactStars"') || html.includes('id="minDiff"') || html.in
 if (!html.includes('id="problemStars"') || !app.includes('filter.exactDifficulty') || !app.includes('Number(P.difficulty) !== Number(filter.exactDifficulty)')) errors.push("Contextual exact 0–5 star filtering must be available for Problems and Problem Progress.");
 if (app.includes('difficulty_range:') || app.includes('global_tags:') || app.includes('structural_tags:')) errors.push("Removed difficulty/structural/global filter copy must not return.");
 if (!html.includes('id="problemSort"') || !app.includes('filter.problemSort')) errors.push("Problem star/difficulty sorting must stay in the contextual toolbar.");
-if (!html.includes('id="olympLevelLabel"') || !app.includes('problemOlympStage = ["problems", "xp"].includes(TAB) && filter.olympOnly') || !app.includes('if (!filter.olympOnly) filter.olympLevel = ""')) errors.push("Problem Olympiad level selector must only appear while Olympiad-only filtering is ON and must reset when turned OFF.");
+if (!html.includes('id="olympLevelLabel" data-i18n="olymp_level_label" style="display:none"') || !html.includes('id="olympLevel" class="select" title="Filtrează nivelul olimpiadei" data-i18n-title="olymp_level_title" style="display:none"') || !app.includes('function mhHasProblemOlympiadContext({ includeLevel = true } = {})') || !app.includes('problemOlympStage = ["problems", "xp"].includes(TAB) && mhHasProblemOlympiadContext()') || !app.includes('!mhHasProblemOlympiadContext({ includeLevel: false })') || !app.includes('if(filter.olympLevel){') || !app.includes('if(!isOlympiad(P)) return false;')) errors.push("Problem Olympiad level selector must start hidden, appear for any active Olympiad context, and filter levels without requiring the Olympiad-only toggle.");
 if (!app.includes('["problems", "xp"].includes(TAB)') || !app.includes('filter(passProblem)')) errors.push("Problem Progress must share active problem filters and contextual star/Olympiad sorting.");
 if (!app.includes('["lessons","problems","xp","exams"].includes(TAB)')) errors.push("Tag filtering must preserve the active Problem Progress tab instead of rendering another content type under it.");
 if (html.includes('data-chip="exams"') || app.includes('mhUi("exam_problems")') || app.includes('exam_linked_problems')) errors.push("The redundant Problems from exams sidebar/main shortcut must stay removed.");
@@ -81,7 +81,7 @@ if (errors.length) {
 } else {
   console.log("- compact tags/categories + contextual star sorting + exact 0–5★ filter: present");
   console.log("- Problem Progress shares problem tags/search/star/Olympiad filters without tab mismatch: present");
-  console.log("- Olympiad level selector is conditional on Olympiad-only ON and resets on OFF: present");
+  console.log("- Olympiad level selector is hidden by default and appears only for active Olympiad filters: present");
   console.log("- redundant exam-problems sidebar entry removed; Exam tips moved to Special categories: present");
   console.log("- replay answer privacy + solved-state solution access + multi-view explanations: present");
   console.log("- exam post-submit duration/review contract: present");
