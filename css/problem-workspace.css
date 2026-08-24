@@ -302,8 +302,18 @@
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-.mh-solution-content {
+.mh-explanation-modes button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.mh-solution-panels {
+  display: grid;
+  gap: 10px;
   margin-top: 12px;
+}
+
+.mh-solution-content {
   padding: 14px;
   border-radius: 14px;
   background: color-mix(in srgb, var(--bg) 82%, var(--accent) 18%);

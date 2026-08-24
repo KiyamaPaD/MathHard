@@ -13,7 +13,6 @@ const copy = lang === "en" ? {
   pageTitle: "MathHard — Public profile",
   metaDescription: "Public MathHard profile.",
   slogan: "Community",
-  back: "Back",
   missingTitle: "Profile unavailable",
   missingText: "This profile is private, unavailable or the username is invalid.",
   progress: ["XP", "Level", "Lessons learned", "Problems solved", "Exams passed", "Streak"],
@@ -33,14 +32,12 @@ const copy = lang === "en" ? {
   days: "days",
   copied: "Link copied",
   copyLink: "Copy link",
-  leaderboards: "Leaderboards",
   portfolio: "Portfolio",
   report: "Report"
 } : {
   pageTitle: "MathHard — Profil public",
   metaDescription: "Profil public MathHard.",
   slogan: "Comunitate",
-  back: "Înapoi",
   missingTitle: "Profil indisponibil",
   missingText: "Profilul este privat, indisponibil sau numele de utilizator nu este valid.",
   progress: ["XP", "Nivel", "Lecții învățate", "Probleme rezolvate", "Examene promovate", "Serie"],
@@ -60,7 +57,6 @@ const copy = lang === "en" ? {
   days: "zile",
   copied: "Adresă copiată",
   copyLink: "Copiază adresa",
-  leaderboards: "Clasamente",
   portfolio: "Portofoliu",
   report: "Raportează"
 };
@@ -78,8 +74,6 @@ function applyStaticText() {
   if ($("communityPublicMeta")) $("communityPublicMeta").content = copy.metaDescription;
   const slogan = document.querySelector(".community-public-topbar .logo-slogan");
   if (slogan) slogan.textContent = copy.slogan;
-  const back = document.querySelector('.community-public-topbar a.btn[href="/index.html"]');
-  if (back) back.textContent = copy.back;
 }
 
 applyStaticText();
@@ -105,7 +99,7 @@ function showEmpty(title = copy.missingTitle, text = copy.missingText) {
   $("communityPublicContent").hidden = true;
   const host = $("communityPublicEmpty");
   host.hidden = false;
-  host.innerHTML = `<div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(text)}</p><a class="btn" href="/index.html">MathHard</a></div>`;
+  host.innerHTML = `<div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(text)}</p></div>`;
 }
 
 function escapeHtml(value) {
@@ -155,7 +149,6 @@ function render(profile) {
   $("communityAchievementsTitle").textContent = copy.sections.achievements;
   $("communityLinksTitle").textContent = copy.sections.links;
   $("communityActivityTitle").textContent = copy.sections.activity;
-  if ($("communityLeaderboardLink")) $("communityLeaderboardLink").textContent = copy.leaderboards;
 
   $("communityPublicEmpty").hidden = true;
   $("communityPublicContent").hidden = false;

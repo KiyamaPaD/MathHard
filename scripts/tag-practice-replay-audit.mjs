@@ -28,6 +28,8 @@ const exam = read("js/secure-exam-repository.js");
 const analytics = read("js/analytics-repository.js") + read("js/analytics-controller.js");
 const profileSettings = read("js/community-profile-settings-controller.js");
 const profilePage = read("js/community-profile-page.js");
+const publicProfileHtml = read("u.html");
+const roadmap = read("js/roadmap-controller.js") + read("css/roadmap.css");
 const layout = read("js/section-layout-controller.js");
 const allHtml = ["index.html", "profile.html", "u.html", "404.html", "offline.html"].map(read).join("\n");
 
@@ -41,28 +43,37 @@ if (!tags.includes('"mh_get_tag_catalog"') || !tags.includes("group_key") || !ta
 if (!tagAdmin.includes("group_key") || !tagAdmin.includes("filter_visible")) errors.push("Admin Tag Studio taxonomy controls are incomplete.");
 if (!replay.includes('"mh_start_problem_replay"') || !replay.includes('"mh_get_practice_replay_analytics"')) errors.push("Problem replay repository contract is incomplete.");
 if (!problem.includes("0 XP") || !problem.includes('import("./practice-replay-repository.js")') || !problem.includes("renderReplayHistory") || !problem.includes("attempt_count")) errors.push("Problem replay must stay isolated at 0 XP with answer history hidden.");
-if (!problem.includes("reveal_seconds_remaining") || !problemWorkspace.includes("revealGate") || !problem.includes("hint1_used&&replay?.hint2_used")) errors.push("Problem solution gate must require both hints plus the server countdown.");
-if (!problem.includes("replaySolution") || !problem.includes("result?.solution") || !replay.includes("p_locale:locale(lang)")) errors.push("Replay solution must stay hidden until the gated reveal and then render the localized explanation.");
+if (!problem.includes("reveal_seconds_remaining") || !problemWorkspace.includes("revealGate") || !problem.includes("workspace.canViewSolution")) errors.push("Problem solution gate/solved-state unlock contract is incomplete.");
+if (!problem.includes("openExplanationModes") || !problem.includes('data-solution-panel') || !problem.includes('aria-pressed')) errors.push("Explanation modes must preserve independent simultaneous open state.");
+if (!problem.includes("replaySolution") || !problem.includes("result?.solution") || !replay.includes("p_locale:locale(lang)")) errors.push("Replay solution localization/rendering contract is incomplete.");
+const feedbackIndex = problem.indexOf("mh-feedback-card");
+const solutionIndex = problem.indexOf("mh-solution-card");
+const trainingIndex = problem.indexOf("Continuă antrenamentul");
+if (!(solutionIndex >= 0 && feedbackIndex > solutionIndex && trainingIndex > feedbackIndex)) errors.push("Work feedback must sit below solution/explanation and directly before Continue training.");
 if (!problem.includes("Reluarea golește răspunsul și istoricul vizibil") || !problem.includes("is-unsaved-danger") && !profileSettings.includes("is-unsaved-danger")) errors.push("Replay/profile warning UX is incomplete.");
 if (!exam.includes('"mh_start_exam_session"') || !exam.includes('"mh_submit_exam_session"')) errors.push("Exam repository must use the official/replay session router.");
 if (!app.includes("duration_seconds") || !app.includes("submitted_answer") || !app.includes("correct_answer")) errors.push("Post-exam duration and answer review rendering is incomplete.");
 if (!analytics.includes("practiceReplays") || !analytics.includes("renderPracticeReplays") || !analytics.includes("Problemă reîncercată") || !analytics.includes("Examen reîncercat") || !analytics.includes("Analiză completă")) errors.push("Expanded replay Analytics is incomplete.");
 if (!profileSettings.includes("showUnsavedWarning") || !profileSettings.includes("beforeunload") || !profileSettings.includes("is-unsaved-danger")) errors.push("Mandatory unsaved-profile warning is incomplete.");
 if (profilePage.includes("Se încarcă profilul") || profilePage.includes("Profilurile publice afișează")) errors.push("Public profile must not inject the stale loading placeholder.");
+if (publicProfileHtml.includes('href="/index.html') || publicProfileHtml.includes('href="/index.html#') || profilePage.includes('href="/index.html"')) errors.push("Full public profile must remain a leaf page with no route back into the app.");
+if (!roadmap.includes("mh-roadmap-target-label") || !roadmap.includes("margin-left: 10px")) errors.push("Roadmap target label offset is missing.");
+if (!app.includes("getExamCatalogItemCount") || !app.includes("exam.items.length") || !app.includes("exam.problems.length")) errors.push("Exam item count must fall back to embedded/legacy items for Admin catalog rows.");
 if (layout.includes("Aspectul paginii a fost salvat") || layout.includes("Page appearance was saved")) errors.push("Redundant page-appearance saved toast must stay removed.");
 if ((allHtml.match(/localStorage\.getItem\("mh_theme"\)/g) || []).length < 5) errors.push("Theme bootstrap must exist on all five HTML entry points.");
 if (sqlFiles(root).length) errors.push("Database SQL must remain outside the application repository.");
 
-console.log("MathHard 087 Filters + Replay Privacy + Profile/Analytics audit");
+console.log("MathHard 088 Replay/Admin Exam + Workspace UX audit");
 if (errors.length) {
   errors.forEach((error) => console.error(`ERROR: ${error}`));
   process.exitCode = 1;
 } else {
   console.log("- compact tags/categories + contextual star sorting: present");
-  console.log("- replay answer privacy + 0 XP + solution gate: present");
+  console.log("- replay answer privacy + solved-state solution access + multi-view explanations: present");
   console.log("- exam post-submit duration/review contract: present");
-  console.log("- unsaved profile guard + global theme bootstrap: present");
+  console.log("- leaf public profile + unsaved profile guard + global theme bootstrap: present");
+  console.log("- Admin exam item-count fallback + roadmap target spacing: present");
   console.log("- expanded replay Analytics: present");
   console.log("- SQL kept outside Git: confirmed");
-  console.log("MathHard 087 audit passed.");
+  console.log("MathHard 088 audit passed.");
 }

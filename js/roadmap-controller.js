@@ -266,7 +266,7 @@ export function createRoadmapController({
     root.innerHTML = `
       <div class="mh-roadmap-toolbar">
         <label>
-          <span>${textFor(language, "Ținta ta", "Your target")}</span>
+          <span class="mh-roadmap-target-label">${textFor(language, "Ținta ta", "Your target")}</span>
           <select class="select" data-roadmap-select="1">${options}</select>
         </label>
       </div>

@@ -3826,6 +3826,14 @@ ${details}`);
     return [];
   }
 
+  function getExamCatalogItemCount(exam){
+    const explicit = Number(exam?.item_count || 0);
+    if (explicit > 0) return explicit;
+    if (Array.isArray(exam?.items) && exam.items.length) return exam.items.length;
+    if (Array.isArray(exam?.problems) && exam.problems.length) return exam.problems.length;
+    return 0;
+  }
+
   function getExamItemStorageKey(examId){
     return scopedStorageKey(`mh_exam_item_results_${String(examId || "").trim()}`, MH_AUTH_USER?.id);
   }
@@ -5599,7 +5607,7 @@ ${details}`);
       : (item.title_en || item.title_ro || "Exam");
 
     const total = Number(item.total_points || 0);
-    const itemCount = Number(item.item_count || 0);
+    const itemCount = getExamCatalogItemCount(item);
     const passed = examsPassedSet.has(item.id);
 
     div.innerHTML = `
@@ -6592,10 +6600,10 @@ function openExam(exam){
     <div class="progressRow">
       <span class="legend">${LANG === "ro" ? "Răspunsuri salvate" : "Saved answers"}:</span>
       <div class="progressBar"><i id="examBar"></i></div>
-      <span id="examProg" class="legend">0/${Number(exam.item_count || 0)}</span>
+      <span id="examProg" class="legend">0/${getExamCatalogItemCount(exam)}</span>
     </div>
     <div class="legend" id="secureExamMeta">
-      ${LANG === "ro" ? "Itemi examen" : "Exam items"}: <b>${Number(exam.item_count || 0)}</b>
+      ${LANG === "ro" ? "Itemi examen" : "Exam items"}: <b>${getExamCatalogItemCount(exam)}</b>
       ${Number(exam.total_points || 0) > 0 ? `• ${LANG === "ro" ? "Punctaj maxim" : "Maximum score"}: <b>${mhFormatExamScoreValue(exam.total_points)}</b>` : ""}
       ${exam.credit_html ? `• ${exam.credit_html}` : ""}
     </div>
@@ -6680,7 +6688,7 @@ function openExam(exam){
   }
 
   function updateExamProgress(){
-    const totalItems = getExamRenderableItems(runtimeExam).length || Number(exam.item_count || 0);
+    const totalItems = getExamRenderableItems(runtimeExam).length || getExamCatalogItemCount(exam);
     const answered = computeExamAnsweredCount(runtimeExam);
     if (prog) prog.textContent = `${answered}/${totalItems}`;
     if (bar) bar.style.width = `${totalItems ? Math.round(100 * answered / totalItems) : 0}%`;

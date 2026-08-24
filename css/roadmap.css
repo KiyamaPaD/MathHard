@@ -25,6 +25,10 @@
   color: var(--muted);
 }
 
+.mh-roadmap-target-label {
+  margin-left: 10px;
+}
+
 .mh-roadmap-schema-badge {
   border: 1px solid var(--border);
   border-radius: 999px;

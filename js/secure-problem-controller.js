@@ -164,8 +164,6 @@ export function createSecureProblemController({
               <details class="collapsible" open><summary>📜 ${ro ? "Istoricul încercărilor" : "Attempt history"} (<span id="attemptCount">${existingAttempts.length}</span>)</summary><div id="attemptHistoryStatus" class="legend">${ro ? "Se încarcă…" : "Loading…"}</div><ul class="attempts mh-server-attempts" id="attemptsList"></ul></details>
             </section>
 
-            <section class="mh-problem-card mh-feedback-card"><h3>🧭 ${ro ? "Feedback de lucru" : "Work feedback"}</h3><p id="problemFeedbackText"></p></section>
-
             <div class="hints" id="hintsBox">
               ${hasHint1 && !isExam ? `
               <div class="hint" id="hintWrap1" style="display:none;">
@@ -188,20 +186,26 @@ export function createSecureProblemController({
               <div class="mh-solution-heading">
                 <h3>🧠 ${ro ? "Explicație și soluție" : "Explanation and solution"}</h3>
                 <div class="mh-explanation-modes" role="group" aria-label="Explanation mode">
-                  <button type="button" data-explanation-mode="academic">🎓 ${ro ? "Completă" : "Detailed"}</button>
-                  <button type="button" data-explanation-mode="simple">✨ ${ro ? "Simplă" : "Simple"}</button>
-                  <button type="button" data-explanation-mode="boss">◈ ${ro ? "Intuitivă" : "Intuitive"}</button>
+                  <button type="button" data-explanation-mode="academic" aria-pressed="false">🎓 ${ro ? "Completă" : "Detailed"}</button>
+                  <button type="button" data-explanation-mode="simple" aria-pressed="false">✨ ${ro ? "Simplă" : "Simple"}</button>
+                  <button type="button" data-explanation-mode="boss" aria-pressed="false">◈ ${ro ? "Intuitivă" : "Intuitive"}</button>
                 </div>
               </div>
               <div id="solutionLocked" class="legend">
                 ${ro ? "Soluția se deblochează după Hint 1 + Hint 2 și 30 de secunde." : "The solution unlocks after Hint 1 + Hint 2 and 30 seconds."}
               </div>
-              <div id="solutionContent" class="mh-solution-content" hidden></div>
+              <div id="solutionPanels" class="mh-solution-panels" hidden>
+                <section class="mh-solution-content" data-solution-panel="academic" hidden></section>
+                <section class="mh-solution-content" data-solution-panel="simple" hidden></section>
+                <section class="mh-solution-content" data-solution-panel="boss" hidden></section>
+              </div>
               <div class="reveal">
                 <button class="reveal-btn" id="revealBtn" type="button">${ro ? "Arată răspunsul și soluția" : "Show answer and solution"}</button>
                 <span class="legend" id="revealText" hidden></span>
               </div>
             </section>` : ""}
+
+            <section class="mh-problem-card mh-feedback-card"><h3>🧭 ${ro ? "Feedback de lucru" : "Work feedback"}</h3><p id="problemFeedbackText"></p></section>
 
             <section class="mh-problem-card">
               <h3>➡️ ${ro ? "Continuă antrenamentul" : "Continue training"}</h3>
@@ -244,7 +248,8 @@ export function createSecureProblemController({
     const replayButton = host.querySelector("#startProblemReplayBtn");
     const replaySummary = host.querySelector("#problemReplaySummary");
     const solutionLocked = host.querySelector("#solutionLocked");
-    const solutionContent = host.querySelector("#solutionContent");
+    const solutionPanels = host.querySelector("#solutionPanels");
+    const solutionPanelEls = [...host.querySelectorAll("[data-solution-panel]")];
     const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
     bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox"));
     attachMathToolbar?.(input, host.querySelector("#answerMathToolbar"));
@@ -261,6 +266,7 @@ export function createSecureProblemController({
     let workspaceLoadEpoch = 0;
     let workspaceSaveChain = Promise.resolve();
     let noteDirty=false,replayMode=false,replay=null,replayApi=null,revealedAnswer="",replaySolution=null,revealTimer=0;
+    const openExplanationModes = new Set();
     function paintReplaySummary(state = replay) {
       if (!replaySummary) return;
       const count = Number(state?.replay_count || 0), last = state?.last_replay_at;
@@ -321,17 +327,35 @@ export function createSecureProblemController({
       ) {
         noteInput.value = workspace.note;
       }
-      modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.explanationMode === workspace.explanationMode));
-
-      const visibleSolution = replayMode ? replaySolution : (workspace.canViewSolution ? workspace.solution : null);
+      const visibleSolution = replayMode
+        ? (replaySolution || (workspace.canViewSolution ? workspace.solution : null))
+        : (workspace.canViewSolution ? workspace.solution : null);
       const unlocked = Boolean(visibleSolution);
       if (solutionLocked) solutionLocked.hidden = unlocked;
-      if (solutionContent) {
-        solutionContent.hidden = !unlocked;
-        solutionContent.innerHTML = unlocked
-          ? `<div>${escapeHtml(solutionText(visibleSolution, workspace.explanationMode, language)).replaceAll("\n", "<br>")}</div>`
+      if (unlocked && !openExplanationModes.size) openExplanationModes.add(workspace.explanationMode || "simple");
+      if (solutionPanels) solutionPanels.hidden = !unlocked;
+      modeButtons.forEach((button) => {
+        const mode = button.dataset.explanationMode;
+        const open = unlocked && openExplanationModes.has(mode);
+        button.disabled = !unlocked;
+        button.classList.toggle("active", open);
+        button.setAttribute("aria-pressed", String(open));
+      });
+      solutionPanelEls.forEach((panel) => {
+        const mode = panel.dataset.solutionPanel;
+        const open = unlocked && openExplanationModes.has(mode);
+        panel.hidden = !open;
+        panel.innerHTML = open
+          ? `<div>${escapeHtml(solutionText(visibleSolution, mode, language)).replaceAll("\n", "<br>")}</div>`
           : "";
-        if (unlocked) renderMath(solutionContent);
+        if (open) renderMath(panel);
+      });
+      if (unlocked && !revealedAnswer) {
+        revealedAnswer = String(visibleSolution?.answer || "");
+      }
+      const currentRevealText = host.querySelector("#revealText");
+      if (unlocked && revealedAnswer && currentRevealText) {
+        currentRevealText.textContent = `${ro ? "Răspuns corect:" : "Correct answer:"} ${revealedAnswer}`;
       }
       if(replayMode)renderReplayHistory();else renderAttempts(workspace.attempts);
       refreshRevealGate();
@@ -339,7 +363,7 @@ export function createSecureProblemController({
 
     function refreshRevealGate(){
       const btn=host.querySelector("#revealBtn"); if(!btn)return; window.clearInterval(revealTimer);
-      if(!replayMode&&workspace.canViewSolution){btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
+      if(workspace.canViewSolution){btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
       const seconds=Math.max(0,Number(replayMode?replay?.reveal_seconds_remaining:workspace.revealGate?.secondsRemaining)||0);
       const hintsReady=replayMode?Boolean(replay?.hint1_used&&replay?.hint2_used):Boolean(workspace.revealGate?.hint1Used&&workspace.revealGate?.hint2Used);
       const paint=()=>{const left=Math.max(0,Math.ceil((Number(btn.dataset.readyAt||0)-Date.now())/1000));btn.disabled=!hintsReady||left>0;btn.textContent=!hintsReady?(ro?"Folosește ambele hinturi":"Use both hints"):(left>0?(ro?`Soluție în ${left}s`:`Solution in ${left}s`):(ro?"Arată răspunsul și soluția":"Show answer and solution"));if(left<=0)window.clearInterval(revealTimer)};
@@ -447,6 +471,9 @@ export function createSecureProblemController({
 
     modeButtons.forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.explanationMode;
+      if (button.disabled) return;
+      if (openExplanationModes.has(mode)) openExplanationModes.delete(mode);
+      else openExplanationModes.add(mode);
       workspace.explanationMode = mode;
       renderWorkspace({ syncNote: false });
       void saveWorkspace({ explanationMode: mode });
@@ -580,7 +607,7 @@ export function createSecureProblemController({
     const revealButton = host.querySelector("#revealBtn");
     const revealText = host.querySelector("#revealText");
     revealButton?.addEventListener("click", async () => {
-      if (revealedAnswer) {
+      if (revealedAnswer && !replayMode) {
         revealText.hidden = !revealText.hidden;
         return;
       }
