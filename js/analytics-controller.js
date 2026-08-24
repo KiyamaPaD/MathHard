@@ -116,6 +116,10 @@ const COPY = {
     replaysHint: "Replay-urile au 0 XP și nu schimbă progresul oficial.",
     problemReplays: "probleme reluate",
     examReplays: "examene reluate",
+    problemReplayEvent: "Problemă reîncercată",
+    examReplayEvent: "Examen reîncercat",
+    fullAnalysis: "Analiză completă",
+    collapseAnalysis: "Restrânge",
     lastReplay: "ultima reluare",
     noReplays: "Nu ai reluat încă probleme sau examene.",
     recent: "Activitate recentă",
@@ -239,6 +243,10 @@ const COPY = {
     replaysHint: "Replays award 0 XP and do not change official progress.",
     problemReplays: "problem replays",
     examReplays: "exam replays",
+    problemReplayEvent: "Problem replayed",
+    examReplayEvent: "Exam replayed",
+    fullAnalysis: "Full analysis",
+    collapseAnalysis: "Collapse",
     lastReplay: "last replay",
     noReplays: "You have not replayed any problems or exams yet.",
     recent: "Recent activity",
@@ -674,10 +682,10 @@ function renderPracticeReplays(payload = {}) {
           <div><strong>${payload.last_replay_at ? formatDateTime(payload.last_replay_at) : "—"}</strong><span>${t.lastReplay}</span></div>
         </div>
         <div class="mh-analytics-recent">
-          ${recent.slice(0, 6).map((row) => `
+          ${recent.slice(0, 12).map((row) => `
             <div class="mh-analytics-recent-row">
               <span class="mh-analytics-event-dot"></span>
-              <div><strong>${escapeHtml(row.content_type === "exam" ? t.examReplays : t.problemReplays)}</strong><span>${escapeHtml(row.content_id || "—")}</span></div>
+              <div><strong>${escapeHtml(row.content_type === "exam" ? t.examReplayEvent : t.problemReplayEvent)}</strong><span>${escapeHtml(row.content_id || "—")}</span></div>
               <time datetime="${escapeHtml(row.created_at || "")}">${formatDateTime(row.created_at)}</time>
             </div>
           `).join("")}
@@ -688,21 +696,14 @@ function renderPracticeReplays(payload = {}) {
 }
 
 function renderRecent(rows) {
-  const t = copy();
+  const t=copy(), safe=Array.isArray(rows)?rows:[], initial=8;
   return `
     <section class="mh-analytics-card mh-analytics-span-2">
-      <div class="mh-analytics-card-head"><div><h3>${t.recent}</h3></div></div>
+      <div class="mh-analytics-card-head"><div><h3>${t.recent}</h3></div>${safe.length>initial?`<button class="btn small" type="button" data-analytics-full>${t.fullAnalysis}</button>`:""}</div>
       <div class="mh-analytics-recent">
-        ${rows.slice(0, 12).map((row) => `
-          <div class="mh-analytics-recent-row">
-            <span class="mh-analytics-event-dot ${escapeHtml(row.eventType)}"></span>
-            <div><strong>${escapeHtml(t.event[row.eventType] || row.eventType)}</strong><span>${escapeHtml(row.title)}</span></div>
-            <time datetime="${escapeHtml(row.createdAt)}">${formatDateTime(row.createdAt)}</time>
-          </div>
-        `).join("") || `<p class="mh-analytics-muted">${t.empty}</p>`}
+        ${safe.slice(0,24).map((row,index)=>`<div class="mh-analytics-recent-row" ${index>=initial?"data-analytics-extra hidden":""}><span class="mh-analytics-event-dot ${escapeHtml(row.eventType)}"></span><div><strong>${escapeHtml(t.event[row.eventType]||row.eventType)}</strong><span>${escapeHtml(row.title)}</span></div><time datetime="${escapeHtml(row.createdAt)}">${formatDateTime(row.createdAt)}</time></div>`).join("")||`<p class="mh-analytics-muted">${t.empty}</p>`}
       </div>
-    </section>
-  `;
+    </section>`;
 }
 
 function renderDashboard(data) {
@@ -826,7 +827,9 @@ export function createAnalyticsController({ host } = {}) {
   }
 
   function renderData() {
-    state.innerHTML = renderDashboard(currentData);
+    state.innerHTML=renderDashboard(currentData);
+    const button=state.querySelector("[data-analytics-full]");
+    button?.addEventListener("click",()=>{const rows=[...state.querySelectorAll("[data-analytics-extra]")],expanded=button.dataset.expanded==="1";rows.forEach(row=>row.hidden=expanded);button.dataset.expanded=expanded?"0":"1";button.textContent=expanded?copy().fullAnalysis:copy().collapseAnalysis;});
   }
 
   function load(force = false) {

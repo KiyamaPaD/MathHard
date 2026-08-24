@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ro" data-mh-build="5b1">
 <head>
+  <script>(()=>{try{const t=localStorage.getItem("mh_theme"),l=localStorage.getItem("mh_lang");if(t==="light")document.documentElement.classList.add("light");if(l==="ro"||l==="en")document.documentElement.lang=l;}catch{}})();</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -74,6 +75,8 @@
   <script defer src="js/katex-init.js"></script>
 </head>
 <body>
+  <script>if(document.documentElement.classList.contains("light"))document.body.classList.add("light");</script>
+
   <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
     <div class="mh-loading-panel">
       <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true" />
@@ -388,26 +391,8 @@
       <div class="section-title" data-i18n="section_advanced_filters">🏷️ Filtre avansate</div>
       <div class="tree" id="treeNested"></div>
 
-      <details open>
-        <summary data-i18n-html="aside_other_summary">⚙️ <b>Altele</b></summary>
-        <div class="branch">
-          <div class="range-row">
-            <span class="legend" data-i18n="difficulty_range_label">Dificultate probleme (0–5)</span>
-            <input type="number" id="minDiff" min="0" max="5" value="0" />
-            <input type="number" id="maxDiff" min="0" max="5" value="5" />
-          </div>
-          <label class="range-row" for="exactStars">
-            <span class="legend">★ Exact</span>
-            <select class="select" id="exactStars">
-              <option value="">Oricare</option>
-              <option value="0">0★</option><option value="1">1★</option><option value="2">2★</option>
-              <option value="3">3★</option><option value="4">4★</option><option value="5">5★</option>
-            </select>
-          </label>
-        </div>
-      </details>
-
       <div id="tagPanel"></div>
+
 
       <details>
         <summary data-i18n-html="aside_special_summary">⭐ <b>Categorii speciale</b></summary>
@@ -416,8 +401,13 @@
           <a class="leaf" data-chip="olymp" data-i18n="special_olymp_problems">🏅 Probleme de Olimpiadă</a>
           <a class="leaf" data-chip="exams" data-i18n="special_exam_problems">📚 Probleme la examene</a>
           <a class="leaf" data-chip="examsets" data-i18n="special_exam_sets">📑 Seturi de examene</a>
+          <a class="leaf" data-chip="en">📝 Evaluarea Națională</a>
+          <a class="leaf" data-chip="bac">🎓 Bacalaureat</a>
+          <a class="leaf" data-chip="ubb">🏛 Admitere UBB</a>
+          <a class="leaf" data-chip="utcn">⚙️ Admitere UTCN</a>
+          <a class="leaf" data-chip="olymp-national">🥇 Olimpiadă națională</a>
           <a class="leaf" data-chip="faculty" data-i18n="special_faculty">🏛 Facultate (cursuri)</a>
-          <a class="leaf" data-chip="admit" data-i18n="special_admission">🎓 Admitere (RO)</a>
+          <a class="leaf" data-chip="admit" data-i18n="special_admission">🎓 Alte admiteri</a>
           <a class="leaf" data-chip="research" data-i18n="special_research">🔬 CERCETARE</a>
           <a class="leaf" data-chip="history" data-i18n="special_history">🕰 Istoria matematicii</a>
         </div>
@@ -439,7 +429,27 @@
           <div class="tab" data-tab="history" data-i18n="tab_history">🕰 Istoria</div>
         </div>
 
-        <!-- Sortare + filtre olimpiadă -->
+        <!-- Sortare / filtre rapide pe tipul de conținut -->
+        <div id="lessonSortBox" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="legend" id="lessonCategoryLabel">Categorie lecții:</span>
+          <select id="lessonCategory" class="select">
+            <option value="">Toate lecțiile</option>
+            <option value="school">Gimnaziu</option>
+            <option value="highschool">Liceu</option>
+            <option value="olympiad">Olimpiadă</option>
+            <option value="faculty">Facultate</option>
+            <option value="research">Cercetare</option>
+            <option value="history">Istoria matematicii</option>
+          </select>
+          <span class="legend" id="lessonOlympLevelLabel" style="display:none">Etapă olimpiadă:</span>
+          <select id="lessonOlympLevel" class="select" style="display:none">
+            <option value="">Toate etapele</option>
+            <option value="locala">Locală</option><option value="judeteana">Județeană</option>
+            <option value="regionala">Interjudețeană / Regională</option><option value="nationala">Națională</option>
+            <option value="balcaniada">Balcaniadă</option><option value="internationala">Internațională</option><option value="mondiala">Mondială</option>
+          </select>
+        </div>
+
         <div id="problemSortBox" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="legend" data-i18n="sort_label">Sortare:</span>
           <select id="problemSort" class="select">
@@ -447,16 +457,9 @@
             <option value="easy-desc" data-i18n="sort_easy_desc">⭐ Greu → Ușor</option>
             <option value="newest" data-i18n="sort_newest">🆕 Cele mai noi</option>
           </select>
-
-          <button
-            class="btn small"
-            id="olympOnlyBtn"
-            title="Afișează doar probleme de olimpiadă"
-            data-i18n-title="olymp_only_title"
-           type="button">
+          <button class="btn small" id="olympOnlyBtn" title="Afișează doar probleme de olimpiadă" data-i18n-title="olymp_only_title" type="button">
             <span data-i18n="olymp_only_label">🏅 Doar olimpiadă:</span> <b id="olympOnlyState">OFF</b>
           </button>
-
           <span class="legend" data-i18n="olymp_level_label">Nivel olimpiadă:</span>
           <select id="olympLevel" class="select" title="Filtrează nivelul olimpiadei" data-i18n-title="olymp_level_title">
             <option value="" data-i18n="olymp_level_all">Toate</option>
@@ -467,6 +470,30 @@
             <option value="balcaniada" data-i18n="olymp_level_balkan">Balcaniadă</option>
             <option value="internationala" data-i18n="olymp_level_international">Internațională</option>
             <option value="mondiala" data-i18n="olymp_level_world">Mondială</option>
+          </select>
+        </div>
+
+        <div id="examSortBox" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="legend">Categorie examen:</span>
+          <select id="examCategory" class="select">
+            <option value="">Toate examenele</option>
+            <option value="en">Evaluarea Națională</option>
+            <option value="bac">Bacalaureat</option>
+            <option value="ubb">Admitere UBB</option>
+            <option value="utcn">Admitere UTCN</option>
+            <option value="admission">Alte admiteri</option>
+            <option value="olympiad">Olimpiadă</option>
+          </select>
+          <span class="legend" id="examOlympLevelLabel" style="display:none">Etapă olimpiadă:</span>
+          <select id="examOlympLevel" class="select" style="display:none">
+            <option value="">Toate etapele</option>
+            <option value="locala">Locală</option>
+            <option value="judeteana">Județeană</option>
+            <option value="regionala">Interjudețeană / Regională</option>
+            <option value="nationala">Națională</option>
+            <option value="balcaniada">Balcaniadă</option>
+            <option value="internationala">Internațională</option>
+            <option value="mondiala">Mondială</option>
           </select>
         </div>
       </div>

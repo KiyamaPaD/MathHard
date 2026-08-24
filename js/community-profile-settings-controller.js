@@ -44,7 +44,8 @@ const copy = language === "en" ? {
   location: "Location",
   goal: "Goal",
   unspecified: "Not specified",
-  automatic: "Automatic"
+  automatic: "Automatic",
+  unsaved: "You have unsaved profile changes. Save them before leaving this page."
 } : {
   loading: "Se încarcă...",
   loadError: "Profilul public nu a putut fi încărcat. Reîncearcă.",
@@ -69,7 +70,8 @@ const copy = language === "en" ? {
   location: "Locație",
   goal: "Obiectiv",
   unspecified: "Nespecificată",
-  automatic: "Automat"
+  automatic: "Automat",
+  unsaved: "Ai modificări nesalvate în profil. Salvează-le înainte să părăsești pagina."
 };
 
 const root = document.getElementById("communityProfileSettings");
@@ -118,7 +120,13 @@ if (root && form) {
   }
 
   function syncSaveState() {
-    if (saveButton) saveButton.disabled = busy || !dirty;
+    if(saveButton){saveButton.disabled=busy||!dirty;saveButton.classList.toggle("is-unsaved-danger",dirty&&!busy);}
+  }
+
+  function showUnsavedWarning(){
+    if(!dirty)return false; setStatus(copy.unsaved,"error");
+    alert(copy.unsaved); saveButton?.scrollIntoView({behavior:"smooth",block:"center"}); saveButton?.focus({preventScroll:true});
+    return true;
   }
 
   function setBusy(value) {
@@ -514,6 +522,8 @@ if (root && form) {
     usernameTimer = setTimeout(() => void verifyUsername(), 420);
   });
   saveButton.addEventListener("click", () => void save());
+  document.addEventListener("click",(event)=>{const link=event.target?.closest?.("a[href]");if(!link||!dirty)return;event.preventDefault();event.stopPropagation();showUnsavedWarning();},true);
+  window.addEventListener("beforeunload",(event)=>{if(!dirty)return;event.preventDefault();event.returnValue="";});
 
   window.addEventListener("mh:profile-auth-user", (event) => void loadForUser(event.detail?.userId || ""));
   supabase.auth.getUser().then(({ data }) => loadForUser(data?.user?.id || "")).catch(() => loadForUser(""));

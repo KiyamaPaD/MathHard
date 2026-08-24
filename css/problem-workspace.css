@@ -825,3 +825,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.mh-answer-card .mh-submit-answer-row { grid-template-columns: minmax(0, 1fr); margin-top: 10px; }
+.mh-answer-card .mh-submit-answer-row .btn { width: 100%; }

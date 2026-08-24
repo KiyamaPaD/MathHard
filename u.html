@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
+  <script>(()=>{try{const t=localStorage.getItem("mh_theme"),l=localStorage.getItem("mh_lang");if(t==="light")document.documentElement.classList.add("light");if(l==="ro"||l==="en")document.documentElement.lang=l;}catch{}})();</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title id="communityPublicTitle">MathHard — Profil public</title>
@@ -23,6 +24,8 @@
   <script defer src="/js/loading-screen.js"></script>
 </head>
 <body class="mh-app community-public-body" data-accent="sky" data-theme="aurora" data-frame="none" data-badge-style="chips">
+  <script>if(document.documentElement.classList.contains("light"))document.body.classList.add("light");</script>
+
   <div id="math-loader" role="status" aria-live="polite" aria-busy="true">
     <div class="mh-loading-panel">
       <img class="mh-loading-logo" src="/img/mathhard-logo.png" alt="" aria-hidden="true">
@@ -43,9 +46,7 @@
   </header>
 
   <main class="community-public-page" id="communityPublicPage">
-    <section class="community-public-empty" id="communityPublicEmpty">
-      <div><h1>Se încarcă profilul</h1><p>Profilurile publice afișează doar informațiile alese de utilizator.</p></div>
-    </section>
+    <section class="community-public-empty" id="communityPublicEmpty" hidden></section>
 
     <div id="communityPublicContent" hidden>
       <article class="community-public-card">

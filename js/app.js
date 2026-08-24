@@ -1594,12 +1594,15 @@ import {
     q: "",
     minDiff: 0,
     maxDiff: 5,
-    exactStars: null,
     byLessonId: null,
     tag: null,
     problemSort: "easy-asc",
     olympOnly: false,
     olympLevel: "",
+    lessonCategory: "",
+    lessonOlympLevel: "",
+    examCategory: "",
+    examOlympLevel: "",
     gradeSet: null,      
     examType: "",       
     topicPreset: "",     
@@ -1609,20 +1612,23 @@ import {
 
   function mhSyncFilterInputs() {
     const qEl = document.getElementById("q");
-    const minEl = document.getElementById("minDiff");
-    const maxEl = document.getElementById("maxDiff");
-    const exactEl = document.getElementById("exactStars");
     const sortEl = document.getElementById("problemSort");
     const olympBadge = document.getElementById("olympOnlyState");
     const olympLevelEl = document.getElementById("olympLevel");
+    const lessonCategoryEl = document.getElementById("lessonCategory");
+    const lessonOlympLevelEl = document.getElementById("lessonOlympLevel");
+    const examCategoryEl = document.getElementById("examCategory");
+    const examOlympLevelEl = document.getElementById("examOlympLevel");
 
     if (qEl) qEl.value = filter.q || "";
-    if (minEl) minEl.value = filter.minDiff;
-    if (maxEl) maxEl.value = filter.maxDiff;
-    if (exactEl) exactEl.value = filter.exactStars ?? "";
     if (sortEl) sortEl.value = filter.problemSort || "easy-asc";
     if (olympBadge) olympBadge.textContent = filter.olympOnly ? "ON" : "OFF";
     if (olympLevelEl) olympLevelEl.value = filter.olympLevel || "";
+    if (lessonCategoryEl) lessonCategoryEl.value = filter.lessonCategory || "";
+    if (lessonOlympLevelEl) lessonOlympLevelEl.value = filter.lessonOlympLevel || "";
+    if (examCategoryEl) examCategoryEl.value = filter.examCategory || "";
+    if (examOlympLevelEl) examOlympLevelEl.value = filter.examOlympLevel || "";
+    mhSyncContextFilterVisibility();
   }
 
   function mhResetContentFilters({ keepDifficulty = false } = {}) {
@@ -1636,12 +1642,15 @@ import {
     filter.unsolvedOnly = false;
     filter.olympOnly = false;
     filter.olympLevel = "";
+    filter.lessonCategory = "";
+    filter.lessonOlympLevel = "";
+    filter.examCategory = "";
+    filter.examOlympLevel = "";
     filter.limitOverride = null;
 
     if (!keepDifficulty) {
       filter.minDiff = 0;
       filter.maxDiff = 5;
-      filter.exactStars = null;
     }
 
     mhSyncFilterInputs();
@@ -1680,6 +1689,18 @@ import {
     return mhMatchesTopicBlob(blob, preset);
   }
 
+  function mhLessonOlympLevel(L = {}) {
+    const blob = mhTextBlob(L.title_ro, L.title_en, L.chapter, L.grade, ...(L.tags || []), ...(L.tag_labels || []));
+    if (/(mondial|world)/i.test(blob)) return "mondiala";
+    if (/(internațional|international|imo)/i.test(blob)) return "internationala";
+    if (/(balcaniad|balkan|jbmo|bmo)/i.test(blob)) return "balcaniada";
+    if (/(național|national|onm)/i.test(blob)) return "nationala";
+    if (/(interjudeț|interjudet|regional)/i.test(blob)) return "regionala";
+    if (/(județean|judetean|county)/i.test(blob)) return "judeteana";
+    if (/(locală|locala|local)/i.test(blob)) return "locala";
+    return "";
+  }
+
   function mhMatchesProblemTopic(P, preset) {
     const L = DATA.lessons.find(x => x.id === P.lessonId) || {};
     const blob = mhTextBlob(
@@ -1687,6 +1708,35 @@ import {
       L?.title_ro, L?.title_en, L?.chapter, L?.grade, ...(L?.tags || [])
     );
     return mhMatchesTopicBlob(blob, preset);
+  }
+
+  function mhExamBlob(E = {}) {
+    return mhTextBlob(E.type, E.title_ro, E.title_en, E.source, E.year, ...(E.tags || []), ...(E.tag_labels || []));
+  }
+
+  function mhExamCategory(E = {}) {
+    const blob = mhExamBlob(E);
+    if (/(evaluarea\s+națională|evaluarea nationala|\ben\b)/i.test(blob)) return "en";
+    if (/(bacalaureat|\bbac\b)/i.test(blob)) return "bac";
+    if (/(universitatea babeș|universitatea babes|\bubb\b|fmi cluj)/i.test(blob)) return "ubb";
+    if (/(universitatea tehnică din cluj|universitatea tehnica din cluj|\butcn\b)/i.test(blob)) return "utcn";
+    if (/(olimpiad|olymp|onm|imo|jbmo|bmo|shortlist)/i.test(blob)) return "olympiad";
+    if (/(admitere|admission|facultate|university|fmi|unibuc|upb|uaic|uvt)/i.test(blob)) return "admission";
+    return "other";
+  }
+
+  function mhExamOlympLevel(E = {}) {
+    const explicit = String(E.olymp_level || E.olympLevel || "").trim().toLowerCase();
+    if (explicit) return explicit;
+    const blob = mhExamBlob(E);
+    if (/(mondial|world)/i.test(blob)) return "mondiala";
+    if (/(internațional|international|imo)/i.test(blob)) return "internationala";
+    if (/(balcaniad|balkan|jbmo|bmo)/i.test(blob)) return "balcaniada";
+    if (/(național|national|onm)/i.test(blob)) return "nationala";
+    if (/(interjudeț|interjudet|regional)/i.test(blob)) return "regionala";
+    if (/(județean|judetean|county)/i.test(blob)) return "judeteana";
+    if (/(locală|locala|local)/i.test(blob)) return "locala";
+    return "";
   }
 
   function passExam(E) {
@@ -1697,8 +1747,9 @@ import {
     };
 
     if (!searchMatch(fakeSearchItem)) return false;
-
     if (filter.examType && String(E.type || "").toUpperCase() !== String(filter.examType).toUpperCase()) return false;
+    if (filter.examCategory && mhExamCategory(E) !== filter.examCategory) return false;
+    if (filter.examCategory === "olympiad" && filter.examOlympLevel && mhExamOlympLevel(E) !== filter.examOlympLevel) return false;
     if (filter.tag && !hasTag(E)) return false;
     return true;
   }
@@ -1836,13 +1887,13 @@ import {
         break;
 
       case "roadmap-en":
-        filter.examType = "EN";
+        filter.examCategory = "en";
         mhSyncFilterInputs();
         selectTab("exams");
         break;
 
       case "roadmap-bac":
-        filter.examType = "BAC";
+        filter.examCategory = "bac";
         mhSyncFilterInputs();
         selectTab("exams");
         break;
@@ -1897,19 +1948,19 @@ import {
         break;
 
       case "open-faculty":
-        filter.gradeSet = ["FAC"];
+        filter.lessonCategory = "faculty";
         mhSyncFilterInputs();
         selectTab("lessons");
         break;
 
       case "open-admit":
-        filter.examType = "ADM";
+        filter.examCategory = "admission";
         mhSyncFilterInputs();
         selectTab("exams");
         break;
 
       case "open-olymp-lessons":
-        filter.gradeSet = ["OL-V","OL-VI","OL-VII","OL-VIII","OL-IX","OL-X","OL-XI","OL-XII"];
+        filter.lessonCategory = "olympiad";
         mhSyncFilterInputs();
         selectTab("lessons");
         break;
@@ -3864,6 +3915,16 @@ ${details}`);
     return Number.isInteger(n) ? String(n) : n.toFixed(2);
   }
 
+  function mhFormatExamDuration(seconds){
+    const total=Math.max(0,Math.floor(Number(seconds)||0)),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),sec=total%60;
+    return h?`${h}h ${String(m).padStart(2,"0")}m`:`${m}m ${String(sec).padStart(2,"0")}s`;
+  }
+  function mhFormatExamReviewAnswer(value){
+    if(Array.isArray(value))return value.length?value.join(", "):"—";
+    if(value&&typeof value==="object"){if(Array.isArray(value.selected))return value.selected.length?value.selected.join(", "):"—";return String(value.answer_text||"—");}
+    return String(value??"—")||"—";
+  }
+
   function getExamFinalItemResult(exam, itemId) {
     const rows = exam?.secure_result?.item_results;
     if (!Array.isArray(rows)) return null;
@@ -3881,7 +3942,8 @@ ${details}`);
       : result.answered
         ? (LANG === "ro" ? "Incorect" : "Incorrect")
         : (LANG === "ro" ? "Fără răspuns" : "Unanswered");
-    return `<div class="legend" style="margin-top:8px;"><b>${icon} ${label}: ${score}/${max}</b></div>`;
+    const submitted=mhFormatExamReviewAnswer(result.submitted_answer),correct=mhFormatExamReviewAnswer(result.correct_answer);
+    return `<div class="legend mh-exam-review-log" style="margin-top:8px;"><b>${icon} ${label}: ${score}/${max}</b><br><span>${LANG==="ro"?"Răspunsul tău":"Your answer"}: <b>${esc(submitted)}</b></span>${result.correct?"":`<br><span>${LANG==="ro"?"Răspuns corect":"Correct answer"}: <b>${esc(correct)}</b></span>`}</div>`;
   }
 
   function buildStructuredExamOpenItemBlock(exam, item, index, locked, onChange, onSave){
@@ -4277,11 +4339,13 @@ ${details}`);
 
     [
       "q",
-      "minDiff",
-      "maxDiff",
+      "lessonCategory",
+      "lessonOlympLevel",
       "problemSort",
       "olympOnlyBtn",
       "olympLevel",
+      "examCategory",
+      "examOlympLevel",
       "loadMore"
     ].forEach((id) => {
       const el = document.getElementById(id);
@@ -4548,11 +4612,7 @@ ${details}`);
         mobile_filters_title: "📚 Filtre și capitole",
         mobile_filters_btn: "☰ Filtre",
         advanced_filters: "🏷️ Filtre avansate",
-        others: "Altele",
-        difficulty_range: "Dificultate probleme (0–5)",
         tags: "Etichete",
-        global_tags: "🌐 Etichete globale",
-        structural_tags: "📂 Etichete structurale",
         special_categories: "Categorii speciale",
         lessons_curriculum: "📚 Lecții și programă",
         school: "🏫 Școală (V–VIII)",
@@ -4583,11 +4643,7 @@ ${details}`);
         mobile_filters_title: "📚 Filters & chapters",
         mobile_filters_btn: "☰ Filters",
         advanced_filters: "🏷️ Advanced filters",
-        others: "Other",
-        difficulty_range: "Problem difficulty (0–5)",
         tags: "Tags",
-        global_tags: "🌐 Global tags",
-        structural_tags: "📂 Structural tags",
         special_categories: "Special categories",
         lessons_curriculum: "📚 Lessons / Curriculum",
         school: "🏫 Middle school (V–VIII)",
@@ -4630,37 +4686,14 @@ ${details}`);
   function mhUpdateSidebarStaticTexts(){
     const mobileHead = document.querySelector(".mobile-aside-head strong");
     if (mobileHead) mobileHead.textContent = mhUi("mobile_filters_title");
-
     const mobileBtn = document.getElementById("mobileFiltersBtn");
     if (mobileBtn) mobileBtn.textContent = mhUi("mobile_filters_btn");
-
     const advancedTitle = document.querySelector("#siteAside > .section-title");
     if (advancedTitle) advancedTitle.textContent = mhUi("advanced_filters");
-
-    const otherSummary = document.querySelector("#siteAside > details:nth-of-type(1) > summary");
-    if (otherSummary) otherSummary.innerHTML = `⚙️ <b>${mhUi("others")}</b>`;
-
-    const diffLegend = document.querySelector("#siteAside .range-row .legend");
-    if (diffLegend) diffLegend.textContent = mhUi("difficulty_range");
-
-    const specialSummary = document.querySelector("#siteAside > details:nth-of-type(2) > summary");
+    const specialSummary = document.querySelector('[data-i18n-html="aside_special_summary"]');
     if (specialSummary) specialSummary.innerHTML = `⭐ <b>${mhUi("special_categories")}</b>`;
-
-    const chipTexts = {
-      olympL: mhUi("olymp_lessons"),
-      olymp: mhUi("olymp_problems"),
-      exams: mhUi("exam_linked_problems"),
-      examsets: mhUi("exam_sets_chip"),
-      faculty: mhUi("faculty_chip"),
-      admit: mhUi("admit_chip"),
-      research: mhUi("research_chip"),
-      history: mhUi("history_chip")
-    };
-
-    document.querySelectorAll("[data-chip]").forEach(el => {
-      const key = el.dataset.chip;
-      if (chipTexts[key]) el.textContent = chipTexts[key];
-    });
+    const chipTexts = { olympL:mhUi("olymp_lessons"), olymp:mhUi("olymp_problems"), exams:mhUi("exam_linked_problems"), examsets:mhUi("exam_sets_chip"), en:LANG==="ro"?"📝 Evaluarea Națională":"📝 National Evaluation", bac:LANG==="ro"?"🎓 Bacalaureat":"🎓 Baccalaureate", ubb:LANG==="ro"?"🏛 Admitere UBB":"🏛 UBB admission", utcn:LANG==="ro"?"⚙️ Admitere UTCN":"⚙️ UTCN admission", "olymp-national":LANG==="ro"?"🥇 Olimpiadă națională":"🥇 National Olympiad", faculty:mhUi("faculty_chip"), admit:LANG==="ro"?"🎓 Alte admiteri":"🎓 Other admissions", research:mhUi("research_chip"), history:mhUi("history_chip") };
+    document.querySelectorAll("[data-chip]").forEach(el => { const key=el.dataset.chip; if(chipTexts[key]) el.textContent=chipTexts[key]; });
   }
 
   function mhOlympLevelLabel(level){
@@ -4691,85 +4724,24 @@ ${details}`);
   }
 
   function mhUpdateToolbarTexts(){
-    const mobileBtn = document.getElementById("mobileFiltersBtn");
-    if (mobileBtn) mobileBtn.textContent = mhUi("mobile_filters_btn");
-
-    const tabMap = {
-      lessons: LANG === "ro" ? "📘 Lecții" : "📘 Lessons",
-      problems: LANG === "ro" ? "🧩 Probleme" : "🧩 Problems",
-      xp: LANG === "ro" ? "📊 Progres probleme" : "📊 Problem progress",
-      exams: LANG === "ro" ? "📑 Examene" : "📑 Exams",
-      research: LANG === "ro" ? "🔬 CERCETARE" : "🔬 RESEARCH",
-      history: LANG === "ro" ? "🕰 Istoria" : "🕰 History"
-    };
-
-    document.querySelectorAll(".tab[data-tab]").forEach(tab => {
-      const key = tab.dataset.tab;
-      if (tabMap[key]) tab.textContent = tabMap[key];
-    });
-
-    const loadMoreBtn = document.getElementById("loadMore");
-    if (loadMoreBtn) {
-      loadMoreBtn.textContent = LANG === "ro" ? "Încarcă mai mult" : "Load more";
-    }
-
-    const sortBox = document.getElementById("problemSortBox");
-    if (sortBox) {
-      const legends = sortBox.querySelectorAll(".legend");
-
-      if (legends[0]) legends[0].textContent = LANG === "ro" ? "Sortare:" : "Sort:";
-      if (legends[1]) legends[1].textContent = LANG === "ro" ? "Nivel olimpiadă:" : "Olympiad level:";
-
-      const sortSelect = document.getElementById("problemSort");
-      if (sortSelect) {
-        const current = sortSelect.value || "easy-asc";
-
-        sortSelect.innerHTML = `
-          <option value="easy-asc">${LANG === "ro" ? "⭐ Ușor → Greu (implicit)" : "⭐ Easy → Hard (default)"}</option>
-          <option value="easy-desc">${LANG === "ro" ? "⭐ Greu → Ușor" : "⭐ Hard → Easy"}</option>
-          <option value="newest">${LANG === "ro" ? "🆕 Cele mai noi" : "🆕 Newest first"}</option>
-        `;
-
-        sortSelect.value = current;
-      }
-
-      const olympBtn = document.getElementById("olympOnlyBtn");
-      const olympState = document.getElementById("olympOnlyState");
-      if (olympBtn) {
-        const stateText = filter.olympOnly ? "ON" : "OFF";
-        olympBtn.title = LANG === "ro"
-          ? "Afișează doar probleme de olimpiadă"
-          : "Show only olympiad problems";
-        olympBtn.innerHTML = `
-          🏅 ${LANG === "ro" ? "Doar olimpiadă" : "Olympiad only"}:
-          <b id="olympOnlyState">${stateText}</b>
-        `;
-      }
-      if (olympState) {
-        olympState.textContent = filter.olympOnly ? "ON" : "OFF";
-      }
-
-      const olympLevel = document.getElementById("olympLevel");
-      if (olympLevel) {
-        const current = olympLevel.value || "";
-
-        olympLevel.innerHTML = `
-          <option value="">${mhOlympLevelLabel("")}</option>
-          <option value="locala">${mhOlympLevelLabel("locala")}</option>
-          <option value="judeteana">${mhOlympLevelLabel("judeteana")}</option>
-          <option value="regionala">${mhOlympLevelLabel("regionala")}</option>
-          <option value="nationala">${mhOlympLevelLabel("nationala")}</option>
-          <option value="balcaniada">${mhOlympLevelLabel("balcaniada")}</option>
-          <option value="internationala">${mhOlympLevelLabel("internationala")}</option>
-          <option value="mondiala">${mhOlympLevelLabel("mondiala")}</option>
-        `;
-
-        olympLevel.value = current;
-        olympLevel.title = LANG === "ro"
-          ? "Filtrează nivelul olimpiadei"
-          : "Filter olympiad level";
-      }
-    }
+    const mobileBtn=document.getElementById("mobileFiltersBtn"); if(mobileBtn) mobileBtn.textContent=mhUi("mobile_filters_btn");
+    const tabMap={lessons:LANG==="ro"?"📘 Lecții":"📘 Lessons",problems:LANG==="ro"?"🧩 Probleme":"🧩 Problems",xp:LANG==="ro"?"📊 Progres probleme":"📊 Problem progress",exams:LANG==="ro"?"📑 Examene":"📑 Exams",research:LANG==="ro"?"🔬 CERCETARE":"🔬 RESEARCH",history:LANG==="ro"?"🕰 Istoria":"🕰 History"};
+    document.querySelectorAll(".tab[data-tab]").forEach(tab=>{if(tabMap[tab.dataset.tab])tab.textContent=tabMap[tab.dataset.tab]});
+    const loadMore=document.getElementById("loadMore"); if(loadMore) loadMore.textContent=LANG==="ro"?"Încarcă mai mult":"Load more";
+    const setOptions=(id, rows)=>{const el=document.getElementById(id);if(!el)return;const value=el.value;el.replaceChildren(...rows.map(([v,t])=>new Option(t,v)));el.value=value;};
+    const lessonLabel=document.getElementById("lessonCategoryLabel"); if(lessonLabel) lessonLabel.textContent=LANG==="ro"?"Categorie lecții:":"Lesson category:";
+    setOptions("lessonCategory",[["",LANG==="ro"?"Toate lecțiile":"All lessons"],["school",LANG==="ro"?"Gimnaziu":"Middle school"],["highschool",LANG==="ro"?"Liceu":"High school"],["olympiad",LANG==="ro"?"Olimpiadă":"Olympiad"],["faculty",LANG==="ro"?"Facultate":"University"],["research",LANG==="ro"?"Cercetare":"Research"],["history",LANG==="ro"?"Istoria matematicii":"History of mathematics"]]);
+    const lessonOlympLabel=document.getElementById("lessonOlympLevelLabel"); if(lessonOlympLabel) lessonOlympLabel.textContent=LANG==="ro"?"Etapă olimpiadă:":"Olympiad stage:";
+    const examLabel=document.querySelector("#examSortBox > .legend:first-child"); if(examLabel) examLabel.textContent=LANG==="ro"?"Categorie examen:":"Exam category:";
+    setOptions("examCategory",[["",LANG==="ro"?"Toate examenele":"All exams"],["en",LANG==="ro"?"Evaluarea Națională":"National Evaluation"],["bac",LANG==="ro"?"Bacalaureat":"Baccalaureate"],["ubb",LANG==="ro"?"Admitere UBB":"UBB admission"],["utcn",LANG==="ro"?"Admitere UTCN":"UTCN admission"],["admission",LANG==="ro"?"Alte admiteri":"Other admissions"],["olympiad",LANG==="ro"?"Olimpiadă":"Olympiad"]]);
+    for(const labelId of ["examOlympLevelLabel","lessonOlympLevelLabel"]){const el=document.getElementById(labelId);if(el)el.textContent=LANG==="ro"?"Etapă olimpiadă:":"Olympiad stage:"}
+    for(const id of ["olympLevel","examOlympLevel","lessonOlympLevel"]) setOptions(id,[["",mhOlympLevelLabel("")],["locala",mhOlympLevelLabel("locala")],["judeteana",mhOlympLevelLabel("judeteana")],["regionala",mhOlympLevelLabel("regionala")],["nationala",mhOlympLevelLabel("nationala")],["balcaniada",mhOlympLevelLabel("balcaniada")],["internationala",mhOlympLevelLabel("internationala")],["mondiala",mhOlympLevelLabel("mondiala")]]);
+    const sortLabel=document.querySelector("#problemSortBox .legend"); if(sortLabel) sortLabel.textContent=LANG==="ro"?"Sortare:":"Sort:";
+    setOptions("problemSort",[["easy-asc",LANG==="ro"?"⭐ Ușor → Greu (implicit)":"⭐ Easy → Hard (default)"],["easy-desc",LANG==="ro"?"⭐ Greu → Ușor":"⭐ Hard → Easy"],["newest",LANG==="ro"?"🆕 Cele mai noi":"🆕 Newest first"]]);
+    const olympLabel=document.querySelector("#problemSortBox .legend:nth-of-type(2)"); if(olympLabel) olympLabel.textContent=LANG==="ro"?"Nivel olimpiadă:":"Olympiad level:";
+    const olympBtn=document.getElementById("olympOnlyBtn"); if(olympBtn){const span=olympBtn.querySelector("span");if(span)span.textContent=LANG==="ro"?"🏅 Doar olimpiadă:":"🏅 Olympiad only:";olympBtn.title=LANG==="ro"?"Afișează doar probleme de olimpiadă":"Show only olympiad problems";}
+    const olympState=document.getElementById("olympOnlyState");if(olympState)olympState.textContent=filter.olympOnly?"ON":"OFF";
+    mhSyncContextFilterVisibility();
   }
 
  function mhUpdateHeaderStaticTexts(){
@@ -5167,6 +5139,8 @@ ${details}`);
         if (chip === "admit") return mhApplyHomePreset("open-admit");
         if (chip === "examsets" || chip === "exams") return mhApplyHomePreset("open-exams");
         if (chip === "olympL") return mhApplyHomePreset("open-olymp-lessons");
+        if (["en","bac","ubb","utcn"].includes(chip)) { mhResetContentFilters(); filter.examCategory=chip; mhSyncFilterInputs(); selectTab("exams"); if(typeof mhScrollToMain==="function")mhScrollToMain(); return; }
+        if (chip === "olymp-national") { mhResetContentFilters(); filter.examCategory="olympiad"; filter.examOlympLevel="nationala"; mhSyncFilterInputs(); selectTab("exams"); if(typeof mhScrollToMain==="function")mhScrollToMain(); return; }
 
         mhResetContentFilters();
         selectTab("lessons");
@@ -5180,133 +5154,15 @@ ${details}`);
 
   /* ===== Super-categoria: Tag-uri ===== */
   function buildTagPanel(){
-    const host = document.getElementById("tagPanel");
-    host.innerHTML = "";
-
-    const box = document.createElement("details");
-    box.open = false;
-    box.innerHTML = `<summary>🏷️ <b>${mhUi("tags")}</b></summary>`;
-
-    const br = document.createElement("div");
-    br.className = "branch";
-
-    const allTags = new Set();
-    [...DATA.lessons,...DATA.problems,...DATA.exams].forEach(item => (item.tags || []).forEach(t => allTags.add(t)));
-
-    // globale
-    const detG = document.createElement("details");
-    detG.open = false;
-    detG.innerHTML = `<summary>${mhUi("global_tags")}</summary>`;
-
-    const brG = document.createElement("div");
-    brG.className = "branch";
-
-    [...allTags]
-      .sort((a,b) => a.localeCompare(b, "ro"))
-      .forEach(tag => {
-        const a = document.createElement("a");
-        a.className = "leaf";
-        a.textContent = `#${mhTagLabel(tag)}`;
-        a.onclick = () => {
-          filter.tag = tag;
-          TAB = "problems";
-          filter.byLessonId = null;
-          selectTab();
-        };
-        brG.appendChild(a);
-      });
-
-    detG.appendChild(brG);
-    br.appendChild(detG);
-
-    // structurale
-    const detS = document.createElement("details");
-    detS.open = false;
-    detS.innerHTML = `<summary>${mhUi("structural_tags")}</summary>`;
-
-    const brS = document.createElement("div");
-    brS.className = "branch";
-
-    const byGrade = {};
-    DATA.lessons.forEach(L => {
-      if (!byGrade[L.grade]) byGrade[L.grade] = {};
-      if (!byGrade[L.grade][L.chapter]) byGrade[L.grade][L.chapter] = [];
-      byGrade[L.grade][L.chapter].push(L);
-    });
-
-    Object.keys(byGrade)
-      .sort((a,b) => DATA.grades.indexOf(a) - DATA.grades.indexOf(b))
-      .forEach(gr => {
-        const d1 = document.createElement("details");
-        d1.open = false;
-        d1.innerHTML = `<summary>🎓 ${gr}</summary>`;
-
-        const b1 = document.createElement("div");
-        b1.className = "branch";
-
-        Object.keys(byGrade[gr])
-          .sort((a,b) => chapterCompare(gr, a, b))
-          .forEach(ch => {
-            const d2 = document.createElement("details");
-            d2.open = false;
-            d2.innerHTML = `<summary>📂 ${getChapterLabel(ch)}</summary>`;
-
-            const b2 = document.createElement("div");
-            b2.className = "branch";
-
-            byGrade[gr][ch].forEach(L => {
-              const d3 = document.createElement("details");
-              d3.open = false;
-
-              const lt = (LANG === "ro")
-                ? (L.title_ro || L.title_en)
-                : (L.title_en || L.title_ro);
-
-              d3.innerHTML = `<summary>📘 ${lt}</summary>`;
-
-              const b3 = document.createElement("div");
-              b3.className = "branch";
-
-              (L.tags || []).forEach(tag => {
-                const a = document.createElement("a");
-                a.className = "leaf";
-                a.textContent = `#${mhTagLabel(tag)}`;
-                a.onclick = () => {
-                  filter.tag = tag;
-                  filter.byLessonId = L.id;
-                  TAB = "problems";
-                  selectTab();
-                };
-                b3.appendChild(a);
-              });
-
-              if (!L.tags || !L.tags.length) {
-                const p = document.createElement("div");
-                p.className = "leaf";
-                p.textContent = mhUi("no_tags");
-                p.style.opacity = ".6";
-                b3.appendChild(p);
-              }
-
-              d3.appendChild(b3);
-              b2.appendChild(d3);
-            });
-
-            d2.appendChild(b2);
-            b1.appendChild(d2);
-          });
-
-        d1.appendChild(b1);
-        brS.appendChild(d1);
-      });
-
-    detS.appendChild(brS);
-    br.appendChild(detS);
-
-    box.appendChild(br);
-    host.appendChild(box);
-
-    wireGlobalExamClickGuards();
+    const host=document.getElementById("tagPanel"); if(!host)return; host.innerHTML="";
+    const catalog=DATA.tagCatalog||{tags:[],mappings:[]}, mapped=new Set((catalog.mappings||[]).map(x=>x.tag_id));
+    const tags=(catalog.tags||[]).filter(t=>t.active!==false&&t.filter_visible!==false&&mapped.has(t.id));
+    if(!tags.length)return;
+    const groups={topic:LANG==="ro"?"Domenii matematice":"Math topics",method:LANG==="ro"?"Metode și competențe":"Methods & skills",context:LANG==="ro"?"Context și sursă":"Context & source"};
+    const box=document.createElement("details");box.innerHTML=`<summary>🏷️ <b>${mhUi("tags")}</b></summary>`;
+    const branch=document.createElement("div");branch.className="branch";
+    for(const [key,title] of Object.entries(groups)){const rows=tags.filter(t=>(t.group_key||"topic")===key).sort((a,b)=>(a.position||0)-(b.position||0)||mhTagLabel(a.id).localeCompare(mhTagLabel(b.id),LANG==="ro"?"ro":"en"));if(!rows.length)continue;const det=document.createElement("details");det.innerHTML=`<summary>${esc(title)}</summary>`;const body=document.createElement("div");body.className="branch";rows.forEach(tag=>{const a=document.createElement("a");a.className="leaf";a.textContent=mhTagLabel(tag.id);a.onclick=()=>{filter.tag=tag.id;filter.byLessonId=null;if(!["lessons","problems","exams"].includes(TAB))TAB="lessons";page=1;renderCards();drawFilterBar();};body.appendChild(a)});det.appendChild(body);branch.appendChild(det)}
+    box.appendChild(branch);host.appendChild(box);wireGlobalExamClickGuards();
   }
 
   /* ===== Search/Filter & Cards ===== */
@@ -5328,11 +5184,21 @@ ${details}`);
     if (filter.gradeSet?.length && !filter.gradeSet.includes(L.grade)) return false;
     if (filter.topicPreset && !mhMatchesLessonTopic(L, filter.topicPreset)) return false;
 
-    if(filter.chip==="research" && L.chapter!=="CERCETARE") return false;
-    if(filter.chip==="history" && L.chapter!=="Istoria matematicii") return false;
-    if(filter.chip==="faculty" && L.grade!=="FAC") return false;
-    if(filter.chip==="olympL" && !/^OL-/.test(L.grade||"")) return false;
-    if(filter.chip==="admit" && L.grade!=="ADM") return false;
+    const grade = String(L.grade || "");
+    const chapter = String(L.chapter || "");
+    if (filter.lessonCategory === "school" && !["V","VI","VII","VIII"].includes(grade)) return false;
+    if (filter.lessonCategory === "highschool" && !["IX","X","XI","XII"].includes(grade)) return false;
+    if (filter.lessonCategory === "olympiad" && !/^OL-/.test(grade)) return false;
+    if (filter.lessonCategory === "olympiad" && filter.lessonOlympLevel && mhLessonOlympLevel(L) !== filter.lessonOlympLevel) return false;
+    if (filter.lessonCategory === "faculty" && grade !== "FAC") return false;
+    if (filter.lessonCategory === "research" && chapter !== "CERCETARE") return false;
+    if (filter.lessonCategory === "history" && chapter !== "Istoria matematicii") return false;
+
+    if(filter.chip==="research" && chapter!=="CERCETARE") return false;
+    if(filter.chip==="history" && chapter!=="Istoria matematicii") return false;
+    if(filter.chip==="faculty" && grade!=="FAC") return false;
+    if(filter.chip==="olympL" && !/^OL-/.test(grade)) return false;
+    if(filter.chip==="admit" && grade!=="ADM") return false;
 
     if(!hasTag(L)) return false;
     return searchMatch(L);
@@ -5343,7 +5209,6 @@ ${details}`);
 
   function passProblem(P){
     if(P.difficulty < filter.minDiff || P.difficulty > filter.maxDiff) return false;
-    if(filter.exactStars !== null && Number(P.difficulty) !== filter.exactStars) return false;
 
     const L = DATA.lessons.find(x => x.id === P.lessonId) || {};
     const src = (P.source || "");
@@ -5762,7 +5627,7 @@ ${details}`);
     refreshExamLockUi();
     adminExamRecoveryController?.refresh();
 
-    document.getElementById("problemSortBox").style.display = (TAB==="problems")?"flex":"none";
+    mhSyncContextFilterVisibility();
   }
 
   /* ===== Filter bar ===== */
@@ -5788,13 +5653,10 @@ ${details}`);
       chips.push(`<span class="chipbtn">🎓 ${esc(filter.gradeSet.join(", "))}</span>`);
     }
 
-    if (filter.exactStars !== null){
-      chips.push(`<span class="chipbtn">★ ${LANG === "ro" ? "Exact" : "Exact"}: <b>${filter.exactStars}★</b></span>`);
-    }
 
-    if (filter.examType){
-      chips.push(`<span class="chipbtn">📑 ${LANG === "ro" ? "Examene" : "Exams"}: <b>${esc(filter.examType)}</b></span>`);
-    }
+    if (filter.examType) chips.push(`<span class="chipbtn">📑 ${LANG === "ro" ? "Examene" : "Exams"}: <b>${esc(filter.examType)}</b></span>`);
+    if (filter.lessonCategory) chips.push(`<span class="chipbtn">📘 ${LANG === "ro" ? "Categorie" : "Category"}: <b>${esc(filter.lessonCategory)}</b></span>`);
+    if (filter.examCategory) chips.push(`<span class="chipbtn">📑 ${LANG === "ro" ? "Categorie" : "Category"}: <b>${esc(filter.examCategory)}</b></span>`);
 
     if (filter.topicPreset){
       chips.push(`<span class="chipbtn">🧭 ${esc(topicMap[filter.topicPreset] || filter.topicPreset)}</span>`);
@@ -5805,7 +5667,7 @@ ${details}`);
     }
 
     if (filter.tag){
-      chips.push(`<span class="chipbtn">🏷️ #${esc(mhTagLabel(filter.tag))}</span>`);
+      chips.push(`<span class="chipbtn">🏷️ ${esc(mhTagLabel(filter.tag))}</span>`);
     }
 
     if (filter.q.trim()){
@@ -6827,7 +6689,8 @@ function openExam(exam){
     if (runtimeExam.secure_result) {
       const score = mhFormatExamScoreValue(runtimeExam.secure_result.score);
       const total = mhFormatExamScoreValue(runtimeExam.secure_result.total_points);
-      document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • 🏁 ${score}/${total}${replaySuffix}`;
+      const duration=mhFormatExamDuration(runtimeExam.secure_result.duration_seconds);
+      document.getElementById("viewMeta").textContent=`🗓 ${exam.year||""} • ${exam.type||""} • 🏁 ${score}/${total} • ⏱ ${duration}${replaySuffix}`;
     } else {
       document.getElementById("viewMeta").textContent = `🗓 ${exam.year || ""} • ${exam.type || ""} • ${answered}/${totalItems}${replaySuffix}`;
     }
@@ -6930,14 +6793,11 @@ function openExam(exam){
 
       submitBtn.style.display = "none";
       leftEl.style.display = "inline-block";
-      leftEl.textContent = practiceReplay ? (LANG === "ro" ? "↻ Replay corectat · 0 XP" : "↻ Replay graded · 0 XP") : timedOut
-        ? (LANG === "ro" ? "⛔ Timp expirat — corectat" : "⛔ Time up — graded")
-        : (result?.passed
-          ? (LANG === "ro" ? "✅ Promovat" : "✅ Passed")
-          : (LANG === "ro" ? "📨 Examen predat" : "📨 Exam submitted"));
+      const passText=result?.passed?(LANG==="ro"?"✅ Promovat":"✅ Passed"):(LANG==="ro"?"❌ Nepromovat":"❌ Not passed");
+      leftEl.textContent=practiceReplay?`↻ ${passText} · 0 XP`:(timedOut?`${LANG==="ro"?"⛔ Timp expirat":"⛔ Time up"} · ${passText}`:passText);
 
       setStatus(
-        `${practiceReplay ? "↻ Replay · 0 XP •" : (result?.passed ? "🏆" : "📊")} ${LANG === "ro" ? "Rezultat" : "Result"}: ${mhFormatExamScoreValue(result?.score)}/${mhFormatExamScoreValue(result?.total_points)} • ${LANG === "ro" ? "prag" : "pass mark"}: ${mhFormatExamScoreValue(result?.pass_threshold ?? PASS_THRESHOLD)}`,
+        `${practiceReplay?"↻ Replay · 0 XP •":(result?.passed?"🏆":"📊")} ${LANG==="ro"?"Rezultat":"Result"}: ${mhFormatExamScoreValue(result?.score)}/${mhFormatExamScoreValue(result?.total_points)} • ${LANG==="ro"?"prag":"pass mark"}: ${mhFormatExamScoreValue(result?.pass_threshold??PASS_THRESHOLD)} • ⏱ ${mhFormatExamDuration(result?.duration_seconds)}`,
         result?.passed ? "ok" : "legend"
       );
 
@@ -7120,10 +6980,40 @@ function openExam(exam){
   /* ===== Inputs & Tabs ===== */
   document.getElementById("q").addEventListener("input", e=>{ filter.q=e.target.value; page=1; renderCards(); drawFilterBar(); });
   document.getElementById("loadMore").onclick=()=>{ page++; renderCards(); };
-  const minD=document.getElementById("minDiff"), maxD=document.getElementById("maxDiff"), exactStars=document.getElementById("exactStars");
-  minD.onchange=()=>{ let v=Math.max(0,Math.min(5,Number(minD.value)||0)); if(v>maxD.value) maxD.value=v; minD.value=v; filter.minDiff=v; page=1; renderCards(); };
-  maxD.onchange=()=>{ let v=Math.max(0,Math.min(5,Number(maxD.value)||5)); if(v<minD.value) minD.value=v; maxD.value=v; filter.maxDiff=v; page=1; renderCards(); };
-  exactStars.onchange=()=>{ filter.exactStars=exactStars.value === "" ? null : Number(exactStars.value); page=1; renderCards(); drawFilterBar(); };
+  const lessonCategorySelect = document.getElementById("lessonCategory");
+  const lessonOlympLevelSelect = document.getElementById("lessonOlympLevel");
+  const examCategorySelect = document.getElementById("examCategory");
+  const examOlympLevelSelect = document.getElementById("examOlympLevel");
+  lessonCategorySelect?.addEventListener("change", (event) => {
+    filter.lessonCategory=event.target.value||""; if(filter.lessonCategory!=="olympiad")filter.lessonOlympLevel=""; page=1; mhSyncFilterInputs(); renderCards(); drawFilterBar();
+  });
+  lessonOlympLevelSelect?.addEventListener("change",(event)=>{filter.lessonOlympLevel=event.target.value||"";page=1;renderCards();drawFilterBar();});
+  examCategorySelect?.addEventListener("change", (event) => {
+    filter.examCategory = event.target.value || "";
+    filter.examType = "";
+    if (filter.examCategory !== "olympiad") filter.examOlympLevel = "";
+    page = 1; mhSyncContextFilterVisibility(); renderCards(); drawFilterBar();
+  });
+  examOlympLevelSelect?.addEventListener("change", (event) => {
+    filter.examOlympLevel = event.target.value || ""; page = 1; renderCards(); drawFilterBar();
+  });
+
+  function mhSyncContextFilterVisibility(){
+    const lessonBox = document.getElementById("lessonSortBox");
+    const problemBox = document.getElementById("problemSortBox");
+    const examBox = document.getElementById("examSortBox");
+    if (lessonBox) lessonBox.style.display = TAB === "lessons" ? "flex" : "none";
+    const lessonStage=TAB==="lessons"&&filter.lessonCategory==="olympiad";
+    const lessonOlymp=document.getElementById("lessonOlympLevel"), lessonOlympLabel=document.getElementById("lessonOlympLevelLabel");
+    if(lessonOlymp)lessonOlymp.style.display=lessonStage?"":"none"; if(lessonOlympLabel)lessonOlympLabel.style.display=lessonStage?"":"none";
+    if (problemBox) problemBox.style.display = TAB === "problems" ? "flex" : "none";
+    if (examBox) examBox.style.display = TAB === "exams" ? "flex" : "none";
+    const olymp = filter.examCategory === "olympiad";
+    const examOlymp = document.getElementById("examOlympLevel");
+    const examOlympLabel = document.getElementById("examOlympLevelLabel");
+    if (examOlymp) examOlymp.style.display = TAB === "exams" && olymp ? "" : "none";
+    if (examOlympLabel) examOlympLabel.style.display = TAB === "exams" && olymp ? "" : "none";
+  }
 
   function selectTab(nextTab = TAB){
     if (hasActiveExamLock() && nextTab !== "exams") {
@@ -7146,7 +7036,7 @@ function openExam(exam){
     drawFilterBar();
 
     document.getElementById("goProblemsBtn").style.display = "none";
-    document.getElementById("problemSortBox").style.display = (TAB === "problems") ? "flex" : "none";
+    mhSyncContextFilterVisibility();
 
     refreshExamLockUi();
     adminExamRecoveryController?.refresh();

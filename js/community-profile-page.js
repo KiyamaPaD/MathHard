@@ -14,8 +14,6 @@ const copy = lang === "en" ? {
   metaDescription: "Public MathHard profile.",
   slogan: "Community",
   back: "Back",
-  loadingTitle: "Loading profile",
-  loadingText: "Public profiles show only the information selected by the user.",
   missingTitle: "Profile unavailable",
   missingText: "This profile is private, unavailable or the username is invalid.",
   progress: ["XP", "Level", "Lessons learned", "Problems solved", "Exams passed", "Streak"],
@@ -43,8 +41,6 @@ const copy = lang === "en" ? {
   metaDescription: "Profil public MathHard.",
   slogan: "Comunitate",
   back: "Înapoi",
-  loadingTitle: "Se încarcă profilul",
-  loadingText: "Profilurile publice afișează numai informațiile alese de utilizator.",
   missingTitle: "Profil indisponibil",
   missingText: "Profilul este privat, indisponibil sau numele de utilizator nu este valid.",
   progress: ["XP", "Nivel", "Lecții învățate", "Probleme rezolvate", "Examene promovate", "Serie"],
@@ -84,13 +80,6 @@ function applyStaticText() {
   if (slogan) slogan.textContent = copy.slogan;
   const back = document.querySelector('.community-public-topbar a.btn[href="/index.html"]');
   if (back) back.textContent = copy.back;
-  const empty = $("communityPublicEmpty");
-  if (empty) {
-    const title = empty.querySelector("h1");
-    const text = empty.querySelector("p");
-    if (title) title.textContent = copy.loadingTitle;
-    if (text) text.textContent = copy.loadingText;
-  }
 }
 
 applyStaticText();

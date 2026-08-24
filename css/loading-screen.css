@@ -122,3 +122,11 @@
     animation: none;
   }
 }
+
+html.light #math-loader, body.light #math-loader {
+  color:#0f172a;
+  background:radial-gradient(circle at 50% 25%,rgba(14,165,233,.10),transparent 38%),#f8fafc;
+}
+html.light .mh-loading-track, body.light .mh-loading-track { background:rgba(100,116,139,.18); }
+html.light .mh-loading-status, body.light .mh-loading-status { color:#64748b; }
+html.light .mh-loading-action, body.light .mh-loading-action { color:#0f172a;background:rgba(255,255,255,.88);border-color:rgba(100,116,139,.3); }

@@ -8,7 +8,9 @@ export function normalizeTagCatalog(payload = {}){
       label_ro: String(tag?.label_ro || tag?.id || "").trim(),
       label_en: String(tag?.label_en || tag?.label_ro || tag?.id || "").trim(),
       position: Number(tag?.position || 0),
-      active: tag?.active !== false
+      active: tag?.active !== false,
+      group_key: new Set(["topic","method","context"]).has(String(tag?.group_key||"")) ? String(tag.group_key) : "topic",
+      filter_visible: tag?.filter_visible !== false
     })).filter((tag) => tag.id),
     mappings: asArray(payload.mappings).map((row) => ({
       content_type: String(row?.content_type || "").trim(),
@@ -59,7 +61,9 @@ export async function hydrateTagCatalog(supabase, data){
 export async function saveTag(supabase, tag){
   const { data, error } = await supabase.rpc("mh_admin_save_tag", {
     p_id: cleanId(tag?.id), p_label_ro: String(tag?.label_ro || "").trim(),
-    p_label_en: String(tag?.label_en || "").trim(), p_active: tag?.active !== false
+    p_label_en: String(tag?.label_en || "").trim(), p_active: tag?.active !== false,
+    p_group_key: new Set(["topic","method","context"]).has(String(tag?.group_key||"")) ? String(tag.group_key) : "topic",
+    p_filter_visible: tag?.filter_visible !== false
   });
   if (error) throw error;
   return data;

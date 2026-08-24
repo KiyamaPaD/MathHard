@@ -220,3 +220,7 @@
 .community-public-badge[data-rarity="legendary"]{background:rgba(245,158,11,.08)}
 @media(max-width:760px){.community-stat-picker,#communityBadgeVisibility{grid-template-columns:1fr 1fr}.community-public-body[data-badge-style="cards"] .community-public-badges{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.community-stat-picker,#communityBadgeVisibility,.community-public-body[data-badge-style="cards"] .community-public-badges{grid-template-columns:1fr}}
+
+#communitySaveProfile.is-unsaved-danger {
+  border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.18);background:rgba(239,68,68,.14);color:var(--text);
+}

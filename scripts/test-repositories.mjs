@@ -761,7 +761,7 @@ await loadProblemReplayState(replayClient, "problem-replay");
 await startProblemReplay(replayClient, "problem-replay");
 assert.equal((await submitProblemReplayAnswer(replayClient, "replay-1", "42")).xp_earned, 0);
 assert.equal((await requestProblemReplayHint(replayClient, "replay-1", 1, "ro")).xp_earned, 0);
-assert.equal((await revealProblemReplayAnswer(replayClient, "replay-1")).xp_earned, 0);
+assert.equal((await revealProblemReplayAnswer(replayClient, "replay-1", "en")).xp_earned, 0);
 assert.equal((await loadPracticeReplayAnalytics(replayClient, 12)).total_replays, 3);
 assert.deepEqual(replayCalls.map((call) => call.name), [
   "mh_get_problem_replay_state",
@@ -771,6 +771,7 @@ assert.deepEqual(replayCalls.map((call) => call.name), [
   "mh_reveal_problem_replay_answer",
   "mh_get_practice_replay_analytics"
 ]);
+assert.equal(replayCalls.find((call) => call.name === "mh_reveal_problem_replay_answer")?.args?.p_locale, "en");
 
 const tagData = {
   lessons: [{ id: "lesson-a", tags: ["legacy-one"] }],

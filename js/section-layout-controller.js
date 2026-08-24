@@ -46,13 +46,11 @@ const TEXT = Object.freeze({
   ro: {
     open: "Deschide",
     close: "Închide",
-    saved: "Aspectul paginii a fost salvat în cont.",
     localOnly: "Aspectul a fost păstrat pe acest dispozitiv.",
   },
   en: {
     open: "Open",
     close: "Close",
-    saved: "Page layout saved to your account.",
     localOnly: "Layout saved on this device.",
   },
 });
@@ -252,7 +250,6 @@ function createController() {
       state = saved;
       writeLocalPreferences(userIdAtStart, state);
       applyState(state);
-      showToast(TEXT[getLanguage()].saved, "ok");
     } catch (error) {
       console.warn("MathHard UI preferences could not be synced:", error);
       if (activeUserId === userIdAtStart) {

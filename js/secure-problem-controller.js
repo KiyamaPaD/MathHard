@@ -25,7 +25,8 @@ function messageFor(language, key, ok = false) {
       checking: "Se verifică…",
       hint_locked: "Indiciul nu este încă deblocat.",
       hint_missing: "Această problemă nu are acest indiciu.",
-      reveal_failed: "Răspunsul nu a putut fi afișat."
+      reveal_failed: "Răspunsul nu a putut fi afișat.",
+      reveal_locked: "Soluția se deblochează după ambele hinturi și încă 30 de secunde."
     },
     en: {
       correct: "✅ Correct, well done.",
@@ -35,7 +36,8 @@ function messageFor(language, key, ok = false) {
       checking: "Checking…",
       hint_locked: "The hint is not unlocked yet.",
       hint_missing: "This problem does not have this hint.",
-      reveal_failed: "The answer could not be revealed."
+      reveal_failed: "The answer could not be revealed.",
+      reveal_locked: "The solution unlocks after both hints and another 30 seconds."
     }
   };
 
@@ -150,40 +152,19 @@ export function createSecureProblemController({
 
             <section class="mh-problem-card mh-answer-card">
               <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
-              <div class="checkrow">
-                <input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">
-                <button class="btn small" id="checkBtn" type="button">${ro ? "Verifică" : "Check"}</button>
-              </div>
+              <input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">
               <div class="legend mh-problem-status" id="statusArea"></div>
-              <div class="mh-live-preview-wrap">
-                <div class="legend">${ro ? "Previzualizare" : "Preview"}</div>
-                <div class="mh-live-preview-box" id="answerPreviewBox"></div>
-              </div>
+              <div class="mh-live-preview-wrap"><div class="legend">${ro ? "Previzualizare" : "Preview"}</div><div class="mh-live-preview-box" id="answerPreviewBox"></div></div>
+              <div class="checkrow mh-submit-answer-row"><button class="btn" id="checkBtn" type="button">${ro ? "Trimite răspunsul" : "Submit answer"}</button></div>
+              <div class="check-confirm" id="checkConfirm"><span>${ro ? "Trimiți răspunsul?" : "Submit this answer?"}</span><div class="check-confirm-buttons"><button class="btn small" id="confirmNo" type="button">${ro ? "Nu" : "No"}</button><button class="btn small" id="confirmYes" type="button">${ro ? "Da" : "Yes"}</button></div></div>
               <div class="mh-math-input-host" id="answerMathToolbar"></div>
-
-              <div class="check-confirm" id="checkConfirm">
-                <span>${ro
-                  ? "Trimiți răspunsul?"
-                  : "Submit this answer?"}</span>
-                <div class="check-confirm-buttons">
-                  <button class="btn small" id="confirmNo" type="button">${ro ? "Nu" : "No"}</button>
-                  <button class="btn small" id="confirmYes" type="button">${ro ? "Da" : "Yes"}</button>
-                </div>
-              </div>
-            </section>
-
-            <section class="mh-problem-card mh-feedback-card">
-              <h3>🧭 ${ro ? "Feedback de lucru" : "Work feedback"}</h3>
-              <p id="problemFeedbackText"></p>
             </section>
 
             <section class="mh-problem-card">
-              <details class="collapsible" open>
-                <summary>📜 ${ro ? "Istoricul încercărilor" : "Attempt history"} (<span id="attemptCount">${existingAttempts.length}</span>)</summary>
-                <div id="attemptHistoryStatus" class="legend">${ro ? "Se încarcă…" : "Loading…"}</div>
-                <ul class="attempts mh-server-attempts" id="attemptsList"></ul>
-              </details>
+              <details class="collapsible" open><summary>📜 ${ro ? "Istoricul încercărilor" : "Attempt history"} (<span id="attemptCount">${existingAttempts.length}</span>)</summary><div id="attemptHistoryStatus" class="legend">${ro ? "Se încarcă…" : "Loading…"}</div><ul class="attempts mh-server-attempts" id="attemptsList"></ul></details>
             </section>
+
+            <section class="mh-problem-card mh-feedback-card"><h3>🧭 ${ro ? "Feedback de lucru" : "Work feedback"}</h3><p id="problemFeedbackText"></p></section>
 
             <div class="hints" id="hintsBox">
               ${hasHint1 && !isExam ? `
@@ -213,7 +194,7 @@ export function createSecureProblemController({
                 </div>
               </div>
               <div id="solutionLocked" class="legend">
-                ${ro ? "Soluția devine disponibilă după rezolvare sau la cerere." : "The solution becomes available after solving or on request."}
+                ${ro ? "Soluția se deblochează după Hint 1 + Hint 2 și 30 de secunde." : "The solution unlocks after Hint 1 + Hint 2 and 30 seconds."}
               </div>
               <div id="solutionContent" class="mh-solution-content" hidden></div>
               <div class="reveal">
@@ -279,9 +260,7 @@ export function createSecureProblemController({
     let workspaceRevision = 0;
     let workspaceLoadEpoch = 0;
     let workspaceSaveChain = Promise.resolve();
-    let noteDirty = false, replayMode = false, replay = null, replayApi = null, revealedAnswer = "";
-
-    const replayRows = () => (replay?.attempts || []).map((row) => ({ id: row.id, answer: row.answer, correct: Boolean(row.correct), createdAt: row.created_at }));
+    let noteDirty=false,replayMode=false,replay=null,replayApi=null,revealedAnswer="",replaySolution=null,revealTimer=0;
     function paintReplaySummary(state = replay) {
       if (!replaySummary) return;
       const count = Number(state?.replay_count || 0), last = state?.last_replay_at;
@@ -302,14 +281,15 @@ export function createSecureProblemController({
         : (ro ? "Nu există încă încercări." : "No attempts yet.");
     }
 
+    function renderReplayHistory(){
+      attemptsList.innerHTML="";
+      const count=Number(replay?.attempt_count||0); attemptCount.textContent=String(count);
+      attemptStatus.textContent=ro?"Răspunsurile din reluare sunt ascunse. Statisticile anti-cheat rămân salvate.":"Replay answers are hidden. Anti-cheat statistics remain stored.";
+    }
+
     function renderFeedback() {
-      const current = getXPRecord(problem.id);
-      feedbackText.textContent = feedbackForAttempt({
-        language,
-        wrongAttempts: replayMode ? Number(replay?.wrong_count || 0) : current.wrong,
-        hasHint1,
-        hasHint2
-      });
+      const current=getXPRecord(problem.id), wrong=replayMode?Number(replay?.wrong_count||0):Number(current.wrong||0);
+      feedbackText.textContent=wrong>0?feedbackForAttempt({language,wrongAttempts:wrong,hasHint1,hasHint2}):(ro?"Feedbackul se activează după prima încercare greșită.":"Work feedback unlocks after the first wrong attempt.");
     }
 
     function refreshHints() {
@@ -323,10 +303,8 @@ export function createSecureProblemController({
     function refreshXp() {
       if (isExam) return;
       const current = getXPRecord(problem.id), value = host.querySelector("#probXpValue"), stats = host.querySelector("#probXpStats");
-      if (value) value.textContent = replayMode ? "Replay · 0 XP" : `${current.xp || 0} / 10 XP`;
-      if (stats) stats.innerHTML = replayMode
-        ? `<span>${ro ? "Greșeli replay" : "Replay mistakes"}: ${Number(replay?.wrong_count || 0)}</span><span>${ro ? "Hinturi replay" : "Replay hints"}: ${Number(replay?.hint_count || 0)}</span>`
-        : `<span>${ro ? "Greșeli" : "Mistakes"}: ${current.wrong || 0}</span><span>${ro ? "Hinturi" : "Hints"}: ${current.hints || 0}</span>`;
+      if(value)value.textContent=`${current.xp||0} / 10 XP`;
+      if(stats)stats.innerHTML=`<span>${ro?"Greșeli":"Mistakes"}: ${current.wrong||0}</span><span>${ro?"Hinturi":"Hints"}: ${current.hints||0}</span>`;
     }
 
     function renderWorkspace({ syncNote = true } = {}) {
@@ -345,16 +323,34 @@ export function createSecureProblemController({
       }
       modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.explanationMode === workspace.explanationMode));
 
-      const unlocked = !replayMode && workspace.canViewSolution && workspace.solution;
-      if (solutionLocked) solutionLocked.hidden = Boolean(unlocked);
+      const visibleSolution = replayMode ? replaySolution : (workspace.canViewSolution ? workspace.solution : null);
+      const unlocked = Boolean(visibleSolution);
+      if (solutionLocked) solutionLocked.hidden = unlocked;
       if (solutionContent) {
         solutionContent.hidden = !unlocked;
         solutionContent.innerHTML = unlocked
-          ? `<div>${escapeHtml(solutionText(workspace.solution, workspace.explanationMode, language)).replaceAll("\n", "<br>")}</div>`
+          ? `<div>${escapeHtml(solutionText(visibleSolution, workspace.explanationMode, language)).replaceAll("\n", "<br>")}</div>`
           : "";
         if (unlocked) renderMath(solutionContent);
       }
-      if (!replayMode) renderAttempts(workspace.attempts);
+      if(replayMode)renderReplayHistory();else renderAttempts(workspace.attempts);
+      refreshRevealGate();
+    }
+
+    function refreshRevealGate(){
+      const btn=host.querySelector("#revealBtn"); if(!btn)return; window.clearInterval(revealTimer);
+      if(!replayMode&&workspace.canViewSolution){btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
+      const seconds=Math.max(0,Number(replayMode?replay?.reveal_seconds_remaining:workspace.revealGate?.secondsRemaining)||0);
+      const hintsReady=replayMode?Boolean(replay?.hint1_used&&replay?.hint2_used):Boolean(workspace.revealGate?.hint1Used&&workspace.revealGate?.hint2Used);
+      const paint=()=>{const left=Math.max(0,Math.ceil((Number(btn.dataset.readyAt||0)-Date.now())/1000));btn.disabled=!hintsReady||left>0;btn.textContent=!hintsReady?(ro?"Folosește ambele hinturi":"Use both hints"):(left>0?(ro?`Soluție în ${left}s`:`Solution in ${left}s`):(ro?"Arată răspunsul și soluția":"Show answer and solution"));if(left<=0)window.clearInterval(revealTimer)};
+      btn.dataset.readyAt=String(Date.now()+seconds*1000); paint(); if(hintsReady&&seconds>0)revealTimer=window.setInterval(paint,1000);
+    }
+
+    function enterReplay(nextReplay,{message=true}={}){
+      replay=nextReplay;replayMode=true;revealedAnswer="";replaySolution=null;hint1Loaded=Boolean(replay?.hint1_used);hint2Loaded=Boolean(replay?.hint2_used);
+      input.value="";input.disabled=false;checkButton.disabled=false;confirmBox.style.display="none";
+      if(message)statusArea.textContent=`${ro?"Replay activ":"Replay active"} · 0 XP`;
+      renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();renderWorkspace({syncNote:false});input.disabled=false;checkButton.disabled=false;input.focus();
     }
 
     async function reloadWorkspace() {
@@ -479,7 +475,7 @@ export function createSecureProblemController({
       try {
         if (replayMode && replay?.replay_id) {
           const result = await replayApi.submitProblemReplayAnswer(supabase, replay.replay_id, value);
-          replay = result?.replay || replay; renderAttempts(replayRows()); paintReplaySummary(replay); refreshHints(); refreshXp();
+          replay=result?.replay||replay;renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();refreshRevealGate();
           if (result?.ok) { statusArea.textContent = messageFor(language, "correct", true) + " · Replay 0 XP"; input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false; }
           else { statusArea.textContent = messageFor(language, "wrong"); input.disabled = false; checkButton.disabled = false; input.focus(); }
           return;
@@ -547,7 +543,8 @@ export function createSecureProblemController({
         if (number === 1) hint1Loaded = true;
         if (number === 2) hint2Loaded = true;
         refreshXp();
-        if (replayMode) { paintReplaySummary(replay); renderAttempts(replayRows()); }
+        if(replayMode){paintReplaySummary(replay);renderReplayHistory();refreshRevealGate();}
+        else await reloadWorkspace();
         renderFeedback();
       } catch (error) {
         console.error(`Secure hint ${number} failed:`, error);
@@ -590,10 +587,15 @@ export function createSecureProblemController({
       revealButton.disabled = true;
       try {
         const result = replayMode && replay?.replay_id
-          ? await replayApi.revealProblemReplayAnswer(supabase, replay.replay_id)
+          ? await replayApi.revealProblemReplayAnswer(supabase, replay.replay_id, language)
           : await revealProblemAnswer(supabase, problem.id, language);
         revealedAnswer = String(result?.answer || "");
-        if (replayMode && result?.replay) { replay = result.replay; paintReplaySummary(replay); renderAttempts(replayRows()); input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false; }
+        if(replayMode){
+          replaySolution=result?.solution&&typeof result.solution==="object"?result.solution:null;
+          if(result?.replay)replay=result.replay;
+          paintReplaySummary(replay);renderReplayHistory();input.disabled=true;checkButton.disabled=true;if(replayButton)replayButton.disabled=false;
+          renderWorkspace({syncNote:false});
+        }
         if (!replayMode && result?.progress) applyProblemProgressResult(problem.id, result.progress, "reveal");
         revealText.textContent = `${ro ? "Răspuns corect:" : "Correct answer:"} ${revealedAnswer}`;
         revealText.hidden = false;
@@ -601,21 +603,19 @@ export function createSecureProblemController({
         if (!replayMode) await reloadWorkspace();
       } catch (error) {
         console.error("Secure answer reveal failed:", error);
-        revealText.textContent = messageFor(language, "reveal_failed");
+        revealText.textContent=/30|hint|unlock/i.test(String(error?.message||""))?messageFor(language,"reveal_locked"):messageFor(language,"reveal_failed");
         revealText.hidden = false;
       } finally {
         revealButton.disabled = false;
       }
     });
 
-    replayButton?.addEventListener("click", async () => {
-      replayButton.disabled = true; statusArea.textContent = ro ? "Se pornește reluarea…" : "Starting replay…";
-      try {
-        replayApi ||= await import("./practice-replay-repository.js"); replay = await replayApi.startProblemReplay(supabase, problem.id); replayMode = true; revealedAnswer = ""; hint1Loaded = false; hint2Loaded = false;
-        input.value = ""; input.disabled = false; checkButton.disabled = false; statusArea.textContent = `${ro ? "Replay activ" : "Replay active"} · 0 XP`; renderAttempts(replayRows()); paintReplaySummary(replay); refreshHints(); refreshXp(); renderWorkspace({syncNote:false}); input.focus();
-      } catch (error) { console.error("Problem replay start failed:", error); statusArea.textContent = messageFor(language, "unavailable"); replayButton.disabled = false; }
+    replayButton?.addEventListener("click",async()=>{
+      if(!replayMode&&!confirm(ro?"Reluarea golește răspunsul și istoricul vizibil din workspace. XP-ul, greșelile și hinturile oficiale rămân neschimbate, iar datele de audit sunt păstrate pentru viitorul rol profesor/admin. Continui?":"Replay clears the answer and visible attempt history from the workspace. Official XP, mistakes and hints stay unchanged, while audit records are retained for future teacher/admin tools. Continue?"))return;
+      replayButton.disabled=true;statusArea.textContent=ro?"Se pornește reluarea…":"Starting replay…";
+      try{replayApi||=await import("./practice-replay-repository.js");const next=await replayApi.startProblemReplay(supabase,problem.id);enterReplay(next);replayButton.disabled=false;}catch(error){console.error("Problem replay start failed:",error);statusArea.textContent=messageFor(language,"unavailable");replayButton.disabled=false;}
     });
-    if (replayEligible) void import("./practice-replay-repository.js").then(async (api) => { replayApi = api; const state = await api.loadProblemReplayState(supabase, problem.id); paintReplaySummary(state); if (state?.active_replay) { replay = state.active_replay; replayMode = true; replayButton?.click(); } }).catch(() => undefined);
+    if(replayEligible)void import("./practice-replay-repository.js").then(async(api)=>{replayApi=api;const state=await api.loadProblemReplayState(supabase,problem.id);paintReplaySummary(state);if(state?.active_replay)enterReplay(state.active_replay,{message:false});}).catch(()=>undefined);
 
     const recommendations = buildProblemRecommendations({
       currentProblem: problem,

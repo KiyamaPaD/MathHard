@@ -13,7 +13,7 @@ export async function loadUserAnalytics(supabase, {
   const safeLocale = String(locale || "ro").toLowerCase().startsWith("en") ? "en" : "ro";
 
   const replayAnalyticsPromise = import("./practice-replay-repository.js")
-    .then((module) => module.loadPracticeReplayAnalytics(supabase, 12))
+    .then((module) => module.loadPracticeReplayAnalytics(supabase, 24))
     .catch(() => ({ problem_replays: 0, exam_replays: 0, total_replays: 0, last_replay_at: "", recent: [] }));
 
   const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy, practiceReplays] = await Promise.all([

@@ -62,6 +62,10 @@ export function normalizeProblemWorkspace(payload = {}) {
     explanationMode: cleanMode(payload?.explanation_mode),
     canViewSolution: Boolean(payload?.can_view_solution),
     solution: payload?.solution && typeof payload.solution === "object" ? payload.solution : null,
+    revealGate: {
+      hint1Used: Boolean(payload?.reveal_gate?.hint1_used), hint2Used: Boolean(payload?.reveal_gate?.hint2_used),
+      secondsRemaining: Math.max(0, Number(payload?.reveal_gate?.seconds_remaining || 0))
+    },
     attempts: attempts.map((row) => ({
       id: row?.id ?? null,
       answer: String(row?.answer || ""),
