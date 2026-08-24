@@ -414,6 +414,11 @@ body.mh-admin-drawer-open #adminDrawer .panel > header {
   display: none;
 }
 
+.mh-shell-mobile-toggle[hidden],
+body.mh-mobile-nav-open .mh-shell-mobile-toggle {
+  display: none !important;
+}
+
 .mh-shell-mobile-backdrop {
   display: none;
 }
