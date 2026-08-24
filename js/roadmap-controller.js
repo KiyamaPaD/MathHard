@@ -130,6 +130,27 @@ function renderNode(state, language, conceptCatalog) {
   `;
 }
 
+function isMathHardM1Roadmap(roadmap) {
+  return String(roadmap?.target_type || "").trim().toLowerCase() === "mathhard_m1";
+}
+
+function renderMathHardCurriculumNotice(roadmap, language) {
+  if (!isMathHardM1Roadmap(roadmap)) return "";
+  return `
+    <aside class="mh-roadmap-curriculum-note" aria-label="${escapeHtml(textFor(language, "Despre ordinea MathHard", "About MathHard ordering"))}">
+      <span class="mh-roadmap-curriculum-badge">M1 · Mate-Info</span>
+      <div>
+        <strong>${textFor(language, "Ordinea MathHard", "MathHard order")}</strong>
+        <p>${textFor(
+          language,
+          "Numerotarea și ordinea lecțiilor sunt proprii MathHard și pot diferi de manual sau de planificarea profesorului. Urmărește conceptele, prerechizitele și acoperirea pentru examen, nu numărul lecției de la clasă.",
+          "Lesson numbering and order are MathHard-specific and may differ from your textbook or teacher's plan. Follow concepts, prerequisites and exam coverage rather than classroom lesson numbers."
+        )}</p>
+      </div>
+    </aside>
+  `;
+}
+
 function renderSection(section, language, conceptCatalog) {
   const stats = section.progress;
   return `
@@ -291,6 +312,8 @@ export function createRoadmapController({
           </div>
         </div>
       </div>
+
+      ${renderMathHardCurriculumNotice(roadmap, language)}
 
       <div class="mh-roadmap-next-card ${next ? "" : "is-complete"}">
         <div>
