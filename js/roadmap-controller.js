@@ -151,7 +151,7 @@ function renderMathHardCurriculumNotice(roadmap, language) {
   `;
 }
 
-function renderSection(section, language, conceptCatalog, { collapsed = false, collapseKey = "", bodyId = "" } = {}) {
+function renderSection(section, language, conceptCatalog, { collapsed = false, collapseKey = "", bodyId = "", stageNumber = 0 } = {}) {
   const stats = section.progress;
   const toggleLabel = collapsed
     ? textFor(language, "Deschide", "Expand")
@@ -160,7 +160,7 @@ function renderSection(section, language, conceptCatalog, { collapsed = false, c
     <section class="mh-roadmap-section-card ${collapsed ? "is-collapsed" : ""}">
       <header class="mh-roadmap-section-head">
         <div>
-          <span class="mh-roadmap-section-kicker">${textFor(language, "Etapă", "Stage")} ${Number(section.position || 0) + 1}</span>
+          <span class="mh-roadmap-section-kicker">${textFor(language, "Etapă", "Stage")} ${stageNumber}</span>
           <h3>${escapeHtml(section.title || section.section_key)}</h3>
           ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
         </div>
@@ -363,7 +363,8 @@ export function createRoadmapController({
           return renderSection(section, language, conceptCatalog, {
             collapsed: collapsedSections.has(collapseKey),
             collapseKey,
-            bodyId: `mh-roadmap-section-body-${index}`
+            bodyId: `mh-roadmap-section-body-${index}`,
+            stageNumber: index
           });
         }).join("")}
       </div>

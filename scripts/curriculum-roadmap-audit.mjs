@@ -54,6 +54,12 @@ if (!controller.includes('aria-expanded="${collapsed ? "false" : "true"}"') || !
 if (!css.includes(".mh-roadmap-section-body[hidden]") || !css.includes("display: none !important")) {
   errors.push("Collapsed roadmap stage bodies must stay hidden even when layout display rules apply.");
 }
+if (!controller.includes("stageNumber: index") || !controller.includes("${stageNumber}")) {
+  errors.push("Roadmap stage labels must use contiguous 0-based display order rather than raw database positions.");
+}
+if (controller.includes("Number(section.position || 0) + 1")) {
+  errors.push("Roadmap stage labels must not expose raw database positions.");
+}
 if (sqlFiles(root).length) {
   errors.push("Database SQL must remain outside the application repository.");
 }
@@ -68,6 +74,7 @@ if (errors.length) {
   console.log("- concept/prerequisite/exam-coverage guidance: present");
   console.log("- compact responsive curriculum notice: present");
   console.log("- independent collapsible roadmap stages: present");
+  console.log("- contiguous 0-based roadmap stage labels: present");
   console.log("- SQL kept outside Git: confirmed");
   console.log("MathHard 090 Curriculum Foundation audit passed.");
 }
