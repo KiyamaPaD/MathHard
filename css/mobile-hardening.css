@@ -824,3 +824,343 @@ body.mh-modal-open {
     padding: 14px;
   }
 }
+
+/* MathHard Phase 100 — compact mobile content workspaces.
+   Keep the learning surface dominant on small screens: navigation stays
+   available, while duplicated titles, metadata and oversized status controls
+   stop consuming vertical space. */
+@media (max-width: 760px) {
+  /* Lessons already render their title inside the lesson body, so the legacy
+     drawer header is duplicate chrome on phones. */
+  .drawer.is-lesson-workspace > .panel > header {
+    display: none !important;
+  }
+
+  /* Problems carry their own hero title; lessons carry an H2. The workspace
+     bar therefore becomes one compact navigation row. */
+  .drawer.is-learning-workspace #mhLearningWorkspaceBar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 5px max(8px, var(--mh-safe-right)) 5px max(8px, var(--mh-safe-left));
+  }
+
+  .drawer.is-learning-workspace .mh-learning-workspace-context {
+    display: block;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .drawer.is-learning-workspace .mh-learning-workspace-breadcrumb {
+    display: none;
+  }
+
+  .drawer.is-learning-workspace .mh-learning-workspace-position {
+    font-size: .68rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .drawer.is-learning-workspace .mh-learning-workspace-actions {
+    width: auto;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .drawer.is-learning-workspace .mh-learning-workspace-actions .btn {
+    position: static;
+    inset: auto;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    flex: 0 0 32px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 9px;
+    font-size: 0;
+    line-height: 1;
+    overflow: hidden;
+  }
+
+  .drawer.is-learning-workspace [data-learning-prev]::before,
+  .drawer.is-learning-workspace [data-learning-next]::before,
+  .drawer.is-learning-workspace [data-learning-roadmap]::before,
+  .drawer.is-learning-workspace [data-learning-close]::before {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .drawer.is-learning-workspace [data-learning-prev]::before { content: "←"; }
+  .drawer.is-learning-workspace [data-learning-next]::before { content: "→"; }
+  .drawer.is-learning-workspace [data-learning-roadmap]::before { content: "🗺️"; font-size: .92rem; }
+  .drawer.is-learning-workspace [data-learning-close]::before { content: "✕"; }
+
+  .drawer.is-learning-workspace .panel .content.viewer {
+    padding-top: 12px;
+    padding-bottom: 20px;
+  }
+
+  /* Remove the empty padded wrapper around the lesson footer. */
+  .drawer.is-lesson-workspace > .panel > .content:not(.viewer),
+  .drawer.is-exam-workspace > .panel > .content:not(.viewer) {
+    padding: 0 !important;
+  }
+
+  /* Lesson verification / proposed problems / reading state stay visible, but
+     as a compact control strip rather than three full-width mobile cards. */
+  .drawer.is-lesson-workspace .lesson-actions {
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 5px;
+    margin: 0;
+    padding: 6px max(7px, var(--mh-safe-right)) calc(6px + var(--mh-safe-bottom)) max(7px, var(--mh-safe-left));
+    background: color-mix(in srgb, var(--bg) 97%, transparent);
+    border-top: 1px solid var(--border);
+  }
+
+  .drawer.is-lesson-workspace #lessonTimerBox,
+  .drawer.is-lesson-workspace #quizBtn,
+  .drawer.is-lesson-workspace #goProblemsBtn,
+  .drawer.is-lesson-workspace #understoodBtn {
+    width: auto !important;
+    min-width: 0;
+    min-height: 38px;
+    margin: 0 !important;
+    justify-content: center;
+    padding: 5px 4px;
+    border-radius: 9px;
+    font-size: .66rem;
+    font-weight: 800;
+    line-height: 1.08;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: none;
+  }
+
+  .drawer.is-lesson-workspace #lessonTimerBox {
+    align-items: center;
+    color: var(--muted);
+  }
+
+  /* Problem title/progress remains visible in the hero, but consumes far less
+     of the initial viewport. */
+  .drawer.is-problem-workspace > .panel > .content.viewer {
+    padding-top: 10px;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-workspace {
+    gap: 12px;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-hero {
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: 15px;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-hero h2 {
+    margin: 2px 0 3px;
+    font-size: 1.12rem;
+    line-height: 1.15;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-hero .stars,
+  .drawer.is-problem-workspace .mh-problem-hero .legend {
+    font-size: .7rem;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-hero-actions {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-hero-actions .btn {
+    width: auto !important;
+    min-height: 32px;
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    font-size: .7rem;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-progress-box {
+    min-width: 150px;
+    width: auto;
+    flex: 1 1 170px;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-progress-top .legend {
+    display: none;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-progress-top strong {
+    font-size: .76rem;
+  }
+
+  .drawer.is-problem-workspace .mh-problem-progress-meta {
+    gap: 4px 8px;
+    font-size: .63rem;
+  }
+
+  /* Exams do not duplicate their title inside the body, so keep one very
+     small header: close + one-line title. Metadata moves out of the way. */
+  .drawer.is-exam-workspace > .panel > header.bar {
+    position: relative;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start !important;
+    gap: 6px;
+    padding: max(5px, var(--mh-safe-top)) max(8px, var(--mh-safe-right)) 5px max(8px, var(--mh-safe-left));
+  }
+
+  .drawer.is-exam-workspace > .panel > header.bar > div:first-child {
+    min-width: 0;
+    width: 100%;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .drawer.is-exam-workspace #closeDrawer {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 9px;
+    font-size: 0;
+  }
+
+  .drawer.is-exam-workspace #closeDrawer::before {
+    content: "✕";
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .drawer.is-exam-workspace #viewTitle {
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    flex: 1 1 auto;
+    font-size: .88rem;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .drawer.is-exam-workspace > .panel > header.bar > .counter,
+  .drawer.is-exam-workspace #viewMeta {
+    display: none !important;
+  }
+
+  .drawer.is-exam-workspace > .panel > .content.viewer {
+    padding: 9px max(10px, var(--mh-safe-right)) calc(22px + var(--mh-safe-bottom)) max(10px, var(--mh-safe-left));
+  }
+
+  /* The exam start/status controls were previously stacked as full-width
+     rows. Keep the important controls compact and reserve a full row only for
+     progress and metadata. */
+  .drawer.is-exam-workspace .examTop {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: start;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 7px;
+  }
+
+  .drawer.is-exam-workspace .examTop > .examBadge:first-child {
+    display: none;
+  }
+
+  .drawer.is-exam-workspace .examTop .select,
+  .drawer.is-exam-workspace .examTop .btn,
+  .drawer.is-exam-workspace .examTop .examBadge {
+    width: auto;
+    min-width: 0;
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: .7rem;
+    line-height: 1.05;
+  }
+
+  .drawer.is-exam-workspace .examTop .btn {
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .drawer.is-exam-workspace .examTop .progressRow,
+  .drawer.is-exam-workspace #secureExamMeta,
+  .drawer.is-exam-workspace .admin-exam-cancel-wrap {
+    grid-column: 1 / -1;
+  }
+
+  .drawer.is-exam-workspace .examTop .progressRow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(80px, 1fr) auto;
+    gap: 5px;
+    margin-top: 0;
+  }
+
+  .drawer.is-exam-workspace .examTop .progressBar {
+    width: 100%;
+    height: 6px;
+  }
+
+  .drawer.is-exam-workspace #secureExamMeta {
+    font-size: .66rem;
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 390px) {
+  .drawer.is-learning-workspace #mhLearningWorkspaceBar {
+    min-height: 38px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  .drawer.is-learning-workspace .mh-learning-workspace-actions .btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    flex-basis: 30px;
+  }
+
+  .drawer.is-lesson-workspace #lessonTimerBox,
+  .drawer.is-lesson-workspace #quizBtn,
+  .drawer.is-lesson-workspace #goProblemsBtn,
+  .drawer.is-lesson-workspace #understoodBtn {
+    min-height: 36px;
+    padding-inline: 3px;
+    font-size: .61rem;
+  }
+
+  .drawer.is-exam-workspace .examTop {
+    grid-template-columns: repeat(2, minmax(0, auto));
+  }
+}

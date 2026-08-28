@@ -898,6 +898,14 @@ if (!learningWorkspaceControllerSource.includes("findNodeByContent") ||
     !learningWorkspaceCss.includes("is-learning-workspace")) {
   fail("Learning workspace must navigate within the current roadmap and preserve roadmap locks.");
 }
+if (!mobileHardeningCss.includes("MathHard Phase 100 — compact mobile content workspaces") ||
+    !mobileHardeningCss.includes(".drawer.is-lesson-workspace > .panel > header") ||
+    !mobileHardeningCss.includes(".drawer.is-exam-workspace .examTop") ||
+    !mobileHardeningCss.includes("grid-template-columns: repeat(4, minmax(0, 1fr))") ||
+    !learningWorkspaceControllerSource.includes('"is-exam-workspace"') ||
+    !appSource.includes('classList.add("is-exam-workspace")')) {
+  fail("Phase 100 mobile lesson/problem/exam workspace compaction is incomplete.");
+}
 if (!roadmapModelSource.includes('"completion:read"') ||
     !appSource.includes("Introducere finalizată") ||
     !appSource.includes("lessonCompletesOnRead")) {

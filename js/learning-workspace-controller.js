@@ -104,7 +104,7 @@ export function createLearningWorkspaceController({
   function render() {
     if (!active) {
       toolbar.hidden = true;
-      drawer.classList.remove("is-learning-workspace", "is-lesson-workspace", "is-problem-workspace");
+      drawer.classList.remove("is-learning-workspace", "is-lesson-workspace", "is-problem-workspace", "is-exam-workspace");
       delete drawer.dataset.workspaceType;
       return;
     }
@@ -116,6 +116,7 @@ export function createLearningWorkspaceController({
     const match = roadmapMatch(type, item.id);
 
     toolbar.hidden = false;
+    drawer.classList.remove("is-exam-workspace");
     drawer.classList.add("is-learning-workspace");
     drawer.classList.toggle("is-lesson-workspace", type === "lesson");
     drawer.classList.toggle("is-problem-workspace", type === "problem");
@@ -142,12 +143,15 @@ export function createLearningWorkspaceController({
     const nextLocked = Boolean(next && isRoadmapLocked(type, next.id));
     previousButton.disabled = !previous || previousLocked;
     previousButton.title = previous ? translated(previous, lang) : "";
+    previousButton.setAttribute("aria-label", lang === "ro" ? "Lecția sau problema anterioară" : "Previous lesson or problem");
     previousButton.textContent = lang === "ro" ? "← Înapoi" : "← Back";
     nextButton.disabled = !next || nextLocked;
     nextButton.title = next ? translated(next, lang) : "";
+    nextButton.setAttribute("aria-label", lang === "ro" ? "Lecția sau problema următoare" : "Next lesson or problem");
     nextButton.textContent = lang === "ro" ? "Înainte →" : "Next →";
     roadmapButton.hidden = !match;
     roadmapButton.textContent = "🗺️ Roadmap";
+    roadmapButton.setAttribute("aria-label", lang === "ro" ? "Înapoi la roadmap" : "Back to roadmap");
     closeButton.textContent = "✕";
     closeButton.title = lang === "ro" ? "Închide" : "Close";
     closeButton.setAttribute("aria-label", closeButton.title);

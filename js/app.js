@@ -6558,6 +6558,11 @@ function openExam(exam){
     return;
   }
 
+  const examDrawer = document.getElementById("drawer");
+  examDrawer?.classList.remove("is-learning-workspace", "is-lesson-workspace", "is-problem-workspace");
+  examDrawer?.classList.add("is-exam-workspace");
+  if (examDrawer) examDrawer.dataset.workspaceType = "exam";
+
   const title = (LANG === "ro" ? exam.title_ro : exam.title_en) || exam.title_ro || exam.title_en || exam.id;
   let runtimeExam = {
     ...exam,
