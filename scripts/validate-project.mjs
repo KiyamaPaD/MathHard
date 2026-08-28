@@ -892,8 +892,20 @@ if (!roadmapAdminControllerSource.includes("patchRoadmapEntity") || !roadmapAdmi
 if (!roadmapAdminModelSource.includes("createRoadmapNodeId") || !roadmapAdminModelSource.includes("filterRoadmapContent")) {
   fail("roadmap-admin-model.js must own ID generation and catalog filtering.");
 }
-if (!learningWorkspaceControllerSource.includes("findNodeByContent") || !learningWorkspaceCss.includes("is-learning-workspace")) {
-  fail("Phase 13A workspace must integrate with the current roadmap and full-screen layout.");
+if (!learningWorkspaceControllerSource.includes("findNodeByContent") ||
+    !learningWorkspaceControllerSource.includes("roadmapContentSequence") ||
+    !learningWorkspaceControllerSource.includes("isRoadmapLocked") ||
+    !learningWorkspaceCss.includes("is-learning-workspace")) {
+  fail("Learning workspace must navigate within the current roadmap and preserve roadmap locks.");
+}
+if (!roadmapModelSource.includes('"completion:read"') ||
+    !appSource.includes("Introducere finalizată") ||
+    !appSource.includes("lessonCompletesOnRead")) {
+  fail("Read-only introduction completion must be represented consistently in roadmap and lesson UI.");
+}
+if (!lessonQuizControllerSource.includes("requiredCorrect") ||
+    !lessonQuizControllerSource.includes("Ai nevoie de minimum")) {
+  fail("Lesson checks must show the concrete minimum correct-answer requirement.");
 }
 if (!roadmapStudioCss.includes("mh-roadmap-admin-quick-add")) {
   fail("Plan de studiu styling is incomplete.");

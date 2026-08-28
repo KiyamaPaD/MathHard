@@ -154,11 +154,11 @@ export function createAppProgressController({
     return enqueueProgressMutation(`lesson-reading:${lessonId}`, async () => {
       try {
         const row = await startLessonReading(supabase, lessonId);
+        if (row?.learned) learnedSet.add(lessonId);
         if (row?.read_completed || row?.learned) {
           readSet.add(lessonId);
           onLessonChanged(lessonId, row);
         }
-        if (row?.learned) learnedSet.add(lessonId);
         return row;
       } catch (error) {
         reconcileMutationError("startLessonReading", error);
@@ -177,6 +177,7 @@ export function createAppProgressController({
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
           const row = await markLessonRead(supabase, lessonId, sessionId);
+          if (row?.learned) learnedSet.add(lessonId);
           if (row?.read_completed || row?.learned) {
             readSet.add(lessonId);
             onLessonChanged(lessonId, row);

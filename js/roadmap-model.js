@@ -94,8 +94,17 @@ function contentLookup(catalog) {
   };
 }
 
+function lessonCompletesOnRead(node) {
+  return node?.node_type === "lesson" && Array.isArray(node?.content?.tags) && node.content.tags.some((tag) => (
+    asText(tag).toLowerCase() === "completion:read"
+  ));
+}
+
 function isContentDone(node, progress) {
-  if (node.node_type === "lesson") return progress.learnedSet?.has(node.content_id) || false;
+  if (node.node_type === "lesson") {
+    if (progress.learnedSet?.has(node.content_id)) return true;
+    return lessonCompletesOnRead(node) && Boolean(progress.readSet?.has(node.content_id));
+  }
   if (node.node_type === "problem") return progress.solvedSet?.has(node.content_id) || false;
   if (node.node_type === "exam") return progress.examsPassedSet?.has(node.content_id) || false;
   return false;

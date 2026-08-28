@@ -71,10 +71,11 @@ requireTokens(profile, "Profile taxonomy", [
   "detailLessonsUnread"
 ]);
 requireTokens(profileJs, "Profile taxonomy loading", ["loadProgressTaxonomy", "counts.readOnly", "counts.attempted"]);
-requireTokens(workspace, "Mobile problem navigation", [
-  "relatedLesson",
+requireTokens(workspace, "Roadmap-scoped learning navigation", [
+  "roadmapContentSequence",
+  "findNodeByContent",
   "Roadmap",
-  "aria-label",
+  "isRoadmapLocked",
   "context || translated(item, lang)"
 ]);
 requireTokens(problemCss, "Mobile problem layout", [

@@ -113,6 +113,7 @@ const {
   buildRoadmapView,
   normalizeRoadmapCatalog
 } = await importBrowserModule("js/roadmap-model.js");
+const { roadmapContentSequence } = await importBrowserModule("js/learning-workspace-controller.js");
 const {
   createRoadmapNodeId,
   filterRoadmapContent,
@@ -1118,6 +1119,36 @@ const readOnlyRoadmapView = buildRoadmapView({
 assert.equal(readOnlyRoadmapView.nodeStates.get("n1").read, true);
 assert.equal(readOnlyRoadmapView.nodeStates.get("n1").status, "available");
 assert.equal(readOnlyRoadmapView.progress.percent, 0);
+
+const introReadRoadmapView = buildRoadmapView({
+  roadmap: normalizedRoadmaps.roadmaps[0],
+  catalog: {
+    lessons: [{ id: "l1", title_ro: "Introducere", tags: ["completion:read"] }],
+    problems: [{ id: "p1", title_ro: "Problema 1" }],
+    exams: []
+  },
+  learnedSet: new Set(),
+  readSet: new Set(["l1"]),
+  solvedSet: new Set(),
+  examsPassedSet: new Set(),
+  language: "ro"
+});
+
+assert.equal(introReadRoadmapView.nodeStates.get("n1").status, "done");
+assert.equal(introReadRoadmapView.nodeStates.get("n2").status, "available");
+assert.equal(introReadRoadmapView.progress.percent, 50);
+
+const workspaceRoadmapSequence = roadmapContentSequence({
+  sections: [{
+    nodes: [
+      { exists: true, node: { node_type: "lesson", content_id: "intro", content: { id: "intro", title_ro: "Introducere" } } },
+      { exists: true, node: { node_type: "lesson", content_id: "a01", content: { id: "a01", title_ro: "Lecția 1" } } },
+      { exists: true, node: { node_type: "problem", content_id: "p01", content: { id: "p01", title_ro: "Problema" } } },
+      { exists: false, node: { node_type: "lesson", content_id: "planned", content: null } }
+    ]
+  }]
+}, "lesson");
+assert.deepEqual(workspaceRoadmapSequence.map((item) => item.id), ["intro", "a01"]);
 
 const completedRoadmapView = buildRoadmapView({
   roadmap: normalizedRoadmaps.roadmaps[0],

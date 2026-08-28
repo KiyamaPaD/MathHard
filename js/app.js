@@ -5684,6 +5684,11 @@ ${details}`);
   function hasLessonVerification(lessonId){
     return LESSON_QUIZ_AVAILABILITY.has(String(lessonId || ""));
   }
+  function lessonCompletesOnRead(lesson){
+    return Array.isArray(lesson?.tags) && lesson.tags.some((tag) => (
+      String(tag || "").trim().toLowerCase() === "completion:read"
+    ));
+  }
   function fmtTime(s){ const m=Math.floor(s/60), ss=("0"+(s%60)).slice(-2); return `${m}:${ss}`; }
   function stopLessonTimer(){
     if(lessonTimer){ clearInterval(lessonTimer); lessonTimer=null; }
@@ -5701,16 +5706,26 @@ ${details}`);
     const quizBtn=document.getElementById("quizBtn");
     const timerBox=document.getElementById("lessonTimerBox");
     const lessonId=lessonReadingLessonId;
-    const isLearned=Boolean(lessonId && learnedSet.has(lessonId));
+    const lesson=lessonId ? DATA.lessons.find((entry) => String(entry?.id || "") === lessonId) : null;
+    const completesOnRead=lessonCompletesOnRead(lesson);
+    const isLearned=Boolean(lessonId && (learnedSet.has(lessonId) || (completesOnRead && readSet.has(lessonId))));
     const isRead=Boolean(lessonId && (readSet.has(lessonId) || isLearned));
-    const hasVerification=Boolean(lessonId && hasLessonVerification(lessonId));
+    const hasVerification=Boolean(!completesOnRead && lessonId && hasLessonVerification(lessonId));
 
     if (!und || !quizBtn) return;
+    quizBtn.style.display=completesOnRead ? 'none' : 'inline-flex';
     und.disabled=true;
     und.classList.toggle("is-read", isRead && !isLearned);
     und.classList.toggle("is-learned", isLearned);
     if (isLearned){
-      und.textContent=LANG==='ro' ? '🎓 Lecție învățată' : '🎓 Lesson learned';
+      und.textContent=completesOnRead
+        ? (LANG==='ro' ? '✅ Introducere finalizată' : '✅ Introduction completed')
+        : (LANG==='ro' ? '🎓 Lecție învățată' : '🎓 Lesson learned');
+      if (completesOnRead) {
+        quizBtn.disabled=true;
+        if (timerBox) timerBox.style.display='none';
+        return;
+      }
       quizBtn.disabled=!hasVerification;
       quizBtn.textContent=hasVerification
         ? (LANG==='ro' ? '✅ Reia verificarea' : '✅ Retake check')
@@ -5763,12 +5778,17 @@ ${details}`);
       return;
     }
     lessonReadSaving=true;
+    const wasLearned=learnedSet.has(lessonId);
     setUnderstoodAvailability(contentScrollable);
     const row=await markLessonReadSafe(lessonId, lessonReadingSessionId);
     lessonReadSaving=false;
     if (lessonId !== lessonReadingLessonId) return;
     if (row?.read_completed || row?.learned) {
       readSet.add(lessonId);
+      if (row?.learned) {
+        learnedSet.add(lessonId);
+        if (!wasLearned) mhIncrementTodayProgress("lesson");
+      }
       lessonSecondsLeft=0;
       if (lessonTimer){ clearInterval(lessonTimer); lessonTimer=null; }
       renderCards();

@@ -18,6 +18,26 @@ function sortLessons(items) {
   });
 }
 
+
+export function roadmapContentSequence(view, type) {
+  const normalizedType = type === "problem" ? "problem" : "lesson";
+  const seen = new Set();
+  const sequence = [];
+
+  for (const section of Array.isArray(view?.sections) ? view.sections : []) {
+    for (const state of Array.isArray(section?.nodes) ? section.nodes : []) {
+      const node = state?.node;
+      const content = node?.content;
+      const contentId = asText(content?.id || node?.content_id);
+      if (!state?.exists || node?.node_type !== normalizedType || !content || !contentId || seen.has(contentId)) continue;
+      seen.add(contentId);
+      sequence.push(content);
+    }
+  }
+
+  return sequence;
+}
+
 function sortProblems(items) {
   return [...items].sort((left, right) => {
     const difficulty = Number(left?.difficulty || 0) - Number(right?.difficulty || 0);
@@ -53,6 +73,12 @@ export function createLearningWorkspaceController({
   }
 
   function buildSequence(item, type) {
+    const match = roadmapMatch(type, item?.id);
+    const roadmapSequence = roadmapContentSequence(match?.view, type);
+    if (roadmapSequence.some((entry) => asText(entry?.id) === asText(item?.id))) {
+      return roadmapSequence;
+    }
+
     const catalog = getCatalog?.() || {};
     if (type === "lesson") return sortLessons(catalog.lessons || []);
     if (type === "problem") {
@@ -69,6 +95,10 @@ export function createLearningWorkspaceController({
   function roadmapMatch(type, itemId) {
     const controller = getRoadmapController?.();
     return controller?.findNodeByContent?.(type, itemId) || null;
+  }
+
+  function isRoadmapLocked(type, itemId) {
+    return roadmapMatch(type, itemId)?.state?.status === "locked";
   }
 
   function render() {
@@ -108,10 +138,12 @@ export function createLearningWorkspaceController({
       ? `${index + 1} / ${sequence.length}`
       : "";
 
-    previousButton.disabled = !previous;
+    const previousLocked = Boolean(previous && isRoadmapLocked(type, previous.id));
+    const nextLocked = Boolean(next && isRoadmapLocked(type, next.id));
+    previousButton.disabled = !previous || previousLocked;
     previousButton.title = previous ? translated(previous, lang) : "";
     previousButton.textContent = lang === "ro" ? "← Înapoi" : "← Back";
-    nextButton.disabled = !next;
+    nextButton.disabled = !next || nextLocked;
     nextButton.title = next ? translated(next, lang) : "";
     nextButton.textContent = lang === "ro" ? "Înainte →" : "Next →";
     roadmapButton.hidden = !match;
@@ -123,12 +155,16 @@ export function createLearningWorkspaceController({
 
   previousButton?.addEventListener("click", () => {
     if (!active || active.index <= 0) return;
-    onOpenItem?.(active.sequence[active.index - 1], active.type);
+    const previous = active.sequence[active.index - 1];
+    if (isRoadmapLocked(active.type, previous?.id)) return;
+    onOpenItem?.(previous, active.type);
   });
 
   nextButton?.addEventListener("click", () => {
     if (!active || active.index < 0 || active.index >= active.sequence.length - 1) return;
-    onOpenItem?.(active.sequence[active.index + 1], active.type);
+    const next = active.sequence[active.index + 1];
+    if (isRoadmapLocked(active.type, next?.id)) return;
+    onOpenItem?.(next, active.type);
   });
 
   roadmapButton?.addEventListener("click", () => {
