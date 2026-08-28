@@ -42,14 +42,17 @@ export function createLessonQuizController({
 
   function renderQuiz(host, quiz) {
     const questions = Array.isArray(quiz?.questions) ? quiz.questions : [];
+    const totalQuestions = Math.max(1, Number(quiz?.question_count || questions.length || 1));
+    const passThreshold = Math.max(1, Math.min(100, Number(quiz?.pass_threshold || 100)));
+    const requiredCorrect = Math.ceil(totalQuestions * passThreshold / 100);
     host.innerHTML = `
       <section class="quizBox mh-secure-lesson-quiz">
         <header class="quizHead">
           <div>
             <div class="quizTitle">${text("Verificare lecție", "Lesson check")}</div>
             <div class="legend">${text(
-              `Prag de promovare: ${quiz.pass_threshold || 100}%.`,
-              `Pass mark: ${quiz.pass_threshold || 100}%.`
+              `Ai nevoie de minimum ${requiredCorrect}/${totalQuestions}.`,
+              `You need at least ${requiredCorrect}/${totalQuestions}.`
             )}</div>
           </div>
         </header>
