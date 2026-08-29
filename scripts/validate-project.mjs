@@ -1497,10 +1497,13 @@ if (!proposedProblemsHandler.includes("closeDrawerSafely()") ||
     !proposedProblemsHandler.includes("mhResetContentFilters()") ||
     !proposedProblemsHandler.includes("filter.byLessonId = lessonId") ||
     !proposedProblemsHandler.includes('selectTab("problems")') ||
+    !proposedProblemsHandler.includes('[data-shell-route="problems"]') ||
     !proposedProblemsHandler.includes('document.getElementById("mhCatalogWorkspace")?.scrollIntoView') ||
-    proposedProblemsHandler.indexOf("closeDrawerSafely()") > proposedProblemsHandler.indexOf('selectTab("problems")') ||
-    proposedProblemsHandler.indexOf('selectTab("problems")') > proposedProblemsHandler.indexOf('document.getElementById("mhCatalogWorkspace")?.scrollIntoView')) {
-  fail("Phase 103 proposed-problems action must close the lesson, open the lesson-scoped Problems catalogue, then redirect the viewport to the catalogue workspace.");
+    proposedProblemsHandler.indexOf("closeDrawerSafely()") > proposedProblemsHandler.indexOf('selectTab("problems")')) {
+  fail("Phase 104 proposed-problems action must close the lesson and activate the lesson-scoped Problems shell route.");
+}
+if (!appSource.includes("mhProtectSetBraces") || !appSource.includes('.replaceAll("⦃", "\\\\left\\\\{")')) {
+  fail("Phase 104 live math preview must preserve visible finite-set braces.");
 }
 
 if (failed) {

@@ -679,8 +679,8 @@ import {
       else if (ch === ")") par--;
       else if (ch === "[") sq++;
       else if (ch === "]") sq--;
-      else if (ch === "{") br++;
-      else if (ch === "}") br--;
+      else if (ch === "{" || ch === "⦃") br++;
+      else if (ch === "}" || ch === "⦄") br--;
       if (ch === separator && par === 0 && sq === 0 && br === 0) {
         out.push(cur.trim());
         cur = "";
@@ -1002,6 +1002,17 @@ import {
     return mhApplySimpleSymbolLatex(s);
   }
 
+  function mhProtectSetBraces(raw) {
+    let out = "", prev = ""; const stack = [];
+    for (const ch of String(raw || "")) {
+      if (ch === "{") { const set = !prev || "=,;([{∈∉⊂⊆⊊".includes(prev); stack.push(set); out += set ? "⦃" : ch; }
+      else if (ch === "}") out += stack.pop() ? "⦄" : ch;
+      else out += ch;
+      if (!/\s/.test(ch)) prev = ch;
+    }
+    return out;
+  }
+
   function mhRenderMathPreview(inputEl, previewEl) {
     if (!inputEl || !previewEl) return;
 
@@ -1016,7 +1027,8 @@ import {
       return;
     }
 
-    const latex = mhMathPreviewToLatex(raw);
+    const latex = mhMathPreviewToLatex(mhProtectSetBraces(raw))
+      .replaceAll("⦃", "\\left\\{").replaceAll("⦄", "\\right\\}");
 
     previewEl.innerHTML = `
       <div class="mh-live-preview-render">\\(${latex}\\)</div>
@@ -6187,16 +6199,8 @@ ${details}`);
           page = 1;
           mhSyncFilterInputs();
           selectTab("problems");
-
-          // When the lesson was opened from the Roadmap, the viewport is still
-          // sitting in the roadmap section. Move explicitly to the catalogue
-          // after the Problems tab has rendered so the transition is visible.
-          requestAnimationFrame(() => {
-            document.getElementById("mhCatalogWorkspace")?.scrollIntoView({
-              behavior: "smooth",
-              block: "start"
-            });
-          });
+          document.querySelector('[data-shell-route="problems"]')?.click();
+          requestAnimationFrame(() => document.getElementById("mhCatalogWorkspace")?.scrollIntoView({ behavior: "smooth", block: "start" }));
         };
       } else {
         goBtn.style.display = "none";
