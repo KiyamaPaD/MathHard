@@ -1486,6 +1486,21 @@ if (!uiPreferencesRepositorySource.includes("preferenceLoadsByUser") ||
   fail("Phase 18C.3 user preference and roadmap loads must reuse authenticated context.");
 }
 
+// Phase 102: lesson proposed-problems transition closes the lesson workspace
+// before opening a clean Problems catalogue filtered to that lesson.
+const proposedProblemsHandlerStart = appSource.lastIndexOf('const goBtn = document.getElementById("goProblemsBtn")');
+const proposedProblemsHandlerEnd = appSource.indexOf('const und=document.getElementById("understoodBtn")', proposedProblemsHandlerStart);
+const proposedProblemsHandler = proposedProblemsHandlerStart >= 0 && proposedProblemsHandlerEnd > proposedProblemsHandlerStart
+  ? appSource.slice(proposedProblemsHandlerStart, proposedProblemsHandlerEnd)
+  : "";
+if (!proposedProblemsHandler.includes("closeDrawerSafely()") ||
+    !proposedProblemsHandler.includes("mhResetContentFilters()") ||
+    !proposedProblemsHandler.includes("filter.byLessonId = lessonId") ||
+    !proposedProblemsHandler.includes('selectTab("problems")') ||
+    proposedProblemsHandler.indexOf("closeDrawerSafely()") > proposedProblemsHandler.indexOf('selectTab("problems")')) {
+  fail("Phase 102 proposed-problems action must close the lesson workspace before opening the lesson-scoped Problems catalogue.");
+}
+
 if (failed) {
   process.exitCode = 1;
 } else {

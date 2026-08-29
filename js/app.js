@@ -6171,12 +6171,22 @@ ${details}`);
       if (item.id && DATA.problems.some(p => p.lessonId === item.id)) {
         goBtn.style.display = "inline-flex";
         mhUpdateLessonDrawerButtons();
-        goBtn.onclick = () => { 
-          TAB = "problems"; 
-          filter.byLessonId = item.id; 
+        goBtn.onclick = () => {
+          const lessonId = item.id;
+
+          // Leave the lesson workspace first. The proposed-problems action is a
+          // catalogue transition, not a second workspace layered over the lesson.
+          closeDrawerSafely();
+          if (document.getElementById("drawer")?.classList.contains("open")) return;
+
+          // Open a clean Problems view scoped strictly to the current lesson.
+          // Previous problem filters must not hide lesson-practice items.
+          mhResetContentFilters();
+          filter.byLessonId = lessonId;
           filter.problemSort = "easy-asc";
           page = 1;
-          selectTab(); 
+          mhSyncFilterInputs();
+          selectTab("problems");
         };
       } else {
         goBtn.style.display = "none";
