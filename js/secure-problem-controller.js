@@ -26,7 +26,8 @@ function messageFor(language, key, ok = false) {
       hint_locked: "Indiciul nu este încă deblocat.",
       hint_missing: "Această problemă nu are acest indiciu.",
       reveal_failed: "Răspunsul nu a putut fi afișat.",
-      reveal_locked: "Soluția se deblochează după ambele hinturi și încă 30 de secunde."
+      reveal_locked: "Soluția se deblochează după ambele hinturi și încă 30 de secunde.",
+      needs_format: "⚠️ Răspunsul nu a putut fi interpretat pentru această problemă."
     },
     en: {
       correct: "✅ Correct, well done.",
@@ -37,12 +38,22 @@ function messageFor(language, key, ok = false) {
       hint_locked: "The hint is not unlocked yet.",
       hint_missing: "This problem does not have this hint.",
       reveal_failed: "The answer could not be revealed.",
-      reveal_locked: "The solution unlocks after both hints and another 30 seconds."
+      reveal_locked: "The solution unlocks after both hints and another 30 seconds.",
+      needs_format: "⚠️ This answer could not be interpreted for this problem."
     }
   };
 
   const lang = language === "en" ? "en" : "ro";
   return messages[lang][key] || (ok ? messages[lang].correct : messages[lang].wrong);
+}
+
+function gradingFeedbackText(result, language) {
+  const feedback = result?.feedback;
+  if (!feedback || typeof feedback !== "object") return "";
+  const text = language === "en"
+    ? String(feedback.message_en || feedback.message_ro || "").trim()
+    : String(feedback.message_ro || feedback.message_en || "").trim();
+  return text ? ` ${text}` : "";
 }
 
 function debounce(callback, delay = 700) {
@@ -506,19 +517,24 @@ export function createSecureProblemController({
         if (replayMode && replay?.replay_id) {
           const result = await replayApi.submitProblemReplayAnswer(supabase, replay.replay_id, value);
           replay=result?.replay||replay;renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();refreshRevealGate();
-          if (result?.ok) { statusArea.textContent = messageFor(language, "correct", true) + " · Replay 0 XP"; input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false; }
-          else { statusArea.textContent = messageFor(language, "wrong"); input.disabled = false; checkButton.disabled = false; input.focus(); }
+          if (result?.ok) {
+            statusArea.textContent = messageFor(language, "correct", true) + " · Replay 0 XP" + gradingFeedbackText(result, language);
+            input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false;
+          } else {
+            statusArea.textContent = messageFor(language, result?.gradable === false ? "needs_format" : "wrong") + gradingFeedbackText(result, language);
+            input.disabled = false; checkButton.disabled = false; input.focus();
+          }
           return;
         }
         const wasAlreadySolved = isProblemSolved(problem.id);
         const previousXp = Number(getXPRecord(problem.id)?.xp || 0);
         const result = await submitProblemAnswer(supabase, problem.id, value, language);
         const ok = Boolean(result?.ok);
-        pushLocalAttempt(value, ok);
+        if (result?.gradable !== false) pushLocalAttempt(value, ok);
         if (result?.progress) applyProblemProgressResult(problem.id, result.progress, ok ? "solved" : "wrong");
 
         if (ok) {
-          statusArea.textContent = messageFor(language, result?.message_key === "already_solved" ? "already_solved" : "correct", true);
+          statusArea.textContent = messageFor(language, result?.message_key === "already_solved" ? "already_solved" : "correct", true) + gradingFeedbackText(result, language);
           if (!wasAlreadySolved && result?.progress?.solved) {
             incrementTodayProgress("problem");
             const earnedXp = Math.max(0, Number(getXPRecord(problem.id)?.xp || 0) - previousXp);
@@ -532,7 +548,7 @@ export function createSecureProblemController({
             }));
           }
         } else {
-          statusArea.textContent = messageFor(language, "wrong");
+          statusArea.textContent = messageFor(language, result?.gradable === false ? "needs_format" : "wrong") + gradingFeedbackText(result, language);
           input.disabled = false;
           checkButton.disabled = false;
           input.focus();

@@ -607,6 +607,8 @@ import {
         { label: "∉", insert: "∉", hint: "nu apartine" },
         { label: "⊂", insert: "⊂", hint: "submultime" },
         { label: "⊆", insert: "⊆", hint: "submultime sau egal" },
+        { label: "⊊", insert: "⊊", hint: "submultime stricta" },
+        { label: "⊈", insert: "⊈", hint: "nu este submultime" },
         { label: "∪", insert: "∪", hint: "reuniune" },
         { label: "∩", insert: "∩", hint: "intersectie" },
         { label: "\\", insert: "\\", hint: "diferenta de multimi" },
