@@ -1497,8 +1497,10 @@ if (!proposedProblemsHandler.includes("closeDrawerSafely()") ||
     !proposedProblemsHandler.includes("mhResetContentFilters()") ||
     !proposedProblemsHandler.includes("filter.byLessonId = lessonId") ||
     !proposedProblemsHandler.includes('selectTab("problems")') ||
-    proposedProblemsHandler.indexOf("closeDrawerSafely()") > proposedProblemsHandler.indexOf('selectTab("problems")')) {
-  fail("Phase 102 proposed-problems action must close the lesson workspace before opening the lesson-scoped Problems catalogue.");
+    !proposedProblemsHandler.includes('document.getElementById("mhCatalogWorkspace")?.scrollIntoView') ||
+    proposedProblemsHandler.indexOf("closeDrawerSafely()") > proposedProblemsHandler.indexOf('selectTab("problems")') ||
+    proposedProblemsHandler.indexOf('selectTab("problems")') > proposedProblemsHandler.indexOf('document.getElementById("mhCatalogWorkspace")?.scrollIntoView')) {
+  fail("Phase 103 proposed-problems action must close the lesson, open the lesson-scoped Problems catalogue, then redirect the viewport to the catalogue workspace.");
 }
 
 if (failed) {

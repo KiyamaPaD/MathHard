@@ -6187,6 +6187,16 @@ ${details}`);
           page = 1;
           mhSyncFilterInputs();
           selectTab("problems");
+
+          // When the lesson was opened from the Roadmap, the viewport is still
+          // sitting in the roadmap section. Move explicitly to the catalogue
+          // after the Problems tab has rendered so the transition is visible.
+          requestAnimationFrame(() => {
+            document.getElementById("mhCatalogWorkspace")?.scrollIntoView({
+              behavior: "smooth",
+              block: "start"
+            });
+          });
         };
       } else {
         goBtn.style.display = "none";
