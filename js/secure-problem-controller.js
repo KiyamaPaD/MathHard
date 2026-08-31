@@ -14,6 +14,13 @@ import {
   feedbackForAttempt,
   formatAttemptTime
 } from "./problem-workspace-model.js";
+import {
+  STRUCTURED_ANSWER_MAX_LENGTH,
+  STRUCTURED_ANSWER_MIN_ROWS,
+  bindStructuredAnswerTextarea,
+  isStructuredAnswerProblem,
+  shouldSubmitAnswerOnKeydown
+} from "./structured-answer-ux.js";
 
 function messageFor(language, key, ok = false) {
   const messages = {
@@ -27,7 +34,8 @@ function messageFor(language, key, ok = false) {
       hint_missing: "Această problemă nu are acest indiciu.",
       reveal_failed: "Răspunsul nu a putut fi afișat.",
       reveal_locked: "Soluția se deblochează după ambele hinturi și încă 30 de secunde.",
-      needs_format: "⚠️ Răspunsul nu a putut fi interpretat pentru această problemă."
+      needs_format: "⚠️ Răspunsul nu a putut fi interpretat pentru această problemă.",
+      too_long: `⚠️ Răspunsul poate avea maximum ${STRUCTURED_ANSWER_MAX_LENGTH} de caractere.`
     },
     en: {
       correct: "✅ Correct, well done.",
@@ -39,7 +47,8 @@ function messageFor(language, key, ok = false) {
       hint_missing: "This problem does not have this hint.",
       reveal_failed: "The answer could not be revealed.",
       reveal_locked: "The solution unlocks after both hints and another 30 seconds.",
-      needs_format: "⚠️ This answer could not be interpreted for this problem."
+      needs_format: "⚠️ This answer could not be interpreted for this problem.",
+      too_long: `⚠️ The answer can contain at most ${STRUCTURED_ANSWER_MAX_LENGTH} characters.`
     }
   };
 
@@ -112,6 +121,7 @@ export function createSecureProblemController({
     const replayEligible = Boolean(record.solved && !isExam);
     const hasHint1 = Boolean(problem.has_hint1 ?? (problem.hint1_ro || problem.hint1_en));
     const hasHint2 = Boolean(problem.has_hint2 ?? (problem.hint2_ro || problem.hint2_en));
+    const structuredAnswer = isStructuredAnswerProblem(problem);
     const title = translated(problem, language);
     const statement = translated(problem, language, "statement");
     const stars = problem.difficulty === 0 ? "0★" : "★".repeat(problem.difficulty);
@@ -163,7 +173,10 @@ export function createSecureProblemController({
 
             <section class="mh-problem-card mh-answer-card">
               <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
-              <input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">
+              ${structuredAnswer
+                ? `<textarea id="answerInput" rows="${STRUCTURED_ANSWER_MIN_ROWS}" maxlength="${STRUCTURED_ANSWER_MAX_LENGTH}" autocomplete="off" spellcheck="false" aria-describedby="structuredAnswerHint" placeholder="${ro ? "Răspunsul tău structurat…" : "Your structured answer…"}"></textarea>
+                   <div class="legend" id="structuredAnswerHint">${ro ? "Enter = rând nou · Ctrl/⌘+Enter = trimite" : "Enter = new line · Ctrl/⌘+Enter = submit"}</div>`
+                : `<input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">`}
               <div class="legend mh-problem-status" id="statusArea"></div>
               <div class="mh-live-preview-wrap"><div class="legend">${ro ? "Previzualizare" : "Preview"}</div><div class="mh-live-preview-box" id="answerPreviewBox"></div></div>
               <div class="checkrow mh-submit-answer-row"><button class="btn" id="checkBtn" type="button">${ro ? "Trimite răspunsul" : "Submit answer"}</button></div>
@@ -264,6 +277,9 @@ export function createSecureProblemController({
     const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
     bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox"));
     attachMathToolbar?.(input, host.querySelector("#answerMathToolbar"));
+    const resizeStructuredAnswer = structuredAnswer
+      ? bindStructuredAnswerTextarea(input)
+      : () => {};
 
     const hintWrap1 = host.querySelector("#hintWrap1");
     const hintWrap2 = host.querySelector("#hintWrap2");
@@ -385,7 +401,7 @@ export function createSecureProblemController({
 
     function enterReplay(nextReplay,{message=true}={}){
       replay=nextReplay;replayMode=true;revealedAnswer="";replaySolution=null;hint1Loaded=Boolean(replay?.hint1_used);hint2Loaded=Boolean(replay?.hint2_used);
-      input.value="";input.disabled=false;checkButton.disabled=false;confirmBox.style.display="none";
+      input.value="";resizeStructuredAnswer();input.disabled=false;checkButton.disabled=false;confirmBox.style.display="none";
       if(message)statusArea.textContent=`${ro?"Replay activ":"Replay active"} · 0 XP`;
       renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();renderWorkspace({syncNote:false});input.disabled=false;checkButton.disabled=false;input.focus();
     }
@@ -501,7 +517,12 @@ export function createSecureProblemController({
     }
 
     async function checkAnswer() {
-      const value = (input.value || "").trim();
+      const rawValue = input.value || "";
+      if (structuredAnswer && rawValue.length > STRUCTURED_ANSWER_MAX_LENGTH) {
+        statusArea.textContent = messageFor(language, "too_long");
+        return;
+      }
+      const value = rawValue.trim();
       if (!value || submitting) {
         if (!value) statusArea.textContent = ro ? "Completează mai întâi răspunsul." : "Type an answer first.";
         return;
@@ -614,7 +635,12 @@ export function createSecureProblemController({
     noButton?.addEventListener("click", () => { confirmBox.style.display = "none"; });
     yesButton?.addEventListener("click", () => { confirmBox.style.display = "none"; void checkAnswer(); });
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
+      if (shouldSubmitAnswerOnKeydown({
+        key: event.key,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        structured: structuredAnswer
+      })) {
         event.preventDefault();
         checkButton.click();
       }
