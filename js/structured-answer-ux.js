@@ -3,6 +3,7 @@ const STRUCTURED_MODE_VALUES = new Set(["structured", "multiline"]);
 export const STRUCTURED_ANSWER_MAX_LENGTH = 1200;
 export const STRUCTURED_ANSWER_MIN_ROWS = 3;
 export const STRUCTURED_ANSWER_MAX_ROWS = 8;
+export const STRUCTURED_ANSWER_MAX_NEWLINES = 12;
 
 function normalizedMode(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -16,15 +17,57 @@ function explicitBoolean(value) {
   return null;
 }
 
+function explicitStructuredMetadata(value) {
+  const booleanValue = explicitBoolean(value);
+  if (booleanValue !== null) return booleanValue;
+
+  if (Array.isArray(value)) {
+    return value.length > 0 ? true : null;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.keys(value).length > 0 ? true : null;
+  }
+
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+
+  if ((raw.startsWith("{") && raw.endsWith("}")) || (raw.startsWith("[") && raw.endsWith("]"))) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.length > 0 ? true : null;
+      if (parsed && typeof parsed === "object") {
+        return Object.keys(parsed).length > 0 ? true : null;
+      }
+    } catch {
+      // Invalid JSON is not enough to activate structured mode.
+    }
+  }
+
+  return null;
+}
+
+function firstStructuredSpec(problem = {}) {
+  return problem.structured_answer ??
+    problem.is_structured_answer ??
+    problem.answer_structure ??
+    problem.structured_fields ??
+    problem.answer_fields ??
+    null;
+}
+
 /**
  * Canonical Phase 109 contract: answer_ui_mode="structured".
- * Compatibility aliases keep the UI safe while older/newer catalog payloads
- * may expose answer_mode="multiline" or an explicit structured_answer flag.
+ *
+ * The structured-answer metadata may also be carried as an explicit boolean
+ * flag or as a non-empty JSON/schema object. Treating that schema itself as an
+ * explicit activation signal keeps the UI working even when a catalog/RPC
+ * returns the schema but omits the duplicated answer_ui_mode flag.
+ *
+ * Ordinary short-answer problems remain single-line by default.
  */
 export function isStructuredAnswerProblem(problem = {}) {
-  const explicit = explicitBoolean(
-    problem.structured_answer ?? problem.is_structured_answer
-  );
+  const explicit = explicitStructuredMetadata(firstStructuredSpec(problem));
   if (explicit !== null) return explicit;
 
   const mode = normalizedMode(
@@ -46,6 +89,13 @@ export function shouldSubmitAnswerOnKeydown({
   return structured ? Boolean(ctrlKey || metaKey) : true;
 }
 
+export function countStructuredAnswerNewlines(value) {
+  return (String(value ?? "").match(/\n/g) || []).length;
+}
+
+export function canInsertStructuredAnswerNewline(value, maxNewlines = STRUCTURED_ANSWER_MAX_NEWLINES) {
+  return countStructuredAnswerNewlines(value) < maxNewlines;
+}
 
 function finitePositive(value, fallback) {
   const number = Number.parseFloat(value);
@@ -82,6 +132,7 @@ export function structuredTextareaMetrics(style = {}, {
 export function bindStructuredAnswerTextarea(textarea, {
   minRows = STRUCTURED_ANSWER_MIN_ROWS,
   maxRows = STRUCTURED_ANSWER_MAX_ROWS,
+  maxNewlines = STRUCTURED_ANSWER_MAX_NEWLINES,
   getStyle = (element) => globalThis.getComputedStyle?.(element) || {}
 } = {}) {
   if (!textarea || String(textarea.tagName || "").toUpperCase() !== "TEXTAREA") {
@@ -101,6 +152,18 @@ export function bindStructuredAnswerTextarea(textarea, {
     if (nextHeight > 0) textarea.style.height = `${Math.ceil(nextHeight)}px`;
     textarea.style.overflowY = scrollHeight > metrics.maxHeight + 1 ? "auto" : "hidden";
   };
+
+  textarea.addEventListener?.("keydown", (event) => {
+    if (
+      event?.key === "Enter" &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !canInsertStructuredAnswerNewline(textarea.value, maxNewlines)
+    ) {
+      event.preventDefault?.();
+    }
+  });
 
   textarea.addEventListener?.("input", resize);
   resize();
