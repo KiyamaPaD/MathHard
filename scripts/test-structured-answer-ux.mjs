@@ -31,7 +31,8 @@ assert.equal(isStructuredAnswerProblem({ structured_answer: { version: 1, blocks
 assert.equal(isStructuredAnswerProblem({ structured_answer: JSON.stringify({ version: 1, blocks: [{ id: "a" }] }) }), true);
 assert.equal(isStructuredAnswerProblem({ structured_answer: {} }), false);
 assert.equal(isStructuredAnswerProblem({ answer_fields: [{ id: "a" }] }), true);
-assert.equal(isStructuredAnswerProblem({}), false);
+assert.equal(isStructuredAnswerProblem({}), true);
+assert.equal(isStructuredAnswerProblem({ answer_ui_mode: "single-line" }), false);
 
 assert.equal(shouldSubmitAnswerOnKeydown({ key: "Enter", structured: false }), true);
 assert.equal(shouldSubmitAnswerOnKeydown({ key: "Enter", structured: true }), false);

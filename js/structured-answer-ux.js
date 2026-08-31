@@ -1,4 +1,5 @@
 const STRUCTURED_MODE_VALUES = new Set(["structured", "multiline"]);
+const SINGLE_LINE_MODE_VALUES = new Set(["singleline", "single_line", "single-line"]);
 
 export const STRUCTURED_ANSWER_MAX_LENGTH = 1200;
 export const STRUCTURED_ANSWER_MIN_ROWS = 3;
@@ -57,14 +58,15 @@ function firstStructuredSpec(problem = {}) {
 }
 
 /**
- * Canonical Phase 109 contract: answer_ui_mode="structured".
+ * Phase 109 hotfix: the problem answer editor is multiline by default.
  *
- * The structured-answer metadata may also be carried as an explicit boolean
- * flag or as a non-empty JSON/schema object. Treating that schema itself as an
- * explicit activation signal keeps the UI working even when a catalog/RPC
- * returns the schema but omits the duplicated answer_ui_mode flag.
+ * Bare Enter must always be safe for writing a multi-line solution. The catalog
+ * currently does not guarantee answer_ui_mode/structured metadata for every
+ * problem, so defaulting to single-line made Enter open the submit confirmation
+ * instead of inserting a newline.
  *
- * Ordinary short-answer problems remain single-line by default.
+ * Future problems can explicitly opt out with answer_ui_mode="singleline" (or
+ * single_line / single-line). Explicit structured metadata still wins.
  */
 export function isStructuredAnswerProblem(problem = {}) {
   const explicit = explicitStructuredMetadata(firstStructuredSpec(problem));
@@ -76,7 +78,12 @@ export function isStructuredAnswerProblem(problem = {}) {
     problem.input_mode ??
     problem.answer_mode
   );
-  return STRUCTURED_MODE_VALUES.has(mode);
+
+  if (STRUCTURED_MODE_VALUES.has(mode)) return true;
+  if (SINGLE_LINE_MODE_VALUES.has(mode)) return false;
+
+  // Fail safe for UX: Enter writes a new line instead of attempting a submit.
+  return true;
 }
 
 export function shouldSubmitAnswerOnKeydown({
