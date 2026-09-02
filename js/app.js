@@ -1016,7 +1016,7 @@ import {
   function mhRenderMathPreview(inputEl, previewEl) {
     if (!inputEl || !previewEl) return;
 
-    const raw = String(inputEl.value || "").trim();
+    const raw = String(inputEl.value || "").replace(/\r\n?/g, "\n").trim();
 
     if (!raw) {
       previewEl.innerHTML = `
@@ -1027,12 +1027,17 @@ import {
       return;
     }
 
-    const latex = mhMathPreviewToLatex(mhProtectSetBraces(raw))
-      .replaceAll("⦃", "\\left\\{").replaceAll("⦄", "\\right\\}");
+    const renderedLines = raw.split("\n").map((line) => {
+      const content = line.trim();
+      if (!content) return '<div class="mh-live-preview-render-line is-empty" aria-hidden="true">&nbsp;</div>';
+      const latex = mhMathPreviewToLatex(mhProtectSetBraces(content))
+        .replaceAll("⦃", "\\left\\{").replaceAll("⦄", "\\right\\}");
+      return `<div class="mh-live-preview-render-line">\\(${latex}\\)</div>`;
+    }).join("");
 
     previewEl.innerHTML = `
-      <div class="mh-live-preview-render">\\(${latex}\\)</div>
-      <div class="mh-live-preview-raw">${esc(raw)}</div>
+      <div class="mh-live-preview-render">${renderedLines}</div>
+      <div class="mh-live-preview-raw">${esc(raw).replaceAll("\n", "<br>")}</div>
       <div class="mh-live-preview-help">
         ${LANG === "ro"
           ? "Exemple: diff(x^3,x,2), int(0,1,x^2,dx), sum(k=1,n,k^2), log(2,x), root(3,x)"
@@ -1087,11 +1092,12 @@ import {
   }
 
   function mhBindMathInputEnhancements(inputEl, previewEl) {
-    if (!inputEl || !previewEl) return;
+    if (!inputEl || !previewEl) return () => {};
 
     const sync = () => mhRenderMathPreview(inputEl, previewEl);
     inputEl.addEventListener("input", sync);
     sync();
+    return sync;
   }
 
   globalThis.mhMathPreviewToLatex = mhMathPreviewToLatex;

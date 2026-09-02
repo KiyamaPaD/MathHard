@@ -118,6 +118,9 @@ export function createSecureProblemController({
     const hasHint1 = Boolean(problem.has_hint1 ?? (problem.hint1_ro || problem.hint1_en));
     const hasHint2 = Boolean(problem.has_hint2 ?? (problem.hint2_ro || problem.hint2_en));
     const structuredAnswer = isStructuredAnswerProblem(problem);
+    const structuredAnswerHint = ro
+      ? `Enter = rând nou · Ctrl/⌘+Enter = trimite · max. ${STRUCTURED_ANSWER_MAX_LINES} rânduri / ${STRUCTURED_ANSWER_MAX_LENGTH} caractere`
+      : `Enter = new line · Ctrl/⌘+Enter = submit · max. ${STRUCTURED_ANSWER_MAX_LINES} lines / ${STRUCTURED_ANSWER_MAX_LENGTH} characters`;
     const title = translated(problem, language);
     const statement = translated(problem, language, "statement");
     const stars = problem.difficulty === 0 ? "0★" : "★".repeat(problem.difficulty);
@@ -171,7 +174,7 @@ export function createSecureProblemController({
               <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
               ${structuredAnswer
                 ? `<textarea id="answerInput" rows="${STRUCTURED_ANSWER_MIN_ROWS}" maxlength="${STRUCTURED_ANSWER_MAX_LENGTH}" autocomplete="off" spellcheck="false" aria-describedby="structuredAnswerHint" placeholder="${ro ? "Răspunsul tău structurat…" : "Your structured answer…"}"></textarea>
-                   <div class="legend" id="structuredAnswerHint">${ro ? "Enter = rând nou · Ctrl/⌘+Enter = trimite · max. ${STRUCTURED_ANSWER_MAX_LINES} rânduri / ${STRUCTURED_ANSWER_MAX_LENGTH} caractere" : "Enter = new line · Ctrl/⌘+Enter = submit · max. ${STRUCTURED_ANSWER_MAX_LINES} lines / ${STRUCTURED_ANSWER_MAX_LENGTH} characters"}</div>`
+                   <div class="legend" id="structuredAnswerHint">${escapeHtml(structuredAnswerHint)}</div>`
                 : `<input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">`}
               <div class="legend mh-problem-status" id="statusArea"></div>
               <div class="mh-live-preview-wrap"><div class="legend">${ro ? "Previzualizare" : "Preview"}</div><div class="mh-live-preview-box" id="answerPreviewBox"></div></div>
@@ -271,7 +274,7 @@ export function createSecureProblemController({
     const solutionPanels = host.querySelector("#solutionPanels");
     const solutionPanelEls = [...host.querySelectorAll("[data-solution-panel]")];
     const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
-    bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox"));
+    const syncMathPreview = bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox")) || (() => {});
     attachMathToolbar?.(input, host.querySelector("#answerMathToolbar"));
     const resizeStructuredAnswer = structuredAnswer
       ? bindStructuredAnswerTextarea(input)
@@ -353,7 +356,7 @@ export function createSecureProblemController({
       }
       solutionAccessGranted = solutionAccessGranted || Boolean(workspace.canViewSolution);
       const visibleSolution = replayMode
-        ? (replaySolution || (solutionAccessGranted ? workspace.solution : null))
+        ? replaySolution
         : (solutionAccessGranted ? workspace.solution : null);
       const unlocked = Boolean(visibleSolution);
       if (solutionLocked) solutionLocked.hidden = unlocked;
@@ -388,7 +391,7 @@ export function createSecureProblemController({
 
     function refreshRevealGate(){
       const btn=host.querySelector("#revealBtn"); if(!btn)return; window.clearInterval(revealTimer);
-      if(solutionAccessGranted||workspace.canViewSolution){solutionAccessGranted=true;btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
+      if(!replayMode&&(solutionAccessGranted||workspace.canViewSolution)){solutionAccessGranted=true;btn.disabled=false;btn.textContent=ro?"Arată răspunsul și soluția":"Show answer and solution";return;}
       const seconds=Math.max(0,Number(replayMode?replay?.reveal_seconds_remaining:workspace.revealGate?.secondsRemaining)||0);
       const hintsReady=replayMode?Boolean(replay?.hint1_used&&replay?.hint2_used):Boolean(workspace.revealGate?.hint1Used&&workspace.revealGate?.hint2Used);
       const paint=()=>{const left=Math.max(0,Math.ceil((Number(btn.dataset.readyAt||0)-Date.now())/1000));btn.disabled=!hintsReady||left>0;btn.textContent=!hintsReady?(ro?"Folosește ambele hinturi":"Use both hints"):(left>0?(ro?`Soluție în ${left}s`:`Solution in ${left}s`):(ro?"Arată răspunsul și soluția":"Show answer and solution"));if(left<=0)window.clearInterval(revealTimer)};
@@ -397,7 +400,12 @@ export function createSecureProblemController({
 
     function enterReplay(nextReplay,{message=true}={}){
       replay=nextReplay;replayMode=true;revealedAnswer="";replaySolution=null;hint1Loaded=Boolean(replay?.hint1_used);hint2Loaded=Boolean(replay?.hint2_used);
-      input.value="";resizeStructuredAnswer();input.disabled=false;checkButton.disabled=false;confirmBox.style.display="none";
+      openExplanationModes.clear();
+      input.value="";resizeStructuredAnswer();syncMathPreview();input.disabled=false;checkButton.disabled=false;confirmBox.style.display="none";
+      const revealText = host.querySelector("#revealText");
+      if(revealText){revealText.textContent="";revealText.hidden=true;}
+      if(hintDetails1) hintDetails1.open=false;
+      if(hintDetails2) hintDetails2.open=false;
       if(message)statusArea.textContent=`${ro?"Replay activ":"Replay active"} · 0 XP`;
       renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();renderWorkspace({syncNote:false});input.disabled=false;checkButton.disabled=false;input.focus();
     }
