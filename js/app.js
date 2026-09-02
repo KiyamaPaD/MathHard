@@ -1013,6 +1013,22 @@ import {
     return out;
   }
 
+  function mhSplitMathPreviewLinePrefix(rawLine) {
+    const line = String(rawLine || "").trim();
+    if (!line) return { prefix: "", expression: "" };
+
+    // Keep exercise/list markers outside the math parser so constructs such as
+    // "a) root(2,x)" still let root(...) be recognized as a function call.
+    // Supported examples: a), B), 1), 12., (a), (3).
+    const match = line.match(/^(\([A-Za-z0-9]+\)|[A-Za-z0-9]+[.)])\s*(.*)$/);
+    if (!match) return { prefix: "", expression: line };
+
+    return {
+      prefix: match[1],
+      expression: String(match[2] || "").trim()
+    };
+  }
+
   function mhRenderMathPreview(inputEl, previewEl) {
     if (!inputEl || !previewEl) return;
 
@@ -1030,9 +1046,16 @@ import {
     const renderedLines = raw.split("\n").map((line) => {
       const content = line.trim();
       if (!content) return '<div class="mh-live-preview-render-line is-empty" aria-hidden="true">&nbsp;</div>';
-      const latex = mhMathPreviewToLatex(mhProtectSetBraces(content))
+
+      const { prefix, expression } = mhSplitMathPreviewLinePrefix(content);
+      if (!expression) {
+        return `<div class="mh-live-preview-render-line">${esc(prefix || content)}</div>`;
+      }
+
+      const latex = mhMathPreviewToLatex(mhProtectSetBraces(expression))
         .replaceAll("⦃", "\\left\\{").replaceAll("⦄", "\\right\\}");
-      return `<div class="mh-live-preview-render-line">\\(${latex}\\)</div>`;
+      const prefixHtml = prefix ? `<span class="mh-live-preview-line-prefix">${esc(prefix)}</span> ` : "";
+      return `<div class="mh-live-preview-render-line">${prefixHtml}\\(${latex}\\)</div>`;
     }).join("");
 
     previewEl.innerHTML = `
