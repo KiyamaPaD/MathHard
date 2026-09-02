@@ -79,6 +79,88 @@ function iconForType(type) {
   return "🏁";
 }
 
+
+const SECTION_VISUAL_GROUPS = [
+  {
+    key: "grade-9",
+    labelRo: "Clasa a IX-a",
+    labelEn: "Grade 9",
+    pattern: /(?:\bix\b|\b9\b|clasa\s*a\s*ix\s*-?\s*a?|clasa\s*a\s*9\s*-?\s*a?|grade\s*9)/i
+  },
+  {
+    key: "grade-10",
+    labelRo: "Clasa a X-a",
+    labelEn: "Grade 10",
+    pattern: /(?:\bx\b|\b10\b|clasa\s*a\s*x\s*-?\s*a?|clasa\s*a\s*10\s*-?\s*a?|grade\s*10)/i
+  },
+  {
+    key: "grade-11",
+    labelRo: "Clasa a XI-a",
+    labelEn: "Grade 11",
+    pattern: /(?:\bxi\b|\b11\b|clasa\s*a\s*xi\s*-?\s*a?|clasa\s*a\s*11\s*-?\s*a?|grade\s*11)/i
+  },
+  {
+    key: "grade-12",
+    labelRo: "Clasa a XII-a",
+    labelEn: "Grade 12",
+    pattern: /(?:\bxii\b|\b12\b|clasa\s*a\s*xii\s*-?\s*a?|clasa\s*a\s*12\s*-?\s*a?|grade\s*12)/i
+  },
+  {
+    key: "bac-core",
+    labelRo: "Recapitulare BAC",
+    labelEn: "BAC review",
+    pattern: /\bbac\b/i
+  },
+  {
+    key: "admission-core",
+    labelRo: "Pregătire admitere",
+    labelEn: "Admission prep",
+    pattern: /admit/i
+  }
+];
+
+function sectionVisualGroup(section, language = "ro") {
+  const haystack = [
+    section?.title_ro,
+    section?.title_en,
+    section?.section_key,
+    section?.id,
+    section?.description_ro,
+    section?.description_en
+  ].map((value) => String(value || "")).join(" ");
+
+  const match = SECTION_VISUAL_GROUPS.find((group) => group.pattern.test(haystack));
+  if (match) {
+    return {
+      key: match.key,
+      label: language === "en" ? match.labelEn : match.labelRo
+    };
+  }
+  return {
+    key: "general",
+    label: language === "en" ? "General" : "General"
+  };
+}
+
+function sectionTopicLabel(section) {
+  const raw = sectionTitle(section);
+  if (!raw) return "Etapă";
+  const compact = raw.replace(/\s+/g, " ").trim();
+  const classPrefix = /^(?:clasa\s*a\s*(?:ix|x|xi|xii|9|10|11|12)\s*-?\s*a?|grade\s*(?:9|10|11|12))\s*[—–\-:|•·]+\s*(.+)$/i;
+  const classSuffix = /^(.+?)\s*[—–\-:|•·]+\s*(?:clasa\s*a\s*(?:ix|x|xi|xii|9|10|11|12)\s*-?\s*a?|grade\s*(?:9|10|11|12))$/i;
+  const prefixMatch = compact.match(classPrefix);
+  if (prefixMatch?.[1]) return prefixMatch[1].trim();
+  const suffixMatch = compact.match(classSuffix);
+  if (suffixMatch?.[1]) return suffixMatch[1].trim();
+  const cleaned = compact
+    .replace(/clasa\s*a\s*(?:ix|x|xi|xii|9|10|11|12)\s*-?\s*a?/ig, "")
+    .replace(/grade\s*(?:9|10|11|12)/ig, "")
+    .replace(/[—–\-:|•·]{2,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned || compact;
+}
+
 export function createRoadmapAdminController({
   root,
   supabase,
@@ -417,66 +499,112 @@ export function createRoadmapAdminController({
     const totalCount = selectedNodes().length;
     const visibleCount = selectedNodes().filter(nodeMatchesBoardFilters).length;
     const filtering = boardFiltersActive();
-    const sectionCards = sections.map((section, sectionIndex) => {
+    const grouped = [];
+    let activeGroup = null;
+
+    sections.forEach((section, sectionIndex) => {
       const allNodes = sectionNodes(section.id);
       const nodes = allNodes.filter(nodeMatchesBoardFilters);
-      if (filtering && !nodes.length) return "";
+      if (filtering && !nodes.length) return;
 
+      const group = sectionVisualGroup(section);
+      if (!activeGroup || activeGroup.key !== group.key) {
+        activeGroup = {
+          key: group.key,
+          label: group.label,
+          sections: [],
+          topics: new Set(),
+          totalNodes: 0,
+          visibleNodes: 0
+        };
+        grouped.push(activeGroup);
+      }
+
+      activeGroup.sections.push({
+        section,
+        sectionIndex,
+        allNodes,
+        nodes
+      });
+      activeGroup.topics.add(sectionTopicLabel(section));
+      activeGroup.totalNodes += allNodes.length;
+      activeGroup.visibleNodes += nodes.length;
+    });
+
+    const groupCards = grouped.map((group) => {
+      const topicBadges = [...group.topics].filter(Boolean).slice(0, 8);
       return `
-        <article class="mh-roadmap-admin-section-card" data-roadmap-drop-section="${escapeHtml(section.id)}">
-          <header>
+        <section class="mh-roadmap-admin-group-card">
+          <header class="mh-roadmap-admin-group-head">
             <div>
-              <strong>${escapeHtml(sectionTitle(section))}</strong>
-              <span>${escapeHtml(section.id)} • ${filtering ? `${nodes.length}/${allNodes.length}` : allNodes.length} noduri</span>
+              <span class="mh-roadmap-admin-group-kicker">grup vizual</span>
+              <strong>${escapeHtml(group.label)}</strong>
+              <span>${group.sections.length} etape · ${filtering ? `${group.visibleNodes}/${group.totalNodes}` : group.totalNodes} noduri</span>
             </div>
-            <div class="mh-roadmap-admin-section-actions">
-              <button class="btn small" type="button" data-roadmap-section-move="up" data-roadmap-section-id="${escapeHtml(section.id)}" ${sectionIndex === 0 || filtering ? "disabled" : ""}>↑</button>
-              <button class="btn small" type="button" data-roadmap-section-move="down" data-roadmap-section-id="${escapeHtml(section.id)}" ${sectionIndex === sections.length - 1 || filtering ? "disabled" : ""}>↓</button>
-              <button class="btn small" type="button" data-roadmap-section-quick-add="${escapeHtml(section.id)}">＋ Conținut</button>
-              <button class="btn small" type="button" data-roadmap-edit-section="${escapeHtml(section.id)}">✏️</button>
-              <button class="btn small" type="button" data-roadmap-delete-section="${escapeHtml(section.id)}">🗑</button>
+            <div class="mh-roadmap-admin-group-chips">
+              ${topicBadges.map((topic) => `<span class="mh-roadmap-admin-group-chip">${escapeHtml(topic)}</span>`).join("")}
             </div>
           </header>
-          <div class="mh-roadmap-admin-node-list">
-            ${nodes.length ? nodes.map((node) => {
-              const nodeIndex = allNodes.findIndex((item) => item.id === node.id);
-              return `
-                <div class="mh-roadmap-admin-node-row" draggable="${filtering ? "false" : "true"}" data-roadmap-drag-node="${escapeHtml(node.id)}">
+          <div class="mh-roadmap-admin-group-sections">
+            ${group.sections.map(({ section, sectionIndex, allNodes, nodes }) => `
+              <article class="mh-roadmap-admin-section-card" data-roadmap-drop-section="${escapeHtml(section.id)}">
+                <header>
                   <div>
-                    <div class="mh-roadmap-admin-node-title-line">
-                      <strong>${iconForType(node.node_type)} ${escapeHtml(nodeTitle(node, catalog()))}</strong>
-                      <span class="mh-roadmap-admin-pill ${node.published !== false ? "is-live" : "is-draft"}">${node.published !== false ? "publicat" : "draft"}</span>
-                      ${node.required !== false ? `<span class="mh-roadmap-admin-pill">obligatoriu</span>` : `<span class="mh-roadmap-admin-pill">opțional</span>`}
-                    </div>
-                    <span>${escapeHtml(node.node_type)} • ${escapeHtml(node.content_id || "milestone")} • prerechizite: ${escapeHtml(prerequisitesFor(node.id).length || 0)}</span>
+                    <strong>${escapeHtml(sectionTitle(section))}</strong>
+                    <span>${escapeHtml(section.id)} • ${filtering ? `${nodes.length}/${allNodes.length}` : allNodes.length} noduri</span>
                   </div>
-                  <div class="mh-roadmap-admin-node-actions">
-                    <button class="btn small" type="button" data-roadmap-node-move="up" data-roadmap-node-id="${escapeHtml(node.id)}" ${nodeIndex === 0 || filtering ? "disabled" : ""}>↑</button>
-                    <button class="btn small" type="button" data-roadmap-node-move="down" data-roadmap-node-id="${escapeHtml(node.id)}" ${nodeIndex === allNodes.length - 1 || filtering ? "disabled" : ""}>↓</button>
-                    <select class="select" data-roadmap-node-section="${escapeHtml(node.id)}" title="Mută în altă etapă">
-                      ${sectionOptions(section.id)}
-                    </select>
-                    <button class="btn small" type="button" data-roadmap-node-toggle-required="${escapeHtml(node.id)}">${node.required !== false ? "★" : "☆"}</button>
-                    <button class="btn small" type="button" data-roadmap-node-toggle-published="${escapeHtml(node.id)}">${node.published !== false ? "👁" : "🙈"}</button>
-                    <button class="btn small" type="button" data-roadmap-duplicate-node="${escapeHtml(node.id)}">⧉</button>
-                    <button class="btn small" type="button" data-roadmap-edit-node="${escapeHtml(node.id)}">✏️</button>
-                    <button class="btn small" type="button" data-roadmap-delete-node="${escapeHtml(node.id)}">🗑</button>
+                  <div class="mh-roadmap-admin-section-actions">
+                    <button class="btn small" type="button" data-roadmap-section-move="up" data-roadmap-section-id="${escapeHtml(section.id)}" ${sectionIndex === 0 || filtering ? "disabled" : ""}>↑</button>
+                    <button class="btn small" type="button" data-roadmap-section-move="down" data-roadmap-section-id="${escapeHtml(section.id)}" ${sectionIndex === sections.length - 1 || filtering ? "disabled" : ""}>↓</button>
+                    <button class="btn small" type="button" data-roadmap-section-quick-add="${escapeHtml(section.id)}">＋ Conținut</button>
+                    <button class="btn small" type="button" data-roadmap-edit-section="${escapeHtml(section.id)}">✏️</button>
+                    <button class="btn small" type="button" data-roadmap-delete-section="${escapeHtml(section.id)}">🗑</button>
                   </div>
+                </header>
+                <div class="mh-roadmap-admin-node-list">
+                  ${nodes.length ? nodes.map((node) => {
+                    const nodeIndex = allNodes.findIndex((item) => item.id === node.id);
+                    return `
+                      <div class="mh-roadmap-admin-node-row" draggable="${filtering ? "false" : "true"}" data-roadmap-drag-node="${escapeHtml(node.id)}">
+                        <div>
+                          <div class="mh-roadmap-admin-node-title-line">
+                            <strong>${iconForType(node.node_type)} ${escapeHtml(nodeTitle(node, catalog()))}</strong>
+                            <span class="mh-roadmap-admin-pill ${node.published !== false ? "is-live" : "is-draft"}">${node.published !== false ? "publicat" : "draft"}</span>
+                            ${node.required !== false ? `<span class="mh-roadmap-admin-pill">obligatoriu</span>` : `<span class="mh-roadmap-admin-pill">opțional</span>`}
+                          </div>
+                          <span>${escapeHtml(node.node_type)} • ${escapeHtml(node.content_id || "milestone")} • prerechizite: ${escapeHtml(prerequisitesFor(node.id).length || 0)}</span>
+                        </div>
+                        <div class="mh-roadmap-admin-node-actions">
+                          <button class="btn small" type="button" data-roadmap-node-move="up" data-roadmap-node-id="${escapeHtml(node.id)}" ${nodeIndex === 0 || filtering ? "disabled" : ""}>↑</button>
+                          <button class="btn small" type="button" data-roadmap-node-move="down" data-roadmap-node-id="${escapeHtml(node.id)}" ${nodeIndex === allNodes.length - 1 || filtering ? "disabled" : ""}>↓</button>
+                          <select class="select" data-roadmap-node-section="${escapeHtml(node.id)}" title="Mută în altă etapă">
+                            ${sectionOptions(section.id)}
+                          </select>
+                          <button class="btn small" type="button" data-roadmap-node-toggle-required="${escapeHtml(node.id)}">${node.required !== false ? "★" : "☆"}</button>
+                          <button class="btn small" type="button" data-roadmap-node-toggle-published="${escapeHtml(node.id)}">${node.published !== false ? "👁" : "🙈"}</button>
+                          <button class="btn small" type="button" data-roadmap-duplicate-node="${escapeHtml(node.id)}">⧉</button>
+                          <button class="btn small" type="button" data-roadmap-edit-node="${escapeHtml(node.id)}">✏️</button>
+                          <button class="btn small" type="button" data-roadmap-delete-node="${escapeHtml(node.id)}">🗑</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join("") : `<div class="mh-roadmap-admin-empty">Trage aici un nod sau folosește „＋ Conținut”.</div>`}
                 </div>
-              `;
-            }).join("") : `<div class="mh-roadmap-admin-empty">Trage aici un nod sau folosește „＋ Conținut”.</div>`}
+              </article>
+            `).join("")}
           </div>
-        </article>
+        </section>
       `;
     }).join("");
 
     return `
       ${renderBoardToolbar(visibleCount, totalCount)}
       <div class="mh-roadmap-admin-list">
-        ${sectionCards || `<div class="mh-roadmap-admin-empty">Niciun nod pentru filtrele selectate.</div>`}
+        ${groupCards || `<div class="mh-roadmap-admin-empty">Niciun nod pentru filtrele selectate.</div>`}
       </div>
     `;
   }
+
 
   function render() {
     root.hidden = !enabled;
