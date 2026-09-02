@@ -2361,3 +2361,16 @@ code {
     padding-inline: 11px;
   }
 }
+
+/* MathHard Phase 112B — calmer emphasis inside lesson/problem reading surfaces */
+body:not(.light) .drawer.is-lesson-workspace #viewContent strong,
+body:not(.light) .drawer.is-lesson-workspace #viewContent b,
+body:not(.light) .drawer.is-problem-workspace #viewContent strong,
+body:not(.light) .drawer.is-problem-workspace #viewContent b,
+body:not(.light) .drawer.is-problem-workspace .problem-statement strong,
+body:not(.light) .drawer.is-problem-workspace .problem-statement b,
+body:not(.light) .drawer.is-problem-workspace .mh-solution-content strong,
+body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
+  color: color-mix(in srgb, var(--text) 76%, var(--muted) 24%);
+  font-weight: 700;
+}
