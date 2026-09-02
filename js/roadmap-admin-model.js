@@ -7,6 +7,10 @@ function asNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function compareText(left, right) {
+  return asText(left).localeCompare(asText(right), "ro", { sensitivity: "base" });
+}
+
 export function slugifyRoadmapValue(value, fallback = "item") {
   const normalized = asText(value)
     .normalize("NFD")
@@ -66,6 +70,80 @@ export function moveOrderedItem(items, itemId, direction) {
   const [item] = list.splice(index, 1);
   list.splice(targetIndex, 0, item);
   return list;
+}
+
+export function roadmapCategoryLabel(value) {
+  const category = asText(value || "custom").toLowerCase();
+  const known = {
+    mathhard_m1: "MathHard M1",
+    admission: "Admitere",
+    bac: "BAC",
+    olympiad: "Olimpiadă",
+    school: "Școală",
+    custom: "Custom"
+  };
+  if (known[category]) return known[category];
+  return category
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase("ro"));
+}
+
+export function roadmapCategories(roadmaps = []) {
+  return [...new Set(
+    (Array.isArray(roadmaps) ? roadmaps : [])
+      .map((roadmap) => asText(roadmap?.target_type || "custom").toLowerCase())
+      .filter(Boolean)
+  )].sort((left, right) => compareText(roadmapCategoryLabel(left), roadmapCategoryLabel(right)));
+}
+
+export function filterAndSortRoadmaps(roadmaps = [], {
+  query = "",
+  category = "all",
+  status = "all",
+  sort = "position"
+} = {}) {
+  const normalizedQuery = asText(query).toLocaleLowerCase("ro");
+  const normalizedCategory = asText(category || "all").toLowerCase();
+  const normalizedStatus = asText(status || "all").toLowerCase();
+  const normalizedSort = asText(sort || "position").toLowerCase();
+
+  const rows = (Array.isArray(roadmaps) ? roadmaps : []).filter((roadmap) => {
+    const itemCategory = asText(roadmap?.target_type || "custom").toLowerCase();
+    if (normalizedCategory !== "all" && itemCategory !== normalizedCategory) return false;
+    if (normalizedStatus === "published" && roadmap?.published === false) return false;
+    if (normalizedStatus === "draft" && roadmap?.published !== false) return false;
+
+    if (!normalizedQuery) return true;
+    const haystack = [
+      roadmap?.id,
+      roadmap?.slug,
+      roadmap?.title_ro,
+      roadmap?.title_en,
+      roadmap?.description_ro,
+      roadmap?.description_en,
+      itemCategory,
+      roadmapCategoryLabel(itemCategory)
+    ].map(asText).join(" ").toLocaleLowerCase("ro");
+    return haystack.includes(normalizedQuery);
+  });
+
+  return rows.sort((left, right) => {
+    if (normalizedSort === "title") {
+      return compareText(left?.title_ro || left?.title_en || left?.id, right?.title_ro || right?.title_en || right?.id);
+    }
+    if (normalizedSort === "category") {
+      return compareText(
+        roadmapCategoryLabel(left?.target_type),
+        roadmapCategoryLabel(right?.target_type)
+      ) || compareText(left?.title_ro || left?.id, right?.title_ro || right?.id);
+    }
+    if (normalizedSort === "status") {
+      const publishedDelta = Number(right?.published !== false) - Number(left?.published !== false);
+      return publishedDelta || compareText(left?.title_ro || left?.id, right?.title_ro || right?.id);
+    }
+    return asNumber(left?.position) - asNumber(right?.position)
+      || compareText(left?.id, right?.id);
+  });
 }
 
 export function filterRoadmapContent(catalog, {

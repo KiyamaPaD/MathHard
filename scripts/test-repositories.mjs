@@ -116,9 +116,12 @@ const {
 const { roadmapContentSequence } = await importBrowserModule("js/learning-workspace-controller.js");
 const {
   createRoadmapNodeId,
+  filterAndSortRoadmaps,
   filterRoadmapContent,
   moveOrderedItem,
   normalizeOrderedPositions,
+  roadmapCategories,
+  roadmapCategoryLabel,
   slugifyRoadmapValue
 } = await importBrowserModule("js/roadmap-admin-model.js");
 const {
@@ -1226,6 +1229,31 @@ assert.deepEqual(
     exams: []
   }, { type: "lesson", query: "algebr" }).map((item) => item.contentId),
   ["l1"]
+);
+
+assert.equal(roadmapCategoryLabel("mathhard_m1"), "MathHard M1");
+assert.deepEqual(
+  roadmapCategories([
+    { target_type: "admission" },
+    { target_type: "mathhard_m1" },
+    { target_type: "admission" }
+  ]),
+  ["admission", "mathhard_m1"]
+);
+assert.deepEqual(
+  filterAndSortRoadmaps([
+    { id: "z", title_ro: "Zeta", target_type: "custom", published: false, position: 0 },
+    { id: "a", title_ro: "Admitere UBB", target_type: "admission", published: true, position: 20 },
+    { id: "m", title_ro: "MathHard M1", target_type: "mathhard_m1", published: true, position: 10 }
+  ], { category: "all", status: "published", sort: "position" }).map((item) => item.id),
+  ["m", "a"]
+);
+assert.deepEqual(
+  filterAndSortRoadmaps([
+    { id: "z", title_ro: "Zeta", target_type: "custom", published: false, position: 0 },
+    { id: "a", title_ro: "Admitere UBB", target_type: "admission", published: true, position: 20 }
+  ], { query: "admitere", sort: "title" }).map((item) => item.id),
+  ["a"]
 );
 
 const normalizedUiPreferences = normalizeUiPreferences({

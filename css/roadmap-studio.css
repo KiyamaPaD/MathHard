@@ -300,3 +300,214 @@
     width: 100%;
   }
 }
+
+/* Phase 110 — Roadmap Admin library, filters and default ordering. */
+.mh-roadmap-admin-library,
+.mh-roadmap-admin-board-filterbar {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+}
+
+.mh-roadmap-admin-library {
+  display: grid;
+  gap: 10px;
+}
+
+.mh-roadmap-admin-library-head,
+.mh-roadmap-admin-board-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mh-roadmap-admin-library-head > div,
+.mh-roadmap-admin-board-filter-head {
+  min-width: 0;
+}
+
+.mh-roadmap-admin-library-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.mh-roadmap-admin-library-head span,
+.mh-roadmap-admin-board-filter-head span {
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.mh-roadmap-admin-result-count {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  font-weight: 800;
+}
+
+.mh-roadmap-admin-library-filters,
+.mh-roadmap-admin-board-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(145px, .75fr)) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.mh-roadmap-admin-library-filters label,
+.mh-roadmap-admin-board-filters label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.mh-roadmap-admin-library-filters input,
+.mh-roadmap-admin-board-filters input,
+.mh-roadmap-admin-library-filters select,
+.mh-roadmap-admin-board-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 7px 9px;
+}
+
+.mh-roadmap-admin-library-list {
+  display: grid;
+  gap: 8px;
+  max-height: 390px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.mh-roadmap-admin-roadmap-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg);
+}
+
+.mh-roadmap-admin-roadmap-card.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent) inset;
+}
+
+.mh-roadmap-admin-roadmap-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mh-roadmap-admin-roadmap-main > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.mh-roadmap-admin-roadmap-main > div > span {
+  color: var(--muted);
+  font-size: .74rem;
+  overflow-wrap: anywhere;
+}
+
+.mh-roadmap-admin-roadmap-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  font-size: 1.1rem;
+}
+
+.mh-roadmap-admin-roadmap-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mh-roadmap-admin-pill.is-default {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mh-roadmap-admin-board-filterbar {
+  display: grid;
+  gap: 9px;
+}
+
+.mh-roadmap-admin-board-filters {
+  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(140px, .7fr)) auto;
+}
+
+@media (max-width: 980px) {
+  .mh-roadmap-admin-library-filters,
+  .mh-roadmap-admin-board-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mh-roadmap-admin-library-filters > label:first-child,
+  .mh-roadmap-admin-board-filters > label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .mh-roadmap-admin-library-filters > .btn,
+  .mh-roadmap-admin-board-filters > .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .mh-roadmap-admin-library-head,
+  .mh-roadmap-admin-board-filter-head,
+  .mh-roadmap-admin-roadmap-card {
+    align-items: stretch;
+  }
+
+  .mh-roadmap-admin-roadmap-card {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-roadmap-admin-roadmap-actions {
+    justify-content: flex-start;
+  }
+
+  .mh-roadmap-admin-roadmap-actions .btn {
+    flex: 1 1 110px;
+  }
+}
+
+@media (max-width: 520px) {
+  .mh-roadmap-admin-library-filters,
+  .mh-roadmap-admin-board-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-roadmap-admin-library-filters > label:first-child,
+  .mh-roadmap-admin-board-filters > label:first-child {
+    grid-column: auto;
+  }
+
+  .mh-roadmap-admin-library-head,
+  .mh-roadmap-admin-board-filter-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
