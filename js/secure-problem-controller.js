@@ -4,23 +4,14 @@ import {
   revealProblemAnswer,
   submitProblemAnswer
 } from "./secure-evaluation-repository.js";
-import {
-  loadProblemWorkspace,
-  normalizeProblemWorkspace,
-  saveContentWorkspace
-} from "./problem-workspace-repository.js";
-import {
-  buildProblemRecommendations,
-  feedbackForAttempt,
-  formatAttemptTime
-} from "./problem-workspace-model.js";
-import {
-  STRUCTURED_ANSWER_MAX_LENGTH,
-  STRUCTURED_ANSWER_MIN_ROWS,
-  bindStructuredAnswerTextarea,
-  isStructuredAnswerProblem,
-  shouldSubmitAnswerOnKeydown
-} from "./structured-answer-ux.js";
+let problemRuntimePromise;
+function loadProblemRuntime() {
+  return problemRuntimePromise ||= Promise.all([
+    import("./problem-workspace-repository.js"),
+    import("./problem-workspace-model.js"),
+    import("./structured-answer-ux.js?v=109")
+  ]);
+}
 
 function messageFor(language, key, ok = false) {
   const messages = {
@@ -34,8 +25,7 @@ function messageFor(language, key, ok = false) {
       hint_missing: "Această problemă nu are acest indiciu.",
       reveal_failed: "Răspunsul nu a putut fi afișat.",
       reveal_locked: "Soluția se deblochează după ambele hinturi și încă 30 de secunde.",
-      needs_format: "⚠️ Răspunsul nu a putut fi interpretat pentru această problemă.",
-      too_long: `⚠️ Răspunsul poate avea maximum ${STRUCTURED_ANSWER_MAX_LENGTH} de caractere.`
+      needs_format: "⚠️ Răspunsul nu a putut fi interpretat pentru această problemă."
     },
     en: {
       correct: "✅ Correct, well done.",
@@ -47,8 +37,7 @@ function messageFor(language, key, ok = false) {
       hint_missing: "This problem does not have this hint.",
       reveal_failed: "The answer could not be revealed.",
       reveal_locked: "The solution unlocks after both hints and another 30 seconds.",
-      needs_format: "⚠️ This answer could not be interpreted for this problem.",
-      too_long: `⚠️ The answer can contain at most ${STRUCTURED_ANSWER_MAX_LENGTH} characters.`
+      needs_format: "⚠️ This answer could not be interpreted for this problem."
     }
   };
 
@@ -109,7 +98,14 @@ export function createSecureProblemController({
 }) {
   if (!supabase) throw new Error("createSecureProblemController requires Supabase.");
 
-  function renderProblem(problem, host) {
+  async function renderProblemReady(problem, host) {
+    const [workspaceApi, workspaceModel, answerUx] = await loadProblemRuntime();
+    const { loadProblemWorkspace, normalizeProblemWorkspace, saveContentWorkspace } = workspaceApi;
+    const { buildProblemRecommendations, feedbackForAttempt, formatAttemptTime } = workspaceModel;
+    const {
+      STRUCTURED_ANSWER_MAX_LENGTH, STRUCTURED_ANSWER_MAX_LINES, STRUCTURED_ANSWER_MIN_ROWS,
+      bindStructuredAnswerTextarea, isStructuredAnswerProblem, shouldSubmitAnswerOnKeydown
+    } = answerUx;
     host = host || document.getElementById("viewContent");
     if (!host) return;
 
@@ -175,7 +171,7 @@ export function createSecureProblemController({
               <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
               ${structuredAnswer
                 ? `<textarea id="answerInput" rows="${STRUCTURED_ANSWER_MIN_ROWS}" maxlength="${STRUCTURED_ANSWER_MAX_LENGTH}" autocomplete="off" spellcheck="false" aria-describedby="structuredAnswerHint" placeholder="${ro ? "Răspunsul tău structurat…" : "Your structured answer…"}"></textarea>
-                   <div class="legend" id="structuredAnswerHint">${ro ? "Enter = rând nou · Ctrl/⌘+Enter = trimite" : "Enter = new line · Ctrl/⌘+Enter = submit"}</div>`
+                   <div class="legend" id="structuredAnswerHint">${ro ? "Enter = rând nou · Ctrl/⌘+Enter = trimite · max. ${STRUCTURED_ANSWER_MAX_LINES} rânduri / ${STRUCTURED_ANSWER_MAX_LENGTH} caractere" : "Enter = new line · Ctrl/⌘+Enter = submit · max. ${STRUCTURED_ANSWER_MAX_LINES} lines / ${STRUCTURED_ANSWER_MAX_LENGTH} characters"}</div>`
                 : `<input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">`}
               <div class="legend mh-problem-status" id="statusArea"></div>
               <div class="mh-live-preview-wrap"><div class="legend">${ro ? "Previzualizare" : "Preview"}</div><div class="mh-live-preview-box" id="answerPreviewBox"></div></div>
@@ -517,12 +513,7 @@ export function createSecureProblemController({
     }
 
     async function checkAnswer() {
-      const rawValue = input.value || "";
-      if (structuredAnswer && rawValue.length > STRUCTURED_ANSWER_MAX_LENGTH) {
-        statusArea.textContent = messageFor(language, "too_long");
-        return;
-      }
-      const value = rawValue.trim();
+      const value = (input.value || "").trim();
       if (!value || submitting) {
         if (!value) statusArea.textContent = ro ? "Completează mai întâi răspunsul." : "Type an answer first.";
         return;
@@ -708,6 +699,10 @@ export function createSecureProblemController({
     if (!recommendations.length) recommendationHost.textContent = ro ? "Nu există încă recomandări." : "No recommendations yet.";
 
     void reloadWorkspace();
+  }
+
+  function renderProblem(problem, host) {
+    void renderProblemReady(problem, host).catch((error) => console.error("Problem workspace failed:", error));
   }
 
   return { renderProblem };

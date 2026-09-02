@@ -923,7 +923,7 @@ if (!roadmapStudioCss.includes("mh-roadmap-admin-quick-add")) {
 if (!indexHtml.includes('css/problem-workspace.css')) {
   fail("Phase 13B problem workspace stylesheet is missing from index.html.");
 }
-if (!secureProblemControllerSource.includes('from "./problem-workspace-repository.js"')) {
+if (!secureProblemControllerSource.includes('"./problem-workspace-repository.js"')) {
   fail("secure-problem-controller.js must use the Phase 13B workspace repository.");
 }
 if (!secureProblemControllerSource.includes('id="problemBookmarkBtn"')) {

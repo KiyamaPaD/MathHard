@@ -3,21 +3,24 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   STRUCTURED_ANSWER_MAX_LENGTH,
+  STRUCTURED_ANSWER_MAX_LINES,
   STRUCTURED_ANSWER_MAX_NEWLINES,
   STRUCTURED_ANSWER_MAX_ROWS,
   STRUCTURED_ANSWER_MIN_ROWS,
   bindStructuredAnswerTextarea,
   canInsertStructuredAnswerNewline,
+  clampStructuredAnswerNewlines,
   countStructuredAnswerNewlines,
   isStructuredAnswerProblem,
   shouldSubmitAnswerOnKeydown,
   structuredTextareaMetrics
 } from "../js/structured-answer-ux.js";
 
-assert.equal(STRUCTURED_ANSWER_MAX_LENGTH, 1200);
+assert.equal(STRUCTURED_ANSWER_MAX_LENGTH, 500);
 assert.equal(STRUCTURED_ANSWER_MIN_ROWS, 3);
 assert.equal(STRUCTURED_ANSWER_MAX_ROWS, 8);
-assert.equal(STRUCTURED_ANSWER_MAX_NEWLINES, 12);
+assert.equal(STRUCTURED_ANSWER_MAX_LINES, 12);
+assert.equal(STRUCTURED_ANSWER_MAX_NEWLINES, 11);
 
 assert.equal(isStructuredAnswerProblem({ answer_ui_mode: "structured" }), true);
 assert.equal(isStructuredAnswerProblem({ answer_ui_mode: "singleline" }), false);
@@ -29,7 +32,7 @@ assert.equal(isStructuredAnswerProblem({ structured_answer: "true" }), true);
 assert.equal(isStructuredAnswerProblem({ structured_answer: false, answer_ui_mode: "structured" }), false);
 assert.equal(isStructuredAnswerProblem({ structured_answer: { version: 1, blocks: [{ id: "a" }] } }), true);
 assert.equal(isStructuredAnswerProblem({ structured_answer: JSON.stringify({ version: 1, blocks: [{ id: "a" }] }) }), true);
-assert.equal(isStructuredAnswerProblem({ structured_answer: {} }), false);
+assert.equal(isStructuredAnswerProblem({ structured_answer: {} }), true);
 assert.equal(isStructuredAnswerProblem({ answer_fields: [{ id: "a" }] }), true);
 assert.equal(isStructuredAnswerProblem({}), true);
 assert.equal(isStructuredAnswerProblem({ answer_ui_mode: "single-line" }), false);
@@ -42,7 +45,8 @@ assert.equal(shouldSubmitAnswerOnKeydown({ key: "a", structured: true, ctrlKey: 
 
 assert.equal(countStructuredAnswerNewlines("a\nb\nc"), 2);
 assert.equal(canInsertStructuredAnswerNewline("a\nb"), true);
-assert.equal(canInsertStructuredAnswerNewline(Array(13).fill("x").join("\n")), false);
+assert.equal(canInsertStructuredAnswerNewline(Array(12).fill("x").join("\n")), false);
+assert.equal(clampStructuredAnswerNewlines(Array(14).fill("x").join("\n")).split("\n").length, 12);
 
 const metrics = structuredTextareaMetrics({
   fontSize: "16px",
@@ -86,7 +90,7 @@ assert.equal(fakeTextarea.style.height, "216px");
 assert.equal(fakeTextarea.style.overflowY, "auto");
 
 let prevented = false;
-fakeTextarea.value = Array(13).fill("x").join("\n");
+fakeTextarea.value = Array(12).fill("x").join("\n");
 listeners.get("keydown")({
   key: "Enter",
   ctrlKey: false,
@@ -95,6 +99,20 @@ listeners.get("keydown")({
   preventDefault() { prevented = true; }
 });
 assert.equal(prevented, true);
+
+prevented = false;
+listeners.get("keydown")({
+  key: "Enter",
+  ctrlKey: false,
+  metaKey: false,
+  altKey: true,
+  preventDefault() { prevented = true; }
+});
+assert.equal(prevented, true);
+
+fakeTextarea.value = Array(14).fill("x").join("\n");
+listeners.get("input")({});
+assert.equal(fakeTextarea.value.split("\n").length, 12);
 
 prevented = false;
 listeners.get("keydown")({

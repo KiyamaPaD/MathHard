@@ -1,10 +1,11 @@
 const STRUCTURED_MODE_VALUES = new Set(["structured", "multiline"]);
 const SINGLE_LINE_MODE_VALUES = new Set(["singleline", "single_line", "single-line"]);
 
-export const STRUCTURED_ANSWER_MAX_LENGTH = 1200;
+export const STRUCTURED_ANSWER_MAX_LENGTH = 500;
 export const STRUCTURED_ANSWER_MIN_ROWS = 3;
 export const STRUCTURED_ANSWER_MAX_ROWS = 8;
-export const STRUCTURED_ANSWER_MAX_NEWLINES = 12;
+export const STRUCTURED_ANSWER_MAX_LINES = 12;
+export const STRUCTURED_ANSWER_MAX_NEWLINES = STRUCTURED_ANSWER_MAX_LINES - 1;
 
 function normalizedMode(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -104,6 +105,25 @@ export function canInsertStructuredAnswerNewline(value, maxNewlines = STRUCTURED
   return countStructuredAnswerNewlines(value) < maxNewlines;
 }
 
+export function clampStructuredAnswerNewlines(value, maxNewlines = STRUCTURED_ANSWER_MAX_NEWLINES) {
+  const text = String(value ?? "");
+  let newlineCount = 0;
+  let output = "";
+
+  for (const char of text) {
+    if (char === "\n") {
+      if (newlineCount >= maxNewlines) {
+        output += " ";
+        continue;
+      }
+      newlineCount += 1;
+    }
+    output += char;
+  }
+
+  return output;
+}
+
 function finitePositive(value, fallback) {
   const number = Number.parseFloat(value);
   return Number.isFinite(number) && number > 0 ? number : fallback;
@@ -165,14 +185,22 @@ export function bindStructuredAnswerTextarea(textarea, {
       event?.key === "Enter" &&
       !event.ctrlKey &&
       !event.metaKey &&
-      !event.altKey &&
       !canInsertStructuredAnswerNewline(textarea.value, maxNewlines)
     ) {
       event.preventDefault?.();
     }
   });
 
-  textarea.addEventListener?.("input", resize);
+  textarea.addEventListener?.("input", () => {
+    const limitedValue = clampStructuredAnswerNewlines(textarea.value, maxNewlines);
+    if (limitedValue !== textarea.value) {
+      const cursor = Number(textarea.selectionStart ?? limitedValue.length);
+      textarea.value = limitedValue;
+      const nextCursor = Math.min(cursor, limitedValue.length);
+      textarea.setSelectionRange?.(nextCursor, nextCursor);
+    }
+    resize();
+  });
   resize();
   return resize;
 }
