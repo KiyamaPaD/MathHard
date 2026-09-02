@@ -630,3 +630,152 @@
     font-size: .74rem;
   }
 }
+
+/* Phase 111 — roadmap super-sections by school year */
+.mh-roadmap-super-section-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgba(99,102,241,.2);
+  border-radius: 22px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(99,102,241,.07), rgba(255,255,255,.02));
+  box-shadow: 0 18px 40px -34px rgba(15, 23, 42, .85);
+}
+
+.mh-roadmap-super-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 2px;
+  border-bottom: 1px dashed rgba(148,163,184,.18);
+}
+
+.mh-roadmap-super-section-head > div:first-child {
+  min-width: 0;
+}
+
+.mh-roadmap-super-section-head h3 {
+  margin: 0;
+}
+
+.mh-roadmap-super-section-head p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.mh-roadmap-super-section-chips {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.mh-roadmap-super-section-chips span {
+  padding: 5px 9px;
+  border: 1px solid rgba(99,102,241,.22);
+  border-radius: 999px;
+  background: rgba(99,102,241,.08);
+  color: var(--text);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.mh-roadmap-super-section-body {
+  display: grid;
+  gap: 12px;
+}
+
+.mh-roadmap-super-section-card .mh-roadmap-section-card {
+  padding: 15px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(15,23,42,.08));
+}
+
+@media (max-width: 760px) {
+  .mh-roadmap-super-section-head {
+    flex-direction: column;
+  }
+
+  .mh-roadmap-super-section-chips {
+    justify-content: flex-start;
+  }
+}
+
+/* Phase 111C — student roadmap grade groups */
+.mh-roadmap-grade-group {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(99,102,241,.24);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(99,102,241,.075), rgba(255,255,255,.018));
+}
+
+.mh-roadmap-grade-head {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-roadmap-grade-head strong {
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.mh-roadmap-grade-head > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(148,163,184,.06);
+}
+
+.mh-roadmap-grade-head:hover > span,
+.mh-roadmap-grade-head:focus-visible > span {
+  border-color: rgba(99,102,241,.48);
+  color: var(--text);
+}
+
+.mh-roadmap-grade-body {
+  display: grid;
+  gap: 12px;
+}
+
+.mh-roadmap-grade-body[hidden] {
+  display: none !important;
+}
+
+.mh-roadmap-grade-group .mh-roadmap-section-card {
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+}
+
+.mh-roadmap-grade-group.is-collapsed {
+  gap: 0;
+}
+
+@media (max-width: 640px) {
+  .mh-roadmap-grade-group {
+    padding: 11px;
+    border-radius: 18px;
+  }
+
+  .mh-roadmap-grade-head {
+    min-height: 44px;
+  }
+}

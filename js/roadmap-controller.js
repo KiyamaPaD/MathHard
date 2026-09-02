@@ -191,6 +191,30 @@ function renderSection(section, language, conceptCatalog, { collapsed = false, c
   `;
 }
 
+
+function gradeGroup(section, language) {
+  const norm = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[_\s]+/g, "-");
+  const ids = [norm(section?.section_key), norm(section?.id)];
+  const token = (value) => ids.some((id) => id === value || id.startsWith(`${value}-`) || id.includes(`-${value}-`) || id.endsWith(`-${value}`));
+  if (token("xii") || token("12")) return ["12", textFor(language, "Clasa a XII-a", "Grade 12")];
+  if (token("xi") || token("11")) return ["11", textFor(language, "Clasa a XI-a", "Grade 11")];
+  if (token("x") || token("10")) return ["10", textFor(language, "Clasa a X-a", "Grade 10")];
+  if (token("ix") || token("9")) return ["9", textFor(language, "Clasa a IX-a", "Grade 9")];
+  return null;
+}
+
+function groupRoadmapSections(sections, language) {
+  const blocks = [];
+  for (const [index, section] of asArray(sections).entries()) {
+    const grade = gradeGroup(section, language);
+    if (!grade) { blocks.push({ section, index }); continue; }
+    let block = blocks.find((item) => item.gradeKey === grade[0]);
+    if (!block) { block = { gradeKey: grade[0], title: grade[1], sections: [] }; blocks.push(block); }
+    block.sections.push({ section, index });
+  }
+  return blocks;
+}
+
 export function createRoadmapController({
   root,
   supabase,
@@ -209,6 +233,7 @@ export function createRoadmapController({
   let loading = false;
   let error = null;
   const collapsedSections = new Set();
+  const collapsedGroups = new Set();
 
   function sectionCollapseKey(section) {
     return `${selectedRoadmapId}:${section.id || section.section_key || section.position || 0}`;
@@ -267,6 +292,14 @@ export function createRoadmapController({
         if (!key) return;
         if (collapsedSections.has(key)) collapsedSections.delete(key);
         else collapsedSections.add(key);
+        render();
+      });
+    }
+
+    for (const button of root.querySelectorAll("[data-roadmap-grade-toggle]")) {
+      button.addEventListener("click", () => {
+        const key = `${selectedRoadmapId}:${button.dataset.roadmapGradeToggle}`;
+        collapsedGroups.has(key) ? collapsedGroups.delete(key) : collapsedGroups.add(key);
         render();
       });
     }
@@ -358,14 +391,20 @@ export function createRoadmapController({
       </div>
 
       <div class="mh-roadmap-sections">
-        ${view.sections.map((section, index) => {
-          const collapseKey = sectionCollapseKey(section);
-          return renderSection(section, language, conceptCatalog, {
-            collapsed: collapsedSections.has(collapseKey),
-            collapseKey,
-            bodyId: `mh-roadmap-section-body-${index}`,
-            stageNumber: index
-          });
+        ${groupRoadmapSections(view.sections, language).map((block) => {
+          if (block.section) {
+            const collapseKey = sectionCollapseKey(block.section);
+            return renderSection(block.section, language, conceptCatalog, { collapsed: collapsedSections.has(collapseKey), collapseKey, bodyId: `mh-roadmap-section-body-${block.index}`, stageNumber: block.index });
+          }
+          const key = `${selectedRoadmapId}:${block.gradeKey}`;
+          const collapsed = collapsedGroups.has(key);
+          return `<section class="mh-roadmap-grade-group ${collapsed ? "is-collapsed" : ""}">
+            <button class="mh-roadmap-grade-head" type="button" data-roadmap-grade-toggle="${escapeHtml(block.gradeKey)}" aria-expanded="${collapsed ? "false" : "true"}"><strong>${escapeHtml(block.title)}</strong><span aria-hidden="true">${collapsed ? "⌄" : "⌃"}</span></button>
+            <div class="mh-roadmap-grade-body" ${collapsed ? "hidden" : ""}>${block.sections.map(({ section, index }) => {
+              const collapseKey = sectionCollapseKey(section);
+              return renderSection(section, language, conceptCatalog, { collapsed: collapsedSections.has(collapseKey), collapseKey, bodyId: `mh-roadmap-section-body-${index}`, stageNumber: index });
+            }).join("")}</div>
+          </section>`;
         }).join("")}
       </div>
     `;
