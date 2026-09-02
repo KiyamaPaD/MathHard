@@ -731,3 +731,121 @@
     justify-content: flex-start;
   }
 }
+
+/* Phase 111B — real collapsible curriculum super-nodes */
+.mh-roadmap-admin-super-node {
+  overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, .24);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, .075), rgba(255,255,255,.018));
+  box-shadow: 0 18px 40px -34px rgba(15, 23, 42, .85);
+}
+
+.mh-roadmap-admin-super-node.is-grade-group {
+  border-color: rgba(99, 102, 241, .34);
+}
+
+.mh-roadmap-admin-super-node > summary {
+  list-style: none;
+}
+
+.mh-roadmap-admin-super-node > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mh-roadmap-admin-super-node-head {
+  display: grid;
+  grid-template-columns: auto minmax(150px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 15px;
+  cursor: pointer;
+  user-select: none;
+  background: linear-gradient(135deg, rgba(99, 102, 241, .13), rgba(14, 165, 233, .045));
+}
+
+.mh-roadmap-admin-super-node-head:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, .17), rgba(14, 165, 233, .065));
+}
+
+.mh-roadmap-admin-super-node-marker {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(99, 102, 241, .25);
+  border-radius: 13px;
+  background: rgba(99, 102, 241, .1);
+  font-size: 1.12rem;
+}
+
+.mh-roadmap-admin-super-node-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.mh-roadmap-admin-super-node-copy strong {
+  font-size: 1.08rem;
+}
+
+.mh-roadmap-admin-super-node-copy small {
+  color: var(--muted);
+  font-size: .74rem;
+}
+
+.mh-roadmap-admin-super-node-topics {
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mh-roadmap-admin-super-node-chevron {
+  color: var(--muted);
+  font-size: 1.1rem;
+  transition: transform .16s ease;
+}
+
+.mh-roadmap-admin-super-node[open] .mh-roadmap-admin-super-node-chevron {
+  transform: rotate(180deg);
+}
+
+.mh-roadmap-admin-super-node > .mh-roadmap-admin-group-sections {
+  padding: 12px;
+  border-top: 1px solid rgba(148, 163, 184, .13);
+}
+
+.mh-roadmap-admin-super-node .mh-roadmap-admin-section-card {
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+}
+
+@media (max-width: 880px) {
+  .mh-roadmap-admin-super-node-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .mh-roadmap-admin-super-node-topics {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .mh-roadmap-admin-super-node-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .mh-roadmap-admin-super-node-marker {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .mh-roadmap-admin-super-node-topics {
+    grid-column: 1 / -1;
+  }
+}

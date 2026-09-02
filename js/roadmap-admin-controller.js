@@ -80,66 +80,54 @@ function iconForType(type) {
 }
 
 
-const SECTION_VISUAL_GROUPS = [
-  {
-    key: "grade-9",
-    labelRo: "Clasa a IX-a",
-    labelEn: "Grade 9",
-    pattern: /(?:\bix\b|\b9\b|clasa\s*a\s*ix\s*-?\s*a?|clasa\s*a\s*9\s*-?\s*a?|grade\s*9)/i
-  },
-  {
-    key: "grade-10",
-    labelRo: "Clasa a X-a",
-    labelEn: "Grade 10",
-    pattern: /(?:\bx\b|\b10\b|clasa\s*a\s*x\s*-?\s*a?|clasa\s*a\s*10\s*-?\s*a?|grade\s*10)/i
-  },
-  {
-    key: "grade-11",
-    labelRo: "Clasa a XI-a",
-    labelEn: "Grade 11",
-    pattern: /(?:\bxi\b|\b11\b|clasa\s*a\s*xi\s*-?\s*a?|clasa\s*a\s*11\s*-?\s*a?|grade\s*11)/i
-  },
-  {
-    key: "grade-12",
-    labelRo: "Clasa a XII-a",
-    labelEn: "Grade 12",
-    pattern: /(?:\bxii\b|\b12\b|clasa\s*a\s*xii\s*-?\s*a?|clasa\s*a\s*12\s*-?\s*a?|grade\s*12)/i
-  },
-  {
-    key: "bac-core",
-    labelRo: "Recapitulare BAC",
-    labelEn: "BAC review",
-    pattern: /\bbac\b/i
-  },
-  {
-    key: "admission-core",
-    labelRo: "Pregătire admitere",
-    labelEn: "Admission prep",
-    pattern: /admit/i
-  }
+const SECTION_GROUP_DEFINITIONS = [
+  { key: "intro", label: "Introducere", aliases: ["intro"] },
+  { key: "grade-9", label: "Clasa a IX-a", aliases: ["ix", "9"] },
+  { key: "grade-10", label: "Clasa a X-a", aliases: ["x", "10"] },
+  { key: "grade-11", label: "Clasa a XI-a", aliases: ["xi", "11"] },
+  { key: "grade-12", label: "Clasa a XII-a", aliases: ["xii", "12"] },
+  { key: "bac-core", label: "Recapitulare BAC", aliases: ["bac"] },
+  { key: "admission-core", label: "Pregătire admitere", aliases: ["admitere", "admission"] }
 ];
 
-function sectionVisualGroup(section, language = "ro") {
-  const haystack = [
-    section?.title_ro,
-    section?.title_en,
-    section?.section_key,
-    section?.id,
-    section?.description_ro,
-    section?.description_en
-  ].map((value) => String(value || "")).join(" ");
+function normalizeSectionGroupText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
-  const match = SECTION_VISUAL_GROUPS.find((group) => group.pattern.test(haystack));
-  if (match) {
-    return {
-      key: match.key,
-      label: language === "en" ? match.labelEn : match.labelRo
-    };
-  }
-  return {
-    key: "general",
-    label: language === "en" ? "General" : "General"
-  };
+function sectionVisualGroup(section) {
+  const id = normalizeSectionGroupText(section?.id);
+  const key = normalizeSectionGroupText(section?.section_key);
+  const title = normalizeSectionGroupText(section?.title_ro || section?.title_en);
+  const identifiers = [key, id].filter(Boolean);
+
+  // Prefer stable section_key / id tokens. This is what makes MathHard M1
+  // deterministic: ix-algebra, x-geometrie, xi-analiza, xii-algebra etc.
+  const tokenMatch = (token) => identifiers.some((value) => (
+    value === token
+    || value.startsWith(`${token}-`)
+    || value.includes(`-${token}-`)
+    || value.endsWith(`-${token}`)
+  ));
+
+  if (tokenMatch("xii") || tokenMatch("12")) return { key: "grade-12", label: "Clasa a XII-a" };
+  if (tokenMatch("xi") || tokenMatch("11")) return { key: "grade-11", label: "Clasa a XI-a" };
+  if (tokenMatch("x") || tokenMatch("10")) return { key: "grade-10", label: "Clasa a X-a" };
+  if (tokenMatch("ix") || tokenMatch("9")) return { key: "grade-9", label: "Clasa a IX-a" };
+
+  if (/clasa-a-xii-a|grade-12/.test(title)) return { key: "grade-12", label: "Clasa a XII-a" };
+  if (/clasa-a-xi-a|grade-11/.test(title)) return { key: "grade-11", label: "Clasa a XI-a" };
+  if (/clasa-a-x-a|grade-10/.test(title)) return { key: "grade-10", label: "Clasa a X-a" };
+  if (/clasa-a-ix-a|grade-9/.test(title)) return { key: "grade-9", label: "Clasa a IX-a" };
+  if (/\bbac\b/.test(title) || tokenMatch("bac")) return { key: "bac-core", label: "Recapitulare BAC" };
+  if (/admit/.test(title) || tokenMatch("admitere") || tokenMatch("admission")) return { key: "admission-core", label: "Pregătire admitere" };
+  if (tokenMatch("intro") || /introducere|introduction/.test(title)) return { key: "intro", label: "Introducere" };
+  return { key: "general", label: "Alte etape" };
 }
 
 function sectionTopicLabel(section) {
@@ -156,9 +144,24 @@ function sectionTopicLabel(section) {
     .replace(/clasa\s*a\s*(?:ix|x|xi|xii|9|10|11|12)\s*-?\s*a?/ig, "")
     .replace(/grade\s*(?:9|10|11|12)/ig, "")
     .replace(/[—–\-:|•·]{2,}/g, " ")
+    .replace(/^\s*[·:—–\-]+|[·:—–\-]+\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim();
   return cleaned || compact;
+}
+
+function sectionGroupRank(groupKey) {
+  const rank = {
+    intro: 0,
+    "grade-9": 10,
+    "grade-10": 20,
+    "grade-11": 30,
+    "grade-12": 40,
+    "bac-core": 50,
+    "admission-core": 60,
+    general: 99
+  };
+  return rank[groupKey] ?? 99;
 }
 
 export function createRoadmapAdminController({
@@ -499,8 +502,7 @@ export function createRoadmapAdminController({
     const totalCount = selectedNodes().length;
     const visibleCount = selectedNodes().filter(nodeMatchesBoardFilters).length;
     const filtering = boardFiltersActive();
-    const grouped = [];
-    let activeGroup = null;
+    const groupMap = new Map();
 
     sections.forEach((section, sectionIndex) => {
       const allNodes = sectionNodes(section.id);
@@ -508,43 +510,48 @@ export function createRoadmapAdminController({
       if (filtering && !nodes.length) return;
 
       const group = sectionVisualGroup(section);
-      if (!activeGroup || activeGroup.key !== group.key) {
-        activeGroup = {
+      if (!groupMap.has(group.key)) {
+        groupMap.set(group.key, {
           key: group.key,
           label: group.label,
           sections: [],
           topics: new Set(),
           totalNodes: 0,
-          visibleNodes: 0
-        };
-        grouped.push(activeGroup);
+          visibleNodes: 0,
+          firstSectionIndex: sectionIndex
+        });
       }
 
-      activeGroup.sections.push({
-        section,
-        sectionIndex,
-        allNodes,
-        nodes
-      });
-      activeGroup.topics.add(sectionTopicLabel(section));
-      activeGroup.totalNodes += allNodes.length;
-      activeGroup.visibleNodes += nodes.length;
+      const bucket = groupMap.get(group.key);
+      bucket.sections.push({ section, sectionIndex, allNodes, nodes });
+      bucket.topics.add(sectionTopicLabel(section));
+      bucket.totalNodes += allNodes.length;
+      bucket.visibleNodes += nodes.length;
+      bucket.firstSectionIndex = Math.min(bucket.firstSectionIndex, sectionIndex);
     });
 
+    const grouped = [...groupMap.values()].sort((left, right) => (
+      sectionGroupRank(left.key) - sectionGroupRank(right.key)
+      || left.firstSectionIndex - right.firstSectionIndex
+    ));
+
     const groupCards = grouped.map((group) => {
-      const topicBadges = [...group.topics].filter(Boolean).slice(0, 8);
+      const topicBadges = [...group.topics].filter(Boolean).slice(0, 10);
+      const isLargeCurriculumGroup = /^grade-/.test(group.key);
       return `
-        <section class="mh-roadmap-admin-group-card">
-          <header class="mh-roadmap-admin-group-head">
-            <div>
-              <span class="mh-roadmap-admin-group-kicker">grup vizual</span>
+        <details class="mh-roadmap-admin-super-node ${isLargeCurriculumGroup ? "is-grade-group" : ""}" open>
+          <summary class="mh-roadmap-admin-super-node-head">
+            <span class="mh-roadmap-admin-super-node-marker" aria-hidden="true">${isLargeCurriculumGroup ? "🎓" : group.key === "intro" ? "🧭" : "🗂️"}</span>
+            <span class="mh-roadmap-admin-super-node-copy">
+              <span class="mh-roadmap-admin-group-kicker">super-nod</span>
               <strong>${escapeHtml(group.label)}</strong>
-              <span>${group.sections.length} etape · ${filtering ? `${group.visibleNodes}/${group.totalNodes}` : group.totalNodes} noduri</span>
-            </div>
-            <div class="mh-roadmap-admin-group-chips">
+              <small>${group.sections.length} etape · ${filtering ? `${group.visibleNodes}/${group.totalNodes}` : group.totalNodes} noduri</small>
+            </span>
+            <span class="mh-roadmap-admin-super-node-topics">
               ${topicBadges.map((topic) => `<span class="mh-roadmap-admin-group-chip">${escapeHtml(topic)}</span>`).join("")}
-            </div>
-          </header>
+            </span>
+            <span class="mh-roadmap-admin-super-node-chevron" aria-hidden="true">⌄</span>
+          </summary>
           <div class="mh-roadmap-admin-group-sections">
             ${group.sections.map(({ section, sectionIndex, allNodes, nodes }) => `
               <article class="mh-roadmap-admin-section-card" data-roadmap-drop-section="${escapeHtml(section.id)}">
@@ -593,7 +600,7 @@ export function createRoadmapAdminController({
               </article>
             `).join("")}
           </div>
-        </section>
+        </details>
       `;
     }).join("");
 
