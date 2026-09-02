@@ -4952,12 +4952,20 @@ ${details}`);
   }
 
   /* ===== Sidebar (super categorii) ===== */
+  function isMathHardM1Lesson(lesson){
+    const id = String(lesson?.id || "").toLowerCase();
+    if (/^m1-(?:ix|x|xi|xii)-/.test(id)) return true;
+    return [...(lesson?.tags || []), ...(lesson?.tag_labels || [])]
+      .some((tag) => /^(?:mathhard[ _-]?m1|m1)$/i.test(String(tag || "").trim()));
+  }
+
   function buildNestedTree(){
     const root = document.getElementById("treeNested");
     root.innerHTML = "";
 
     const byGrade = {};
     DATA.lessons.forEach(L => {
+      if (isMathHardM1Lesson(L)) return;
       if (!byGrade[L.grade]) byGrade[L.grade] = {};
       if (!byGrade[L.grade][L.chapter]) byGrade[L.grade][L.chapter] = [];
       byGrade[L.grade][L.chapter].push(L);
@@ -5189,7 +5197,7 @@ ${details}`);
     const catalog=DATA.tagCatalog||{tags:[],mappings:[]}, mapped=new Set((catalog.mappings||[]).map(x=>x.tag_id));
     const tags=(catalog.tags||[]).filter(t=>t.active!==false&&t.filter_visible!==false&&mapped.has(t.id));
     if(!tags.length)return;
-    const groups={topic:LANG==="ro"?"Domenii matematice":"Math topics",method:LANG==="ro"?"Metode și competențe":"Methods & skills",context:LANG==="ro"?"Context și sursă":"Context & source"};
+    const groups={topic:LANG==="ro"?"Domenii matematice":"Math topics"};
     const box=document.createElement("details");box.innerHTML=`<summary>🏷️ <b>${mhUi("tags")}</b></summary>`;
     const branch=document.createElement("div");branch.className="branch";
     for(const [key,title] of Object.entries(groups)){const rows=tags.filter(t=>(t.group_key||"topic")===key).sort((a,b)=>(a.position||0)-(b.position||0)||mhTagLabel(a.id).localeCompare(mhTagLabel(b.id),LANG==="ro"?"ro":"en"));if(!rows.length)continue;const det=document.createElement("details");det.innerHTML=`<summary>${esc(title)}</summary>`;const body=document.createElement("div");body.className="branch";rows.forEach(tag=>{const a=document.createElement("a");a.className="leaf";a.textContent=mhTagLabel(tag.id);a.onclick=()=>{filter.tag=tag.id;filter.byLessonId=null;if(!["lessons","problems","xp","exams"].includes(TAB)){selectTab("lessons");return;}page=1;renderCards();drawFilterBar();mhSyncContextFilterVisibility();};body.appendChild(a)});det.appendChild(body);branch.appendChild(det)}
@@ -5218,7 +5226,7 @@ ${details}`);
     const grade = String(L.grade || "");
     const chapter = String(L.chapter || "");
     if (filter.lessonCategory === "school" && !["V","VI","VII","VIII"].includes(grade)) return false;
-    if (filter.lessonCategory === "highschool" && !["IX","X","XI","XII"].includes(grade)) return false;
+    if (filter.lessonCategory === "highschool" && (!["IX","X","XI","XII"].includes(grade) || isMathHardM1Lesson(L))) return false;
     if (filter.lessonCategory === "olympiad" && !/^OL-/.test(grade)) return false;
     if (filter.lessonCategory === "olympiad" && filter.lessonOlympLevel && mhLessonOlympLevel(L) !== filter.lessonOlympLevel) return false;
     if (filter.lessonCategory === "faculty" && grade !== "FAC") return false;
