@@ -2222,3 +2222,142 @@ code {
 .mh-exam-replay-history li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:11px;background:var(--bg)}
 .mh-exam-replay-history li>span:last-child{color:var(--muted);font-size:.75rem;text-align:right}
 @media(max-width:620px){.mh-exam-replay-history li{align-items:flex-start;flex-direction:column}.mh-exam-replay-history li>span:last-child{text-align:left}}
+
+/* MathHard Phase 112 — compact lesson number-line visuals */
+.mh-lesson-numberline-wrap {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.mh-lesson-numberline-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+
+.mh-lesson-numberline-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px 14px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  overflow-x: auto;
+}
+
+.mh-lesson-numberline-card > strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.mh-lesson-numberline-card > p {
+  margin: 2px 0 8px;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
+.mh-lesson-numberline {
+  position: relative;
+  min-width: 440px;
+  height: 82px;
+  margin: 2px 4px 0;
+  --mh-nl-left: 5%;
+  --mh-nl-right: 95%;
+}
+
+.mh-lesson-numberline::before {
+  content: "";
+  position: absolute;
+  left: var(--mh-nl-left);
+  right: calc(100% - var(--mh-nl-right));
+  top: 31px;
+  height: 2px;
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+  border-radius: 999px;
+}
+
+.mh-lesson-numberline-point {
+  position: absolute;
+  left: var(--x);
+  top: 24px;
+  width: 16px;
+  height: 16px;
+  transform: translateX(-50%);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--card);
+  z-index: 2;
+}
+
+.mh-lesson-numberline-point.is-filled {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mh-lesson-numberline-point.is-muted {
+  border-color: color-mix(in srgb, var(--muted) 62%, var(--border));
+  background: var(--card);
+}
+
+.mh-lesson-numberline-point > span {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text);
+  font-size: .76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mh-lesson-numberline-segment {
+  position: absolute;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
+  top: 27px;
+  height: 10px;
+  border-radius: 999px;
+  transform: translateX(0);
+  background: color-mix(in srgb, var(--accent) 64%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent) inset;
+  z-index: 1;
+}
+
+.mh-lesson-numberline-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.mh-lesson-numberline-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mh-lesson-numberline-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+.mh-lesson-numberline-legend i.is-filled {
+  background: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .mh-lesson-numberline-compare {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-lesson-numberline-card {
+    padding-inline: 11px;
+  }
+}
