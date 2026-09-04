@@ -780,6 +780,25 @@
   }
 }
 
+/* MathHard Phase 119 — roadmap chapter interaction hardening.
+   Generic site `header` styles are sticky; roadmap headers must remain in normal flow. */
+.mh-roadmap-section-card > .mh-roadmap-section-head,
+.mh-roadmap-chapter-card > .mh-roadmap-chapter-head {
+  position: static;
+  inset: auto;
+  top: auto;
+  z-index: auto;
+  backdrop-filter: none;
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+}
+
+/* `display:grid` would otherwise override the browser's hidden presentation. */
+.mh-roadmap-chapter-body[hidden] {
+  display: none !important;
+}
+
 /* MathHard Phase 118B — nested roadmap chapters */
 .mh-roadmap-section-content {
   display: grid;

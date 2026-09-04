@@ -244,3 +244,118 @@
   .mh-gamification-admin-row-actions { grid-column: 1 / -1; }
   .mh-gamification-form-grid.two { grid-template-columns: 1fr; }
 }
+
+/* Phase 119 — non-destructive admin UI simulator. */
+.mh-gamification-admin-toolbar [hidden] { display: none !important; }
+.mh-gamification-admin-layout.is-simulator,
+.mh-gamification-admin-layout:has(.mh-gamification-simulator) {
+  grid-template-columns: 1fr;
+}
+.mh-gamification-admin-toolbar:has(+ .mh-gamification-admin-feedback + .mh-gamification-admin-layout .mh-gamification-simulator) .mh-gamification-admin-actions input[hidden],
+.mh-gamification-admin-toolbar:has(+ .mh-gamification-admin-feedback + .mh-gamification-admin-layout .mh-gamification-simulator) [data-gamification-action="new"][hidden] {
+  display: none !important;
+}
+.mh-gamification-admin-editor:empty { display: none; }
+.mh-gamification-simulator {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card) 96%, var(--accent) 4%);
+}
+.mh-gamification-simulator > header {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.mh-gamification-simulator > header span {
+  color: #f59e0b;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+.mh-gamification-simulator > header h3 { margin: 3px 0 4px; }
+.mh-gamification-simulator > header p { margin: 0; color: var(--muted); font-size: .8rem; }
+.mh-gamification-simulator > header > strong {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #22c55e 30%, var(--border));
+  color: #22c55e;
+  font-size: .72rem;
+}
+.mh-gamification-simulator-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.mh-gamification-sim-card {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.mh-gamification-sim-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.mh-gamification-sim-card-head > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.mh-gamification-sim-card-head strong,
+.mh-gamification-sim-card-head small { display: block; }
+.mh-gamification-sim-card-head small { margin-top: 3px; color: var(--muted); line-height: 1.4; }
+.mh-gamification-sim-card label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 750;
+}
+.mh-gamification-sim-card input,
+.mh-gamification-sim-card select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.mh-gamification-sim-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.mh-gamification-sim-note { color: var(--muted); line-height: 1.45; }
+@media (max-width: 900px) {
+  .mh-gamification-simulator-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .mh-gamification-sim-fields { grid-template-columns: 1fr; }
+  .mh-gamification-simulator > header { display: grid; }
+  .mh-gamification-simulator > header > strong { width: max-content; }
+}

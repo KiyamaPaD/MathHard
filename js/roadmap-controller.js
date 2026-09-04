@@ -348,8 +348,27 @@ export function createRoadmapController({
       button.addEventListener("click", () => {
         const key = String(button.dataset.roadmapChapterToggle || "");
         if (!key) return;
-        collapsedChapters.has(key) ? collapsedChapters.delete(key) : collapsedChapters.add(key);
-        render();
+
+        const card = button.closest(".mh-roadmap-chapter-card");
+        const body = card?.querySelector(":scope > .mh-roadmap-chapter-body");
+        if (!card || !body) return;
+
+        const willCollapse = !collapsedChapters.has(key);
+        if (willCollapse) collapsedChapters.add(key);
+        else collapsedChapters.delete(key);
+
+        // Toggle the existing DOM instead of rebuilding the whole roadmap.
+        // Re-rendering a tall chapter could move the document scroll anchor and
+        // made the collapse control feel broken on touch/trackpad devices.
+        body.hidden = willCollapse;
+        card.classList.toggle("is-collapsed", willCollapse);
+        button.setAttribute("aria-expanded", willCollapse ? "false" : "true");
+        const label = willCollapse
+          ? textFor(currentLanguage(), "Deschide capitolul", "Expand chapter")
+          : textFor(currentLanguage(), "Închide capitolul", "Collapse chapter");
+        button.title = label;
+        const icon = button.querySelector("span[aria-hidden='true']");
+        if (icon) icon.textContent = willCollapse ? "⌄" : "⌃";
       });
     }
 

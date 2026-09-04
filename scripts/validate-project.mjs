@@ -43,6 +43,7 @@ const moduleJsFiles = [
   "js/roadmap-model.js",
   "js/roadmap-repository.js",
   "js/roadmap-controller.js",
+  "js/chapter-completion-controller.js",
   "js/roadmap-admin-controller.js",
   "js/roadmap-admin-model.js",
   "js/learning-workspace-controller.js",
@@ -109,6 +110,7 @@ const requiredFiles = [
   "u.html",
   "README.md",
   "css/roadmap.css",
+  "css/chapter-completion.css",
   "css/roadmap-studio.css",
   "css/learning-workspace.css",
   "css/problem-workspace.css",
@@ -1507,6 +1509,39 @@ if (!proposedProblemsHandler.includes("closeDrawerSafely()") ||
 }
 if (!appSource.includes("mhProtectSetBraces") || !appSource.includes('.replaceAll("⦃", "\\\\left\\\\{")')) {
   fail("Phase 104 live math preview must preserve visible finite-set braces.");
+}
+
+// Phase 119: nested chapter UX + non-destructive Admin simulation.
+const roadmapCss119 = readFileSync(resolve(root, "css/roadmap.css"), "utf8");
+const roadmapController119 = readFileSync(resolve(root, "js/roadmap-controller.js"), "utf8");
+const chapterCompletion119 = readFileSync(resolve(root, "js/chapter-completion-controller.js"), "utf8");
+const gamificationAdmin119 = readFileSync(resolve(root, "js/gamification-admin-controller.js"), "utf8");
+if (!roadmapCss119.includes(".mh-roadmap-chapter-body[hidden]") ||
+    !roadmapCss119.includes(".mh-roadmap-chapter-card > .mh-roadmap-chapter-head") ||
+    !roadmapCss119.includes("position: static")) {
+  fail("Phase 119 roadmap chapters must hide deterministically and must not inherit the global sticky header.");
+}
+const chapterToggle119 = roadmapController119.slice(
+  roadmapController119.indexOf('for (const button of root.querySelectorAll("[data-roadmap-chapter-toggle]"))'),
+  roadmapController119.indexOf('for (const button of root.querySelectorAll("[data-roadmap-node-id]"))')
+);
+if (!chapterToggle119.includes("body.hidden = willCollapse") ||
+    !chapterToggle119.includes('card.classList.toggle("is-collapsed"') ||
+    !chapterToggle119.includes('button.setAttribute("aria-expanded"') ||
+    chapterToggle119.includes("render();")) {
+  fail("Phase 119 chapter collapse must update the existing DOM without re-rendering the full roadmap.");
+}
+if (!chapterCompletion119.includes("previewChapterCompletion") ||
+    !chapterCompletion119.includes("mathhard:admin-preview-chapter") ||
+    !chapterCompletion119.includes("SIMULARE ADMIN")) {
+  fail("Phase 119 chapter finale must expose a clearly marked, non-destructive Admin preview.");
+}
+if (!gamificationAdmin119.includes("Simulator UI") ||
+    !gamificationAdmin119.includes("0 DB writes") ||
+    !gamificationAdmin119.includes("mh_get_user_chapter_progress") ||
+    !gamificationAdmin119.includes('import("./chapter-completion-controller.js")') ||
+    !gamificationAdmin119.includes("Simulează unlock + confetti")) {
+  fail("Phase 119 Gamification Studio must expose chapter and achievement UI simulation without progress writes.");
 }
 
 if (failed) {

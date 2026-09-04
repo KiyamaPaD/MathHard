@@ -96,13 +96,14 @@ function reviewChapter(chapter) {
   }, 80);
 }
 
-function renderCompletion(payload, language) {
+function renderCompletion(payload, language, { simulation = false } = {}) {
   const chapter = payload?.chapter || {};
   const overlay = document.createElement("div");
   overlay.className = "mh-chapter-final-overlay";
   overlay.innerHTML = `
     <section class="mh-chapter-final" role="dialog" aria-modal="true" aria-labelledby="mhChapterFinalTitle">
       <button class="mh-chapter-final-close" type="button" data-chapter-final-close aria-label="${escapeHtml(textFor(language, "Închide", "Close"))}">×</button>
+      ${simulation ? `<div class="mh-chapter-final-simulation"><strong>${textFor(language, "SIMULARE ADMIN", "ADMIN PREVIEW")}</strong><span>${textFor(language, "Nu se modifică progresul, XP-ul sau achievements-urile.", "Progress, XP and achievements are not changed.")}</span></div>` : ""}
       <div class="mh-chapter-final-hero">
         <span class="mh-chapter-final-kicker">${textFor(language, "CAPITOL FINALIZAT", "CHAPTER COMPLETED")}</span>
         <div class="mh-chapter-final-trophy" aria-hidden="true">🏆</div>
@@ -145,9 +146,13 @@ function renderCompletion(payload, language) {
     if (event.target === overlay || event.target.closest("[data-chapter-final-close]")) closeOverlay();
   });
   overlay.querySelector("[data-chapter-final-continue]")?.addEventListener("click", () => {
+    if (simulation) return closeOverlay();
     if (!openRoadmapNode(chapter.next_node_id)) closeOverlay();
   });
-  overlay.querySelector("[data-chapter-final-review]")?.addEventListener("click", () => reviewChapter(chapter));
+  overlay.querySelector("[data-chapter-final-review]")?.addEventListener("click", () => {
+    if (simulation) return closeOverlay();
+    reviewChapter(chapter);
+  });
   document.body.appendChild(overlay);
   activeOverlay = overlay;
   requestAnimationFrame(() => overlay.classList.add("is-visible"));
@@ -171,3 +176,47 @@ export async function maybeShowChapterCompletion(supabase, lessonId, language = 
   })().finally(() => { requestPromise = null; });
   return requestPromise;
 }
+export function previewChapterCompletion(chapter = {}, language = "ro") {
+  const lang = language === "en" ? "en" : "ro";
+  const coreTotal = Math.max(0, number(chapter.core_lesson_total));
+  const checkTotal = Math.max(0, number(chapter.verification_total));
+  const synthesisTotal = Math.max(0, number(chapter.synthesis_total));
+  const practiceTotal = Math.max(0, number(chapter.practice_total));
+  const extensionTotal = Math.max(0, number(chapter.extension_total));
+  const conceptTotal = Math.max(0, number(chapter.concept_total));
+  const simulated = {
+    ...chapter,
+    title: String(chapter.title || (lang === "en" ? "Chapter preview" : "Previzualizare capitol")),
+    core_lesson_total: coreTotal,
+    core_lessons_completed: coreTotal,
+    verification_total: checkTotal,
+    verifications_passed: checkTotal,
+    synthesis_total: synthesisTotal,
+    syntheses_completed: synthesisTotal,
+    practice_total: practiceTotal,
+    problems_solved: Math.max(0, Math.min(practiceTotal, number(chapter.problems_solved))),
+    extension_total: extensionTotal,
+    extensions_completed: Math.max(0, Math.min(extensionTotal, number(chapter.extensions_completed))),
+    concept_total: conceptTotal,
+    concepts_mastered: Math.max(0, Math.min(conceptTotal, number(chapter.concepts_mastered))),
+    exploration_percent: Math.max(0, Math.min(100, number(chapter.exploration_percent))),
+    next_node_id: chapter.next_node_id || "__admin_preview__"
+  };
+  renderCompletion({ show: true, chapter: simulated }, lang, { simulation: true });
+  window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+    detail: {
+      kind: "achievement",
+      title: lang === "en" ? "Chapter completed" : "Capitol finalizat",
+      subtitle: simulated.title,
+      duration: 3600
+    }
+  }));
+  return simulated;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("mathhard:admin-preview-chapter", (event) => {
+    previewChapterCompletion(event.detail?.chapter || {}, event.detail?.language || document.documentElement.lang || "ro");
+  });
+}
+

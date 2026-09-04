@@ -47,6 +47,10 @@ function esc(value) {
     .replaceAll("'", "&#39;");
 }
 
+function unwrap(data) {
+  return Array.isArray(data) && data.length === 1 ? data[0] : data;
+}
+
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -87,6 +91,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     activeTab: "achievements",
     query: "",
     payload: { achievements: [], challenges: [], templates: [] },
+    chapters: [],
     editing: { type: null, id: null }
   };
 
@@ -96,6 +101,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         <button class="is-active" data-gamification-tab="achievements" type="button">Achievements</button>
         <button data-gamification-tab="challenges" type="button">Challenge-uri</button>
         <button data-gamification-tab="automation" type="button">Automatizări</button>
+        <button data-gamification-tab="simulator" type="button">Simulator UI</button>
       </div>
       <div class="mh-gamification-admin-actions">
         <input id="mhGamificationAdminSearch" type="search" placeholder="Caută..." autocomplete="off">
@@ -125,7 +131,9 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       ? state.payload.achievements
       : state.activeTab === "challenges"
         ? state.payload.challenges
-        : state.payload.templates;
+        : state.activeTab === "automation"
+          ? state.payload.templates
+          : [];
     const query = state.query.trim().toLowerCase();
     if (!query) return source;
     return source.filter((item) => [item.id, item.title_ro, item.title_en, item.metric]
@@ -152,6 +160,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
           </div>
         </div>
         <div class="mh-gamification-admin-row-actions">
+          <button class="btn small" data-row-action="preview" type="button">Testează</button>
           <button class="btn small" data-row-action="edit" type="button">Editează</button>
           <button class="btn small" data-row-action="duplicate" type="button">Duplică</button>
           <button class="btn small danger" data-row-action="delete" type="button">Șterge</button>
@@ -214,7 +223,73 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       </article>`;
   }
 
+  function selectedChapter(id = "") {
+    return state.chapters.find((chapter) => String(chapter.id) === String(id)) || state.chapters[0] || null;
+  }
+
+  function renderSimulator() {
+    const chapter = selectedChapter();
+    const conceptTotal = Array.isArray(chapter?.concept_ids) ? chapter.concept_ids.length : Number(chapter?.concept_total || 0);
+    const practiceTotal = Number(chapter?.practice_total || 0);
+    const extensionTotal = Number(chapter?.extension_total || 0);
+    const defaultSolved = Math.min(practiceTotal, Number(chapter?.problems_solved || 0));
+    const defaultExtensions = Math.min(extensionTotal, Number(chapter?.extensions_completed || 0));
+    const exploration = practiceTotal + conceptTotal + extensionTotal > 0
+      ? Math.round(100 * (defaultSolved + defaultExtensions) / (practiceTotal + conceptTotal + extensionTotal))
+      : 0;
+
+    listHost.innerHTML = `
+      <section class="mh-gamification-simulator">
+        <header>
+          <div><span>ADMIN ONLY</span><h3>Simulator UI</h3><p>Preview-uri locale. Nu scriu progres, XP, claims sau achievements în baza de date.</p></div>
+          <strong>0 DB writes</strong>
+        </header>
+
+        <div class="mh-gamification-simulator-grid">
+          <form class="mh-gamification-sim-card" data-sim-form="chapter">
+            <div class="mh-gamification-sim-card-head"><span>🏁</span><div><strong>Final de capitol</strong><small>Testează overlay-ul, confetti-ul și layout-ul fără să finalizezi capitolul real.</small></div></div>
+            <label>Capitol
+              <select name="chapter_id" data-sim-chapter-select>
+                ${state.chapters.map((item) => `<option value="${esc(item.id)}">${esc(item.title || item.title_ro || item.id)}</option>`).join("")}
+              </select>
+            </label>
+            ${chapter ? `
+            <div class="mh-gamification-sim-fields">
+              <label>Probleme rezolvate<input name="problems_solved" type="number" min="0" max="${practiceTotal}" value="${defaultSolved}"></label>
+              <label>Concepte stăpânite<input name="concepts_mastered" type="number" min="0" max="${conceptTotal}" value="${Math.min(conceptTotal, Math.max(0, conceptTotal - 2))}"></label>
+              <label>Extensii explorate<input name="extensions_completed" type="number" min="0" max="${extensionTotal}" value="${defaultExtensions}"></label>
+              <label>Explorare %<input name="exploration_percent" type="number" min="0" max="100" value="${exploration}"></label>
+              <label>Accuracy verificări %<input name="verification_accuracy" type="number" min="0" max="100" step="0.1" value="94"></label>
+              <label>Probleme fără hint<input name="problems_without_hints" type="number" min="0" max="${practiceTotal}" value="${Math.min(defaultSolved, Math.max(0, defaultSolved - 2))}"></label>
+              <label>Concept puternic<input name="strongest_concept" value="Reuniune și intersecție"></label>
+              <label>Concept de revăzut<input name="review_concept" value="Diagrame cu 3 mulțimi"></label>
+            </div>` : `<div class="mh-admin-empty-state"><strong>Niciun capitol disponibil</strong><span>Rulează Phase 118C și reîncarcă Studio-ul.</span></div>`}
+            <button class="btn" type="submit" ${chapter ? "" : "disabled"}>Simulează CAPITOL FINALIZAT</button>
+          </form>
+
+          <form class="mh-gamification-sim-card" data-sim-form="achievement">
+            <div class="mh-gamification-sim-card-head"><span>✦</span><div><strong>Achievement unlock</strong><small>Rulează exact celebrarea vizuală pentru orice achievement, inclusiv Legendary/secret.</small></div></div>
+            <label>Achievement
+              <select name="achievement_id">
+                ${state.payload.achievements.map((item) => `<option value="${esc(item.id)}">${esc(item.icon || "✦")} ${esc(item.title_ro || item.id)} · ${esc(item.rarity || "common")}</option>`).join("")}
+              </select>
+            </label>
+            <button class="btn" type="submit" ${state.payload.achievements.length ? "" : "disabled"}>Simulează unlock + confetti</button>
+            <small class="mh-gamification-sim-note">În simulator, achievement-ul nu este acordat și XP-ul nu este modificat. După animație rămâi exact în Admin Studio.</small>
+          </form>
+        </div>
+      </section>`;
+  }
+
   function renderList() {
+    host.classList.toggle("is-simulator", state.activeTab === "simulator");
+    search.hidden = state.activeTab === "simulator";
+    host.querySelector("[data-gamification-action='new']")?.toggleAttribute("hidden", state.activeTab === "simulator");
+    if (state.activeTab === "simulator") {
+      editorHost.innerHTML = "";
+      renderSimulator();
+      return;
+    }
     const items = currentItems();
     if (!items.length) {
       listHost.innerHTML = `<div class="mh-admin-empty-state"><strong>Niciun rezultat</strong><span>Schimbă filtrul sau creează un item nou.</span></div>`;
@@ -351,6 +426,16 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     setFeedback("Se încarcă...", "loading");
     try {
       applyPayload(await loadGamificationStudio(supabase));
+      try {
+        const { data: chapterData, error: chapterError } = await supabase.rpc("mh_get_user_chapter_progress", { p_locale: "ro" });
+        if (chapterError) throw chapterError;
+        const chapterPayload = unwrap(chapterData) || {};
+        state.chapters = Array.isArray(chapterPayload.chapters) ? chapterPayload.chapters : [];
+      } catch (chapterError) {
+        console.warn("Chapter simulator targets unavailable:", chapterError);
+        state.chapters = [];
+      }
+      renderList();
       setFeedback("Recompense actualizate.", "success");
     } catch (error) {
       console.error("Gamification Studio load failed:", error);
@@ -400,11 +485,30 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     const rowAction = event.target.closest("[data-row-action]");
     if (!rowAction) return;
     const id = rowAction.closest("[data-id]")?.dataset.id;
-    const source = state.activeTab === "achievements" ? state.payload.achievements : state.activeTab === "challenges" ? state.payload.challenges : state.payload.templates;
+    const source = state.activeTab === "achievements"
+      ? state.payload.achievements
+      : state.activeTab === "challenges"
+        ? state.payload.challenges
+        : state.activeTab === "automation"
+          ? state.payload.templates
+          : [];
     const item = source.find((row) => row.id === id);
     if (!item) return;
 
     const name = rowAction.dataset.rowAction;
+    if (name === "preview" && state.activeTab === "achievements") {
+      window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+        detail: {
+          kind: "achievement",
+          title: "Achievement deblocat",
+          subtitle: `${item.icon || "✦"} ${item.title_ro || item.id} · ${item.rarity || "common"}`,
+          xp: Number(item.reward_xp || 0),
+          duration: 4200
+        }
+      }));
+      setFeedback(`Preview local: ${item.title_ro || item.id}. Nicio modificare salvată.`, "success");
+      return;
+    }
     if (name === "edit") return openEditor(item);
     if (name === "duplicate") return openEditor(item, true);
     if (name === "generate") {
@@ -439,10 +543,65 @@ export function createGamificationAdminController({ host, supabase } = {}) {
   });
 
   host.addEventListener("submit", (event) => {
+    const simForm = event.target.closest("[data-sim-form]");
+    if (simForm) {
+      event.preventDefault();
+      if (simForm.dataset.simForm === "achievement") {
+        const id = String(new FormData(simForm).get("achievement_id") || "");
+        const achievement = state.payload.achievements.find((item) => String(item.id) === id);
+        if (!achievement) return;
+        window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
+          detail: {
+            kind: "achievement",
+            title: "Achievement deblocat",
+            subtitle: `${achievement.icon || "✦"} ${achievement.title_ro || achievement.id} · ${achievement.rarity || "common"}`,
+            xp: Number(achievement.reward_xp || 0),
+            duration: 4200
+          }
+        }));
+        setFeedback(`Simulare: ${achievement.title_ro || achievement.id}. Nicio modificare salvată.`, "success");
+        return;
+      }
+
+      const raw = readForm(simForm);
+      const chapter = selectedChapter(raw.chapter_id);
+      if (!chapter) return;
+      const conceptTotal = Array.isArray(chapter.concept_ids) ? chapter.concept_ids.length : Number(chapter.concept_total || 0);
+      const preview = {
+        ...chapter,
+        concept_total: conceptTotal,
+        problems_solved: Number(raw.problems_solved || 0),
+        concepts_mastered: Number(raw.concepts_mastered || 0),
+        extensions_completed: Number(raw.extensions_completed || 0),
+        exploration_percent: Number(raw.exploration_percent || 0),
+        verification_accuracy: Number(raw.verification_accuracy || 0),
+        problems_without_hints: Number(raw.problems_without_hints || 0),
+        strongest_concept: raw.strongest_concept ? { title: raw.strongest_concept } : null,
+        review_concept: raw.review_concept ? { title: raw.review_concept } : null
+      };
+      void import("./chapter-completion-controller.js")
+        .then((module) => module.previewChapterCompletion(preview, "ro"))
+        .catch((error) => {
+          console.error("Chapter preview could not be opened:", error);
+          setFeedback("Preview-ul de capitol nu a putut fi deschis.", "error");
+        });
+      setFeedback(`Simulare final capitol: ${chapter.title || chapter.id}. Nicio modificare salvată.`, "success");
+      return;
+    }
+
     const form = event.target.closest(".mh-gamification-form");
     if (!form) return;
     event.preventDefault();
     void persist(form);
+  });
+
+  host.addEventListener("change", (event) => {
+    const select = event.target.closest("[data-sim-chapter-select]");
+    if (!select || state.activeTab !== "simulator") return;
+    const chosen = selectedChapter(select.value);
+    if (!chosen) return;
+    state.chapters = [chosen, ...state.chapters.filter((item) => item.id !== chosen.id)];
+    renderSimulator();
   });
 
   search.addEventListener("input", () => {
@@ -460,6 +619,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       if (!isAdmin) {
         state.loaded = false;
         state.payload = { achievements: [], challenges: [], templates: [] };
+        state.chapters = [];
         closeEditor();
         renderList();
       }

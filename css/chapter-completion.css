@@ -120,3 +120,24 @@
   .mh-chapter-final-strengths > div { grid-template-columns: 1fr; }
   .mh-chapter-final-actions .btn { width: 100%; }
 }
+
+/* Phase 119 — non-destructive admin preview marker. */
+.mh-chapter-final-simulation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -4px 42px 14px;
+  padding: 7px 10px;
+  border: 1px dashed color-mix(in srgb, #f59e0b 46%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, #f59e0b 9%, transparent);
+  color: var(--muted);
+  font-size: .72rem;
+  text-align: center;
+}
+.mh-chapter-final-simulation strong { color: #f59e0b; letter-spacing: .06em; }
+@media (max-width: 640px) {
+  .mh-chapter-final-simulation { margin-left: 32px; margin-right: 32px; border-radius: 14px; }
+}
