@@ -2559,3 +2559,155 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
   .mh-venn-difference-card,
   .mh-venn-complement-card{padding:12px;}
 }
+
+/* MathHard Phase 115 — Lesson 7 Venn–Euler synthesis + formula toggles */
+.mh-l7-venn-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin:16px 0 20px;
+}
+.mh-l7-venn-card,
+.mh-l7-three-card,
+.mh-l7-region-card{
+  border:1px solid color-mix(in srgb,var(--border) 86%,transparent);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  padding:14px;
+  box-shadow:0 10px 24px rgba(0,0,0,.08);
+}
+.mh-l7-venn-card h4,
+.mh-l7-three-card h4,
+.mh-l7-region-card h4{
+  margin:0 0 4px;
+}
+.mh-l7-venn-card p,
+.mh-l7-three-card p,
+.mh-l7-region-card p{
+  margin:0 0 10px;
+  color:var(--muted);
+}
+.mh-l7-venn-svg,
+.mh-l7-three-svg,
+.mh-l7-count-svg{
+  display:block;
+  width:100%;
+  max-width:520px;
+  height:auto;
+  margin:0 auto;
+  overflow:visible;
+}
+.mh-l7-universe{
+  fill:color-mix(in srgb,var(--card) 82%,transparent);
+  stroke:color-mix(in srgb,var(--text) 38%,var(--border));
+  stroke-width:2.2;
+}
+.mh-l7-outline{
+  fill:color-mix(in srgb,var(--card) 26%,transparent);
+  stroke:color-mix(in srgb,var(--text) 50%,var(--border));
+  stroke-width:2.5;
+}
+.mh-l7-label{
+  fill:var(--text);
+  font:700 18px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-l7-region-label{
+  fill:color-mix(in srgb,var(--text) 84%,var(--muted));
+  font:650 13px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-l7-region-number{
+  fill:var(--text);
+  font:800 16px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  paint-order:stroke;
+  stroke:color-mix(in srgb,var(--card) 90%,transparent);
+  stroke-width:4px;
+  stroke-linejoin:round;
+}
+.mh-l7-highlight-a{fill:color-mix(in srgb,#4f8cff 56%,transparent);}
+.mh-l7-highlight-b{fill:color-mix(in srgb,#9b6bff 54%,transparent);}
+.mh-l7-highlight-c{fill:color-mix(in srgb,#46b96b 54%,transparent);}
+.mh-l7-highlight-union{fill:color-mix(in srgb,#4f8cff 38%,transparent);}
+.mh-l7-highlight-intersection{fill:color-mix(in srgb,#d264c7 62%,transparent);}
+.mh-l7-highlight-outside{fill:color-mix(in srgb,#e6b94d 46%,transparent);}
+.mh-l7-highlight-distribute{fill:color-mix(in srgb,#46b96b 58%,transparent);}
+.mh-l7-venn-toggle{
+  margin:14px 0 18px;
+  border:1px solid color-mix(in srgb,var(--border) 88%,transparent);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+  overflow:hidden;
+}
+.mh-l7-venn-toggle > summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  cursor:pointer;
+  list-style:none;
+  padding:11px 13px;
+  font-weight:700;
+  user-select:none;
+}
+.mh-l7-venn-toggle > summary::-webkit-details-marker{display:none;}
+.mh-l7-venn-toggle > summary:hover{
+  background:color-mix(in srgb,var(--accent) 8%,transparent);
+}
+.mh-l7-toggle-formula{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.mh-l7-toggle-action{
+  flex:0 0 auto;
+  border:1px solid color-mix(in srgb,var(--accent) 36%,var(--border));
+  border-radius:999px;
+  padding:5px 9px;
+  color:color-mix(in srgb,var(--accent) 76%,var(--text));
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  font-size:.78rem;
+  line-height:1;
+}
+.mh-l7-toggle-action::before{content:"Arată diagrama";}
+.mh-l7-venn-toggle[open] .mh-l7-toggle-action::before{content:"Ascunde diagrama";}
+.mh-l7-toggle-body{
+  border-top:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  padding:12px;
+}
+.mh-l7-toggle-body .mh-l7-venn-grid{margin:0;}
+.mh-l7-toggle-note{
+  margin:8px 0 0;
+  text-align:center;
+  color:var(--muted);
+  font-size:.88rem;
+}
+.mh-l7-three-card{
+  max-width:680px;
+  margin:16px auto 20px;
+}
+.mh-l7-count-card{
+  max-width:660px;
+  margin:14px auto 18px;
+}
+.mh-l7-count-svg .mh-l7-count{
+  fill:var(--text);
+  font:800 17px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  paint-order:stroke;
+  stroke:color-mix(in srgb,var(--card) 92%,transparent);
+  stroke-width:4px;
+  stroke-linejoin:round;
+}
+.mh-l7-region-key{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px 14px;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:.88rem;
+}
+@media (max-width:760px){
+  .mh-l7-venn-grid{grid-template-columns:1fr;}
+  .mh-l7-region-key{grid-template-columns:1fr;}
+  .mh-l7-venn-toggle > summary{align-items:flex-start;}
+  .mh-l7-venn-card,
+  .mh-l7-three-card,
+  .mh-l7-region-card{padding:12px;}
+}
