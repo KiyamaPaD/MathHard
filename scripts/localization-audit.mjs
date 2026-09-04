@@ -85,8 +85,8 @@ requireTokens(shell, "Application shell copy", [
 requireTokens(analytics, "Analytics workspace copy", [
   'title: "Analiză"',
   'title: "Analytics"',
-  'mastery: "Stăpânire pe capitole"',
-  'mastery: "Mastery by chapter"',
+  'mastery: "Stăpânire pe zone de conținut"',
+  'mastery: "Mastery by content area"',
   'hints: "indicii"',
   'hints: "hints"'
 ]);

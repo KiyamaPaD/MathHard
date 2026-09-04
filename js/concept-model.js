@@ -29,7 +29,7 @@ function safeConceptType(value) {
 
 function safeRelationType(value) {
   const type = asText(value).toLowerCase();
-  return new Set(["primary", "supporting", "prerequisite", "assessed"]).has(type)
+  return new Set(["primary", "supporting", "prerequisite", "assessed", "reference"]).has(type)
     ? type
     : "supporting";
 }
@@ -94,6 +94,7 @@ export function normalizeConceptCatalog(payload) {
       content_type: asText(mapping?.content_type).toLowerCase(),
       content_id: asText(mapping?.content_id),
       relation_type: safeRelationType(mapping?.relation_type),
+      evidence_eligible: asBoolean(mapping?.evidence_eligible, safeRelationType(mapping?.relation_type) !== "reference"),
       position: asNumber(mapping?.position)
     }))
     .filter((mapping) => (

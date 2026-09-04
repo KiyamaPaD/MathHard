@@ -779,3 +779,121 @@
     min-height: 44px;
   }
 }
+
+/* MathHard Phase 118B — nested roadmap chapters */
+.mh-roadmap-section-content {
+  display: grid;
+  gap: 14px;
+}
+
+.mh-roadmap-chapter-card {
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card) 97%, var(--accent) 3%);
+  overflow: hidden;
+}
+
+.mh-roadmap-chapter-card.is-complete {
+  border-color: color-mix(in srgb, #34d399 38%, var(--border));
+}
+
+.mh-roadmap-chapter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 15px;
+}
+
+.mh-roadmap-chapter-head h4 {
+  margin: 2px 0 0;
+  font-size: 1.02rem;
+}
+
+.mh-roadmap-chapter-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.mh-roadmap-chapter-kicker {
+  display: block;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.mh-roadmap-chapter-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+
+.mh-roadmap-chapter-score {
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.mh-roadmap-chapter-score strong { font-size: .92rem; }
+.mh-roadmap-chapter-score span { color: var(--muted); font-size: .66rem; }
+
+.mh-roadmap-chapter-toggle {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mh-roadmap-chapter-body {
+  display: grid;
+  gap: 11px;
+  padding: 0 12px 12px;
+}
+
+.mh-roadmap-chapter-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.mh-roadmap-chapter-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.mh-roadmap-chapter-card.is-complete .mh-roadmap-chapter-progress i {
+  background: #34d399;
+}
+
+.mh-roadmap-chapter-extension {
+  display: grid;
+  gap: 7px;
+  padding-top: 9px;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.mh-roadmap-chapter-extension-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .mh-roadmap-chapter-head { align-items: flex-start; }
+  .mh-roadmap-chapter-score span { display: none; }
+}

@@ -69,6 +69,25 @@ export function normalizeRoadmapCatalog(payload) {
       position: asNumber(node?.position),
       content_exists: node?.content_exists !== false
     })),
+    chapters: sortByPosition(roadmap?.chapters).map((chapter) => ({
+      id: asText(chapter?.id),
+      roadmap_id: asText(chapter?.roadmap_id || roadmap?.id),
+      section_id: asText(chapter?.section_id),
+      title_ro: asText(chapter?.title_ro),
+      title_en: asText(chapter?.title_en),
+      description_ro: asText(chapter?.description_ro),
+      description_en: asText(chapter?.description_en),
+      position: asNumber(chapter?.position),
+      active: chapter?.active !== false,
+      members: sortByPosition(chapter?.members).map((member) => ({
+        content_type: asText(member?.content_type).toLowerCase(),
+        content_id: asText(member?.content_id),
+        role: asText(member?.role),
+        required_for_completion: member?.required_for_completion === true,
+        requires_verification: member?.requires_verification === true,
+        position: asNumber(member?.position)
+      }))
+    })).filter((chapter) => chapter.id && chapter.active),
     edges: asArray(roadmap?.edges).map((edge) => ({
       roadmap_id: asText(edge?.roadmap_id || roadmap?.id),
       prerequisite_node_id: asText(edge?.prerequisite_node_id),
@@ -256,6 +275,31 @@ export function buildRoadmapView({
       .map((node) => states.get(node.id))
       .filter(Boolean);
 
+    const chapters = sortByPosition(roadmap.chapters)
+      .filter((chapter) => chapter.section_id === section.id)
+      .map((chapter) => {
+        const memberByKey = new Map(chapter.members.map((member) => [`${member.content_type}:${member.content_id}`, member]));
+        const chapterNodes = nodeStates.filter((state) => memberByKey.has(`${state.node.node_type}:${state.node.content_id}`));
+        const requiredNodes = chapterNodes.filter((state) => state.node.required !== false && memberByKey.get(`${state.node.node_type}:${state.node.content_id}`)?.role !== "extension");
+        const extensionNodes = chapterNodes.filter((state) => memberByKey.get(`${state.node.node_type}:${state.node.content_id}`)?.role === "extension");
+        return {
+          ...chapter,
+          title: translated(
+            language === "en" ? chapter.title_en : chapter.title_ro,
+            language === "en" ? chapter.title_ro : chapter.title_en
+          ),
+          description: translated(
+            language === "en" ? chapter.description_en : chapter.description_ro,
+            language === "en" ? chapter.description_ro : chapter.description_en
+          ),
+          nodes: chapterNodes,
+          coreNodes: chapterNodes.filter((state) => memberByKey.get(`${state.node.node_type}:${state.node.content_id}`)?.role !== "extension"),
+          extensionNodes,
+          progress: progressStats(new Map(requiredNodes.map((state) => [state.node.id, state]))),
+          extensionProgress: progressStats(new Map(extensionNodes.map((state) => [state.node.id, state])))
+        };
+      });
+    const groupedNodeIds = new Set(chapters.flatMap((chapter) => chapter.nodes.map((state) => state.node.id)));
     return {
       ...section,
       title: translated(
@@ -267,6 +311,8 @@ export function buildRoadmapView({
         language === "en" ? section.description_ro : section.description_en
       ),
       nodes: nodeStates,
+      chapters,
+      ungroupedNodes: nodeStates.filter((state) => !groupedNodeIds.has(state.node.id)),
       progress: progressStats(new Map(nodeStates.map((state) => [state.node.id, state])))
     };
   });

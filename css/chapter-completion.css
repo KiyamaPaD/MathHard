@@ -1,0 +1,122 @@
+.mh-chapter-final-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10080;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: auto;
+  background: rgba(3, 7, 18, .78);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.mh-chapter-final-overlay.is-visible { opacity: 1; }
+
+.mh-chapter-final {
+  position: relative;
+  width: min(900px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid color-mix(in srgb, var(--accent, #7c8bff) 38%, var(--border));
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--card, #111827) 96%, transparent);
+  box-shadow: 0 28px 90px rgba(0,0,0,.42);
+  color: var(--text);
+}
+
+.mh-chapter-final-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(148,163,184,.07);
+  color: var(--muted);
+  font: inherit;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.mh-chapter-final-hero { text-align: center; }
+.mh-chapter-final-kicker {
+  display: block;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
+.mh-chapter-final-trophy { margin: 8px 0 2px; font-size: 3rem; }
+.mh-chapter-final-hero h2 { margin: 0; font-size: clamp(2rem, 6vw, 3.5rem); }
+.mh-chapter-final-hero p { margin: 7px 0 0; color: var(--muted); font-size: 1.02rem; }
+
+.mh-chapter-final-statuses {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+}
+.mh-chapter-final-statuses > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(148,163,184,.035);
+}
+.mh-chapter-final-statuses > div > span { font-size: 1.35rem; }
+.mh-chapter-final-statuses strong,
+.mh-chapter-final-statuses small { display: block; }
+.mh-chapter-final-statuses small { margin-top: 2px; color: var(--muted); line-height: 1.35; }
+.mh-chapter-final-statuses .is-complete { border-color: rgba(52,211,153,.3); }
+.mh-chapter-final-statuses .is-exploration { border-color: rgba(124,139,255,.28); }
+
+.mh-chapter-final-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 9px;
+}
+.mh-chapter-final-metric,
+.mh-chapter-final-insight {
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(148,163,184,.025);
+}
+.mh-chapter-final-metric span,
+.mh-chapter-final-insight span { color: var(--muted); font-size: .78rem; }
+.mh-chapter-final-metric strong { font-size: 1.16rem; }
+
+.mh-chapter-final-strengths {
+  padding-top: 4px;
+}
+.mh-chapter-final-strengths h3 { margin: 0 0 10px; font-size: 1rem; }
+.mh-chapter-final-strengths > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 9px;
+}
+
+.mh-chapter-final-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 3px;
+}
+.mh-chapter-final-primary { min-width: min(100%, 310px); }
+
+@media (max-width: 700px) {
+  .mh-chapter-final-overlay { padding: 10px; align-items: start; }
+  .mh-chapter-final { margin: 12px 0; padding: 24px 14px 18px; border-radius: 22px; }
+  .mh-chapter-final-statuses,
+  .mh-chapter-final-metrics,
+  .mh-chapter-final-strengths > div { grid-template-columns: 1fr; }
+  .mh-chapter-final-actions .btn { width: 100%; }
+}

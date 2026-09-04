@@ -154,3 +154,53 @@ export function heatLevel(count, maximum) {
   if (ratio <= 0.75) return 3;
   return 4;
 }
+
+export function normalizeChapterProgressPayload(payload = {}) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const summary = source.summary && typeof source.summary === "object" ? source.summary : {};
+  return {
+    available: source.available !== false,
+    summary: {
+      total: number(summary.total),
+      completed: number(summary.completed),
+      inProgress: number(summary.in_progress),
+      notStarted: number(summary.not_started)
+    },
+    chapters: Array.isArray(source.chapters) ? source.chapters.map((row) => ({
+      id: text(row.id),
+      title: text(row.title, row.id || "—"),
+      description: text(row.description),
+      status: ["completed", "in_progress", "not_started"].includes(row.status) ? row.status : "not_started",
+      coreLessonTotal: number(row.core_lesson_total),
+      coreLessonsCompleted: number(row.core_lessons_completed),
+      verificationTotal: number(row.verification_total),
+      verificationsPassed: number(row.verifications_passed),
+      synthesisTotal: number(row.synthesis_total),
+      synthesesCompleted: number(row.syntheses_completed),
+      practiceTotal: number(row.practice_total),
+      problemsSolved: number(row.problems_solved),
+      extensionTotal: number(row.extension_total),
+      extensionsCompleted: number(row.extensions_completed),
+      conceptIds: Array.isArray(row.concept_ids) ? row.concept_ids.map((value) => text(value)).filter(Boolean) : [],
+      conceptTotal: 0,
+      conceptsMastered: 0,
+      activity: number(row.activity)
+    })) : []
+  };
+}
+
+export function attachChapterConceptProgress(chapterProgress = {}, conceptMastery = {}) {
+  const masteryById = new Map((Array.isArray(conceptMastery?.concepts) ? conceptMastery.concepts : [])
+    .map((concept) => [concept.id, concept]));
+  return {
+    ...chapterProgress,
+    chapters: (Array.isArray(chapterProgress?.chapters) ? chapterProgress.chapters : []).map((chapter) => {
+      const concepts = chapter.conceptIds.map((id) => masteryById.get(id)).filter(Boolean);
+      return {
+        ...chapter,
+        conceptTotal: concepts.length,
+        conceptsMastered: concepts.filter((concept) => concept.status === "mastered").length
+      };
+    })
+  };
+}

@@ -6,7 +6,22 @@ export const ACHIEVEMENT_METRICS = Object.freeze([
   "perfect_solutions",
   "current_streak",
   "longest_streak",
-  "accuracy"
+  "accuracy",
+  "chapter_checks_completed",
+  "chapter_completed",
+  "chapters_completed",
+  "extensions_completed",
+  "chapter_practice_completed"
+]);
+
+export const ACHIEVEMENT_CATEGORIES = Object.freeze([
+  "lessons",
+  "problems",
+  "chapters",
+  "exploration",
+  "exams",
+  "global",
+  "secret"
 ]);
 
 export const CHALLENGE_METRICS = Object.freeze([
@@ -64,13 +79,16 @@ export function normalizeAchievementDraft(input = {}) {
     description_ro: String(input.description_ro || "").trim(),
     description_en: String(input.description_en || input.description_ro || "").trim(),
     icon: String(input.icon || "✦").trim().slice(0, 12) || "✦",
-    category: ["progress", "consistency", "accuracy", "exam", "xp"].includes(input.category)
+    category: ACHIEVEMENT_CATEGORIES.includes(input.category)
       ? input.category
-      : "progress",
+      : "global",
     criteria: {
       metric,
       threshold: Number.isFinite(threshold) ? Math.max(0, threshold) : 1,
-      ...(metric === "accuracy" ? { min_attempts: minAttempts } : {})
+      ...(metric === "accuracy" ? { min_attempts: minAttempts } : {}),
+      ...(["chapter_checks_completed", "chapter_completed", "chapter_practice_completed"].includes(metric)
+        ? { chapter_id: String(criteria.chapter_id ?? input.chapter_id ?? "").trim() }
+        : {})
     },
     reward_xp: integer(input.reward_xp, 0, 0, 100000),
     rarity: ["common", "uncommon", "rare", "epic", "legendary"].includes(input.rarity)

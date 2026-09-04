@@ -35,6 +35,11 @@ const COPY = {
     completed: "Finalizat",
     achievements: "Realizări",
     achievementsHint: "Deblocate automat pe baza progresului tău.",
+    achievementSections: { lessons: "Lecții", problems: "Probleme", chapters: "Capitole", exploration: "Explorare", exams: "Examene", global: "Globale", secret: "Secrete" },
+    secretProgress: "Secrete descoperite",
+    secretHint: "Unele realizări nu își dezvăluie condiția până când le descoperi.",
+    mysteryTitle: "???",
+    progressDetails: "Vezi ce mai lipsește",
     unlocked: "Deblocat",
     locked: "În progres",
     saving: "Se salvează…",
@@ -65,6 +70,11 @@ const COPY = {
     completed: "Completed",
     achievements: "Achievements",
     achievementsHint: "Unlocked automatically from your progress.",
+    achievementSections: { lessons: "Lessons", problems: "Problems", chapters: "Chapters", exploration: "Exploration", exams: "Exams", global: "Global", secret: "Secrets" },
+    secretProgress: "Secrets discovered",
+    secretHint: "Some achievements keep their objective hidden until you discover them.",
+    mysteryTitle: "???",
+    progressDetails: "See what remains",
     unlocked: "Unlocked",
     locked: "In progress",
     saving: "Saving…",
@@ -185,30 +195,70 @@ function renderChallenge(data) {
   `;
 }
 
+function achievementSection(category) {
+  const value = String(category || "global").toLowerCase();
+  const aliases = {
+    progress: "global",
+    consistency: "global",
+    accuracy: "problems",
+    exam: "exams",
+    xp: "global"
+  };
+  return ["lessons", "problems", "chapters", "exploration", "exams", "global", "secret"].includes(value)
+    ? value
+    : (aliases[value] || "global");
+}
+
+function renderAchievementCard(achievement, data) {
+  const t = copy();
+  const progress = achievementProgress(achievement, data.summary);
+  const secretLocked = achievement.hiddenUntilUnlocked && !achievement.unlocked;
+  const detailItems = secretLocked ? [] : achievement.progressItems;
+  return `
+    <article class="mh-game-achievement ${achievement.unlocked ? "is-unlocked" : "is-locked"} ${secretLocked ? "is-secret" : ""}" data-rarity="${secretLocked ? "mystery" : escapeHtml(achievement.rarity)}">
+      <div class="mh-game-achievement-icon" aria-hidden="true">${secretLocked ? "?" : escapeHtml(achievement.icon)}</div>
+      <div class="mh-game-achievement-copy">
+        <div><strong>${secretLocked ? t.mysteryTitle : escapeHtml(achievement.title)}</strong><span>${achievement.unlocked ? t.unlocked : t.locked}</span></div>
+        <p>${secretLocked ? "••••••••••" : escapeHtml(achievement.description)}</p>
+        ${!secretLocked && achievement.rewardXp > 0 ? `<small class="mh-game-achievement-reward">+${achievement.rewardXp} XP</small>` : ""}
+        ${achievement.unlocked || secretLocked ? "" : `
+          <div class="mh-game-achievement-progress">
+            <div class="mh-game-progress-track"><i style="width:${progress.percent}%"></i></div>
+            <small>${formatNumber(progress.current, 1)} / ${formatNumber(progress.target, 1)}</small>
+          </div>
+        `}
+        ${detailItems.length ? `
+          <details class="mh-game-achievement-details">
+            <summary>${t.progressDetails}</summary>
+            <div>${detailItems.map((item) => `<span class="${item.completed ? "is-done" : ""}"><i aria-hidden="true">${item.completed ? "✓" : "○"}</i>${escapeHtml(item.title)}</span>`).join("")}</div>
+          </details>
+        ` : ""}
+      </div>
+    </article>`;
+}
+
 function renderAchievements(data) {
   const t = copy();
+  const order = ["lessons", "problems", "chapters", "exploration", "exams", "global", "secret"];
+  const groups = new Map(order.map((key) => [key, []]));
+  data.achievements.forEach((achievement) => groups.get(achievementSection(achievement.category))?.push(achievement));
+
   return `
     <section class="mh-game-card mh-game-achievements-section">
       <div class="mh-game-card-head"><div><h3>${t.achievements}</h3><p>${t.achievementsHint}</p></div></div>
-      <div class="mh-game-achievements-grid">
-        ${data.achievements.map((achievement) => {
-          const progress = achievementProgress(achievement, data.summary);
+      <div class="mh-game-achievement-groups">
+        ${order.map((key) => {
+          const items = groups.get(key) || [];
+          if (!items.length) return "";
+          const isSecret = key === "secret";
           return `
-            <article class="mh-game-achievement ${achievement.unlocked ? "is-unlocked" : "is-locked"}" data-rarity="${escapeHtml(achievement.rarity)}">
-              <div class="mh-game-achievement-icon" aria-hidden="true">${escapeHtml(achievement.icon)}</div>
-              <div class="mh-game-achievement-copy">
-                <div><strong>${escapeHtml(achievement.title)}</strong><span>${achievement.unlocked ? t.unlocked : t.locked}</span></div>
-                <p>${escapeHtml(achievement.description)}</p>
-                ${achievement.rewardXp > 0 ? `<small class="mh-game-achievement-reward">+${achievement.rewardXp} XP</small>` : ""}
-                ${achievement.unlocked ? "" : `
-                  <div class="mh-game-achievement-progress">
-                    <div class="mh-game-progress-track"><i style="width:${progress.percent}%"></i></div>
-                    <small>${formatNumber(progress.current, 1)} / ${formatNumber(progress.target, 1)}</small>
-                  </div>
-                `}
+            <section class="mh-game-achievement-group" data-achievement-group="${key}">
+              <div class="mh-game-achievement-group-head">
+                <div><h4>${escapeHtml(t.achievementSections[key])}</h4>${isSecret ? `<p>${escapeHtml(t.secretHint)}</p>` : ""}</div>
+                ${isSecret ? `<strong>${t.secretProgress}: ${data.summary.unlockedSecretAchievements} / ${data.summary.totalSecretAchievements}</strong>` : `<span>${items.filter((item) => item.unlocked).length} / ${items.length}</span>`}
               </div>
-            </article>
-          `;
+              <div class="mh-game-achievements-grid">${items.map((achievement) => renderAchievementCard(achievement, data)).join("")}</div>
+            </section>`;
         }).join("")}
       </div>
     </section>

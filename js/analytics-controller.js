@@ -57,7 +57,19 @@ const COPY = {
     activityHint: "Activitate și XP în perioada selectată",
     heatmap: "Consecvență",
     heatmapHint: "Ultimele 365 de zile",
-    mastery: "Stăpânire pe capitole",
+    chapterProgress: "Capitole",
+    chapterProgressHint: "Finalizarea capitolului urmărește lecțiile obligatorii, verificările și sinteza. Problemele și extensiile rămân progres separat.",
+    chapterDone: "Terminate",
+    chapterInProgress: "În progres",
+    chapterNotStarted: "Neîncepute",
+    chapterStatus: { completed: "Terminat", in_progress: "În progres", not_started: "Neînceput" },
+    chapterCoreLessons: "Lecții obligatorii",
+    chapterChecks: "Verificări",
+    chapterSynthesis: "Sinteză",
+    chapterPractice: "Probleme",
+    chapterConcepts: "Concepte stăpânite",
+    chapterExtensions: "Extensii",
+    mastery: "Stăpânire pe zone de conținut",
     conceptMastery: "Stăpânire pe concepte",
     conceptMasteryHint: "Calculată din activitatea și rezultatele tale",
     conceptStrengths: "Concepte solide",
@@ -184,7 +196,19 @@ const COPY = {
     activityHint: "Activity and XP in the selected range",
     heatmap: "Consistency",
     heatmapHint: "Last 365 days",
-    mastery: "Mastery by chapter",
+    chapterProgress: "Chapters",
+    chapterProgressHint: "Chapter completion tracks required lessons, checks and synthesis. Practice and extensions stay separate.",
+    chapterDone: "Completed",
+    chapterInProgress: "In progress",
+    chapterNotStarted: "Not started",
+    chapterStatus: { completed: "Completed", in_progress: "In progress", not_started: "Not started" },
+    chapterCoreLessons: "Required lessons",
+    chapterChecks: "Checks",
+    chapterSynthesis: "Synthesis",
+    chapterPractice: "Problems",
+    chapterConcepts: "Mastered concepts",
+    chapterExtensions: "Extensions",
+    mastery: "Mastery by content area",
     conceptMastery: "Concept mastery",
     conceptMasteryHint: "Calculated from your activity and results",
     conceptStrengths: "Strong concepts",
@@ -403,6 +427,42 @@ function renderHeatmap(rows) {
       <div class="mh-analytics-heatmap-legend"><span>0</span><i class="level-1"></i><i class="level-2"></i><i class="level-3"></i><i class="level-4"></i><span>${maximum}</span></div>
     </section>
   `;
+}
+
+function renderChapterProgress(payload = {}) {
+  const t = copy();
+  if (payload?.available === false) return "";
+  const chapters = Array.isArray(payload?.chapters) ? payload.chapters : [];
+  if (!chapters.length) return "";
+  const summary = payload.summary || {};
+  const statusClass = (status) => `is-${String(status || "not_started").replaceAll("_", "-")}`;
+  return `
+    <section class="mh-analytics-card mh-analytics-span-2 mh-analytics-chapter-progress-card">
+      <div class="mh-analytics-card-head"><div><h3>${t.chapterProgress}</h3><p>${t.chapterProgressHint}</p></div></div>
+      <div class="mh-analytics-chapter-summary">
+        <div><strong>${summary.completed || 0}</strong><span>${t.chapterDone}</span></div>
+        <div><strong>${summary.inProgress || 0}</strong><span>${t.chapterInProgress}</span></div>
+        <div><strong>${summary.notStarted || 0}</strong><span>${t.chapterNotStarted}</span></div>
+      </div>
+      <div class="mh-analytics-chapter-progress-list">
+        ${chapters.map((chapter) => `
+          <article class="mh-analytics-chapter-progress ${statusClass(chapter.status)}">
+            <div class="mh-analytics-chapter-progress-head">
+              <div><strong>${escapeHtml(chapter.title)}</strong>${chapter.description ? `<p>${escapeHtml(chapter.description)}</p>` : ""}</div>
+              <span>${escapeHtml(t.chapterStatus[chapter.status] || t.chapterStatus.not_started)}</span>
+            </div>
+            <div class="mh-analytics-chapter-metrics">
+              <span><small>${t.chapterCoreLessons}</small><strong>${chapter.coreLessonsCompleted}/${chapter.coreLessonTotal}</strong></span>
+              <span><small>${t.chapterChecks}</small><strong>${chapter.verificationsPassed}/${chapter.verificationTotal}</strong></span>
+              <span><small>${t.chapterSynthesis}</small><strong>${chapter.synthesesCompleted}/${chapter.synthesisTotal}</strong></span>
+              <span><small>${t.chapterPractice}</small><strong>${chapter.problemsSolved}/${chapter.practiceTotal}</strong></span>
+              <span><small>${t.chapterConcepts}</small><strong>${chapter.conceptsMastered}/${chapter.conceptTotal}</strong></span>
+              <span><small>${t.chapterExtensions}</small><strong>${chapter.extensionsCompleted}/${chapter.extensionTotal}</strong></span>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>`;
 }
 
 function renderChapterList(chapters) {
@@ -746,6 +806,7 @@ function renderDashboard(data) {
       ${renderProgressTaxonomy(data.progressTaxonomy)}
       ${renderTrend(data.dailyActivity)}
       ${renderHeatmap(data.heatmap)}
+      ${renderChapterProgress(data.chapterProgress)}
       ${renderChapterList(data.chapters)}
       ${renderConceptMastery(data.conceptMastery)}
       ${renderConceptRetention(data.conceptRetention)}

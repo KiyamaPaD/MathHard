@@ -10,6 +10,12 @@ import {
   validateRoadmapGraph
 } from "./roadmap-repository.js";
 import {
+  deleteRoadmapChapterGroup,
+  loadRoadmapChapterGroups,
+  saveRoadmapChapterGroup,
+  setRoadmapChapterMembership
+} from "./roadmap-chapter-admin-repository.js";
+import {
   createRoadmapNodeId,
   filterAndSortRoadmaps,
   filterRoadmapContent,
@@ -174,13 +180,15 @@ export function createRoadmapAdminController({
   if (!supabase) throw new Error("createRoadmapAdminController requires Supabase.");
 
   let enabled = false;
-  let data = { roadmaps: [], sections: [], nodes: [], edges: [] };
+  let data = { roadmaps: [], sections: [], chapters: [], chapterMembers: [], nodes: [], edges: [] };
   let selectedRoadmapId = "";
   let statusMessage = "";
   let busy = false;
   let quickType = "all";
   let quickQuery = "";
   let quickSectionId = "";
+  let quickChapterId = "";
+  let quickChapterRole = "core_lesson";
   let editingNodeId = "";
   let draggedNodeId = "";
   let roadmapQuery = "";
@@ -215,6 +223,31 @@ export function createRoadmapAdminController({
     return data.sections
       .filter((section) => section.roadmap_id === selectedRoadmapId)
       .sort((left, right) => Number(left.position || 0) - Number(right.position || 0));
+  }
+
+  function selectedChapters() {
+    return (data.chapters || [])
+      .filter((chapter) => chapter.roadmap_id === selectedRoadmapId)
+      .sort((left, right) => Number(left.position || 0) - Number(right.position || 0) || String(left.id || "").localeCompare(String(right.id || ""), "ro"));
+  }
+
+  function chaptersForSection(sectionId) {
+    return selectedChapters().filter((chapter) => chapter.section_id === sectionId);
+  }
+
+  function chapterMembers(chapterId) {
+    return (data.chapterMembers || [])
+      .filter((member) => member.chapter_id === chapterId)
+      .sort((left, right) => Number(left.position || 0) - Number(right.position || 0));
+  }
+
+  function chapterForContent(contentType, contentId) {
+    const member = (data.chapterMembers || []).find((item) => item.content_type === contentType && item.content_id === contentId && selectedChapters().some((chapter) => chapter.id === item.chapter_id));
+    return member ? selectedChapters().find((chapter) => chapter.id === member.chapter_id) || null : null;
+  }
+
+  function chapterMemberForContent(contentType, contentId) {
+    return (data.chapterMembers || []).find((item) => item.content_type === contentType && item.content_id === contentId && selectedChapters().some((chapter) => chapter.id === item.chapter_id)) || null;
   }
 
   function sectionNodes(sectionId) {
@@ -361,14 +394,40 @@ export function createRoadmapAdminController({
     const roadmap = selectedRoadmap();
     const sections = selectedSections();
     const nodes = selectedNodes();
+    const chapters = selectedChapters();
     const liveNodes = nodes.filter((node) => node.published !== false).length;
     return `
       <div class="mh-roadmap-admin-summary-grid">
         <div class="mh-roadmap-admin-summary-card"><strong>${roadmap ? 1 : 0}</strong><span>roadmap selectat</span></div>
+        <div class="mh-roadmap-admin-summary-card"><strong>${chapters.length}</strong><span>capitole</span></div>
         <div class="mh-roadmap-admin-summary-card"><strong>${sections.length}</strong><span>etape</span></div>
         <div class="mh-roadmap-admin-summary-card"><strong>${nodes.length}</strong><span>noduri</span></div>
         <div class="mh-roadmap-admin-summary-card"><strong>${liveNodes}</strong><span>publicate</span></div>
       </div>
+    `;
+  }
+
+  function renderChapterLibrary() {
+    const chapters = selectedChapters();
+    return `
+      <section class="mh-roadmap-admin-chapters">
+        <div class="mh-roadmap-admin-library-head">
+          <div><strong>Capitole</strong><span>Grupe collapsible de lecții în interiorul etapelor roadmap.</span></div>
+          <button class="btn small" type="button" data-roadmap-new-chapter>＋ Capitol</button>
+        </div>
+        <div class="mh-roadmap-admin-chapter-list">
+          ${chapters.length ? chapters.map((chapter) => {
+            const members = chapterMembers(chapter.id);
+            const lessons = members.filter((member) => member.content_type === "lesson");
+            const parent = selectedSections().find((section) => section.id === chapter.section_id);
+            return `
+            <article class="mh-roadmap-admin-chapter-summary">
+              <div><strong>📚 ${escapeHtml(chapter.title_ro || chapter.id)}</strong><span>${escapeHtml(chapter.id)} · ${escapeHtml(sectionTitle(parent) || chapter.section_id)} · ${lessons.length} lecții · ${chapter.active !== false ? "activ" : "inactiv"}</span></div>
+              <button class="btn small" type="button" data-roadmap-edit-chapter="${escapeHtml(chapter.id)}">✏️ Editează</button>
+            </article>`;
+          }).join("") : `<div class="mh-roadmap-admin-empty">Niciun capitol definit încă.</div>`}
+        </div>
+      </section>
     `;
   }
 
@@ -394,6 +453,19 @@ export function createRoadmapAdminController({
         <div class="mh-roadmap-admin-quick-grid">
           <label>Etapa
             <select class="select" data-roadmap-quick-section>${sectionOptions(quickSectionId)}</select>
+          </label>
+          <label>Capitol
+            <select class="select" data-roadmap-quick-chapter>
+              <option value="">Fără capitol</option>
+              ${chaptersForSection(quickSectionId).map((chapter) => `<option value="${escapeHtml(chapter.id)}" ${chapter.id === quickChapterId ? "selected" : ""}>${escapeHtml(chapter.title_ro || chapter.id)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Rol în capitol
+            <select class="select" data-roadmap-quick-chapter-role ${quickChapterId ? "" : "disabled"}>
+              <option value="core_lesson" ${quickChapterRole === "core_lesson" ? "selected" : ""}>Lecție obligatorie</option>
+              <option value="synthesis" ${quickChapterRole === "synthesis" ? "selected" : ""}>Sinteză</option>
+              <option value="extension" ${quickChapterRole === "extension" ? "selected" : ""}>Extensie</option>
+            </select>
           </label>
           <label>Tip
             <select class="select" data-roadmap-quick-type>
@@ -557,7 +629,7 @@ export function createRoadmapAdminController({
               <article class="mh-roadmap-admin-section-card" data-roadmap-drop-section="${escapeHtml(section.id)}">
                 <header>
                   <div>
-                    <strong>${escapeHtml(sectionTitle(section))}</strong>
+                    <div class="mh-roadmap-admin-node-title-line"><strong>${escapeHtml(sectionTitle(section))}</strong>${chaptersForSection(section.id).length ? `<span class="mh-roadmap-admin-pill">${chaptersForSection(section.id).length} capitol${chaptersForSection(section.id).length === 1 ? "" : "e"}</span>` : ""}</div>
                     <span>${escapeHtml(section.id)} • ${filtering ? `${nodes.length}/${allNodes.length}` : allNodes.length} noduri</span>
                   </div>
                   <div class="mh-roadmap-admin-section-actions">
@@ -578,6 +650,7 @@ export function createRoadmapAdminController({
                             <strong>${iconForType(node.node_type)} ${escapeHtml(nodeTitle(node, catalog()))}</strong>
                             <span class="mh-roadmap-admin-pill ${node.published !== false ? "is-live" : "is-draft"}">${node.published !== false ? "publicat" : "draft"}</span>
                             ${node.required !== false ? `<span class="mh-roadmap-admin-pill">obligatoriu</span>` : `<span class="mh-roadmap-admin-pill">opțional</span>`}
+                            ${chapterForContent(node.node_type, node.content_id) ? `<span class="mh-roadmap-admin-pill">📚 ${escapeHtml(chapterForContent(node.node_type, node.content_id).title_ro || chapterForContent(node.node_type, node.content_id).id)}</span>` : ""}
                           </div>
                           <span>${escapeHtml(node.node_type)} • ${escapeHtml(node.content_id || "milestone")} • prerechizite: ${escapeHtml(prerequisitesFor(node.id).length || 0)}</span>
                         </div>
@@ -642,6 +715,7 @@ export function createRoadmapAdminController({
         </div>
 
         ${summaryCards()}
+        ${roadmap ? renderChapterLibrary() : ""}
         ${roadmap ? renderQuickAdd() : ""}
         ${roadmap ? renderBoard() : `<div class="mh-roadmap-admin-empty">Creează primul roadmap din formular.</div>`}
 
@@ -673,6 +747,29 @@ export function createRoadmapAdminController({
           </form>
         </details>
 
+        <details class="mh-roadmap-admin-form" data-roadmap-chapter-details>
+          <summary><strong>📚 ➕ / ✏️ Capitol</strong></summary>
+          <form data-roadmap-form="chapter">
+            <div class="mh-roadmap-admin-grid">
+              <label>Chapter ID<input name="id" placeholder="m1-sets"></label>
+              <label>Etapa părinte<select name="section_id" class="select">${sectionOptions()}</select></label>
+              <label>Roadmap ID<input name="roadmap_id" value="${escapeHtml(selectedRoadmapId)}" readonly></label>
+              <label>Poziție<input name="position" type="number" value="${nextPosition(selectedChapters())}"></label>
+            </div>
+            <label>Titlu RO<input name="title_ro" placeholder="Mulțimi"></label>
+            <label>Titlu EN<input name="title_en" placeholder="Sets"></label>
+            <label>Descriere RO<textarea name="description_ro" rows="2"></textarea></label>
+            <label>Descriere EN<textarea name="description_en" rows="2"></textarea></label>
+            <label class="mh-roadmap-admin-check"><input name="active" type="checkbox" checked> Activ</label>
+            <div class="mh-roadmap-admin-actions">
+              <button class="btn" type="submit" ${busy ? "disabled" : ""}>💾 Generează / salvează capitolul</button>
+              <button class="btn small" type="button" data-roadmap-delete-chapter>🗑 Șterge capitolul</button>
+              <button class="btn small" type="reset">♻️ Reset</button>
+            </div>
+            <p class="mh-roadmap-admin-form-note">Capitolul apare ca grup collapsible în etapa aleasă. Adaugă apoi lecțiile direct în capitol din „Adăugare rapidă”.</p>
+          </form>
+        </details>
+
         <details class="mh-roadmap-admin-form" data-roadmap-section-details>
           <summary><strong>➕ / ✏️ Etapă</strong></summary>
           <form data-roadmap-form="section">
@@ -700,6 +797,8 @@ export function createRoadmapAdminController({
               <label>ID<input name="id" placeholder="generat automat dacă rămâne gol"></label>
               <label>Roadmap ID<input name="roadmap_id" value="${escapeHtml(selectedRoadmapId)}" readonly></label>
               <label>Etapă<select name="section_id" class="select">${sectionOptions()}</select></label>
+              <label>Capitol<select name="chapter_id" class="select"><option value="">Fără capitol</option>${selectedChapters().map((chapter) => `<option value="${escapeHtml(chapter.id)}">${escapeHtml(chapter.title_ro || chapter.id)}</option>`).join("")}</select></label>
+              <label>Rol capitol<select name="chapter_role" class="select"><option value="core_lesson">Lecție obligatorie</option><option value="synthesis">Sinteză</option><option value="extension">Extensie</option></select></label>
               <label>Tip<select name="node_type" class="select"><option value="lesson">lesson</option><option value="problem">problem</option><option value="exam">exam</option><option value="milestone">milestone</option></select></label>
               <label>Content ID<input name="content_id" placeholder="selectează din catalog sau scrie ID"></label>
               <label>Minute<input name="estimated_minutes" type="number" min="0" value="20"></label>
@@ -759,6 +858,9 @@ export function createRoadmapAdminController({
 
     if (type === "node") {
       editingNodeId = item.id;
+      const member = chapterMemberForContent(item.node_type, item.content_id);
+      if (form.elements.chapter_id) form.elements.chapter_id.value = member?.chapter_id || "";
+      if (form.elements.chapter_role) form.elements.chapter_role.value = member?.role || "core_lesson";
       const pickerHost = form.querySelector("[data-roadmap-prerequisite-picker]")?.parentElement;
       if (pickerHost) pickerHost.innerHTML = `<span class="legend">Prerechizite</span>${prerequisitePicker(item.id)}`;
     }
@@ -870,11 +972,21 @@ export function createRoadmapAdminController({
       description_ro: "",
       description_en: "",
       estimated_minutes: nodeType === "exam" ? 120 : nodeType === "problem" ? 20 : 30,
-      required: true,
+      required: quickChapterId && quickChapterRole === "extension" ? false : true,
       published: true,
       position: nextPosition(sectionNodes(section.id))
     });
-    statusMessage = `${translated(content)} a fost adăugat.`;
+    if (nodeType === "lesson") {
+      await setRoadmapChapterMembership(supabase, {
+        roadmapId: selectedRoadmapId,
+        chapterId: quickChapterId,
+        contentType: nodeType,
+        contentId,
+        role: quickChapterRole,
+        position: nextPosition(chapterMembers(quickChapterId).filter((member) => member.content_type === "lesson"))
+      });
+    }
+    statusMessage = `${translated(content)} a fost adăugat${quickChapterId ? " în capitol" : ""}.`;
   }
 
   function collectPrerequisites(form) {
@@ -999,7 +1111,15 @@ export function createRoadmapAdminController({
 
     root.querySelector("[data-roadmap-quick-section]")?.addEventListener("change", (event) => {
       quickSectionId = event.target.value;
+      if (!chaptersForSection(quickSectionId).some((chapter) => chapter.id === quickChapterId)) quickChapterId = "";
       render();
+    });
+    root.querySelector("[data-roadmap-quick-chapter]")?.addEventListener("change", (event) => {
+      quickChapterId = event.target.value || "";
+      render();
+    });
+    root.querySelector("[data-roadmap-quick-chapter-role]")?.addEventListener("change", (event) => {
+      quickChapterRole = event.target.value || "core_lesson";
     });
     root.querySelector("[data-roadmap-quick-type]")?.addEventListener("change", (event) => {
       quickType = event.target.value;
@@ -1049,6 +1169,25 @@ export function createRoadmapAdminController({
       });
     });
 
+    root.querySelector('[data-roadmap-form="chapter"]')?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const titleRo = formValue(form, "title_ro");
+      const chapterId = formValue(form, "id") || `${slugifyRoadmapValue(selectedRoadmapId)}-${slugifyRoadmapValue(titleRo, "capitol")}`;
+      const sectionId = formValue(form, "section_id");
+      void runMutation("Salvare capitol", () => saveRoadmapChapterGroup(supabase, {
+        id: chapterId,
+        section_id: sectionId,
+        roadmap_id: selectedRoadmapId,
+        title_ro: titleRo,
+        title_en: formValue(form, "title_en"),
+        description_ro: formValue(form, "description_ro"),
+        description_en: formValue(form, "description_en"),
+        position: formNumber(form, "position", nextPosition(selectedChapters())),
+        active: formChecked(form, "active")
+      }));
+    });
+
     root.querySelector('[data-roadmap-form="section"]')?.addEventListener("submit", (event) => {
       event.preventDefault();
       const form = event.currentTarget;
@@ -1095,6 +1234,16 @@ export function createRoadmapAdminController({
           required: formChecked(form, "required"),
           published: formChecked(form, "published")
         });
+        if (nodeType === "lesson" && contentId) {
+          await setRoadmapChapterMembership(supabase, {
+            roadmapId: selectedRoadmapId,
+            chapterId: formValue(form, "chapter_id"),
+            contentType: nodeType,
+            contentId,
+            role: formValue(form, "chapter_role") || "core_lesson",
+            position: formNumber(form, "position", 0)
+          });
+        }
         await replaceNodePrerequisites(supabase, {
           roadmapId: saved.roadmap_id,
           nodeId: saved.id,
@@ -1107,6 +1256,25 @@ export function createRoadmapAdminController({
     root.querySelector("[data-roadmap-reset-node]")?.addEventListener("click", () => {
       editingNodeId = "";
       setTimeout(render, 0);
+    });
+
+    root.querySelector("[data-roadmap-new-chapter]")?.addEventListener("click", () => {
+      const form = root.querySelector('[data-roadmap-form="chapter"]');
+      if (!form) return;
+      form.reset();
+      form.elements.roadmap_id.value = selectedRoadmapId;
+      form.elements.position.value = nextPosition(selectedChapters());
+      form.closest("details").open = true;
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    for (const button of root.querySelectorAll("[data-roadmap-edit-chapter]")) {
+      button.addEventListener("click", () => fillForm("chapter", selectedChapters().find((item) => item.id === button.dataset.roadmapEditChapter)));
+    }
+    root.querySelector('[data-roadmap-form="chapter"] [data-roadmap-delete-chapter]')?.addEventListener("click", () => {
+      const form = root.querySelector('[data-roadmap-form="chapter"]');
+      const id = formValue(form, "id");
+      if (!id || !confirm(`Ștergi capitolul ${id}? Secțiunea roadmap poate rămâne pentru a nu șterge accidental conținut.`)) return;
+      void runMutation("Ștergere capitol", () => deleteRoadmapChapterGroup(supabase, id));
     });
 
     for (const button of root.querySelectorAll("[data-roadmap-edit-section]")) {
@@ -1209,6 +1377,9 @@ export function createRoadmapAdminController({
     render();
     try {
       data = await loadRoadmapAdminData(supabase);
+      const chapterData = await loadRoadmapChapterGroups(supabase);
+      data.chapters = chapterData.chapters;
+      data.chapterMembers = chapterData.members;
       if (!selectedRoadmapId || !data.roadmaps.some((item) => item.id === selectedRoadmapId)) {
         selectedRoadmapId = orderedRoadmaps()[0]?.id || "";
       }
@@ -1225,7 +1396,7 @@ export function createRoadmapAdminController({
   function setAdmin(isAdmin) {
     enabled = Boolean(isAdmin);
     if (!enabled) {
-      data = { roadmaps: [], sections: [], nodes: [], edges: [] };
+      data = { roadmaps: [], sections: [], chapters: [], chapterMembers: [], nodes: [], edges: [] };
       selectedRoadmapId = "";
       statusMessage = "";
       roadmapQuery = "";

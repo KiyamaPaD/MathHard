@@ -373,3 +373,116 @@
 .mh-game-achievement[data-rarity="rare"] { border-color: color-mix(in srgb, #38bdf8 38%, var(--border)); }
 .mh-game-achievement[data-rarity="epic"] { border-color: color-mix(in srgb, #c084fc 42%, var(--border)); }
 .mh-game-achievement[data-rarity="legendary"] { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); }
+
+/* Phase 118 — categorized achievements + secret discovery UX. */
+.mh-game-achievement-groups {
+  display: grid;
+  gap: 20px;
+}
+
+.mh-game-achievement-group {
+  display: grid;
+  gap: 10px;
+}
+
+.mh-game-achievement-group + .mh-game-achievement-group {
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.mh-game-achievement-group-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mh-game-achievement-group-head h4,
+.mh-game-achievement-group-head p {
+  margin: 0;
+}
+
+.mh-game-achievement-group-head h4 {
+  font-size: .96rem;
+}
+
+.mh-game-achievement-group-head p,
+.mh-game-achievement-group-head > span,
+.mh-game-achievement-group-head > strong {
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.mh-game-achievement-group-head > strong {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mh-game-achievement.is-secret {
+  border-style: dashed;
+  opacity: .82;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--card) 94%, transparent), color-mix(in srgb, var(--bg) 80%, transparent));
+}
+
+.mh-game-achievement.is-secret .mh-game-achievement-icon {
+  background: color-mix(in srgb, var(--muted) 12%, var(--card));
+  color: var(--muted);
+}
+
+.mh-game-achievement.is-secret .mh-game-achievement-copy p {
+  max-width: 10ch;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--muted) 65%, transparent);
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.mh-game-achievement-details {
+  margin-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding-top: 8px;
+}
+
+.mh-game-achievement-details summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.mh-game-achievement-details > div {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.mh-game-achievement-details span {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 6px;
+  color: var(--muted);
+  font-size: .77rem;
+}
+
+.mh-game-achievement-details span.is-done {
+  color: var(--text);
+}
+
+.mh-game-achievement-details i {
+  font-style: normal;
+  text-align: center;
+}
+
+.mh-game-achievement[data-rarity="mystery"] {
+  border-color: color-mix(in srgb, var(--muted) 35%, var(--border));
+}
+
+@media (max-width: 600px) {
+  .mh-game-achievement-group-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+}

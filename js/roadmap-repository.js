@@ -61,10 +61,24 @@ export async function loadRoadmapCatalog({ supabase, forceRefresh = false, user 
   const requestEpoch = loadEpoch;
   const promise = (async () => {
     const rpcName = userId === GUEST_SCOPE ? "mh_get_public_roadmap_catalog" : "mh_get_roadmap_catalog";
-    const { data, error } = await supabase.rpc(rpcName);
-    if (error) throw error;
+    const [catalogResult, chapterResult] = await Promise.all([
+      supabase.rpc(rpcName),
+      supabase.rpc("mh_get_roadmap_chapter_groups")
+    ]);
+    if (catalogResult.error) throw catalogResult.error;
 
-    const catalog = normalizeRoadmapCatalog(unwrapRpc(data));
+    const rawCatalog = unwrapRpc(catalogResult.data) || {};
+    const chapterPayload = chapterResult.error ? {} : (unwrapRpc(chapterResult.data) || {});
+    const chapterRows = Array.isArray(chapterPayload.chapters) ? chapterPayload.chapters : [];
+    const roadmapRows = Array.isArray(rawCatalog.roadmaps) ? rawCatalog.roadmaps : [];
+    const enriched = {
+      ...rawCatalog,
+      roadmaps: roadmapRows.map((roadmap) => ({
+        ...roadmap,
+        chapters: chapterRows.filter((chapter) => String(chapter?.roadmap_id || "") === String(roadmap?.id || ""))
+      }))
+    };
+    const catalog = normalizeRoadmapCatalog(enriched);
     if (requestEpoch !== loadEpoch) {
       const newerLoad = inFlight?.userId === userId && inFlight.epoch > requestEpoch
         ? inFlight.promise

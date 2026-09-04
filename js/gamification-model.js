@@ -46,7 +46,9 @@ export function normalizeGamificationPayload(payload = {}) {
       accuracy: Math.max(0, Math.min(100, number(summary.accuracy))),
       leaderboardOptIn: Boolean(summary.leaderboard_opt_in),
       unlockedAchievements: Math.max(0, number(summary.unlocked_achievements)),
-      totalAchievements: Math.max(0, number(summary.total_achievements))
+      totalAchievements: Math.max(0, number(summary.total_achievements)),
+      unlockedSecretAchievements: Math.max(0, number(summary.unlocked_secret_achievements)),
+      totalSecretAchievements: Math.max(0, number(summary.total_secret_achievements))
     },
     weeklyChallenge: challenge ? {
       id: text(challenge.id),
@@ -73,8 +75,17 @@ export function normalizeGamificationPayload(payload = {}) {
         rewardXp: Math.max(0, number(item.reward_xp)),
         rarity: text(item.rarity, "common"),
         hiddenUntilUnlocked: Boolean(item.hidden_until_unlocked),
+        secretLocked: Boolean(item.secret_locked),
         unlocked: Boolean(item.unlocked),
-        unlockedAt: text(item.unlocked_at)
+        unlockedAt: text(item.unlocked_at),
+        progressCurrent: item.progress_current == null ? null : Math.max(0, number(item.progress_current)),
+        progressTarget: item.progress_target == null ? null : Math.max(0, number(item.progress_target)),
+        progressItems: Array.isArray(item.progress_items) ? item.progress_items.map((entry) => ({
+          id: text(entry?.id),
+          title: text(entry?.title),
+          completed: Boolean(entry?.completed),
+          kind: text(entry?.kind)
+        })) : []
       }))
       : [],
     leaderboard: Array.isArray(payload.leaderboard)
@@ -107,11 +118,17 @@ export function achievementProgress(achievement, summary) {
     longest_streak: summary?.longestStreak,
     accuracy: summary?.accuracy
   };
-  const current = Math.max(0, number(values[metric]));
+  const hasServerProgress = achievement?.progressCurrent != null && achievement?.progressTarget != null;
+  const current = hasServerProgress
+    ? Math.max(0, number(achievement.progressCurrent))
+    : Math.max(0, number(values[metric]));
+  const target = hasServerProgress
+    ? Math.max(1, number(achievement.progressTarget, 1))
+    : threshold;
   return {
     current,
-    target: threshold,
-    percent: achievement?.unlocked ? 100 : progressPercent(current, threshold)
+    target,
+    percent: achievement?.unlocked ? 100 : progressPercent(current, target)
   };
 }
 

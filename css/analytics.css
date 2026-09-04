@@ -811,3 +811,136 @@
 
 /* 089: Recent Activity overflow is genuinely hidden until Full Analysis. */
 .mh-analytics-recent-row[data-analytics-extra][hidden]{display:none!important}
+
+/* Phase 118 — explicit chapter completion analytics. */
+.mh-analytics-chapter-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.mh-analytics-chapter-summary > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+.mh-analytics-chapter-summary strong {
+  font-size: 1.15rem;
+}
+
+.mh-analytics-chapter-summary span {
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.mh-analytics-chapter-progress-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mh-analytics-chapter-progress {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--bg) 68%, transparent);
+}
+
+.mh-analytics-chapter-progress.is-completed {
+  border-color: color-mix(in srgb, #22c55e 42%, var(--border));
+}
+
+.mh-analytics-chapter-progress.is-in-progress {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+}
+
+.mh-analytics-chapter-progress-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mh-analytics-chapter-progress-head strong,
+.mh-analytics-chapter-progress-head p {
+  margin: 0;
+}
+
+.mh-analytics-chapter-progress-head p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.mh-analytics-chapter-progress-head > span {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.mh-analytics-chapter-progress.is-completed .mh-analytics-chapter-progress-head > span {
+  color: #22c55e;
+  border-color: color-mix(in srgb, #22c55e 42%, var(--border));
+}
+
+.mh-analytics-chapter-progress.is-in-progress .mh-analytics-chapter-progress-head > span {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+}
+
+.mh-analytics-chapter-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.mh-analytics-chapter-metrics > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 64%, transparent);
+}
+
+.mh-analytics-chapter-metrics small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: .7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mh-analytics-chapter-metrics strong {
+  font-size: .87rem;
+}
+
+@media (max-width: 720px) {
+  .mh-analytics-chapter-summary,
+  .mh-analytics-chapter-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 460px) {
+  .mh-analytics-chapter-summary,
+  .mh-analytics-chapter-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .mh-analytics-chapter-progress-head {
+    flex-direction: column;
+    gap: 7px;
+  }
+}

@@ -80,8 +80,14 @@ import {
   tagsFromInput as mhTagsFromInput,
   validateExamPayload as mhValidateExamPayload
 } from "./admin-content-model.js";
-import { createRoadmapController } from "./roadmap-controller.js";
-import { invalidateRoadmapCache } from "./roadmap-repository.js";
+const roadmapRuntimePromise = Promise.all([
+  import("./roadmap-controller.js"),
+  import("./roadmap-repository.js")
+]).then(([controllerModule, repositoryModule]) => ({
+  createRoadmapController: controllerModule.createRoadmapController,
+  invalidateRoadmapCache: repositoryModule.invalidateRoadmapCache
+}));
+const { createRoadmapController, invalidateRoadmapCache } = await roadmapRuntimePromise;
 import { createLearningWorkspaceController } from "./learning-workspace-controller.js";
 import { loadNumberLineRuntime } from "./runtime-loader.js";
 import {
@@ -4523,11 +4529,12 @@ ${details}`);
     isExamProblem,
     onXpChanged: updateXPHeader,
     onCountersChanged: updateCounters,
-    onLessonChanged: () => {
+    onLessonChanged: (id,row) => {
       renderCards();
       buildNestedTree();
       buildTagPanel();
       roadmapController?.refreshProgress(); mhUpdateLessonDrawerButtons();
+      if(row?.learned||row?.read_completed)import("./chapter-completion-controller.js").then(m=>m.maybeShowChapterCompletion(supabase,id,LANG));
     },
     onTerminalProblemChanged: () => {
       renderCards();

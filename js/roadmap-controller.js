@@ -151,7 +151,38 @@ function renderMathHardCurriculumNotice(roadmap, language) {
   `;
 }
 
-function renderSection(section, language, conceptCatalog, { collapsed = false, collapseKey = "", bodyId = "", stageNumber = 0 } = {}) {
+function renderChapter(chapter, language, conceptCatalog, { collapsed = false, collapseKey = "", bodyId = "" } = {}) {
+  const stats = chapter.progress || { done: 0, total: 0, percent: 0 };
+  const extensionStats = chapter.extensionProgress || { done: 0, total: 0, percent: 0 };
+  const toggleLabel = collapsed ? textFor(language, "Deschide capitolul", "Expand chapter") : textFor(language, "Închide capitolul", "Collapse chapter");
+  const complete = stats.total > 0 && stats.done === stats.total;
+  return `
+    <article class="mh-roadmap-chapter-card ${collapsed ? "is-collapsed" : ""} ${complete ? "is-complete" : ""}">
+      <header class="mh-roadmap-chapter-head">
+        <div>
+          <span class="mh-roadmap-chapter-kicker">${textFor(language, "Capitol", "Chapter")} ${Math.max(1, Number(chapter.position || 0))}</span>
+          <h4>${escapeHtml(chapter.title || chapter.id)}</h4>
+          ${chapter.description ? `<p>${escapeHtml(chapter.description)}</p>` : ""}
+        </div>
+        <div class="mh-roadmap-chapter-actions">
+          <div class="mh-roadmap-chapter-score"><strong>${stats.done}/${stats.total}</strong><span>${textFor(language, "obligatorii", "required")}</span></div>
+          <button class="mh-roadmap-chapter-toggle" type="button" data-roadmap-chapter-toggle="${escapeHtml(collapseKey)}" aria-expanded="${collapsed ? "false" : "true"}" aria-controls="${escapeHtml(bodyId)}" title="${escapeHtml(toggleLabel)}"><span aria-hidden="true">${collapsed ? "⌄" : "⌃"}</span></button>
+        </div>
+      </header>
+      <div class="mh-roadmap-chapter-body" id="${escapeHtml(bodyId)}" ${collapsed ? "hidden" : ""}>
+        <div class="mh-roadmap-chapter-progress" aria-label="${stats.percent}%"><i style="width:${Math.max(0, Math.min(100, stats.percent))}%"></i></div>
+        <div class="mh-roadmap-node-list">${chapter.coreNodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}</div>
+        ${chapter.extensionNodes.length ? `
+          <div class="mh-roadmap-chapter-extension">
+            <div class="mh-roadmap-chapter-extension-head"><span>🔭 ${textFor(language, "Extensie opțională", "Optional extension")}</span><small>${extensionStats.done}/${extensionStats.total}</small></div>
+            <div class="mh-roadmap-node-list">${chapter.extensionNodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}</div>
+          </div>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function renderSection(section, language, conceptCatalog, { collapsed = false, collapseKey = "", bodyId = "", stageNumber = 0, collapsedChapterKeys = new Set() } = {}) {
   const stats = section.progress;
   const toggleLabel = collapsed
     ? textFor(language, "Deschide", "Expand")
@@ -160,7 +191,7 @@ function renderSection(section, language, conceptCatalog, { collapsed = false, c
     <section class="mh-roadmap-section-card ${collapsed ? "is-collapsed" : ""}">
       <header class="mh-roadmap-section-head">
         <div>
-          <span class="mh-roadmap-section-kicker">${textFor(language, "Etapă", "Stage")} ${stageNumber}</span>
+          <span class="mh-roadmap-section-kicker">${String(section.section_key || "").startsWith("chapter-") ? textFor(language, "Capitol", "Chapter") : textFor(language, "Etapă", "Stage")} ${stageNumber}</span>
           <h3>${escapeHtml(section.title || section.section_key)}</h3>
           ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
         </div>
@@ -183,8 +214,16 @@ function renderSection(section, language, conceptCatalog, { collapsed = false, c
         <div class="mh-roadmap-section-progress" aria-label="${stats.percent}%">
           <i style="width:${Math.max(0, Math.min(100, stats.percent))}%"></i>
         </div>
-        <div class="mh-roadmap-node-list">
-          ${section.nodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}
+        <div class="mh-roadmap-section-content">
+          ${(section.chapters || []).map((chapter, chapterIndex) => {
+            const chapterKey = `${collapseKey}:chapter:${chapter.id}`;
+            return renderChapter(chapter, language, conceptCatalog, {
+              collapsed: collapsedChapterKeys?.has?.(chapterKey) || false,
+              collapseKey: chapterKey,
+              bodyId: `${bodyId}-chapter-${chapterIndex}`
+            });
+          }).join("")}
+          ${section.ungroupedNodes?.length ? `<div class="mh-roadmap-node-list">${section.ungroupedNodes.map((state) => renderNode(state, language, conceptCatalog)).join("")}</div>` : ""}
         </div>
       </div>
     </section>
@@ -234,6 +273,7 @@ export function createRoadmapController({
   let error = null;
   const collapsedSections = new Set();
   const collapsedGroups = new Set();
+  const collapsedChapters = new Set();
 
   function sectionCollapseKey(section) {
     return `${selectedRoadmapId}:${section.id || section.section_key || section.position || 0}`;
@@ -300,6 +340,15 @@ export function createRoadmapController({
       button.addEventListener("click", () => {
         const key = `${selectedRoadmapId}:${button.dataset.roadmapGradeToggle}`;
         collapsedGroups.has(key) ? collapsedGroups.delete(key) : collapsedGroups.add(key);
+        render();
+      });
+    }
+
+    for (const button of root.querySelectorAll("[data-roadmap-chapter-toggle]")) {
+      button.addEventListener("click", () => {
+        const key = String(button.dataset.roadmapChapterToggle || "");
+        if (!key) return;
+        collapsedChapters.has(key) ? collapsedChapters.delete(key) : collapsedChapters.add(key);
         render();
       });
     }
@@ -394,7 +443,7 @@ export function createRoadmapController({
         ${groupRoadmapSections(view.sections, language).map((block) => {
           if (block.section) {
             const collapseKey = sectionCollapseKey(block.section);
-            return renderSection(block.section, language, conceptCatalog, { collapsed: collapsedSections.has(collapseKey), collapseKey, bodyId: `mh-roadmap-section-body-${block.index}`, stageNumber: block.index });
+            return renderSection(block.section, language, conceptCatalog, { collapsed: collapsedSections.has(collapseKey), collapseKey, bodyId: `mh-roadmap-section-body-${block.index}`, stageNumber: block.index, collapsedChapterKeys: collapsedChapters });
           }
           const key = `${selectedRoadmapId}:${block.gradeKey}`;
           const collapsed = collapsedGroups.has(key);
@@ -402,7 +451,7 @@ export function createRoadmapController({
             <button class="mh-roadmap-grade-head" type="button" data-roadmap-grade-toggle="${escapeHtml(block.gradeKey)}" aria-expanded="${collapsed ? "false" : "true"}"><strong>${escapeHtml(block.title)}</strong><span aria-hidden="true">${collapsed ? "⌄" : "⌃"}</span></button>
             <div class="mh-roadmap-grade-body" ${collapsed ? "hidden" : ""}>${block.sections.map(({ section, index }) => {
               const collapseKey = sectionCollapseKey(section);
-              return renderSection(section, language, conceptCatalog, { collapsed: collapsedSections.has(collapseKey), collapseKey, bodyId: `mh-roadmap-section-body-${index}`, stageNumber: index });
+              return renderSection(section, language, conceptCatalog, { collapsed: collapsedSections.has(collapseKey), collapseKey, bodyId: `mh-roadmap-section-body-${index}`, stageNumber: index, collapsedChapterKeys: collapsedChapters });
             }).join("")}</div>
           </section>`;
         }).join("")}

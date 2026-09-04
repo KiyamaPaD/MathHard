@@ -422,29 +422,33 @@ assert.equal(conceptRpcCalls, 3);
 const conceptCatalog = buildConceptIndex(normalizeConceptCatalog({
   concepts: [
     { id: "numbers", title_ro: "Numere", concept_type: "concept", published: true, position: 1 },
-    { id: "compare", title_ro: "Comparare", concept_type: "skill", published: true, position: 2 }
+    { id: "compare", title_ro: "Comparare", concept_type: "skill", published: true, position: 2 },
+    { id: "recap", title_ro: "Recapitulare", concept_type: "concept", published: true, position: 3 }
   ],
   edges: [
     { prerequisite_concept_id: "numbers", dependent_concept_id: "compare", edge_type: "required" }
   ],
   mappings: [
     { concept_id: "compare", content_type: "lesson", content_id: "lesson-a", relation_type: "primary", position: 0 },
-    { concept_id: "numbers", content_type: "lesson", content_id: "lesson-a", relation_type: "supporting", position: 1 }
+    { concept_id: "numbers", content_type: "lesson", content_id: "lesson-a", relation_type: "supporting", position: 1 },
+    { concept_id: "recap", content_type: "lesson", content_id: "lesson-a", relation_type: "reference", evidence_eligible: false, position: 2 }
   ]
 }));
-assert.deepEqual(conceptIdsForContent(conceptCatalog, "lesson", "lesson-a"), ["compare", "numbers"]);
+assert.deepEqual(conceptIdsForContent(conceptCatalog, "lesson", "lesson-a"), ["compare", "numbers", "recap"]);
 assert.equal(conceptsForContent(conceptCatalog, "lesson", "lesson-a")[0].id, "compare");
 assert.equal(prerequisitesForConcept(conceptCatalog, "compare")[0].concept.id, "numbers");
 assert.deepEqual(
   conceptsForRoadmapNode(conceptCatalog, { node_type: "lesson", content_id: "lesson-a" }).map((item) => item.id),
-  ["compare", "numbers"]
+  ["compare", "numbers", "recap"]
 );
+assert.equal(conceptCatalog.mappings.find((item) => item.concept_id === "recap")?.relation_type, "reference");
+assert.equal(conceptCatalog.mappings.find((item) => item.concept_id === "recap")?.evidence_eligible, false);
 const conceptCoverage = buildRoadmapConceptCoverage(conceptCatalog, [
   { exists: true, node: { node_type: "lesson", content_id: "lesson-a" } },
   { exists: true, node: { node_type: "problem", content_id: "problem-unmapped" } },
   { exists: true, node: { node_type: "milestone", content_id: "" } }
 ]);
-assert.deepEqual(conceptCoverage, { totalNodes: 2, mappedNodes: 1, uniqueConcepts: 2, coveragePercent: 50 });
+assert.deepEqual(conceptCoverage, { totalNodes: 2, mappedNodes: 1, uniqueConcepts: 3, coveragePercent: 50 });
 const conceptDisclosure = renderContentConceptDetails({
   catalog: conceptCatalog,
   contentType: "lesson",
@@ -1069,6 +1073,13 @@ const normalizedRoadmaps = normalizeRoadmapCatalog({
     title_ro: "Road to UBB",
     position: 0,
     sections: [{ id: "core", title_ro: "Core", position: 0 }],
+    chapters: [{
+      id: "chapter-one", section_id: "core", title_ro: "Capitol test", position: 1, active: true,
+      members: [
+        { content_type: "lesson", content_id: "l1", role: "core_lesson", required_for_completion: true, position: 1 },
+        { content_type: "problem", content_id: "p1", role: "practice", position: 2 }
+      ]
+    }],
     nodes: [
       { id: "n1", section_id: "core", node_type: "lesson", content_id: "l1", required: true, content_exists: true, position: 0 },
       { id: "n2", section_id: "core", node_type: "problem", content_id: "p1", required: true, content_exists: true, position: 1 },
@@ -1084,6 +1095,7 @@ const normalizedRoadmaps = normalizeRoadmapCatalog({
 
 assert.equal(normalizedRoadmaps.selectedRoadmapId, "ubb");
 assert.equal(normalizedRoadmaps.roadmaps[0].nodes.length, 4);
+assert.equal(normalizedRoadmaps.roadmaps[0].chapters.length, 1);
 
 const firstRoadmapView = buildRoadmapView({
   roadmap: normalizedRoadmaps.roadmaps[0],
@@ -1104,6 +1116,9 @@ assert.equal(firstRoadmapView.nodeStates.get("n3").status, "locked");
 assert.equal(firstRoadmapView.nodeStates.get("n4").status, "planned");
 assert.equal(firstRoadmapView.progress.percent, 50);
 assert.equal(firstRoadmapView.nextNode.node.id, "n2");
+assert.equal(firstRoadmapView.sections[0].chapters[0].title, "Capitol test");
+assert.deepEqual(firstRoadmapView.sections[0].chapters[0].nodes.map((state) => state.node.id), ["n1", "n2"]);
+assert.deepEqual(firstRoadmapView.sections[0].ungroupedNodes.map((state) => state.node.id), ["n3", "n4"]);
 
 const readOnlyRoadmapView = buildRoadmapView({
   roadmap: normalizedRoadmaps.roadmaps[0],
@@ -1184,11 +1199,16 @@ const roadmapClient = {
   },
   async rpc(name) {
     roadmapRpcCalls += 1;
-    assert.equal(name, "mh_get_roadmap_catalog");
-    return {
-      data: { selected_roadmap_id: "", schema_version: "phase-18c3", roadmaps: [] },
-      error: null
-    };
+    if (name === "mh_get_roadmap_catalog") {
+      return {
+        data: { selected_roadmap_id: "", schema_version: "phase-18c3", roadmaps: [] },
+        error: null
+      };
+    }
+    if (name === "mh_get_roadmap_chapter_groups") {
+      return { data: { chapters: [], schema_version: "roadmap-chapters-v1" }, error: null };
+    }
+    assert.fail(`Unexpected roadmap RPC: ${name}`);
   }
 };
 await roadmapRepositoryModule.loadRoadmapCatalog({
@@ -1200,7 +1220,7 @@ await roadmapRepositoryModule.loadRoadmapCatalog({
   user: { id: "roadmap-user" }
 });
 assert.equal(roadmapAuthChecks, 0);
-assert.equal(roadmapRpcCalls, 1);
+assert.equal(roadmapRpcCalls, 2);
 
 
 assert.equal(slugifyRoadmapValue("Funcții și grafice"), "functii-si-grafice");
@@ -1665,7 +1685,7 @@ assert.equal(normalizeVersionEntry({ id: 3, snapshot: { id: "p-1" } }).snapshot.
 
 // Phase 17C.2.4: lesson verification must be reconciled after progress changes.
 const appSource17c24 = await readFile(resolve(root, "js/app.js"), "utf8");
-assert.match(appSource17c24, /onLessonChanged: \(\) =>[\s\S]*mhUpdateLessonDrawerButtons\(\)/);
+assert.match(appSource17c24, /onLessonChanged: \([^)]*\) =>[\s\S]*mhUpdateLessonDrawerButtons\(\)/);
 const showLessonActionsAt = appSource17c24.indexOf("setLessonOnlyActionsVisible(true);");
 assert.ok(showLessonActionsAt >= 0 && appSource17c24.indexOf("mhUpdateLessonDrawerButtons();", showLessonActionsAt) > showLessonActionsAt);
 

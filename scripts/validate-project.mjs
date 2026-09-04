@@ -741,7 +741,10 @@ if (!indexHtml.includes('id="mhDynamicRoadmap"') || !indexHtml.includes('css/roa
 if (!indexHtml.includes('id="mhRoadmapAdminStudio"')) {
   fail("Phase 12 Roadmap Studio root is missing from the Admin drawer.");
 }
-if (!appSource.includes('from "./roadmap-controller.js"') || !appSource.includes('import("./roadmap-admin-controller.js")')) {
+const usesRoadmapControllerRuntime =
+  appSource.includes('from "./roadmap-controller.js"') ||
+  appSource.includes('import("./roadmap-controller.js")');
+if (!usesRoadmapControllerRuntime || !appSource.includes('import("./roadmap-admin-controller.js")')) {
   fail("app.js must use the extracted Phase 12 roadmap controllers, with Admin loaded on demand.");
 }
 if (!appSource.includes("roadmapController?.refreshProgress()")) {

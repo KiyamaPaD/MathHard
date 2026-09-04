@@ -849,3 +849,48 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Phase 118 final — chapter authoring */
+.mh-roadmap-admin-chapters {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(148,163,184,.025);
+}
+
+.mh-roadmap-admin-chapter-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mh-roadmap-admin-chapter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(124,139,255,.22);
+  border-radius: 14px;
+  background: rgba(124,139,255,.04);
+}
+
+.mh-roadmap-admin-chapter-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.mh-roadmap-admin-chapter-summary span,
+.mh-roadmap-admin-form-note {
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+@media (max-width: 700px) {
+  .mh-roadmap-admin-chapter-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

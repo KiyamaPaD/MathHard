@@ -1,4 +1,9 @@
-import { clampAnalyticsRange, normalizeAnalyticsPayload } from "./analytics-model.js";
+import {
+  attachChapterConceptProgress,
+  clampAnalyticsRange,
+  normalizeAnalyticsPayload,
+  normalizeChapterProgressPayload
+} from "./analytics-model.js";
 import { loadConceptMastery } from "./concept-mastery-repository.js";
 import { loadConceptRetention } from "./concept-retention-repository.js";
 import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
@@ -16,7 +21,15 @@ export async function loadUserAnalytics(supabase, {
     .then((module) => module.loadPracticeReplayAnalytics(supabase, 24))
     .catch(() => ({ problem_replays: 0, exam_replays: 0, total_replays: 0, last_replay_at: "", recent: [] }));
 
-  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy, practiceReplays] = await Promise.all([
+  const chapterProgressPromise = supabase.rpc("mh_get_user_chapter_progress", { p_locale: safeLocale })
+    .then(({ data, error }) => {
+      if (error?.code === "PGRST202" || error?.status === 404) return normalizeChapterProgressPayload({ available: false });
+      if (error) throw error;
+      return normalizeChapterProgressPayload(data || {});
+    })
+    .catch(() => normalizeChapterProgressPayload({ available: false }));
+
+  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy, practiceReplays, chapterProgress] = await Promise.all([
     supabase.rpc("mh_get_user_analytics", {
       p_days: safeDays,
       p_locale: safeLocale
@@ -30,7 +43,8 @@ export async function loadUserAnalytics(supabase, {
       locale: safeLocale
     }),
     loadProgressTaxonomy(supabase),
-    replayAnalyticsPromise
+    replayAnalyticsPromise,
+    chapterProgressPromise
   ]);
 
   if (analyticsResult.error) {
@@ -47,6 +61,7 @@ export async function loadUserAnalytics(supabase, {
     conceptMastery,
     conceptRetention,
     progressTaxonomy,
-    practiceReplays
+    practiceReplays,
+    chapterProgress: attachChapterConceptProgress(chapterProgress, conceptMastery)
   };
 }

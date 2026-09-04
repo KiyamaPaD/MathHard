@@ -1,5 +1,6 @@
 import {
   ACHIEVEMENT_METRICS,
+  ACHIEVEMENT_CATEGORIES,
   CHALLENGE_METRICS,
   nextDuplicateId,
   normalizeAchievementDraft,
@@ -26,6 +27,11 @@ const METRIC_LABELS = {
   current_streak: "Streak curent",
   longest_streak: "Streak maxim",
   accuracy: "Acuratețe (%)",
+  chapter_checks_completed: "Verificări de capitol",
+  chapter_completed: "Capitol finalizat",
+  chapters_completed: "Capitole finalizate",
+  extensions_completed: "Extensii finalizate",
+  chapter_practice_completed: "Toate problemele unui capitol",
   answer_correct: "Răspunsuri corecte",
   solved_problem: "Probleme rezolvate",
   lesson_completed: "Lecții finalizate",
@@ -235,10 +241,11 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         <label>Descriere RO<textarea name="description_ro" rows="3">${esc(draft.description_ro)}</textarea></label>
         <label>Descriere EN<textarea name="description_en" rows="3">${esc(draft.description_en)}</textarea></label>
         <div class="mh-gamification-form-grid two">
-          <label>Categorie<select name="category">${["progress","consistency","accuracy","exam","xp"].map(v => `<option value="${v}"${draft.category===v?" selected":""}>${v}</option>`).join("")}</select></label>
+          <label>Categorie<select name="category">${ACHIEVEMENT_CATEGORIES.map(v => `<option value="${v}"${draft.category===v?" selected":""}>${v}</option>`).join("")}</select></label>
           <label>Condiție<select name="metric">${metricOptions(ACHIEVEMENT_METRICS, draft.criteria.metric)}</select></label>
           <label>Țintă<input name="threshold" type="number" min="0" step="0.01" value="${esc(draft.criteria.threshold)}"></label>
           <label>Încercări minime<input name="min_attempts" type="number" min="0" value="${esc(draft.criteria.min_attempts || 0)}"></label>
+          <label>Context capitol<input name="chapter_id" value="${esc(draft.criteria.chapter_id || "")}" placeholder="ex. m1-sets"></label>
           <label>Recompensă XP<input name="reward_xp" type="number" min="0" value="${esc(draft.reward_xp)}"></label>
           <label>Raritate<select name="rarity">${["common","uncommon","rare","epic","legendary"].map(v => `<option value="${v}"${draft.rarity===v?" selected":""}>${v}</option>`).join("")}</select></label>
           <label>Ordine<input name="sort_order" type="number" value="${esc(draft.sort_order)}"></label>
