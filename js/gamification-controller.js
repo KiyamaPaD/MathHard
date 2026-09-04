@@ -290,7 +290,33 @@ export function createGamificationController({ host }) {
   let reloadAfterCurrent = false;
   let knownLevel = null;
   let knownUnlockedAchievements = null;
+  let primePromise = null;
 
+  function rememberMilestoneBaseline(next) {
+    knownLevel = Number(next?.summary?.level || 1);
+    knownUnlockedAchievements = new Set(
+      (Array.isArray(next?.achievements) ? next.achievements : [])
+        .filter((item) => item?.unlocked)
+        .map((item) => String(item.id || item.title || ""))
+        .filter(Boolean)
+    );
+  }
+
+  function primeMilestones() {
+    if (primePromise) return primePromise;
+    primePromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+        const next = await loadGamificationDashboard(supabase, { locale: locale() });
+        rememberMilestoneBaseline(next);
+        if (!data) data = next;
+      } catch (error) {
+        console.warn("Gamification milestone baseline could not be primed:", error);
+      }
+    })().finally(() => { primePromise = null; });
+    return primePromise;
+  }
 
   function announceProgressMilestones(next) {
     const nextLevel = Number(next?.summary?.level || 1);
@@ -314,7 +340,7 @@ export function createGamificationController({ host }) {
     if (knownUnlockedAchievements instanceof Set) {
       const newAchievements = (Array.isArray(next?.achievements) ? next.achievements : [])
         .filter((item) => item?.unlocked && !knownUnlockedAchievements.has(String(item.id || item.title || "")));
-      newAchievements.slice(0, 2).forEach((achievement) => {
+      newAchievements.slice(0, 3).forEach((achievement) => {
         window.dispatchEvent(new CustomEvent("mathhard:celebrate", {
           detail: {
             kind: "achievement",
@@ -449,7 +475,7 @@ export function createGamificationController({ host }) {
       }
     })().finally(() => {
       if (loadPromise === promise) loadPromise = null;
-      if (reloadAfterCurrent && active) {
+      if (reloadAfterCurrent) {
         reloadAfterCurrent = false;
         queueMicrotask(() => void load(true));
       } else {
@@ -473,8 +499,13 @@ export function createGamificationController({ host }) {
   supabase.auth.onAuthStateChange((_event, session) => {
     epoch += 1;
     data = null;
+    knownLevel = null;
+    knownUnlockedAchievements = null;
     if (!session?.user) renderAuth();
-    else if (active) void load(true);
+    else {
+      void primeMilestones();
+      if (active) void load(true);
+    }
   });
 
   new MutationObserver(() => {
@@ -489,6 +520,12 @@ export function createGamificationController({ host }) {
     data = null;
     if (active) void load(true);
   });
+
+  window.addEventListener("mh:progress-mutated", () => {
+    void Promise.resolve(primePromise || Promise.resolve()).then(() => load(true));
+  });
+
+  void primeMilestones();
 
   return { activate, deactivate, refresh: () => load(true) };
 }

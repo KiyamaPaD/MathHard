@@ -583,7 +583,7 @@ if (/function reconcileMutationError\([^)]*\)\s*\{[^}]*loadAppProgressFromDb/.te
 if (!appProgressSource.includes("onTerminalProblemChanged(problemId, merged)")) {
   fail("app-progress.js must notify the UI after terminal problem mutations.");
 }
-if (!/onTerminalProblemChanged:\s*\(\)\s*=>\s*\{[\s\S]{0,260}renderCards\(\)/.test(appSource)) {
+if (!/onTerminalProblemChanged:\s*\([^)]*\)\s*=>\s*\{[\s\S]{0,320}renderCards\(\)/.test(appSource)) {
   fail("Solved problem mutations must refresh problem cards immediately.");
 }
 if (!appSource.includes('.from("mh_lessons").upsert(payload, { onConflict: "id" })')) {
@@ -1542,6 +1542,41 @@ if (!gamificationAdmin119.includes("Simulator UI") ||
     !gamificationAdmin119.includes('import("./chapter-completion-controller.js")') ||
     !gamificationAdmin119.includes("Simulează unlock + confetti")) {
   fail("Phase 119 Gamification Studio must expose chapter and achievement UI simulation without progress writes.");
+}
+
+
+// Phase 121: canonical achievement refresh + reversible Admin Progress Lab.
+if (!appSource.includes('source: "secure-quiz"') ||
+    !appSource.includes('maybeShowChapterCompletion(supabase, lessonId, LANG)') ||
+    !appSource.includes('"mh:progress-mutated"') ||
+    !appSource.includes('"mh:admin-progress-lab-changed"')) {
+  fail("Phase 121 app integration must refresh achievements/chapter completion after canonical lesson/problem changes and resync after Admin Progress Lab mutations.");
+}
+if (!gamificationControllerSource.includes("primeMilestones") ||
+    !gamificationControllerSource.includes('window.addEventListener("mh:progress-mutated"') ||
+    !gamificationControllerSource.includes("newAchievements.slice(0, 3)")) {
+  fail("Phase 121 gamification controller must prime unlock baselines, react outside the Rewards route, and surface simultaneous chapter achievements.");
+}
+if (!gamificationAdminRepositorySource.includes('mh_admin_get_progress_lab') ||
+    !gamificationAdminRepositorySource.includes('mh_admin_progress_lab_action') ||
+    !gamificationAdminRepositorySource.includes('mh_admin_progress_lab_undo') ||
+    !gamificationAdminRepositorySource.includes('mh_admin_progress_lab_restore')) {
+  fail("Phase 121 Gamification Studio repository must expose the guarded Progress Lab RPCs.");
+}
+if (!gamificationAdminControllerSource.includes("Progress Lab") ||
+    !gamificationAdminControllerSource.includes("REAL DB TEST MODE") ||
+    !gamificationAdminControllerSource.includes("Restore baseline") ||
+    !gamificationAdminControllerSource.includes('data-lab-action="chapter_full"') ||
+    !gamificationAdminControllerSource.includes('data-lab-action="lesson_reset"') ||
+    !gamificationAdminControllerSource.includes('data-lab-action="problem_reset"') ||
+    !gamificationAdminControllerSource.includes('data-lab-action="achievement_fast_forward"') ||
+    !gamificationAdminControllerSource.includes("FAST-FORWARD PÂNĂ LA UNLOCK")) {
+  fail("Phase 121 Admin Progress Lab must provide chapter/achievement fast-forward plus lesson/problem reset and exact baseline restore controls.");
+}
+if (!gamificationStudioCss.includes(".mh-progress-lab") ||
+    !gamificationStudioCss.includes(".mh-progress-lab-safety") ||
+    !gamificationStudioCss.includes(".mh-progress-lab-grid")) {
+  fail("Phase 121 Progress Lab styling is incomplete.");
 }
 
 if (failed) {

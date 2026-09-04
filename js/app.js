@@ -4534,14 +4534,16 @@ ${details}`);
       buildNestedTree();
       buildTagPanel();
       roadmapController?.refreshProgress(); mhUpdateLessonDrawerButtons();
+      window.dispatchEvent(new CustomEvent("mh:progress-mutated", { detail: { contentType: "lesson", contentId: id } }));
       if(row?.learned||row?.read_completed)import("./chapter-completion-controller.js").then(m=>m.maybeShowChapterCompletion(supabase,id,LANG));
     },
-    onTerminalProblemChanged: () => {
+    onTerminalProblemChanged: (id, row) => {
       renderCards();
       buildNestedTree();
       buildTagPanel();
       drawFilterBar();
       roadmapController?.refreshProgress();
+      window.dispatchEvent(new CustomEvent("mh:progress-mutated", { detail: { contentType: "problem", contentId: id, solved: Boolean(row?.solved) } }));
     },
     onFullRefresh: refreshProgressUIFromDb
   });
@@ -4561,6 +4563,10 @@ ${details}`);
     saveExamAttemptResultSafe,
     updateExamAttemptScore
   } = progressController;
+
+  window.addEventListener("mh:admin-progress-lab-changed", () => {
+    if (MH_AUTH_USER) void loadAppProgressFromDb(MH_AUTH_USER);
+  });
 
   adminExamRecoveryController = createAdminExamRecoveryController({
     cancelAttempt: cancelExamAttemptSafe,
@@ -6012,6 +6018,10 @@ ${details}`);
       buildTagPanel();
       roadmapController?.refreshProgress();
       mhUpdateLessonDrawerButtons();
+      window.dispatchEvent(new CustomEvent("mh:progress-mutated", { detail: { contentType: "lesson", contentId: lessonId, source: "secure-quiz" } }));
+      import("./chapter-completion-controller.js")
+        .then((module) => module.maybeShowChapterCompletion(supabase, lessonId, LANG))
+        .catch((error) => console.error("Chapter completion check after secure lesson quiz failed:", error));
       const title = document.getElementById("viewTitle");
       if (title) {
         title.textContent = "🎓 " + (LANG === "ro"

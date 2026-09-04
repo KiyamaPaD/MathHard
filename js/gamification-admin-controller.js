@@ -13,6 +13,10 @@ import {
   deleteChallengeTemplate,
   generateChallenge,
   loadGamificationStudio,
+  loadProgressLab,
+  restoreProgressLabBaseline,
+  runProgressLabAction,
+  undoProgressLabAction,
   saveAchievement,
   saveChallenge,
   saveChallengeTemplate
@@ -92,6 +96,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     query: "",
     payload: { achievements: [], challenges: [], templates: [] },
     chapters: [],
+    lab: { loaded: false, loading: false, data: null, chapterId: "", lessonId: "", problemId: "", achievementId: "" },
     editing: { type: null, id: null }
   };
 
@@ -102,6 +107,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         <button data-gamification-tab="challenges" type="button">Challenge-uri</button>
         <button data-gamification-tab="automation" type="button">Automatizări</button>
         <button data-gamification-tab="simulator" type="button">Simulator UI</button>
+        <button data-gamification-tab="progress-lab" type="button">Progress Lab</button>
       </div>
       <div class="mh-gamification-admin-actions">
         <input id="mhGamificationAdminSearch" type="search" placeholder="Caută..." autocomplete="off">
@@ -281,13 +287,152 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       </section>`;
   }
 
+  function selectedLabChapter() {
+    const chapters = Array.isArray(state.lab.data?.chapters) ? state.lab.data.chapters : [];
+    return chapters.find((chapter) => String(chapter.id) === String(state.lab.chapterId)) || chapters[0] || null;
+  }
+
+  function labRoleLabel(role) {
+    return ({ core_lesson: "Lecție core", synthesis: "Sinteză", extension: "Extensie", practice: "Practică", bonus_problem: "Bonus" })[role] || role || "Conținut";
+  }
+
+  function renderProgressLab() {
+    if (state.lab.loading) {
+      listHost.innerHTML = `<div class="mh-admin-empty-state"><strong>Se încarcă Progress Lab…</strong><span>Citim starea reală a contului tău admin.</span></div>`;
+      return;
+    }
+    const lab = state.lab.data;
+    if (!lab) {
+      listHost.innerHTML = `<div class="mh-admin-empty-state"><strong>Progress Lab nu este încă încărcat</strong><span>Apasă Actualizează sau redeschide tab-ul.</span></div>`;
+      return;
+    }
+    const chapters = Array.isArray(lab.chapters) ? lab.chapters : [];
+    const chapter = selectedLabChapter();
+    if (chapter && !state.lab.chapterId) state.lab.chapterId = String(chapter.id);
+    const members = Array.isArray(chapter?.members) ? chapter.members : [];
+    const lessons = members.filter((item) => item.content_type === "lesson");
+    const problems = members.filter((item) => item.content_type === "problem");
+    const selectedLesson = lessons.find((item) => String(item.content_id) === String(state.lab.lessonId)) || lessons[0] || null;
+    const selectedProblem = problems.find((item) => String(item.content_id) === String(state.lab.problemId)) || problems[0] || null;
+    if (selectedLesson && !state.lab.lessonId) state.lab.lessonId = String(selectedLesson.content_id);
+    if (selectedProblem && !state.lab.problemId) state.lab.problemId = String(selectedProblem.content_id);
+    const achievements = Array.isArray(lab.achievements) ? lab.achievements : [];
+    const selectedAchievement = achievements.find((item) => String(item.id) === String(state.lab.achievementId)) || achievements[0] || null;
+    if (selectedAchievement && !state.lab.achievementId) state.lab.achievementId = String(selectedAchievement.id);
+    const session = lab.session || {};
+    const latest = session.latest_action;
+
+    const lessonState = selectedLesson
+      ? `${selectedLesson.read_completed ? "Citită" : "Necitită"} · ${selectedLesson.quiz_passed ? "Verificare trecută" : "Fără verificare trecută"} · ${selectedLesson.learned ? "Învățată" : "Neînvățată"}`
+      : "—";
+    const problemState = selectedProblem
+      ? `${selectedProblem.solved ? "Rezolvată" : "Nerezolvată"} · ${Number(selectedProblem.xp_earned || 0)} XP`
+      : "—";
+
+    listHost.innerHTML = `
+      <section class="mh-progress-lab">
+        <header class="mh-progress-lab-head">
+          <div>
+            <span class="mh-admin-kicker">ADMIN ONLY · REAL DB TEST MODE</span>
+            <h3>Progress Lab</h3>
+            <p>Fast-forward și reset pe starea reală a contului tău admin. Fiecare acțiune face snapshot înainte de modificare.</p>
+          </div>
+          <strong>${session.active ? `Sesiune activă · ${Number(session.action_count || 0)} acțiuni` : "Snapshot la prima acțiune"}</strong>
+        </header>
+
+        <div class="mh-progress-lab-safety">
+          <div><strong>↶ Undo</strong><span>revine exact înaintea ultimei acțiuni.</span></div>
+          <div><strong>⟲ Restore baseline</strong><span>revine exact la starea de dinainte să începi testarea.</span></div>
+          <div><strong>DB real</strong><span>achievement-urile, XP-ul, claims și progresul chiar se schimbă temporar.</span></div>
+        </div>
+
+        <div class="mh-progress-lab-toolbar">
+          <button class="btn small" data-lab-command="undo" type="button" ${session.can_undo ? "" : "disabled"}>↶ Undo ultima acțiune</button>
+          <button class="btn small danger" data-lab-command="restore" type="button" ${session.active ? "" : "disabled"}>⟲ Restore baseline</button>
+          ${latest ? `<small>Ultima: <code>${esc(latest.action)}</code> · ${esc(latest.scope_id)}</small>` : `<small>Nicio acțiune DB în sesiunea curentă.</small>`}
+        </div>
+
+        <label class="mh-progress-lab-chapter">Capitol
+          <select data-lab-select="chapter">
+            ${chapters.map((item) => `<option value="${esc(item.id)}"${String(item.id) === String(chapter?.id) ? " selected" : ""}>${esc(item.title || item.id)} · ${esc(item.status || "not_started")}</option>`).join("")}
+          </select>
+        </label>
+
+        ${chapter ? `
+        <div class="mh-progress-lab-grid">
+          <article class="mh-progress-lab-card is-chapter">
+            <div class="mh-progress-lab-card-head"><span>🏁</span><div><strong>${esc(chapter.title || chapter.id)}</strong><small>Fast-forward pentru milestones care în mod normal iau mult timp.</small></div></div>
+            <div class="mh-progress-lab-actions">
+              <button class="btn small" data-lab-action="chapter_checks" data-lab-chapter="${esc(chapter.id)}" type="button">7/7 verificări</button>
+              <button class="btn small" data-lab-action="chapter_core" data-lab-chapter="${esc(chapter.id)}" type="button">Core + sinteză</button>
+              <button class="btn small" data-lab-action="chapter_extension" data-lab-chapter="${esc(chapter.id)}" type="button">Extensie</button>
+              <button class="btn small" data-lab-action="chapter_practice" data-lab-chapter="${esc(chapter.id)}" type="button">Toate problemele core</button>
+              <button class="btn" data-lab-action="chapter_full" data-lab-chapter="${esc(chapter.id)}" type="button">100% capitol</button>
+              <button class="btn small danger" data-lab-action="chapter_reset" data-lab-chapter="${esc(chapter.id)}" type="button">Reset capitol</button>
+            </div>
+            <small>Reset capitol șterge progresul, attempts, events și completion claim pentru conținutul capitolului în sesiunea de test. Restore baseline le readuce exact.</small>
+          </article>
+
+          <article class="mh-progress-lab-card is-achievement">
+            <div class="mh-progress-lab-card-head"><span>🏆</span><div><strong>Fast-forward achievement</strong><small>Construiește progresul canonic necesar și lasă achievement engine-ul real să decidă unlock-ul.</small></div></div>
+            <label>Achievement
+              <select data-lab-select="achievement">
+                ${achievements.map((item) => `<option value="${esc(item.id)}"${String(item.id) === String(selectedAchievement?.id) ? " selected" : ""}>${esc(item.icon || "✦")} ${esc(item.title || item.id)} · ${esc(item.rarity || "common")}${item.unlocked ? " · DEBLOCAT" : ""}</option>`).join("")}
+              </select>
+            </label>
+            <div class="mh-progress-lab-current">${selectedAchievement ? `${esc(selectedAchievement.unlocked ? "Deblocat" : "Blocat")} · criteriu <code>${esc(selectedAchievement.criteria?.metric || "—")}</code>` : "—"}</div>
+            <div class="mh-progress-lab-actions">
+              <button class="btn" data-lab-action="achievement_fast_forward" data-lab-type="achievement" data-lab-id="${esc(selectedAchievement?.id || "")}" type="button" ${selectedAchievement ? "" : "disabled"}>FAST-FORWARD PÂNĂ LA UNLOCK</button>
+            </div>
+            <small>Nu inserează achievement-ul direct. Progress Lab creează starea reală citită de evaluator: lecții, verificări, probleme, extensii, examene, XP sau streak, după criteriul achievement-ului.</small>
+          </article>
+
+          <article class="mh-progress-lab-card">
+            <div class="mh-progress-lab-card-head"><span>📘</span><div><strong>Lecție</strong><small>Testează Read / verificare / reset fără timer și fără 6 întrebări manual.</small></div></div>
+            <label>Lecție
+              <select data-lab-select="lesson">
+                ${lessons.map((item) => `<option value="${esc(item.content_id)}"${String(item.content_id) === String(selectedLesson?.content_id) ? " selected" : ""}>${esc(item.title || item.content_id)} · ${esc(labRoleLabel(item.role))}</option>`).join("")}
+              </select>
+            </label>
+            <div class="mh-progress-lab-current">${esc(lessonState)}</div>
+            <div class="mh-progress-lab-actions">
+              <button class="btn small" data-lab-action="lesson_read" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson ? "" : "disabled"}>Marchează citită</button>
+              <button class="btn" data-lab-action="lesson_pass" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson?.requires_verification ? "" : "disabled"}>Promovează verificarea</button>
+              <button class="btn small danger" data-lab-action="lesson_reset" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson ? "" : "disabled"}>Reset lecția</button>
+            </div>
+          </article>
+
+          <article class="mh-progress-lab-card">
+            <div class="mh-progress-lab-card-head"><span>🧩</span><div><strong>Problemă</strong><small>Produce starea canonică de rezolvare perfectă sau șterge tot ce ține de problemă.</small></div></div>
+            <label>Problemă
+              <select data-lab-select="problem">
+                ${problems.map((item) => `<option value="${esc(item.content_id)}"${String(item.content_id) === String(selectedProblem?.content_id) ? " selected" : ""}>${esc(item.title || item.content_id)} · ${esc(labRoleLabel(item.role))}</option>`).join("")}
+              </select>
+            </label>
+            <div class="mh-progress-lab-current">${esc(problemState)}</div>
+            <div class="mh-progress-lab-actions">
+              <button class="btn" data-lab-action="problem_solve" data-lab-type="problem" data-lab-id="${esc(selectedProblem?.content_id || "")}" type="button" ${selectedProblem ? "" : "disabled"}>Rezolvă perfect</button>
+              <button class="btn small danger" data-lab-action="problem_reset" data-lab-type="problem" data-lab-id="${esc(selectedProblem?.content_id || "")}" type="button" ${selectedProblem ? "" : "disabled"}>Reset problema</button>
+            </div>
+          </article>
+        </div>` : `<div class="mh-admin-empty-state"><strong>Niciun capitol disponibil</strong><span>Progress Lab funcționează pe capitolele create în engine-ul nou.</span></div>`}
+      </section>`;
+  }
+
   function renderList() {
+    const specialTab = state.activeTab === "simulator" || state.activeTab === "progress-lab";
     host.classList.toggle("is-simulator", state.activeTab === "simulator");
-    search.hidden = state.activeTab === "simulator";
-    host.querySelector("[data-gamification-action='new']")?.toggleAttribute("hidden", state.activeTab === "simulator");
+    host.classList.toggle("is-progress-lab", state.activeTab === "progress-lab");
+    search.hidden = specialTab;
+    host.querySelector("[data-gamification-action='new']")?.toggleAttribute("hidden", specialTab);
     if (state.activeTab === "simulator") {
       editorHost.innerHTML = "";
       renderSimulator();
+      return;
+    }
+    if (state.activeTab === "progress-lab") {
+      editorHost.innerHTML = "";
+      renderProgressLab();
       return;
     }
     const items = currentItems();
@@ -445,6 +590,87 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     }
   }
 
+  async function loadLab({ force = false } = {}) {
+    if (state.lab.loading || (state.lab.loaded && !force)) return;
+    state.lab.loading = true;
+    if (state.activeTab === "progress-lab") renderProgressLab();
+    setFeedback("Se încarcă Progress Lab…", "loading");
+    try {
+      const payload = unwrap(await loadProgressLab(supabase, "ro")) || {};
+      state.lab.data = payload;
+      state.lab.loaded = true;
+      const chapters = Array.isArray(payload.chapters) ? payload.chapters : [];
+      if (!chapters.some((chapter) => String(chapter.id) === String(state.lab.chapterId))) {
+        state.lab.chapterId = String(chapters[0]?.id || "");
+        state.lab.lessonId = "";
+        state.lab.problemId = "";
+      }
+      if (state.activeTab === "progress-lab") renderProgressLab();
+      setFeedback("Progress Lab sincronizat cu baza de date.", "success");
+    } catch (error) {
+      console.error("Progress Lab load failed:", error);
+      setFeedback("Progress Lab nu a putut fi încărcat. Verifică Phase 121.", "error");
+    } finally {
+      state.lab.loading = false;
+      if (state.activeTab === "progress-lab") renderProgressLab();
+    }
+  }
+
+  async function applyLabAction(action, { contentType = null, contentId = null, chapterId = null } = {}) {
+    setFeedback("Se aplică în DB…", "loading");
+    try {
+      const result = unwrap(await runProgressLabAction(supabase, { action, contentType, contentId, chapterId, locale: "ro" })) || {};
+      state.lab.data = result.lab || state.lab.data;
+      state.lab.loaded = true;
+      renderProgressLab();
+      window.dispatchEvent(new CustomEvent("mh:progress-mutated", { detail: { source: "admin-progress-lab", action, contentType, contentId, chapterId } }));
+      window.dispatchEvent(new CustomEvent("mh:admin-progress-lab-changed", { detail: { action } }));
+      const triggerLessonId = String(result.trigger_lesson_id || "");
+      if (triggerLessonId) {
+        void import("./chapter-completion-controller.js")
+          .then((module) => module.maybeShowChapterCompletion(supabase, triggerLessonId, "ro"))
+          .catch((error) => console.error("Progress Lab chapter finale failed:", error));
+      }
+      setFeedback(`Progress Lab: ${action} aplicat. Poți da Undo sau Restore baseline.`, "success");
+    } catch (error) {
+      console.error("Progress Lab action failed:", error);
+      setFeedback(error?.message || "Acțiunea Progress Lab a eșuat.", "error");
+    }
+  }
+
+  async function undoLab() {
+    setFeedback("Undo în baza de date…", "loading");
+    try {
+      const result = unwrap(await undoProgressLabAction(supabase, "ro")) || {};
+      state.lab.data = result.lab || state.lab.data;
+      state.lab.loaded = true;
+      renderProgressLab();
+      window.dispatchEvent(new CustomEvent("mh:progress-mutated", { detail: { source: "admin-progress-lab", action: "undo" } }));
+      window.dispatchEvent(new CustomEvent("mh:admin-progress-lab-changed", { detail: { action: "undo" } }));
+      setFeedback(result.ok ? "Undo complet. Starea DB a fost restaurată exact." : "Nu există nicio acțiune de anulat.", result.ok ? "success" : "");
+    } catch (error) {
+      console.error("Progress Lab undo failed:", error);
+      setFeedback("Undo nu a putut fi executat.", "error");
+    }
+  }
+
+  async function restoreLab() {
+    if (!confirm("Restore baseline va reveni exact la starea contului tău de dinaintea sesiunii Progress Lab. Continui?")) return;
+    setFeedback("Se restaurează snapshot-ul inițial…", "loading");
+    try {
+      const result = unwrap(await restoreProgressLabBaseline(supabase, "ro")) || {};
+      state.lab.data = result.lab || state.lab.data;
+      state.lab.loaded = true;
+      renderProgressLab();
+      window.dispatchEvent(new CustomEvent("mh:progress-mutated", { detail: { source: "admin-progress-lab", action: "restore-baseline" } }));
+      window.dispatchEvent(new CustomEvent("mh:admin-progress-lab-changed", { detail: { action: "restore-baseline" } }));
+      setFeedback(result.ok ? "Baseline restaurat. Ești exact la starea de dinaintea testului." : "Nu există o sesiune activă.", result.ok ? "success" : "");
+    } catch (error) {
+      console.error("Progress Lab restore failed:", error);
+      setFeedback("Baseline-ul nu a putut fi restaurat.", "error");
+    }
+  }
+
   async function persist(form) {
     const raw = readForm(form);
     for (const checkbox of form.querySelectorAll('input[type="checkbox"]')) raw[checkbox.name] = checkbox.checked;
@@ -473,12 +699,27 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       host.querySelectorAll("[data-gamification-tab]").forEach((button) => button.classList.toggle("is-active", button === tab));
       closeEditor();
       renderList();
+      if (state.activeTab === "progress-lab") void loadLab();
       return;
     }
 
     const action = event.target.closest("[data-gamification-action]")?.dataset.gamificationAction;
-    if (action === "refresh") return void load({ force: true });
+    if (action === "refresh") return state.activeTab === "progress-lab" ? void loadLab({ force: true }) : void load({ force: true });
     if (action === "new") return openEditor();
+
+    const labCommand = event.target.closest("[data-lab-command]")?.dataset.labCommand;
+    if (labCommand === "undo") return void undoLab();
+    if (labCommand === "restore") return void restoreLab();
+
+    const labActionButton = event.target.closest("[data-lab-action]");
+    if (labActionButton) {
+      const labAction = String(labActionButton.dataset.labAction || "");
+      const contentType = labActionButton.dataset.labType || null;
+      const contentId = labActionButton.dataset.labId || null;
+      const chapterId = labActionButton.dataset.labChapter || null;
+      if ((labAction.endsWith("_reset") || labAction === "chapter_reset") && !confirm("Reset-ul șterge starea DB pentru ținta selectată în sesiunea de test. Snapshot-ul îți permite Undo/Restore. Continui?")) return;
+      return void applyLabAction(labAction, { contentType, contentId, chapterId });
+    }
 
     if (event.target.closest("[data-editor-action='close']")) return closeEditor();
 
@@ -597,11 +838,28 @@ export function createGamificationAdminController({ host, supabase } = {}) {
 
   host.addEventListener("change", (event) => {
     const select = event.target.closest("[data-sim-chapter-select]");
-    if (!select || state.activeTab !== "simulator") return;
-    const chosen = selectedChapter(select.value);
-    if (!chosen) return;
-    state.chapters = [chosen, ...state.chapters.filter((item) => item.id !== chosen.id)];
-    renderSimulator();
+    if (select && state.activeTab === "simulator") {
+      const chosen = selectedChapter(select.value);
+      if (!chosen) return;
+      state.chapters = [chosen, ...state.chapters.filter((item) => item.id !== chosen.id)];
+      renderSimulator();
+      return;
+    }
+
+    const labSelect = event.target.closest("[data-lab-select]");
+    if (!labSelect || state.activeTab !== "progress-lab") return;
+    if (labSelect.dataset.labSelect === "chapter") {
+      state.lab.chapterId = String(labSelect.value || "");
+      state.lab.lessonId = "";
+      state.lab.problemId = "";
+    } else if (labSelect.dataset.labSelect === "lesson") {
+      state.lab.lessonId = String(labSelect.value || "");
+    } else if (labSelect.dataset.labSelect === "problem") {
+      state.lab.problemId = String(labSelect.value || "");
+    } else if (labSelect.dataset.labSelect === "achievement") {
+      state.lab.achievementId = String(labSelect.value || "");
+    }
+    renderProgressLab();
   });
 
   search.addEventListener("input", () => {
@@ -620,6 +878,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         state.loaded = false;
         state.payload = { achievements: [], challenges: [], templates: [] };
         state.chapters = [];
+        state.lab = { loaded: false, loading: false, data: null, chapterId: "", lessonId: "", problemId: "" };
         closeEditor();
         renderList();
       }

@@ -44,3 +44,26 @@ export function generateChallenge(supabase, templateId, startsOn, featured = tru
     p_featured: Boolean(featured)
   });
 }
+
+
+export function loadProgressLab(supabase, locale = "ro") {
+  return call(supabase, "mh_admin_get_progress_lab", { p_locale: locale });
+}
+
+export function runProgressLabAction(supabase, { action, contentType = null, contentId = null, chapterId = null, locale = "ro" } = {}) {
+  return call(supabase, "mh_admin_progress_lab_action", {
+    p_action: action,
+    p_content_type: contentType,
+    p_content_id: contentId,
+    p_chapter_id: chapterId,
+    p_locale: locale
+  });
+}
+
+export function undoProgressLabAction(supabase, locale = "ro") {
+  return call(supabase, "mh_admin_progress_lab_undo", { p_locale: locale });
+}
+
+export function restoreProgressLabBaseline(supabase, locale = "ro") {
+  return call(supabase, "mh_admin_progress_lab_restore", { p_locale: locale });
+}

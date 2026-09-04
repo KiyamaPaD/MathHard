@@ -93,6 +93,12 @@ const {
   normalizeProblem
 } = await importBrowserModule("js/content-model.js");
 const {
+  loadProgressLab,
+  restoreProgressLabBaseline,
+  runProgressLabAction,
+  undoProgressLabAction
+} = await importBrowserModule("js/gamification-admin-repository.js");
+const {
   buildConceptIndex,
   buildRoadmapConceptCoverage,
   conceptIdsForContent,
@@ -1222,6 +1228,50 @@ await roadmapRepositoryModule.loadRoadmapCatalog({
 assert.equal(roadmapAuthChecks, 0);
 assert.equal(roadmapRpcCalls, 2);
 
+
+
+const progressLabCalls = [];
+const progressLabClient = {
+  async rpc(name, args) {
+    progressLabCalls.push({ name, args });
+    return { data: { ok: true, name, args }, error: null };
+  }
+};
+await loadProgressLab(progressLabClient, "ro");
+await runProgressLabAction(progressLabClient, {
+  action: "lesson_pass",
+  contentType: "lesson",
+  contentId: "l1",
+  chapterId: "m1-sets",
+  locale: "ro"
+});
+await runProgressLabAction(progressLabClient, {
+  action: "achievement_fast_forward",
+  contentType: "achievement",
+  contentId: "sets-all-practice",
+  locale: "ro"
+});
+await undoProgressLabAction(progressLabClient, "ro");
+await restoreProgressLabBaseline(progressLabClient, "ro");
+assert.deepEqual(progressLabCalls, [
+  { name: "mh_admin_get_progress_lab", args: { p_locale: "ro" } },
+  { name: "mh_admin_progress_lab_action", args: {
+    p_action: "lesson_pass",
+    p_content_type: "lesson",
+    p_content_id: "l1",
+    p_chapter_id: "m1-sets",
+    p_locale: "ro"
+  } },
+  { name: "mh_admin_progress_lab_action", args: {
+    p_action: "achievement_fast_forward",
+    p_content_type: "achievement",
+    p_content_id: "sets-all-practice",
+    p_chapter_id: null,
+    p_locale: "ro"
+  } },
+  { name: "mh_admin_progress_lab_undo", args: { p_locale: "ro" } },
+  { name: "mh_admin_progress_lab_restore", args: { p_locale: "ro" } }
+]);
 
 assert.equal(slugifyRoadmapValue("Funcții și grafice"), "functii-si-grafice");
 assert.equal(
