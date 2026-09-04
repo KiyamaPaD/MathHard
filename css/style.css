@@ -2838,3 +2838,176 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
     grid-template-columns:1fr;
   }
 }
+
+/* MathHard Phase 117 — optional power-set extension */
+.mh-power-shell{
+  display:grid;
+  gap:14px;
+}
+.mh-power-shell > h2{
+  margin:8px 0 0;
+}
+.mh-power-kicker{
+  width:max-content;
+  max-width:100%;
+  padding:5px 9px;
+  border:1px solid color-mix(in srgb,#9b6bff 34%,var(--border));
+  border-radius:999px;
+  background:color-mix(in srgb,#9b6bff 9%,transparent);
+  color:color-mix(in srgb,#9b6bff 74%,var(--text));
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.mh-power-optional-note,
+.mh-power-core-rule,
+.mh-power-special-case{
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+  line-height:1.55;
+}
+.mh-power-optional-note{
+  border-color:color-mix(in srgb,#9b6bff 34%,var(--border));
+  background:color-mix(in srgb,#9b6bff 7%,var(--card));
+}
+.mh-power-core-rule{
+  border-color:color-mix(in srgb,var(--accent) 30%,var(--border));
+  background:color-mix(in srgb,var(--accent) 7%,var(--card));
+  text-align:center;
+  font-size:1.02rem;
+}
+.mh-power-contrast{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.mh-power-contrast article{
+  display:grid;
+  gap:6px;
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+}
+.mh-power-contrast article strong{
+  font-size:.88rem;
+}
+.mh-power-example-list{
+  display:grid;
+  gap:6px;
+  padding:0;
+  margin:0;
+  list-style:none;
+}
+.mh-power-example-list li{
+  padding:8px 10px;
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  border-radius:10px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+}
+.mh-power-tree-card{
+  margin:14px 0 18px;
+  padding:14px;
+  border:1px solid color-mix(in srgb,#9b6bff 30%,var(--border));
+  border-radius:16px;
+  background:linear-gradient(145deg,color-mix(in srgb,#9b6bff 7%,var(--card)),color-mix(in srgb,var(--card) 98%,transparent));
+  overflow:hidden;
+}
+.mh-power-tree-card h3{
+  margin:0 0 4px;
+}
+.mh-power-tree-card > p{
+  margin:0 0 12px;
+  color:var(--muted);
+}
+.mh-power-tree-scroll{
+  overflow-x:auto;
+  padding-bottom:4px;
+}
+.mh-power-tree-svg{
+  display:block;
+  width:100%;
+  min-width:780px;
+  height:auto;
+}
+.mh-power-tree-svg .edge{
+  stroke:color-mix(in srgb,var(--muted) 58%,transparent);
+  stroke-width:2;
+  fill:none;
+}
+.mh-power-tree-svg .node{
+  fill:color-mix(in srgb,var(--card) 94%,transparent);
+  stroke:color-mix(in srgb,var(--border) 92%,transparent);
+  stroke-width:1.5;
+}
+.mh-power-tree-svg .node-no{
+  fill:color-mix(in srgb,#6f7d91 12%,var(--card));
+}
+.mh-power-tree-svg .node-yes{
+  fill:color-mix(in srgb,#46b96b 12%,var(--card));
+}
+.mh-power-tree-svg .leaf{
+  fill:color-mix(in srgb,#9b6bff 9%,var(--card));
+  stroke:color-mix(in srgb,#9b6bff 32%,var(--border));
+  stroke-width:1.4;
+}
+.mh-power-tree-svg text{
+  fill:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-power-tree-svg .node-text{
+  font-size:12px;
+  font-weight:750;
+}
+.mh-power-tree-svg .leaf-code{
+  font-size:12px;
+  font-weight:800;
+}
+.mh-power-tree-svg .leaf-set{
+  font-size:12px;
+  font-weight:650;
+}
+.mh-power-tree-svg .level-label{
+  fill:var(--muted);
+  font-size:11px;
+  font-weight:700;
+}
+.mh-power-tree-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 14px;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:.86rem;
+}
+.mh-power-tree-legend span{
+  white-space:nowrap;
+}
+.mh-power-formula-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.mh-power-formula-grid article{
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+}
+.mh-power-mini-check-note{
+  padding:11px 13px;
+  border-left:3px solid color-mix(in srgb,#46b96b 70%,var(--border));
+  border-radius:0 10px 10px 0;
+  background:color-mix(in srgb,#46b96b 7%,transparent);
+}
+@media (max-width:760px){
+  .mh-power-contrast,
+  .mh-power-formula-grid{
+    grid-template-columns:1fr;
+  }
+  .mh-power-tree-card{
+    padding:12px;
+  }
+}
