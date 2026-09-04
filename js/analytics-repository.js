@@ -7,6 +7,7 @@ import {
 import { loadConceptMastery } from "./concept-mastery-repository.js";
 import { loadConceptRetention } from "./concept-retention-repository.js";
 import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
+import { loadXpSummary } from "./xp-summary-repository.js";
 
 export async function loadUserAnalytics(supabase, {
   days = 90,
@@ -21,6 +22,11 @@ export async function loadUserAnalytics(supabase, {
     .then((module) => module.loadPracticeReplayAnalytics(supabase, 24))
     .catch(() => ({ problem_replays: 0, exam_replays: 0, total_replays: 0, last_replay_at: "", recent: [] }));
 
+  const xpSummaryPromise = loadXpSummary(supabase).catch((error) => {
+    console.warn("Could not load canonical XP for analytics; using analytics XP fallback:", error);
+    return null;
+  });
+
   const chapterProgressPromise = supabase.rpc("mh_get_user_chapter_progress", { p_locale: safeLocale })
     .then(({ data, error }) => {
       if (error?.code === "PGRST202" || error?.status === 404) return normalizeChapterProgressPayload({ available: false });
@@ -29,7 +35,7 @@ export async function loadUserAnalytics(supabase, {
     })
     .catch(() => normalizeChapterProgressPayload({ available: false }));
 
-  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy, practiceReplays, chapterProgress] = await Promise.all([
+  const [analyticsResult, conceptMastery, conceptRetention, progressTaxonomy, practiceReplays, chapterProgress, xpSummary] = await Promise.all([
     supabase.rpc("mh_get_user_analytics", {
       p_days: safeDays,
       p_locale: safeLocale
@@ -44,7 +50,8 @@ export async function loadUserAnalytics(supabase, {
     }),
     loadProgressTaxonomy(supabase),
     replayAnalyticsPromise,
-    chapterProgressPromise
+    chapterProgressPromise,
+    xpSummaryPromise
   ]);
 
   if (analyticsResult.error) {
@@ -56,8 +63,11 @@ export async function loadUserAnalytics(supabase, {
     throw error;
   }
 
+  const normalizedAnalytics = normalizeAnalyticsPayload(analyticsResult.data || {});
+  if (xpSummary) normalizedAnalytics.summary.xpTotal = xpSummary.totalXp;
+
   return {
-    ...normalizeAnalyticsPayload(analyticsResult.data || {}),
+    ...normalizedAnalytics,
     conceptMastery,
     conceptRetention,
     progressTaxonomy,

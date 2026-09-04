@@ -12,6 +12,7 @@ import {
   sortLessonsForProfile
 } from "./profile-model.js";
 import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
+import { loadXpSummary } from "./xp-summary-repository.js";
 import {
   initializeProfileExperience,
   renderProfileExperience,
@@ -701,7 +702,8 @@ async function loadProfileStatsFromDb(userId) {
       { data: problemRows, error: problemError },
       { data: examRows, error: examError },
       catalog,
-      taxonomy
+      taxonomy,
+      xpSummary
     ] = await Promise.all([
       supabase
         .from("user_lesson_progress")
@@ -719,6 +721,10 @@ async function loadProfileStatsFromDb(userId) {
       loadProgressTaxonomy(supabase).catch((error) => {
         console.warn("Could not load detailed progress taxonomy for profile:", error);
         return null;
+      }),
+      loadXpSummary(supabase).catch((error) => {
+        console.warn("Could not load canonical XP for profile; using problem XP only:", error);
+        return null;
       })
     ]);
 
@@ -732,6 +738,7 @@ async function loadProfileStatsFromDb(userId) {
       examRows: examError ? [] : (examRows || []),
       catalog,
       taxonomy: taxonomy?.available ? taxonomy : null,
+      gamificationSummary: xpSummary,
       lang: LANG
     });
 

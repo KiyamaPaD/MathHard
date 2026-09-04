@@ -1,4 +1,5 @@
 import { loadProgressTaxonomy } from "./progress-taxonomy-repository.js";
+import { loadXpSummary } from "./xp-summary-repository.js";
 
 
 export function lessonTimerSecondsRemaining(error) {
@@ -33,6 +34,7 @@ export let attemptedProblemSet = new Set();
 export let openedProblemSet = new Set();
 export let progressTaxonomy = null;
 export let XP_TOTAL = 0;
+export let XP_BONUS = 0;
 export let XP_DETAILS = {};
 
 function resetProgressState() {
@@ -44,6 +46,7 @@ function resetProgressState() {
   openedProblemSet = new Set();
   progressTaxonomy = null;
   XP_TOTAL = 0;
+  XP_BONUS = 0;
   XP_DETAILS = {};
 }
 
@@ -88,12 +91,39 @@ export function createAppProgressController({
   }
 
   function recomputeXPTotal() {
-    XP_TOTAL = Object.values(XP_DETAILS || {}).reduce((sum, record) => {
+    const baseXp = Object.values(XP_DETAILS || {}).reduce((sum, record) => {
       return sum + Number(record?.xp || 0);
     }, 0);
+    XP_TOTAL = Math.max(0, baseXp + Number(XP_BONUS || 0));
 
     onXpChanged(XP_TOTAL);
     return XP_TOTAL;
+  }
+
+  function syncCanonicalXp(summary = {}) {
+    const parsedBonus = Number(summary?.bonusXp ?? summary?.bonus_xp);
+    if (Number.isFinite(parsedBonus)) XP_BONUS = Math.max(0, Math.round(parsedBonus));
+
+    const parsedTotal = Number(summary?.totalXp ?? summary?.total_xp);
+    const parsedBase = Number(summary?.baseXp ?? summary?.base_xp);
+    if (Number.isFinite(parsedTotal) && Number.isFinite(parsedBase)) {
+      XP_BONUS = Math.max(0, Math.round(parsedTotal - parsedBase));
+    }
+
+    return recomputeXPTotal();
+  }
+
+  async function refreshCanonicalXp() {
+    const expectedUserId = progressUser?.id || "";
+    if (!expectedUserId) return recomputeXPTotal();
+    try {
+      const summary = await loadXpSummary(supabase);
+      if ((progressUser?.id || "") !== expectedUserId) return XP_TOTAL;
+      return syncCanonicalXp(summary);
+    } catch (error) {
+      console.warn("Could not refresh canonical XP; keeping last known value:", error);
+      return XP_TOTAL;
+    }
   }
 
   function awardXPForProblem(problem) {
@@ -309,7 +339,7 @@ export function createAppProgressController({
       }
 
       const userId = resolvedUser.id;
-      const [lessonResult, problemResult, examResult, taxonomyResult] = await Promise.all([
+      const [lessonResult, problemResult, examResult, taxonomyResult, xpSummaryResult] = await Promise.all([
         supabase
           .from("user_lesson_progress")
           .select("*")
@@ -324,6 +354,10 @@ export function createAppProgressController({
           .eq("user_id", userId),
         loadProgressTaxonomy(supabase).catch((error) => {
           console.warn("Could not load progress taxonomy; using table progress only:", error);
+          return null;
+        }),
+        loadXpSummary(supabase).catch((error) => {
+          console.warn("Could not load canonical XP summary; using problem XP only:", error);
           return null;
         })
       ]);
@@ -401,6 +435,9 @@ export function createAppProgressController({
         examsPassedSet = nextPassed;
       }
 
+      if (xpSummaryResult) syncCanonicalXp(xpSummaryResult);
+      else recomputeXPTotal();
+
       onFullRefresh();
       return {
         errors: progressErrors.map(([section, error]) => ({ section, error }))
@@ -447,6 +484,8 @@ export function createAppProgressController({
     markProblemOpened,
     markLessonReadSafe,
     recomputeXPTotal,
+    refreshCanonicalXp,
+    syncCanonicalXp,
     recordExamAttemptStart,
     startLessonReadingSafe,
     applyProblemProgressResult,

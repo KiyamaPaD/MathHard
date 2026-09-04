@@ -146,6 +146,22 @@ const {
 } = await importBrowserModule("js/progress-taxonomy-model.js");
 const { loadProgressTaxonomy } = await importBrowserModule("js/progress-taxonomy-repository.js");
 const {
+  loadXpSummary,
+  normalizeXpSummary
+} = await importBrowserModule("js/xp-summary-repository.js");
+assert.deepEqual(normalizeXpSummary({ base_xp: 80, bonus_xp: 25, total_xp: 105 }), {
+  baseXp: 80, bonusXp: 25, totalXp: 105
+});
+const xpRpcCalls = [];
+const xpSummaryFixture = await loadXpSummary({
+  async rpc(name) {
+    xpRpcCalls.push(name);
+    return { data: { base_xp: 80, bonus_xp: 25, total_xp: 105 }, error: null };
+  }
+});
+assert.equal(xpSummaryFixture.totalXp, 105);
+assert.deepEqual(xpRpcCalls, ["mh_get_user_xp_summary"]);
+const {
   buildProfileExperienceSummary,
   calculateLevelState,
   calculateOverallCompletion
@@ -928,11 +944,15 @@ const profileStats = buildProfileStats({
     problems: [{ id: "problem-1", title_ro: "Problemă" }],
     exams: [{ id: "exam-1", type: "EN", year: 2026, title_ro: "Simulare" }]
   },
+  gamificationSummary: { baseXp: 8, bonusXp: 50, totalXp: 58 },
   lang: "ro"
 });
 assert.equal(profileStats.counts.learned, 1);
 assert.equal(profileStats.counts.solved, 1);
-assert.equal(profileStats.counts.xpTotal, 8);
+assert.equal(profileStats.counts.baseXp, 8);
+assert.equal(profileStats.counts.bonusXp, 50);
+assert.equal(profileStats.counts.xpTotal, 58);
+assert.equal(profileStats.counts.avgXp, "8.00");
 assert.equal(profileStats.counts.totalExamAttempts, 2);
 assert.equal(profileStats.nextLesson.id, "lesson-2");
 assert.equal(profileStats.retryRecommended, true);
@@ -954,6 +974,15 @@ const progressRows = {
 
 const progressErrors = new Set();
 const appProgressClient = {
+  async rpc(name) {
+    if (name === "mh_get_user_xp_summary") {
+      return { data: { base_xp: 9, bonus_xp: 50, total_xp: 59 }, error: null };
+    }
+    if (name === "mh_get_progress_taxonomy") {
+      return { data: null, error: { code: "PGRST202", message: "missing in fixture" } };
+    }
+    return { data: null, error: new Error(`Unexpected RPC: ${name}`) };
+  },
   auth: {
     async getUser() {
       return { data: { user: { id: "user-1" } }, error: null };
@@ -1011,7 +1040,8 @@ assert.equal(appProgressModule.learnedSet.has("lesson-progress"), true);
 assert.equal(appProgressModule.readSet.has("lesson-progress"), true);
 assert.equal(appProgressModule.solvedSet.has("problem-progress"), true);
 assert.equal(appProgressModule.examsPassedSet.has("exam-progress"), true);
-assert.equal(appProgressModule.XP_TOTAL, 9);
+assert.equal(appProgressModule.XP_BONUS, 50);
+assert.equal(appProgressModule.XP_TOTAL, 59);
 assert.equal(progressRefreshes, 2);
 
 progressErrors.add("user_problem_progress");
@@ -1027,7 +1057,7 @@ try {
 assert.ok(progressWarnings.some((message) => message.includes("keeping the last known state")));
 assert.equal(appProgressModule.learnedSet.has("lesson-progress"), false);
 assert.equal(appProgressModule.solvedSet.has("problem-progress"), true);
-assert.equal(appProgressModule.XP_TOTAL, 9);
+assert.equal(appProgressModule.XP_TOTAL, 59);
 progressErrors.clear();
 progressRows.user_lesson_progress = [{ lesson_id: "lesson-progress", learned: true }];
 

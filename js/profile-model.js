@@ -85,6 +85,7 @@ export function buildProfileStats({
   examRows = [],
   catalog = { lessons: [], problems: [], exams: [] },
   taxonomy = null,
+  gamificationSummary = null,
   lang = "ro"
 } = {}) {
   const lessons = sortLessonsForProfile(catalog.lessons, lang);
@@ -128,10 +129,16 @@ export function buildProfileStats({
   const passed = passedRows.length;
   const failed = failedRows.length;
 
-  const xpTotal = solvedRows.reduce(
+  const baseXp = solvedRows.reduce(
     (sum, row) => sum + Number(row.xp_earned || 0),
     0
   );
+  const canonicalTotalXp = Number(gamificationSummary?.totalXp ?? gamificationSummary?.total_xp);
+  const canonicalBonusXp = Number(gamificationSummary?.bonusXp ?? gamificationSummary?.bonus_xp);
+  const bonusXp = Number.isFinite(canonicalBonusXp) ? Math.max(0, canonicalBonusXp) : 0;
+  const xpTotal = Number.isFinite(canonicalTotalXp)
+    ? Math.max(0, canonicalTotalXp)
+    : Math.max(0, baseXp + bonusXp);
 
   const learnedIds = new Set(
     taxonomy?.lessons?.learnedIds?.length
@@ -180,8 +187,10 @@ export function buildProfileStats({
       failed,
       unlearned: Math.max(0, totals.lessons - learned),
       unattempted: Math.max(0, totals.exams - passed - failed),
+      baseXp,
+      bonusXp,
       xpTotal,
-      avgXp: solved > 0 ? (xpTotal / solved).toFixed(2) : "0",
+      avgXp: solved > 0 ? (baseXp / solved).toFixed(2) : "0",
       totalExamAttempts: examRows.reduce(
         (sum, row) => sum + Number(row.attempts_count || 0),
         0

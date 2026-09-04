@@ -4557,12 +4557,17 @@ ${details}`);
     markProblemAttempted,
     markProblemOpened,
     recomputeXPTotal,
+    refreshCanonicalXp,
+    syncCanonicalXp,
     recordExamAttemptStart,
     startLessonReadingSafe,
     applyProblemProgressResult,
     saveExamAttemptResultSafe,
     updateExamAttemptScore
   } = progressController;
+
+  window.addEventListener("mh:progress-mutated", () => void refreshCanonicalXp());
+  window.addEventListener("mh:gamification-data", (event) => syncCanonicalXp(event?.detail || {}));
 
   window.addEventListener("mh:admin-progress-lab-changed", () => {
     if (MH_AUTH_USER) void loadAppProgressFromDb(MH_AUTH_USER);
