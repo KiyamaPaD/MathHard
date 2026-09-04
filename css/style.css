@@ -3037,6 +3037,7 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
 
 .mh-enrichment-guide > h2,
 .mh-enrichment-guide > h3,
+.mh-enrichment-box > h2,
 .mh-enrichment-box > h3{
   margin-top:0;
 }
