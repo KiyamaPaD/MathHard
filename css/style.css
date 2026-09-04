@@ -2711,3 +2711,130 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
   .mh-l7-three-card,
   .mh-l7-region-card{padding:12px;}
 }
+
+/* MathHard Phase 116 — Set theory synthesis + PDF resource */
+.mh-set-summary-shell{
+  display:grid;
+  gap:14px;
+}
+.mh-set-summary-shell > h2{
+  margin:8px 0 0;
+}
+.mh-set-summary-kicker{
+  width:max-content;
+  max-width:100%;
+  padding:5px 9px;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,var(--border));
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 9%,transparent);
+  color:color-mix(in srgb,var(--accent) 76%,var(--text));
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.mh-set-summary-rule{
+  padding:12px 14px;
+  border:1px solid color-mix(in srgb,var(--accent) 28%,var(--border));
+  border-radius:14px;
+  background:color-mix(in srgb,var(--accent) 7%,var(--card));
+  line-height:1.55;
+}
+.mh-set-summary-rule span{
+  white-space:nowrap;
+}
+.mh-set-summary-download{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:18px;
+  padding:16px;
+  border:1px solid color-mix(in srgb,var(--accent) 36%,var(--border));
+  border-radius:18px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--card)),color-mix(in srgb,var(--card) 96%,transparent));
+  box-shadow:0 12px 28px rgba(0,0,0,.08);
+}
+.mh-set-summary-download h3{
+  margin:5px 0 5px;
+}
+.mh-set-summary-download p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.5;
+}
+.mh-set-summary-pdf-badge{
+  width:max-content;
+  padding:4px 7px;
+  border-radius:8px;
+  background:color-mix(in srgb,#d95555 12%,transparent);
+  border:1px solid color-mix(in srgb,#d95555 28%,var(--border));
+  color:color-mix(in srgb,#d95555 80%,var(--text));
+  font-size:.72rem;
+  font-weight:800;
+}
+.mh-set-summary-download-btn{
+  flex:0 0 auto;
+  white-space:nowrap;
+  text-decoration:none;
+}
+.mh-set-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.mh-set-summary-grid article,
+.mh-set-summary-bac > div{
+  display:grid;
+  gap:5px;
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+}
+.mh-set-summary-grid article > span,
+.mh-set-summary-bac > div > span{
+  color:var(--muted);
+  line-height:1.48;
+}
+.mh-set-summary-bac{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.mh-set-summary-bac > div:first-child{
+  border-color:color-mix(in srgb,#46b96b 32%,var(--border));
+  background:color-mix(in srgb,#46b96b 7%,var(--card));
+}
+.mh-set-summary-bac > div:last-child{
+  border-color:color-mix(in srgb,#e6b94d 34%,var(--border));
+  background:color-mix(in srgb,#e6b94d 8%,var(--card));
+}
+.mh-set-summary-note{
+  margin:0;
+  padding:10px 12px;
+  border-left:3px solid color-mix(in srgb,#e6b94d 72%,var(--border));
+  background:color-mix(in srgb,#e6b94d 7%,transparent);
+  border-radius:0 10px 10px 0;
+}
+.mh-set-summary-checklist{
+  display:grid;
+  gap:6px;
+  margin:0;
+  padding-left:22px;
+}
+.mh-set-summary-checklist li{
+  line-height:1.5;
+}
+@media (max-width:760px){
+  .mh-set-summary-download{
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  .mh-set-summary-download-btn{
+    width:100%;
+    justify-content:center;
+  }
+  .mh-set-summary-grid,
+  .mh-set-summary-bac{
+    grid-template-columns:1fr;
+  }
+}
