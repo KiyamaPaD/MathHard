@@ -2374,3 +2374,188 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
   color: color-mix(in srgb, var(--text) 76%, var(--muted) 24%);
   font-weight: 700;
 }
+
+/* MathHard Phase 113 — Lesson 5 Venn–Euler operation visuals */
+.mh-venn-pair{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin:16px 0 20px;
+}
+.mh-venn-card{
+  min-width:0;
+  padding:14px 14px 12px;
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+}
+.mh-venn-card h4{
+  margin:0 0 4px;
+  font-size:1rem;
+}
+.mh-venn-card p{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:.92rem;
+}
+.mh-venn-svg{
+  display:block;
+  width:100%;
+  max-width:430px;
+  height:auto;
+  margin:0 auto;
+  overflow:visible;
+}
+.mh-venn-svg .mh-venn-base{
+  fill:color-mix(in srgb,var(--card) 84%,transparent);
+  stroke:color-mix(in srgb,var(--text) 48%,var(--border));
+  stroke-width:2.5;
+}
+.mh-venn-svg .mh-venn-union-fill{
+  fill:color-mix(in srgb,#4f8cff 58%,transparent);
+}
+.mh-venn-svg .mh-venn-intersection-fill{
+  fill:color-mix(in srgb,#9b6cff 72%,transparent);
+}
+.mh-venn-svg .mh-venn-label{
+  fill:var(--text);
+  font:700 18px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-venn-svg .mh-venn-region-label{
+  fill:color-mix(in srgb,var(--text) 84%,var(--muted));
+  font:600 14px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-venn-legend{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:8px;
+  color:var(--muted);
+  font-size:.88rem;
+  text-align:center;
+}
+.mh-venn-swatch{
+  width:12px;
+  height:12px;
+  flex:0 0 auto;
+  border-radius:3px;
+  background:color-mix(in srgb,#4f8cff 58%,transparent);
+  border:1px solid color-mix(in srgb,var(--text) 20%,transparent);
+}
+.mh-venn-swatch.is-intersection{
+  background:color-mix(in srgb,#9b6cff 72%,transparent);
+}
+@media (max-width:760px){
+  .mh-venn-pair{grid-template-columns:1fr;}
+  .mh-venn-card{padding:12px;}
+}
+.mh-venn-svg .mh-venn-outline{
+  fill:none;
+  stroke:color-mix(in srgb,var(--text) 48%,var(--border));
+  stroke-width:2.5;
+}
+
+/* MathHard Phase 114 — Lesson 6 difference/complement Venn–Euler visuals */
+.mh-venn-difference-pair{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin:16px 0 20px;
+}
+.mh-venn-difference-card,
+.mh-venn-complement-card{
+  min-width:0;
+  padding:14px 14px 12px;
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+}
+.mh-venn-difference-card h4,
+.mh-venn-complement-card h4{
+  margin:0 0 4px;
+  font-size:1rem;
+}
+.mh-venn-difference-card p,
+.mh-venn-complement-card p{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:.92rem;
+}
+.mh-venn-difference-svg,
+.mh-venn-complement-svg{
+  display:block;
+  width:100%;
+  max-width:430px;
+  height:auto;
+  margin:0 auto;
+  overflow:visible;
+}
+.mh-venn-difference-svg .mh-venn-set-base,
+.mh-venn-complement-svg .mh-venn-set-base{
+  fill:color-mix(in srgb,var(--card) 84%,transparent);
+  stroke:color-mix(in srgb,var(--text) 48%,var(--border));
+  stroke-width:2.5;
+}
+.mh-venn-difference-svg .mh-venn-difference-a-fill{
+  fill:color-mix(in srgb,#46b96b 64%,transparent);
+}
+.mh-venn-difference-svg .mh-venn-difference-b-fill{
+  fill:color-mix(in srgb,#4f8cff 62%,transparent);
+}
+.mh-venn-complement-svg .mh-venn-universe-fill{
+  fill:color-mix(in srgb,#e6b94d 50%,transparent);
+}
+.mh-venn-difference-svg .mh-venn-outline,
+.mh-venn-complement-svg .mh-venn-outline{
+  fill:none;
+  stroke:color-mix(in srgb,var(--text) 48%,var(--border));
+  stroke-width:2.5;
+}
+.mh-venn-difference-svg .mh-venn-label,
+.mh-venn-complement-svg .mh-venn-label{
+  fill:var(--text);
+  font:700 18px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-venn-difference-svg .mh-venn-region-label,
+.mh-venn-complement-svg .mh-venn-region-label{
+  fill:color-mix(in srgb,var(--text) 84%,var(--muted));
+  font:600 14px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.mh-venn-difference-legend,
+.mh-venn-complement-legend{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:8px;
+  color:var(--muted);
+  font-size:.88rem;
+  text-align:center;
+}
+.mh-venn-difference-swatch,
+.mh-venn-complement-swatch{
+  width:12px;
+  height:12px;
+  flex:0 0 auto;
+  border-radius:3px;
+  border:1px solid color-mix(in srgb,var(--text) 20%,transparent);
+}
+.mh-venn-difference-swatch.is-a{
+  background:color-mix(in srgb,#46b96b 64%,transparent);
+}
+.mh-venn-difference-swatch.is-b{
+  background:color-mix(in srgb,#4f8cff 62%,transparent);
+}
+.mh-venn-complement-swatch{
+  background:color-mix(in srgb,#e6b94d 50%,transparent);
+}
+.mh-venn-complement-card{
+  max-width:620px;
+  margin:16px auto 20px;
+}
+@media (max-width:760px){
+  .mh-venn-difference-pair{grid-template-columns:1fr;}
+  .mh-venn-difference-card,
+  .mh-venn-complement-card{padding:12px;}
+}
