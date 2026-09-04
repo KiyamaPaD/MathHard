@@ -3011,3 +3011,148 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
     padding:12px;
   }
 }
+
+/* ==========================================================================
+   MathHard Phase 120 — enrichment boxes
+   Spoiler Alert / Fun Fact / Dincolo de programă are exploration-only UI.
+   ========================================================================== */
+.mh-enrichment-guide,
+.mh-enrichment-box{
+  margin:18px 0;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:rgba(15,23,42,.42);
+  box-shadow:0 12px 28px rgba(0,0,0,.12);
+}
+
+.light .mh-enrichment-guide,
+.light .mh-enrichment-box{
+  background:rgba(255,255,255,.86);
+  box-shadow:0 12px 26px rgba(15,23,42,.06);
+}
+
+.mh-enrichment-guide{
+  padding:18px;
+}
+
+.mh-enrichment-guide > h2,
+.mh-enrichment-guide > h3,
+.mh-enrichment-box > h3{
+  margin-top:0;
+}
+
+.mh-enrichment-guide-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
+  margin:14px 0;
+}
+
+.mh-enrichment-guide-card{
+  min-width:0;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:rgba(2,6,23,.2);
+}
+
+.light .mh-enrichment-guide-card{
+  background:rgba(248,250,252,.92);
+}
+
+.mh-enrichment-guide-card h3{
+  margin:0 0 7px;
+  font-size:1rem;
+}
+
+.mh-enrichment-guide-card p{
+  margin:0;
+}
+
+.mh-enrichment-guide-note{
+  margin:12px 0 0;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+  color:var(--muted);
+}
+
+.mh-enrichment-guide.is-compact .mh-enrichment-guide-grid{
+  grid-template-columns:1fr;
+  gap:8px;
+}
+
+.mh-enrichment-guide.is-compact .mh-enrichment-guide-card{
+  padding:11px 13px;
+}
+
+.mh-enrichment-box{
+  position:relative;
+  overflow:hidden;
+  padding:16px 18px 16px 20px;
+}
+
+.mh-enrichment-box::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:var(--accent);
+}
+
+.mh-enrichment-box--spoiler::before{
+  background:#38bdf8;
+}
+
+.mh-enrichment-box--fun::before{
+  background:#f59e0b;
+}
+
+.mh-enrichment-box--beyond::before{
+  background:#a78bfa;
+}
+
+.mh-enrichment-box--spoiler{
+  background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(15,23,42,.28));
+}
+
+.mh-enrichment-box--fun{
+  background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(15,23,42,.28));
+}
+
+.mh-enrichment-box--beyond{
+  background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(15,23,42,.28));
+}
+
+.light .mh-enrichment-box--spoiler{
+  background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(255,255,255,.9));
+}
+
+.light .mh-enrichment-box--fun{
+  background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(255,255,255,.9));
+}
+
+.light .mh-enrichment-box--beyond{
+  background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(255,255,255,.9));
+}
+
+.mh-enrichment-box > :last-child{
+  margin-bottom:0;
+}
+
+.mh-enrichment-optional{
+  color:var(--muted);
+  font-size:.94em;
+}
+
+@media (max-width:640px){
+  .mh-enrichment-guide,
+  .mh-enrichment-box{
+    border-radius:14px;
+  }
+  .mh-enrichment-guide{
+    padding:14px;
+  }
+  .mh-enrichment-box{
+    padding:14px 14px 14px 17px;
+  }
+}
