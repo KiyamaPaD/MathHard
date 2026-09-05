@@ -1579,7 +1579,7 @@ import {
       header_counter_read_title: "Lecții citite",
       header_counter_learned_title: "Lecții învățate",
       header_counter_exams_title: "Examene promovate",
-      header_counter_xp_title: "XP acumulat din probleme",
+      header_counter_xp_title: "XP total · probleme + bonusuri",
 
       tip_text: "Pentru starea Citită, parcurge lecția până la final și așteaptă un minut.",
 
@@ -1614,7 +1614,7 @@ import {
       header_counter_read_title: "Lessons read",
       header_counter_learned_title: "Lessons learned",
       header_counter_exams_title: "Exams passed",
-      header_counter_xp_title: "XP earned from problems",
+      header_counter_xp_title: "Total XP · problems + bonuses",
 
       tip_text: "To earn Read status, finish the lesson and spend at least one minute on it.",
 
