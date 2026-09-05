@@ -3,6 +3,8 @@ import {
   loadCommunityBadgeStudio,
   loadCommunityModerationDashboard,
   loadCommunityIntegrityDashboard,
+  deleteCommunityIntegrityFlag,
+  clearCommunityIntegrityFlags,
   resetCommunityUsername,
   reviewCommunityIntegrityFlag,
   revokeCommunityBadge,
@@ -216,14 +218,14 @@ export function createCommunityAdminController({ host, supabase }) {
   }
 
   function integrityFlagCard(flag) {
-    return `<article class="mh-community-integrity-flag" data-severity="${escapeHtml(flag.severity)}"><div><strong>${escapeHtml(flag.title)}</strong><small>${escapeHtml(FLAG_SEVERITY_LABELS[flag.severity])} · ${escapeHtml(formatDate(flag.lastDetectedAt))}${flag.autoExclude ? " · exclude automat" : ""}</small></div><pre>${escapeHtml(JSON.stringify(flag.evidence, null, 2))}</pre><form data-community-integrity-flag-form="${escapeHtml(flag.id)}"><select name="status">${Object.entries(FLAG_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${flag.status === value ? "selected" : ""}>${label}</option>`).join("")}</select><input name="note" maxlength="2000" value="${escapeHtml(flag.adminNote)}" placeholder="Notă internă"><button class="btn small" type="submit">Salvează flag-ul</button></form></article>`;
+    return `<article class="mh-community-integrity-flag" data-severity="${escapeHtml(flag.severity)}"><div><strong>${escapeHtml(flag.title)}</strong><small>${escapeHtml(FLAG_SEVERITY_LABELS[flag.severity])} · ${escapeHtml(formatDate(flag.lastDetectedAt))}${flag.autoExclude ? " · exclude automat" : ""}</small></div><pre>${escapeHtml(JSON.stringify(flag.evidence, null, 2))}</pre><form data-community-integrity-flag-form="${escapeHtml(flag.id)}"><select name="status">${Object.entries(FLAG_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${flag.status === value ? "selected" : ""}>${label}</option>`).join("")}</select><input name="note" maxlength="2000" value="${escapeHtml(flag.adminNote)}" placeholder="Notă internă"><button class="btn small" type="submit">Salvează flag-ul</button></form><div class="mh-community-integrity-flag-actions"><button class="btn small danger" data-community-delete-integrity-flag="${escapeHtml(flag.id)}" type="button">Șterge flag-ul</button></div></article>`;
   }
 
   function integrityEditor(user) {
     if (!user) return '<div class="mh-community-editor-empty"><strong>Selectează un profil</strong><span>Controlează integritatea, vizibilitatea și tipul contului.</span></div>';
     const flags = state.integrity.flags.filter((flag) => flag.userId === user.userId);
     const draft = communityIntegrityUserDraft(user);
-    return `<div class="mh-community-integrity-editor"><form id="mhCommunityIntegrityForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><div class="mh-community-editor-head"><div><span>Integritate comunitate</span><h3>${escapeHtml(user.displayName)}</h3><code>@${escapeHtml(user.username)} · ${escapeHtml(user.role)}</code></div><button class="btn small" data-community-action="scan-selected" type="button">Scanează</button></div><div class="mh-community-form-grid"><label><span>Tip cont</span><select name="account_kind">${Object.entries(ACCOUNT_KIND_LABELS).map(([value,label]) => `<option value="${value}" ${draft.account_kind === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Review profil</span><select name="content_review_status">${Object.entries(REVIEW_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${draft.content_review_status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="mh-community-integrity-switches"><label class="mh-community-check"><input name="profile_allowed" type="checkbox" ${draft.profile_allowed ? "checked" : ""}><span>Profil public permis</span></label><label class="mh-community-check"><input name="leaderboard_allowed" type="checkbox" ${draft.leaderboard_allowed ? "checked" : ""}><span>Clasamente permise</span></label><label class="mh-community-check"><input name="bio_allowed" type="checkbox" ${draft.bio_allowed ? "checked" : ""}><span>Bio și headline publice</span></label><label class="mh-community-check"><input name="links_allowed" type="checkbox" ${draft.links_allowed ? "checked" : ""}><span>Linkuri publice</span></label><label class="mh-community-check"><input name="integrity_hold" type="checkbox" ${draft.integrity_hold ? "checked" : ""}><span>Suspendare temporară din clasamente</span></label><label class="mh-community-check"><input name="allow_internal_leaderboard" type="checkbox" ${draft.allow_internal_leaderboard ? "checked" : ""}><span>Permite cont intern în clasamente</span></label></div><label><span>Notă internă</span><textarea name="note" maxlength="1000">${escapeHtml(draft.note)}</textarea></label><button class="btn" type="submit">Salvează integritatea</button></form><form class="mh-community-username-reset" id="mhCommunityUsernameResetForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><label><span>Resetare username</span><input name="username" maxlength="24" value="${escapeHtml(user.username)}"></label><label><span>Motiv</span><input name="note" maxlength="500" placeholder="Motiv intern"></label><button class="btn small" type="submit">Schimbă username-ul</button></form><section class="mh-community-integrity-flags"><div class="mh-community-list-head"><strong>Flag-uri de integritate</strong><span>${flags.length}</span></div>${flags.map(integrityFlagCard).join("") || '<p class="legend">Nu există flag-uri pentru acest utilizator.</p>'}</section></div>`;
+    return `<div class="mh-community-integrity-editor"><form id="mhCommunityIntegrityForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><div class="mh-community-editor-head"><div><span>Integritate comunitate</span><h3>${escapeHtml(user.displayName)}</h3><code>@${escapeHtml(user.username)} · ${escapeHtml(user.role)}</code></div><button class="btn small" data-community-action="scan-selected" type="button">Scanează</button></div><div class="mh-community-form-grid"><label><span>Tip cont</span><select name="account_kind">${Object.entries(ACCOUNT_KIND_LABELS).map(([value,label]) => `<option value="${value}" ${draft.account_kind === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Review profil</span><select name="content_review_status">${Object.entries(REVIEW_STATUS_LABELS).map(([value,label]) => `<option value="${value}" ${draft.content_review_status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="mh-community-integrity-switches"><label class="mh-community-check"><input name="profile_allowed" type="checkbox" ${draft.profile_allowed ? "checked" : ""}><span>Profil public permis</span></label><label class="mh-community-check"><input name="leaderboard_allowed" type="checkbox" ${draft.leaderboard_allowed ? "checked" : ""}><span>Clasamente permise</span></label><label class="mh-community-check"><input name="bio_allowed" type="checkbox" ${draft.bio_allowed ? "checked" : ""}><span>Bio și headline publice</span></label><label class="mh-community-check"><input name="links_allowed" type="checkbox" ${draft.links_allowed ? "checked" : ""}><span>Linkuri publice</span></label><label class="mh-community-check"><input name="integrity_hold" type="checkbox" ${draft.integrity_hold ? "checked" : ""}><span>Suspendare temporară din clasamente</span></label><label class="mh-community-check"><input name="allow_internal_leaderboard" type="checkbox" ${draft.allow_internal_leaderboard ? "checked" : ""}><span>Permite cont intern în clasamente</span></label></div><label><span>Notă internă</span><textarea name="note" maxlength="1000">${escapeHtml(draft.note)}</textarea></label><button class="btn" type="submit">Salvează integritatea</button></form><form class="mh-community-username-reset" id="mhCommunityUsernameResetForm"><input type="hidden" name="user_id" value="${escapeHtml(user.userId)}"><label><span>Resetare username</span><input name="username" maxlength="24" value="${escapeHtml(user.username)}"></label><label><span>Motiv</span><input name="note" maxlength="500" placeholder="Motiv intern"></label><button class="btn small" type="submit">Schimbă username-ul</button></form><section class="mh-community-integrity-flags"><div class="mh-community-list-head"><strong>Flag-uri de integritate</strong><div class="mh-community-integrity-flags-head-actions"><span>${flags.length}</span>${flags.length ? `<button class="btn small danger" data-community-clear-integrity-flags="${escapeHtml(user.userId)}" type="button">Șterge toate</button>` : ""}</div></div>${flags.map(integrityFlagCard).join("") || '<p class="legend">Nu există flag-uri pentru acest utilizator.</p>'}</section></div>`;
   }
 
   function integritySearchToolbar() {
@@ -433,6 +435,32 @@ export function createCommunityAdminController({ host, supabase }) {
         await loadIntegrity({ force: true });
         setFeedback("Scanare finalizată.", "success");
       } catch (error) { console.error("Integrity scan failed:", error); setFeedback("Scanarea nu a putut fi finalizată.", "error"); }
+      return;
+    }
+
+    const deleteIntegrityFlagButton = event.target.closest("[data-community-delete-integrity-flag]");
+    if (deleteIntegrityFlagButton) {
+      if (!confirm("Ștergi definitiv acest flag de integritate?")) return;
+      setFeedback("Se șterge flag-ul...", "loading");
+      try {
+        await deleteCommunityIntegrityFlag(supabase, deleteIntegrityFlagButton.dataset.communityDeleteIntegrityFlag);
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Flag șters definitiv.", "success");
+      } catch (error) { console.error("Integrity flag delete failed:", error); setFeedback("Flag-ul nu a putut fi șters.", "error"); }
+      return;
+    }
+
+    const clearIntegrityFlagsButton = event.target.closest("[data-community-clear-integrity-flags]");
+    if (clearIntegrityFlagsButton) {
+      if (!confirm("Ștergi definitiv toate flag-urile de integritate pentru acest cont?")) return;
+      setFeedback("Se șterg flag-urile...", "loading");
+      try {
+        await clearCommunityIntegrityFlags(supabase, clearIntegrityFlagsButton.dataset.communityClearIntegrityFlags);
+        state.integrityLoaded = false;
+        await loadIntegrity({ force: true });
+        setFeedback("Toate flag-urile au fost șterse.", "success");
+      } catch (error) { console.error("Integrity flags clear failed:", error); setFeedback("Flag-urile nu au putut fi șterse.", "error"); }
       return;
     }
 

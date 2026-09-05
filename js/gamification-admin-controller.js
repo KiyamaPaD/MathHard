@@ -365,7 +365,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
             <div class="mh-progress-lab-actions">
               <button class="btn small" data-lab-action="chapter_checks" data-lab-chapter="${esc(chapter.id)}" type="button">7/7 verificări</button>
               <button class="btn small" data-lab-action="chapter_core" data-lab-chapter="${esc(chapter.id)}" type="button">Core + sinteză</button>
-              <button class="btn small" data-lab-action="chapter_extension" data-lab-chapter="${esc(chapter.id)}" type="button">Extensie</button>
+              <button class="btn small" data-lab-action="chapter_extension" data-lab-chapter="${esc(chapter.id)}" type="button">Verifică extensia</button>
               <button class="btn small" data-lab-action="chapter_practice" data-lab-chapter="${esc(chapter.id)}" type="button">Toate problemele core</button>
               <button class="btn" data-lab-action="chapter_full" data-lab-chapter="${esc(chapter.id)}" type="button">100% capitol</button>
               <button class="btn small danger" data-lab-action="chapter_reset" data-lab-chapter="${esc(chapter.id)}" type="button">Reset capitol</button>
@@ -397,7 +397,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
             <div class="mh-progress-lab-current">${esc(lessonState)}</div>
             <div class="mh-progress-lab-actions">
               <button class="btn small" data-lab-action="lesson_read" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson ? "" : "disabled"}>Marchează citită</button>
-              <button class="btn" data-lab-action="lesson_pass" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson?.requires_verification ? "" : "disabled"}>Promovează verificarea</button>
+              <button class="btn" data-lab-action="lesson_pass" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${(selectedLesson?.requires_verification || selectedLesson?.role === "extension") ? "" : "disabled"}>Promovează verificarea</button>
               <button class="btn small danger" data-lab-action="lesson_reset" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson ? "" : "disabled"}>Reset lecția</button>
             </div>
           </article>

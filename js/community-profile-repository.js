@@ -176,6 +176,14 @@ export function reviewCommunityIntegrityFlag(supabase, value) {
   });
 }
 
+export function deleteCommunityIntegrityFlag(supabase, flagId) {
+  return call(supabase, "mh_admin_delete_community_integrity_flag", { p_flag_id: flagId });
+}
+
+export function clearCommunityIntegrityFlags(supabase, userId) {
+  return call(supabase, "mh_admin_clear_community_integrity_flags", { p_user_id: userId });
+}
+
 export function resetCommunityUsername(supabase, value) {
   return call(supabase, "mh_admin_reset_community_username", {
     p_user_id: value.userId,

@@ -153,3 +153,9 @@
     width: 100%;
   }
 }
+
+/* Phase 121D — integrity flag deletion controls */
+.mh-community-integrity-flag-actions{display:flex;justify-content:flex-end;gap:8px}
+.mh-community-integrity-flags-head-actions{display:flex;align-items:center;gap:8px}
+.mh-community-integrity-flags-head-actions>span{color:var(--muted);font-size:.72rem}
+@media(max-width:780px){.mh-community-integrity-flag-actions{justify-content:stretch}.mh-community-integrity-flag-actions>.btn{width:100%}.mh-community-integrity-flags-head-actions{width:100%;justify-content:space-between}}
