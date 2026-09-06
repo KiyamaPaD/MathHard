@@ -1057,6 +1057,7 @@ import {
       if (!expression) {
         return `<div class="mh-live-preview-render-line">${esc(prefix || content)}</div>`;
       }
+      if ((expression.match(/[A-Za-zĂÂÎȘȚăâîșț]{2,}/g) || []).length >= 4) return `<div class="mh-live-preview-render-line">${prefix ? `<span class="mh-live-preview-line-prefix">${esc(prefix)}</span> ` : ""}${esc(expression)}</div>`;
 
       const latex = mhMathPreviewToLatex(mhProtectSetBraces(expression))
         .replaceAll("⦃", "\\left\\{").replaceAll("⦄", "\\right\\}");

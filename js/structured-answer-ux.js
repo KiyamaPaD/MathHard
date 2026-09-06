@@ -4,7 +4,7 @@ const SINGLE_LINE_MODE_VALUES = new Set(["singleline", "single_line", "single-li
 export const STRUCTURED_ANSWER_MAX_LENGTH = 500;
 export const STRUCTURED_ANSWER_MIN_ROWS = 3;
 export const STRUCTURED_ANSWER_MAX_ROWS = 8;
-export const STRUCTURED_ANSWER_MAX_LINES = 12;
+export const STRUCTURED_ANSWER_MAX_LINES = 16;
 export const STRUCTURED_ANSWER_MAX_NEWLINES = STRUCTURED_ANSWER_MAX_LINES - 1;
 
 function normalizedMode(value) {

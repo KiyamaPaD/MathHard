@@ -19,8 +19,8 @@ import {
 assert.equal(STRUCTURED_ANSWER_MAX_LENGTH, 500);
 assert.equal(STRUCTURED_ANSWER_MIN_ROWS, 3);
 assert.equal(STRUCTURED_ANSWER_MAX_ROWS, 8);
-assert.equal(STRUCTURED_ANSWER_MAX_LINES, 12);
-assert.equal(STRUCTURED_ANSWER_MAX_NEWLINES, 11);
+assert.equal(STRUCTURED_ANSWER_MAX_LINES, 16);
+assert.equal(STRUCTURED_ANSWER_MAX_NEWLINES, 15);
 
 assert.equal(isStructuredAnswerProblem({ answer_ui_mode: "structured" }), true);
 assert.equal(isStructuredAnswerProblem({ answer_ui_mode: "singleline" }), false);
@@ -45,8 +45,8 @@ assert.equal(shouldSubmitAnswerOnKeydown({ key: "a", structured: true, ctrlKey: 
 
 assert.equal(countStructuredAnswerNewlines("a\nb\nc"), 2);
 assert.equal(canInsertStructuredAnswerNewline("a\nb"), true);
-assert.equal(canInsertStructuredAnswerNewline(Array(12).fill("x").join("\n")), false);
-assert.equal(clampStructuredAnswerNewlines(Array(14).fill("x").join("\n")).split("\n").length, 12);
+assert.equal(canInsertStructuredAnswerNewline(Array(16).fill("x").join("\n")), false);
+assert.equal(clampStructuredAnswerNewlines(Array(18).fill("x").join("\n")).split("\n").length, 16);
 
 const metrics = structuredTextareaMetrics({
   fontSize: "16px",
@@ -90,7 +90,7 @@ assert.equal(fakeTextarea.style.height, "216px");
 assert.equal(fakeTextarea.style.overflowY, "auto");
 
 let prevented = false;
-fakeTextarea.value = Array(12).fill("x").join("\n");
+fakeTextarea.value = Array(16).fill("x").join("\n");
 listeners.get("keydown")({
   key: "Enter",
   ctrlKey: false,
@@ -110,9 +110,9 @@ listeners.get("keydown")({
 });
 assert.equal(prevented, true);
 
-fakeTextarea.value = Array(14).fill("x").join("\n");
+fakeTextarea.value = Array(18).fill("x").join("\n");
 listeners.get("input")({});
-assert.equal(fakeTextarea.value.split("\n").length, 12);
+assert.equal(fakeTextarea.value.split("\n").length, 16);
 
 prevented = false;
 listeners.get("keydown")({
@@ -134,5 +134,9 @@ assert.match(controllerSource, /maxlength="\$\{STRUCTURED_ANSWER_MAX_LENGTH\}"/)
 assert.match(controllerSource, /bindStructuredAnswerTextarea\(input\)/);
 assert.match(controllerSource, /shouldSubmitAnswerOnKeydown\(\{/);
 assert.doesNotMatch(controllerSource, /\bP(?:8|9|11)\b/);
+
+
+const appSource = readFileSync(fileURLToPath(new URL("../js/app.js", import.meta.url)), "utf8");
+assert.match(appSource, /expression\.match\(\/\[A-Za-zĂÂÎȘȚăâîșț\]/);
 
 console.log("Structured Answer UX tests passed.");
