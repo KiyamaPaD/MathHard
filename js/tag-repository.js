@@ -43,7 +43,10 @@ export function applyTagCatalog(data, catalog){
       const mapped = asArray(byContent.get(`${type}:${item.id}`)).sort((a,b) => a.position-b.position).map((row) => row.tag_id);
       const legacy = type === "lesson" ? asArray(item.tags).map(cleanId).filter(Boolean) : [];
       if (type === "lesson") item.legacy_tags = [...legacy];
-      item.tags = [...new Set(mapped.length ? mapped : legacy)];
+      const completionControlTags = type === "lesson"
+        ? legacy.filter((tag) => String(tag || "").trim().toLowerCase().startsWith("completion:"))
+        : [];
+      item.tags = [...new Set([...(mapped.length ? mapped : legacy), ...completionControlTags])];
       const labels = new Map(normalized.tags.map((tag) => [tag.id, tag]));
       item.tag_labels = item.tags.flatMap((id) => { const tag = labels.get(id); return tag ? [tag.label_ro, tag.label_en] : [id]; });
     }
