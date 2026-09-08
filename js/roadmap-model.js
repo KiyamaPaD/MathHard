@@ -113,8 +113,9 @@ function contentLookup(catalog) {
   };
 }
 
-function lessonCompletesOnRead(node) {
+function lessonCompletesOnRead(node, readOnlyLessonIds = new Set()) {
   if (node?.node_type !== "lesson") return false;
+  if (readOnlyLessonIds.has(node.content_id)) return true;
   const tags = [
     ...asArray(node?.content?.tags),
     ...asArray(node?.content?.legacy_tags)
@@ -122,10 +123,23 @@ function lessonCompletesOnRead(node) {
   return tags.some((tag) => asText(tag).toLowerCase() === "completion:read");
 }
 
-function isContentDone(node, progress) {
+function readOnlySynthesisLessonIds(roadmap) {
+  const ids = new Set();
+  for (const chapter of asArray(roadmap?.chapters)) {
+    for (const member of asArray(chapter?.members)) {
+      if (member?.content_type !== "lesson") continue;
+      if (asText(member?.role).toLowerCase() !== "synthesis") continue;
+      if (member?.requires_verification !== false) continue;
+      if (member?.content_id) ids.add(member.content_id);
+    }
+  }
+  return ids;
+}
+
+function isContentDone(node, progress, readOnlyLessonIds = new Set()) {
   if (node.node_type === "lesson") {
     if (progress.learnedSet?.has(node.content_id)) return true;
-    return lessonCompletesOnRead(node) && Boolean(progress.readSet?.has(node.content_id));
+    return lessonCompletesOnRead(node, readOnlyLessonIds) && Boolean(progress.readSet?.has(node.content_id));
   }
   if (node.node_type === "problem") return progress.solvedSet?.has(node.content_id) || false;
   if (node.node_type === "exam") return progress.examsPassedSet?.has(node.content_id) || false;
@@ -181,6 +195,7 @@ function requiredPrerequisiteMap(roadmap) {
 function computeNodeStates(roadmap, progress, catalog, language) {
   const lookups = contentLookup(catalog);
   const prerequisiteMap = requiredPrerequisiteMap(roadmap);
+  const readOnlyLessonIds = readOnlySynthesisLessonIds(roadmap);
   const nodes = roadmap.nodes.map((node) => attachContent(node, lookups, language));
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const states = new Map();
@@ -193,7 +208,7 @@ function computeNodeStates(roadmap, progress, catalog, language) {
     states.set(node.id, {
       node,
       exists,
-      done: exists && isContentDone(node, progress),
+      done: exists && isContentDone(node, progress, readOnlyLessonIds),
       read: exists && isContentRead(node, progress),
       status: exists ? "pending" : "planned",
       unmetPrerequisites: []

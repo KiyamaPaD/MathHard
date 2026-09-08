@@ -5755,11 +5755,8 @@ ${details}`);
     return LESSON_QUIZ_AVAILABILITY.has(String(lessonId || ""));
   }
   function lessonCompletesOnRead(lesson){
-    const tags = [
-      ...(Array.isArray(lesson?.tags) ? lesson.tags : []),
-      ...(Array.isArray(lesson?.legacy_tags) ? lesson.legacy_tags : [])
-    ];
-    return tags.some((tag) => (
+    if (["m1-ix-logic-synthesis","m1-ix-set-synthesis"].includes(String(lesson?.id || ""))) return true;
+    return [...(lesson?.tags || []), ...(lesson?.legacy_tags || [])].some((tag) => (
       String(tag || "").trim().toLowerCase() === "completion:read"
     ));
   }
