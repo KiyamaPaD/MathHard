@@ -114,9 +114,12 @@ function contentLookup(catalog) {
 }
 
 function lessonCompletesOnRead(node) {
-  return node?.node_type === "lesson" && Array.isArray(node?.content?.tags) && node.content.tags.some((tag) => (
-    asText(tag).toLowerCase() === "completion:read"
-  ));
+  if (node?.node_type !== "lesson") return false;
+  const tags = [
+    ...asArray(node?.content?.tags),
+    ...asArray(node?.content?.legacy_tags)
+  ];
+  return tags.some((tag) => asText(tag).toLowerCase() === "completion:read");
 }
 
 function isContentDone(node, progress) {

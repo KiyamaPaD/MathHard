@@ -5755,7 +5755,11 @@ ${details}`);
     return LESSON_QUIZ_AVAILABILITY.has(String(lessonId || ""));
   }
   function lessonCompletesOnRead(lesson){
-    return Array.isArray(lesson?.tags) && lesson.tags.some((tag) => (
+    const tags = [
+      ...(Array.isArray(lesson?.tags) ? lesson.tags : []),
+      ...(Array.isArray(lesson?.legacy_tags) ? lesson.legacy_tags : [])
+    ];
+    return tags.some((tag) => (
       String(tag || "").trim().toLowerCase() === "completion:read"
     ));
   }
