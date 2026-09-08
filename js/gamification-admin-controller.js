@@ -322,9 +322,13 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     const session = lab.session || {};
     const latest = session.latest_action;
 
+    const selectedLessonIsReadOnlySynthesis = selectedLesson?.role === "synthesis";
     const lessonState = selectedLesson
-      ? `${selectedLesson.read_completed ? "Citită" : "Necitită"} · ${selectedLesson.quiz_passed ? "Verificare trecută" : "Fără verificare trecută"} · ${selectedLesson.learned ? "Învățată" : "Neînvățată"}`
+      ? selectedLessonIsReadOnlySynthesis
+        ? `${selectedLesson.read_completed ? "Citită" : "Necitită"} · Sinteză read-only · Fără verificare`
+        : `${selectedLesson.read_completed ? "Citită" : "Necitită"} · ${selectedLesson.quiz_passed ? "Verificare trecută" : "Fără verificare trecută"} · ${selectedLesson.learned ? "Învățată" : "Neînvățată"}`
       : "—";
+    const chapterVerificationTotal = lessons.filter((item) => item.role === "core_lesson" && item.requires_verification).length;
     const problemState = selectedProblem
       ? `${selectedProblem.solved ? "Rezolvată" : "Nerezolvată"} · ${Number(selectedProblem.xp_earned || 0)} XP`
       : "—";
@@ -363,7 +367,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
           <article class="mh-progress-lab-card is-chapter">
             <div class="mh-progress-lab-card-head"><span>🏁</span><div><strong>${esc(chapter.title || chapter.id)}</strong><small>Fast-forward pentru milestones care în mod normal iau mult timp.</small></div></div>
             <div class="mh-progress-lab-actions">
-              <button class="btn small" data-lab-action="chapter_checks" data-lab-chapter="${esc(chapter.id)}" type="button">7/7 verificări</button>
+              <button class="btn small" data-lab-action="chapter_checks" data-lab-chapter="${esc(chapter.id)}" type="button">${chapterVerificationTotal}/${chapterVerificationTotal} verificări</button>
               <button class="btn small" data-lab-action="chapter_core" data-lab-chapter="${esc(chapter.id)}" type="button">Core + sinteză</button>
               <button class="btn small" data-lab-action="chapter_extension" data-lab-chapter="${esc(chapter.id)}" type="button">Verifică extensia</button>
               <button class="btn small" data-lab-action="chapter_practice" data-lab-chapter="${esc(chapter.id)}" type="button">Toate problemele core</button>
@@ -397,7 +401,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
             <div class="mh-progress-lab-current">${esc(lessonState)}</div>
             <div class="mh-progress-lab-actions">
               <button class="btn small" data-lab-action="lesson_read" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson ? "" : "disabled"}>Marchează citită</button>
-              <button class="btn" data-lab-action="lesson_pass" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${(selectedLesson?.requires_verification || selectedLesson?.role === "extension") ? "" : "disabled"}>Promovează verificarea</button>
+              <button class="btn" data-lab-action="lesson_pass" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${(selectedLesson?.requires_verification || selectedLesson?.role === "extension") ? "" : "disabled"}>${selectedLessonIsReadOnlySynthesis ? "Fără verificare" : "Promovează verificarea"}</button>
               <button class="btn small danger" data-lab-action="lesson_reset" data-lab-type="lesson" data-lab-id="${esc(selectedLesson?.content_id || "")}" type="button" ${selectedLesson ? "" : "disabled"}>Reset lecția</button>
             </div>
           </article>
