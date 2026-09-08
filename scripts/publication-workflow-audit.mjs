@@ -78,10 +78,18 @@ if (!css.includes(".mh-quality-bulk-bar") || !css.includes(".mh-quality-modal-ca
 if (!controller.includes("setSelectionRange") || !controller.includes("data-quality-query")) {
   errors.push("Editorial search does not preserve focus during live filtering.");
 }
-if (!contentRepository.includes("CACHE_VERSION = 15")) {
+function cacheVersion(source) {
+  const match = source.match(/\bCACHE_VERSION\s*=\s*(\d+)\b/);
+  return match ? Number(match[1]) : null;
+}
+
+const contentCacheVersion = cacheVersion(contentRepository);
+const conceptCacheVersion = cacheVersion(conceptRepository);
+
+if (!Number.isInteger(contentCacheVersion) || contentCacheVersion < 15) {
   errors.push("Content cache version was not invalidated for the publication gate.");
 }
-if (!conceptRepository.includes("CACHE_VERSION = 2")) {
+if (!Number.isInteger(conceptCacheVersion) || conceptCacheVersion < 2) {
   errors.push("Concept cache version was not invalidated for publication filtering.");
 }
 
