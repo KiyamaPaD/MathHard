@@ -45,7 +45,7 @@
       @media(max-width:640px){.mh-real-nline__stage{height:260px}.mh-real-nline input[type=text]{max-width:150px}}
     </style>
     <div class="mh-real-nline__head"><strong>↔ ${tr('title')}</strong><span class="mh-real-nline__hint">${tr('hint')}</span></div>
-    <div class="mh-real-nline__controls"><input class="mh-rnl-input" type="text" inputmode="text" placeholder="${tr('input')} — ex. -3, 1/2, sqrt(2), pi"><button data-a="add">＋ ${tr('add')}</button><button data-a="clear">${tr('clear')}</button></div>
+    <div class="mh-real-nline__controls"><input class="mh-rnl-input" type="text" inputmode="text" placeholder="${tr('input')} — ex. -3, 1/2, sqrt(2), pi"><button type="button" data-a="add">＋ ${tr('add')}</button><button type="button" data-a="clear">${tr('clear')}</button></div>
     <div class="mh-real-nline__error"></div><div class="mh-real-nline__stage"><svg aria-label="${tr('title')}"></svg></div>
     <div><span style="color:var(--muted)">${tr('order')}:</span> <span class="mh-real-nline__order"></span></div>
     <div class="mh-real-nline__interval"><strong>${tr('interval')}:</strong>
