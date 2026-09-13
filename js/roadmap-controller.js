@@ -289,6 +289,11 @@ export function createRoadmapController({
       || null;
   }
 
+  function renderRoadmapMath() {
+    const renderer = globalThis.MH_render;
+    if (typeof renderer === "function") renderer(root);
+  }
+
   function currentView() {
     const progress = getProgress?.() || {};
     return buildRoadmapView({
@@ -477,6 +482,10 @@ export function createRoadmapController({
       </div>
     `;
 
+    // Roadmap descriptions are inserted dynamically after the page-level KaTeX
+    // pass has already run. Re-run MathHard's shared renderer so delimiters in
+    // lesson/chapter/next-step descriptions are typeset instead of shown raw.
+    renderRoadmapMath();
     bindInteractions();
   }
 
