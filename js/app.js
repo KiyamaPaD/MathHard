@@ -2010,7 +2010,7 @@ import {
     if (typeof mhScrollToMain === "function") mhScrollToMain();
   }
 
-  let scrollHandler=null;
+  let scrollHandler=null, workspaceContinuityController=null;
 
   /* lesson timer state */
   let lessonTimer=null, lessonSecondsLeft=0, lessonScrolled=false;
@@ -3597,8 +3597,6 @@ ${details}`);
     const scope = String(userId || "").trim();
     if (!scope || adminControllerUserId === scope) return;
 
-    // Controllers are reused across auth changes, but their visible form state
-    // must never cross account boundaries in the same browser tab.
     mhClearAdminForm({ saveCurrent: false, restoreDraft: false });
     restoreLastAdminEditorContext();
     mhRenderAdminList();
@@ -3632,7 +3630,6 @@ ${details}`);
     adminBtn.disabled = !visible;
     if (visible) updateAdminConnectionLabel(LANG === "ro" ? "Pregătit" : "Ready");
 
-    // Access loss is definitive only after the session and role checks finish.
     if (!visible && closeSurfaces) {
       adminDrawer?.classList.remove("open");
       adminExamRecoveryController?.setAdmin(false);
@@ -3647,8 +3644,6 @@ ${details}`);
 
   async function getVerifiedActiveUser() {
     try {
-      // getUser() validates the current access token instead of trusting only
-      // the locally cached session returned by getSession().
       const { data, error } = await supabase.auth.getUser();
 
       if (error) {
@@ -3697,15 +3692,11 @@ ${details}`);
   async function refreshAdminButtonVisibility() {
     if (!adminBtn) return false;
 
-    // Each refresh owns an epoch. Any newer auth/navigation event invalidates
-    // this result, preventing a slow stale admin check from re-showing the
     // button after logout.
     const requestEpoch = ++adminVisibilityEpoch;
     const wasGranted = adminBtn.dataset.accessState === "granted"
       || Boolean(adminDrawer?.classList.contains("open"));
 
-    // A visibility change or token refresh must not close an active Admin workspace.
-    // Keep the last verified state until the new check finishes.
     setAdminVerificationPending();
 
     const activeUser = await getVerifiedActiveUser();
@@ -3741,8 +3732,6 @@ ${details}`);
     const requestEpoch = ++adminVisibilityEpoch;
 
     try {
-      // Re-check auth and role on every click. Button visibility alone is never
-      // treated as authorization.
       setAdminVerificationPending();
       const activeUser = await getVerifiedActiveUser();
 
@@ -3818,7 +3807,6 @@ ${details}`);
   }
 
   async function logoutAdmin() {
-    // Invalidate every in-flight role check before waiting for sign-out.
     ++adminVisibilityEpoch;
     setAdminButtonVisibility(false);
     adminExamRecoveryController?.setAdmin(false);
@@ -3835,7 +3823,6 @@ ${details}`);
     if (error) {
       console.error("Logout error:", error);
       alert("Delogarea a eșuat: " + error.message);
-      // The session may still be valid when sign-out fails.
       refreshAdminButtonVisibility();
       return;
     }
@@ -5894,7 +5881,6 @@ ${details}`);
     lessonReadingSessionId=String(row.session_id || '');
     const eligibleAt=Date.parse(row.eligible_at || ''), startedAt=Date.parse(row.started_at || '');
     const serverDurationMs=eligibleAt-startedAt;
-    // Use server-to-server duration so device clock skew cannot unlock early.
     lessonReadingEligibleAt=(Number.isFinite(serverDurationMs) && serverDurationMs>=0)
       ? Date.now()+serverDurationMs : (Number.isFinite(eligibleAt) ? eligibleAt : Date.now()+60_000);
     lessonSecondsLeft=Math.max(0, Math.ceil((lessonReadingEligibleAt-Date.now())/1000));
@@ -6094,9 +6080,10 @@ ${details}`);
     setLessonOnlyActionsVisible(false);
     stopLessonTimer();
 
-    // opresc instanța anterioară (dacă există)
     try{ if (window.MH_NumberLinePy) MH_NumberLinePy.unmount(WIDGET_ID); }catch(e){}
     const isProblem = forcedType ? forcedType === "problem" : (TAB === "problems");
+    const drawer=document.getElementById("drawer");
+    if(drawer)drawer.dataset.workspaceItemId=item.id||"";
     learningWorkspaceController?.open(item, isProblem ? "problem" : "lesson");
     const title=(LANG==="ro"? (item.title_ro||item.title_en):(item.title_en||item.title_ro));
     const done = isProblem ? solvedSet.has(item.id) : learnedSet.has(item.id);
@@ -6242,13 +6229,9 @@ ${details}`);
         goBtn.onclick = () => {
           const lessonId = item.id;
 
-          // Leave the lesson workspace first. The proposed-problems action is a
-          // catalogue transition, not a second workspace layered over the lesson.
           closeDrawerSafely();
           if (document.getElementById("drawer")?.classList.contains("open")) return;
 
-          // Open a clean Problems view scoped strictly to the current lesson.
-          // Previous problem filters must not hide lesson-practice items.
           mhResetContentFilters();
           filter.byLessonId = lessonId;
           filter.problemSort = "easy-asc";
@@ -6347,7 +6330,8 @@ ${details}`);
     setLessonOnlyActionsVisible(false);
     stopLessonTimer();
 
-    document.getElementById("drawer").classList.add("open");
+    const tipsDrawer=document.getElementById("drawer");
+    if(tipsDrawer){delete tipsDrawer.dataset.workspaceItemId;tipsDrawer.dataset.workspaceType="tips";tipsDrawer.classList.add("open");}
   }
   try{ if (window.MH_NumberLinePy) MH_NumberLinePy.unmount(WIDGET_ID); }catch(e){}
   function closeDrawerSafely() {
@@ -6643,7 +6627,7 @@ function openExam(exam){
   const examDrawer = document.getElementById("drawer");
   examDrawer?.classList.remove("is-learning-workspace", "is-lesson-workspace", "is-problem-workspace");
   examDrawer?.classList.add("is-exam-workspace");
-  if (examDrawer) examDrawer.dataset.workspaceType = "exam";
+  if (examDrawer){examDrawer.dataset.workspaceType="exam";examDrawer.dataset.workspaceItemId=exam.id||"";}
 
   const title = (LANG === "ro" ? exam.title_ro : exam.title_en) || exam.title_ro || exam.title_en || exam.id;
   let runtimeExam = {
@@ -6873,8 +6857,6 @@ function openExam(exam){
     setStatus(LANG === "ro" ? "Se salvează ultimele răspunsuri și se calculează rezultatul…" : "Saving final answers and calculating the result…");
 
     try {
-      // Always flush the latest local values, including automatic timeout.
-      // Per-item mutation queues guarantee this final save runs after older autosaves.
       await persistAllLocalAnswers();
       const result = await submitSecureExamAttempt(supabase, activeAttempt.attempt_id);
       examFinished = true;
@@ -7619,8 +7601,6 @@ function openExam(exam){
     const previousUserId = MH_AUTH_USER?.id || "";
     const nextUserId = nextUser?.id || "";
 
-    // Persist the outgoing admin's draft while getUserId() still resolves to
-    // that account, then clear all in-memory Admin state before switching.
     if (previousUserId && previousUserId !== nextUserId) {
       adminDraftController?.saveNow();
     }
@@ -7743,6 +7723,16 @@ function openExam(exam){
   wireGlobalExamClickGuards();
   refreshExamLockUi();
     adminExamRecoveryController?.refresh();
+
+  void import("./workspace-continuity-controller.js?v=154").then(({createWorkspaceContinuityController})=>{
+    workspaceContinuityController=createWorkspaceContinuityController({
+      getUserId:()=>MH_AUTH_USER?.id||"guest",
+      resolveContent:(type,id)=>type==="exam"?DATA.exams.find(x=>x.id===id):type==="problem"?DATA.problems.find(x=>x.id===id):DATA.lessons.find(x=>x.id===id),
+      openContent:(item,type)=>type==="exam"?openExam(item):openViewer(item,type)
+    });
+    workspaceContinuityController.mount();
+    setTimeout(()=>workspaceContinuityController?.restoreContent(),80);
+  }).catch(error=>console.warn("Workspace continuity unavailable:",error));
 
   if (CONTENT_BOOT_ERROR) {
     mhShowContentStatusBanner({

@@ -185,7 +185,7 @@ function normalizeStoredPayload(parsed, expectedScope) {
     context: normalizeAdminDraftContext(parsed.context || {}),
     controls: sanitizeControls(parsed.controls || {}),
     exam_items: Array.isArray(parsed.exam_items) ? clone(parsed.exam_items.slice(0, 250)) : [],
-    lesson_tab: parsed.lesson_tab === "quiz" ? "quiz" : "content"
+    lesson_tab: ["quiz", "practice"].includes(parsed.lesson_tab) ? parsed.lesson_tab : "content"
   };
 }
 
@@ -393,7 +393,7 @@ export function createAdminDraftController({
       context: currentContext,
       controls: sanitizeControls(serializeAdminFormValues(form)),
       exam_items: clone((getExamItems?.() || []).slice(0, 250)),
-      lesson_tab: getLessonTab?.() === "quiz" ? "quiz" : "content"
+      lesson_tab: ["quiz", "practice"].includes(getLessonTab?.()) ? getLessonTab() : "content"
     };
 
     const serialized = JSON.stringify(payload);
@@ -419,7 +419,7 @@ export function createAdminDraftController({
     try {
       restoreAdminFormValues(form, payload.controls || {});
       setExamItems(clone(payload.exam_items || []));
-      setLessonTab(payload.lesson_tab === "quiz" ? "quiz" : "content");
+      setLessonTab(["quiz", "practice"].includes(payload.lesson_tab) ? payload.lesson_tab : "content");
       onAfterRestore(payload);
     } finally {
       restoring = false;
