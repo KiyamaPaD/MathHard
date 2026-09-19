@@ -29,7 +29,7 @@ for (const token of [
   '/js/app.js?v=5b2'
 ]) has(index, token, `release cache token ${token}`);
 has(app, 'import("./roadmap-controller.js?v=151")', "fresh roadmap controller import");
-has(app, 'import("./function-intro-explorer.js?v=151")', "fresh function explorer import");
+has(app, 'import("./function-intro-explorer.js?v=152")', "fresh function explorer import");
 has(app, 'console.error("Function intro explorer failed:"', "visible function explorer load error");
 
 // The explorer stays progressively enhanced and idempotent.

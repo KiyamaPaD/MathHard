@@ -3468,3 +3468,199 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
     justify-content:flex-start;
   }
 }
+
+/* ==========================================================================
+   MathHard Phase 152 — function image / preimage trace explorer
+   ========================================================================== */
+.mh-function-trace{
+  margin:18px 0;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--card) 90%,transparent),color-mix(in srgb,var(--accent) 5%,var(--card)));
+  box-shadow:0 14px 30px rgba(0,0,0,.10);
+}
+
+.mh-function-trace__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:12px;
+}
+
+.mh-function-trace__head>div:first-child{
+  display:grid;
+  gap:3px;
+}
+
+.mh-function-trace__head strong{font-size:1rem}
+.mh-function-trace__head small{color:var(--muted)}
+
+.mh-function-trace__controls{
+  display:grid;
+  justify-items:end;
+  gap:8px;
+}
+
+.mh-function-trace__tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.mh-function-trace__tabs button{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--chip);
+  color:var(--chip-text);
+  padding:7px 10px;
+  font:inherit;
+  font-size:.8rem;
+  cursor:pointer;
+}
+
+.mh-function-trace__tabs button.is-active{
+  border-color:color-mix(in srgb,var(--accent) 70%,var(--border));
+  background:color-mix(in srgb,var(--accent) 18%,var(--chip));
+  color:var(--text);
+  font-weight:800;
+}
+
+.mh-function-trace__restriction{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:var(--muted);
+  font-size:.84rem;
+  cursor:pointer;
+}
+
+.mh-function-trace__restriction input{accent-color:var(--accent)}
+
+.mh-function-trace__status,
+.mh-function-trace__summary{
+  text-align:center;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.mh-function-trace__status{
+  min-height:28px;
+  margin-bottom:4px;
+}
+
+.mh-function-trace__canvas{
+  max-width:650px;
+  margin:0 auto;
+}
+
+.mh-function-trace__svg{
+  width:100%;
+  height:auto;
+  display:block;
+}
+
+.mh-function-trace__oval{
+  fill:color-mix(in srgb,var(--chip) 44%,transparent);
+  stroke:var(--border);
+  stroke-width:2;
+}
+
+.mh-function-trace__set-label{
+  fill:var(--text);
+  text-anchor:middle;
+  font-family:inherit;
+  font-size:18px;
+  font-weight:800;
+}
+
+.mh-trace-edge{
+  fill:none;
+  stroke:color-mix(in srgb,var(--muted) 72%,transparent);
+  stroke-width:3;
+  stroke-linecap:round;
+  opacity:.55;
+  transition:stroke .16s ease,opacity .16s ease,stroke-width .16s ease;
+}
+
+.mh-trace-edge.is-highlighted{
+  stroke:var(--accent);
+  stroke-width:4;
+  opacity:1;
+}
+
+.mh-trace-arrowhead{fill:var(--accent)}
+
+.mh-trace-node{
+  cursor:pointer;
+  outline:none;
+}
+
+.mh-trace-node circle{
+  fill:var(--card);
+  stroke:color-mix(in srgb,var(--accent) 44%,var(--border));
+  stroke-width:2;
+  transition:fill .16s ease,stroke .16s ease,stroke-width .16s ease;
+}
+
+.mh-trace-node text{
+  fill:var(--text);
+  text-anchor:middle;
+  font-family:inherit;
+  font-size:16px;
+  font-weight:800;
+  pointer-events:none;
+}
+
+.mh-trace-node:hover circle,
+.mh-trace-node:focus circle{
+  stroke:var(--accent);
+}
+
+.mh-trace-node.is-highlighted circle,
+.mh-trace-node.is-selected circle{
+  fill:color-mix(in srgb,var(--accent) 16%,var(--card));
+  stroke:var(--accent);
+  stroke-width:3;
+}
+
+.mh-function-trace__result{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  max-width:650px;
+  min-height:54px;
+  margin:6px auto 8px;
+  padding:9px 12px;
+  border:1px solid color-mix(in srgb,var(--accent) 42%,var(--border));
+  border-radius:12px;
+  background:color-mix(in srgb,var(--accent) 6%,transparent);
+}
+
+.mh-function-trace__result strong{
+  font-size:.82rem;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.mh-function-trace__result .katex-display{margin:.2em 0}
+
+.mh-function-trace--fallback .mh-function-trace__result{
+  grid-template-columns:1fr;
+  text-align:center;
+}
+
+@media (max-width:720px){
+  .mh-function-trace__head{
+    display:grid;
+  }
+  .mh-function-trace__controls{
+    justify-items:start;
+  }
+  .mh-function-trace__result{
+    grid-template-columns:1fr;
+    text-align:center;
+  }
+}

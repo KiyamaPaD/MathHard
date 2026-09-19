@@ -21,7 +21,7 @@ const expect = (condition, message) => { if (!condition) failures.push(message);
 const requireText = (source, token, label = token) => expect(source.includes(token), `missing: ${label}`);
 const rejectText = (source, token, label = token) => expect(!source.includes(token), `unexpected: ${label}`);
 
-requireText(app, 'import("./function-intro-explorer.js?v=151")', "lazy function explorer import with fresh cache key");
+requireText(app, 'import("./function-intro-explorer.js?v=152")', "lazy function explorer import with fresh cache key");
 rejectText(app, 'from "./function-intro-explorer.js"', "function explorer must not be eagerly imported");
 requireText(app, "mountFunctionIntroExplorers(content)", "lesson-body function explorer mount");
 expect(app.split(/\r?\n/).length <= 7850, "app.js exceeds 7850-line architecture ceiling");

@@ -145,6 +145,10 @@ function mappingSvg(variant, markerId) {
 }
 
 function mountFunctionMapping(host) {
+  if (host?.dataset?.mhTraceMode === "image-preimage") {
+    mountFunctionTraceExplorer(host);
+    return;
+  }
   if (!host || host.dataset.mhMounted === "1") return;
   host.dataset.mhMounted = "1";
   const en = isEnglish();
@@ -183,6 +187,150 @@ function mountFunctionMapping(host) {
 
   buttons.forEach((button) => button.addEventListener("click", () => show(button.dataset.mapCase)));
   show("valid");
+}
+
+const TRACE_MAPPING = {
+  domain: ["1", "2", "3", "4"],
+  codomain: ["a", "b", "c", "d"],
+  edges: [["1", "a"], ["2", "b"], ["3", "a"], ["4", "c"]],
+  restrictedDomain: new Set(["1", "3"])
+};
+
+function traceSetText(values) {
+  return values.length ? `\\{${values.join(",")}\\}` : `\\varnothing`;
+}
+
+function mountFunctionTraceExplorer(host) {
+  if (!host || host.dataset.mhMounted === "1") return;
+  host.dataset.mhMounted = "1";
+  const en = isEnglish();
+  const serial = ++mappingSerial;
+  let mode = "image";
+  let restricted = false;
+  let selectedLeft = "1";
+  let selectedRight = "a";
+
+  host.innerHTML = `
+    <section class="mh-function-trace" aria-label="${en ? "Interactive image and preimage explorer" : "Explorer interactiv pentru imagine și preimagine"}">
+      <div class="mh-function-trace__head">
+        <div>
+          <strong>${en ? "Trace the arrows" : "Urmărește săgețile"}</strong>
+          <small>${en ? "Choose a direction, then select an input or an output." : "Alege direcția, apoi selectează un input sau un output."}</small>
+        </div>
+        <div class="mh-function-trace__controls">
+          <div class="mh-function-trace__tabs" role="group" aria-label="${en ? "Trace direction" : "Direcția urmăririi"}">
+            <button type="button" data-trace-mode="image" class="is-active">${en ? "IMAGE" : "IMAGINE"}</button>
+            <button type="button" data-trace-mode="preimage">${en ? "PREIMAGE" : "PREIMAGINE"}</button>
+          </div>
+          <label class="mh-function-trace__restriction">
+            <input type="checkbox" data-trace-restrict>
+            <span>${en ? "Restrict to C = {1,3}" : "Restricționează la C = {1,3}"}</span>
+          </label>
+        </div>
+      </div>
+      <div class="mh-function-trace__status" aria-live="polite"></div>
+      <div class="mh-function-trace__canvas"></div>
+      <div class="mh-function-trace__result" aria-live="polite"></div>
+      <div class="mh-function-trace__summary"></div>
+    </section>
+  `;
+
+  const canvas = host.querySelector(".mh-function-trace__canvas");
+  const status = host.querySelector(".mh-function-trace__status");
+  const result = host.querySelector(".mh-function-trace__result");
+  const summary = host.querySelector(".mh-function-trace__summary");
+  const modeButtons = [...host.querySelectorAll("[data-trace-mode]")];
+  const restrictInput = host.querySelector("[data-trace-restrict]");
+
+  const activeDomain = () => TRACE_MAPPING.domain.filter((value) => !restricted || TRACE_MAPPING.restrictedDomain.has(value));
+  const activeEdges = () => TRACE_MAPPING.edges.filter(([from]) => activeDomain().includes(from));
+  const imageSet = () => [...new Set(activeEdges().map(([, to]) => to))].sort();
+  const preimages = (target) => activeEdges().filter(([, to]) => to === target).map(([from]) => from);
+
+  const render = () => {
+    const active = new Set(activeDomain());
+    if (!active.has(selectedLeft)) selectedLeft = activeDomain()[0] || "";
+    const edges = activeEdges();
+    const ysLeft = { "1": 58, "2": 108, "3": 158, "4": 208 };
+    const ysRight = { a: 58, b: 108, c: 158, d: 208 };
+    const markerId = `mh-function-trace-arrow-${serial}`;
+
+    let highlightedSources = new Set();
+    let highlightedTargets = new Set();
+    if (mode === "image" && selectedLeft) {
+      highlightedSources.add(selectedLeft);
+      const edge = edges.find(([from]) => from === selectedLeft);
+      if (edge) highlightedTargets.add(edge[1]);
+    } else if (mode === "preimage") {
+      highlightedTargets.add(selectedRight);
+      preimages(selectedRight).forEach((value) => highlightedSources.add(value));
+    }
+
+    const paths = edges.map(([from, to]) => {
+      const isHighlighted = mode === "image"
+        ? from === selectedLeft
+        : to === selectedRight;
+      return `<path class="mh-trace-edge${isHighlighted ? " is-highlighted" : ""}" d="M 185 ${ysLeft[from]} C 255 ${ysLeft[from]}, 315 ${ysRight[to]}, 385 ${ysRight[to]}" marker-end="url(#${markerId})"/>`;
+    }).join("");
+
+    const leftNodes = TRACE_MAPPING.domain.map((value) => {
+      if (!active.has(value)) return "";
+      const selected = mode === "image" && value === selectedLeft;
+      const highlighted = highlightedSources.has(value);
+      return `<g class="mh-trace-node${selected ? " is-selected" : ""}${highlighted ? " is-highlighted" : ""}" data-trace-left="${value}" role="button" tabindex="0" aria-label="${en ? `Input ${value}` : `Input ${value}`}"><circle cx="135" cy="${ysLeft[value]}" r="22"/><text x="135" y="${ysLeft[value] + 5}">${value}</text></g>`;
+    }).join("");
+
+    const rightNodes = TRACE_MAPPING.codomain.map((value) => {
+      const selected = mode === "preimage" && value === selectedRight;
+      const highlighted = highlightedTargets.has(value);
+      return `<g class="mh-trace-node${selected ? " is-selected" : ""}${highlighted ? " is-highlighted" : ""}" data-trace-right="${value}" role="button" tabindex="0" aria-label="${en ? `Output ${value}` : `Output ${value}`}"><circle cx="435" cy="${ysRight[value]}" r="22"/><text x="435" y="${ysRight[value] + 5}">${value}</text></g>`;
+    }).join("");
+
+    canvas.innerHTML = `
+      <svg class="mh-function-trace__svg" viewBox="0 0 570 270" role="img" aria-label="${en ? "Mapping from A to B" : "Corespondență de la A la B"}">
+        <defs><marker id="${markerId}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mh-trace-arrowhead" d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>
+        <text class="mh-function-trace__set-label" x="135" y="24">${restricted ? "C" : "A"}</text>
+        <text class="mh-function-trace__set-label" x="435" y="24">B</text>
+        <ellipse class="mh-function-trace__oval" cx="135" cy="133" rx="76" ry="119"/>
+        <ellipse class="mh-function-trace__oval" cx="435" cy="133" rx="76" ry="119"/>
+        ${paths}${leftNodes}${rightNodes}
+      </svg>
+    `;
+
+    canvas.querySelectorAll("[data-trace-left]").forEach((node) => {
+      const select = () => { if (mode === "image") { selectedLeft = node.dataset.traceLeft; render(); } };
+      node.addEventListener("click", select);
+      node.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } });
+    });
+    canvas.querySelectorAll("[data-trace-right]").forEach((node) => {
+      const select = () => { if (mode === "preimage") { selectedRight = node.dataset.traceRight; render(); } };
+      node.addEventListener("click", select);
+      node.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } });
+    });
+
+    modeButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.traceMode === mode));
+    status.innerHTML = restricted
+      ? `${en ? "Restriction active" : "Restricție activă"}: \\(C=\\{1,3\\}\\subseteq A\\)`
+      : `${en ? "Full domain" : "Domeniu complet"}: \\(A=\\{1,2,3,4\\}\\)`;
+
+    if (mode === "image") {
+      const edge = edges.find(([from]) => from === selectedLeft);
+      const target = edge?.[1] || "—";
+      result.innerHTML = `<strong>${en ? "Image" : "Imagine"}</strong><span>\\[f(${selectedLeft})=${target}\\]</span>`;
+    } else {
+      const values = preimages(selectedRight);
+      result.innerHTML = `<strong>${en ? "Preimage" : "Preimagine"}</strong><span>\\[f^{-1}(\\{${selectedRight}\\})=${traceSetText(values)}\\]</span>`;
+    }
+    summary.innerHTML = `${en ? "Current image of the function" : "Imaginea funcției în starea curentă"}: \\(\\operatorname{Im}f=${traceSetText(imageSet())}\\)`;
+    renderMath(host);
+  };
+
+  modeButtons.forEach((button) => button.addEventListener("click", () => {
+    mode = button.dataset.traceMode === "preimage" ? "preimage" : "image";
+    render();
+  }));
+  restrictInput.addEventListener("change", () => { restricted = restrictInput.checked; render(); });
+  render();
 }
 
 export function mountFunctionIntroExplorers(root = document) {
