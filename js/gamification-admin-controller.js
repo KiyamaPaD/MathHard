@@ -267,8 +267,8 @@ export function createGamificationAdminController({ host, supabase } = {}) {
               <label>Explorare %<input name="exploration_percent" type="number" min="0" max="100" value="${exploration}"></label>
               <label>Accuracy verificări %<input name="verification_accuracy" type="number" min="0" max="100" step="0.1" value="94"></label>
               <label>Probleme fără hint<input name="problems_without_hints" type="number" min="0" max="${practiceTotal}" value="${Math.min(defaultSolved, Math.max(0, defaultSolved - 2))}"></label>
-              <label>Concept puternic<input name="strongest_concept" value="Reuniune și intersecție"></label>
-              <label>Concept de revăzut<input name="review_concept" value="Diagrame cu 3 mulțimi"></label>
+              <label>Concept puternic<input name="strongest_concept" value="" placeholder="opțional · ex. un concept din capitol"></label>
+              <label>Concept de revăzut<input name="review_concept" value="" placeholder="opțional · ex. un concept de consolidat"></label>
             </div>` : `<div class="mh-admin-empty-state"><strong>Niciun capitol disponibil</strong><span>Rulează Phase 118C și reîncarcă Studio-ul.</span></div>`}
             <button class="btn" type="submit" ${chapter ? "" : "disabled"}>Simulează CAPITOL FINALIZAT</button>
           </form>
@@ -316,7 +316,16 @@ export function createGamificationAdminController({ host, supabase } = {}) {
     const selectedProblem = problems.find((item) => String(item.content_id) === String(state.lab.problemId)) || problems[0] || null;
     if (selectedLesson && !state.lab.lessonId) state.lab.lessonId = String(selectedLesson.content_id);
     if (selectedProblem && !state.lab.problemId) state.lab.problemId = String(selectedProblem.content_id);
-    const achievements = Array.isArray(lab.achievements) ? lab.achievements : [];
+    const achievementsRaw = Array.isArray(lab.achievements) ? lab.achievements : [];
+    const chapterId = String(chapter?.id || "");
+    const achievements = [...achievementsRaw].sort((left, right) => {
+      const leftChapter = String(left?.criteria?.chapter_id || "");
+      const rightChapter = String(right?.criteria?.chapter_id || "");
+      const leftMatch = leftChapter === chapterId ? 0 : 1;
+      const rightMatch = rightChapter === chapterId ? 0 : 1;
+      if (leftMatch !== rightMatch) return leftMatch - rightMatch;
+      return String(left?.title || left?.id || "").localeCompare(String(right?.title || right?.id || ""), "ro");
+    });
     const selectedAchievement = achievements.find((item) => String(item.id) === String(state.lab.achievementId)) || achievements[0] || null;
     if (selectedAchievement && !state.lab.achievementId) state.lab.achievementId = String(selectedAchievement.id);
     const session = lab.session || {};
@@ -328,7 +337,11 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         ? `${selectedLesson.read_completed ? "Citită" : "Necitită"} · Sinteză read-only · Fără verificare`
         : `${selectedLesson.read_completed ? "Citită" : "Necitită"} · ${selectedLesson.quiz_passed ? "Verificare trecută" : "Fără verificare trecută"} · ${selectedLesson.learned ? "Învățată" : "Neînvățată"}`
       : "—";
+    const chapterCoreTotal = lessons.filter((item) => item.role === "core_lesson").length;
     const chapterVerificationTotal = lessons.filter((item) => item.role === "core_lesson" && item.requires_verification).length;
+    const chapterSynthesisTotal = lessons.filter((item) => item.role === "synthesis").length;
+    const chapterExtensionTotal = lessons.filter((item) => item.role === "extension").length;
+    const chapterPracticeTotal = problems.filter((item) => item.role === "practice").length;
     const problemState = selectedProblem
       ? `${selectedProblem.solved ? "Rezolvată" : "Nerezolvată"} · ${Number(selectedProblem.xp_earned || 0)} XP`
       : "—";
@@ -366,10 +379,11 @@ export function createGamificationAdminController({ host, supabase } = {}) {
         <div class="mh-progress-lab-grid">
           <article class="mh-progress-lab-card is-chapter">
             <div class="mh-progress-lab-card-head"><span>🏁</span><div><strong>${esc(chapter.title || chapter.id)}</strong><small>Fast-forward pentru milestones care în mod normal iau mult timp.</small></div></div>
+            <div class="mh-progress-lab-current">${chapterCoreTotal} core · ${chapterVerificationTotal} verificări · ${chapterSynthesisTotal} sinteză · ${chapterPracticeTotal} probleme · ${chapterExtensionTotal} extensii</div>
             <div class="mh-progress-lab-actions">
               <button class="btn small" data-lab-action="chapter_checks" data-lab-chapter="${esc(chapter.id)}" type="button">${chapterVerificationTotal}/${chapterVerificationTotal} verificări</button>
               <button class="btn small" data-lab-action="chapter_core" data-lab-chapter="${esc(chapter.id)}" type="button">Core + sinteză</button>
-              <button class="btn small" data-lab-action="chapter_extension" data-lab-chapter="${esc(chapter.id)}" type="button">Verifică extensia</button>
+              <button class="btn small" data-lab-action="chapter_extension" data-lab-chapter="${esc(chapter.id)}" type="button" ${chapterExtensionTotal ? "" : "disabled"}>${chapterExtensionTotal ? "Verifică extensia" : "Fără extensie"}</button>
               <button class="btn small" data-lab-action="chapter_practice" data-lab-chapter="${esc(chapter.id)}" type="button">Toate problemele core</button>
               <button class="btn" data-lab-action="chapter_full" data-lab-chapter="${esc(chapter.id)}" type="button">100% capitol</button>
               <button class="btn small danger" data-lab-action="chapter_reset" data-lab-chapter="${esc(chapter.id)}" type="button">Reset capitol</button>
@@ -384,7 +398,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
                 ${achievements.map((item) => `<option value="${esc(item.id)}"${String(item.id) === String(selectedAchievement?.id) ? " selected" : ""}>${esc(item.icon || "✦")} ${esc(item.title || item.id)} · ${esc(item.rarity || "common")}${item.unlocked ? " · DEBLOCAT" : ""}</option>`).join("")}
               </select>
             </label>
-            <div class="mh-progress-lab-current">${selectedAchievement ? `${esc(selectedAchievement.unlocked ? "Deblocat" : "Blocat")} · criteriu <code>${esc(selectedAchievement.criteria?.metric || "—")}</code>` : "—"}</div>
+            <div class="mh-progress-lab-current">${selectedAchievement ? `${esc(selectedAchievement.unlocked ? "Deblocat" : "Blocat")} · criteriu <code>${esc(selectedAchievement.criteria?.metric || "—")}</code>${selectedAchievement.progress_current != null && selectedAchievement.progress_target != null ? ` · ${esc(selectedAchievement.progress_current)}/${esc(selectedAchievement.progress_target)}` : ""}` : "—"}</div>
             <div class="mh-progress-lab-actions">
               <button class="btn" data-lab-action="achievement_fast_forward" data-lab-type="achievement" data-lab-id="${esc(selectedAchievement?.id || "")}" type="button" ${selectedAchievement ? "" : "disabled"}>FAST-FORWARD PÂNĂ LA UNLOCK</button>
             </div>
@@ -856,6 +870,7 @@ export function createGamificationAdminController({ host, supabase } = {}) {
       state.lab.chapterId = String(labSelect.value || "");
       state.lab.lessonId = "";
       state.lab.problemId = "";
+      state.lab.achievementId = "";
     } else if (labSelect.dataset.labSelect === "lesson") {
       state.lab.lessonId = String(labSelect.value || "");
     } else if (labSelect.dataset.labSelect === "problem") {
