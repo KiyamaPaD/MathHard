@@ -3203,3 +3203,268 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
 .mh-practice-admin-ungrouped{display:grid;gap:8px;border-top:1px solid var(--border);padding-top:12px}
 .mh-practice-admin-ungrouped select{min-width:180px}
 @media(max-width:720px){.mh-practice-admin-toolbar,.mh-practice-admin-group-head,.mh-practice-admin-problem{align-items:flex-start;flex-direction:column}.mh-practice-admin-row-actions,.mh-practice-admin-add{width:100%}.mh-practice-admin-add select{flex:1;min-width:0}}
+
+/* ==========================================================================
+   MathHard Phase 150 — C5 L1 function foundations micro-visuals
+   ========================================================================== */
+.mh-function-machine,
+.mh-function-map{
+  margin:18px 0;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--card) 88%,transparent),color-mix(in srgb,var(--accent) 6%,var(--card)));
+  box-shadow:0 14px 30px rgba(0,0,0,.10);
+}
+
+.mh-function-machine__head,
+.mh-function-map__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
+
+.mh-function-machine__head > div,
+.mh-function-map__head > div:first-child{
+  display:grid;
+  gap:3px;
+}
+
+.mh-function-machine__head strong,
+.mh-function-map__head strong{
+  font-size:1rem;
+}
+
+.mh-function-machine__head small,
+.mh-function-map__head small{
+  color:var(--muted);
+}
+
+.mh-function-machine__badge{
+  flex:0 0 auto;
+  padding:5px 9px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--chip);
+  color:var(--chip-text);
+  font-size:.76rem;
+  font-weight:800;
+  letter-spacing:.025em;
+}
+
+.mh-function-machine__grid{
+  display:grid;
+  grid-template-columns:minmax(100px,.9fr) 34px minmax(180px,1.4fr) 34px minmax(100px,.9fr);
+  gap:8px;
+  align-items:stretch;
+}
+
+.mh-function-machine__stage{
+  min-width:0;
+  display:grid;
+  align-content:center;
+  gap:8px;
+  min-height:112px;
+  padding:13px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--chip) 62%,transparent);
+  text-align:center;
+}
+
+.mh-function-machine__stage > span{
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+
+.mh-function-machine__input,
+.mh-function-machine__select{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg);
+  color:var(--text);
+  padding:10px 11px;
+  font:inherit;
+  text-align:center;
+}
+
+.mh-function-machine__stage--output{
+  border-color:color-mix(in srgb,#22c55e 55%,var(--border));
+}
+
+.mh-function-machine__output{
+  font-size:1.7rem;
+  line-height:1;
+}
+
+.mh-function-machine__arrow{
+  display:grid;
+  place-items:center;
+  color:var(--muted);
+  font-size:1.6rem;
+  font-weight:900;
+}
+
+.mh-function-machine__equation{
+  min-height:46px;
+  display:grid;
+  place-items:center;
+  margin-top:10px;
+  padding:6px 10px;
+  border-radius:12px;
+  background:color-mix(in srgb,var(--bg) 55%,transparent);
+}
+
+.mh-function-machine__equation .katex-display{
+  margin:.25em 0;
+}
+
+.mh-function-machine__note,
+.mh-function-map__rule{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:.92rem;
+  text-align:center;
+}
+
+.mh-function-map__tabs{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:6px;
+}
+
+.mh-function-map__tabs button{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--chip);
+  color:var(--chip-text);
+  padding:7px 10px;
+  font:inherit;
+  font-size:.82rem;
+  cursor:pointer;
+}
+
+.mh-function-map__tabs button.is-active{
+  border-color:color-mix(in srgb,var(--accent) 70%,var(--border));
+  background:color-mix(in srgb,var(--accent) 18%,var(--chip));
+  color:var(--text);
+  font-weight:800;
+}
+
+.mh-function-map__canvas{
+  max-width:620px;
+  margin:0 auto;
+}
+
+.mh-function-map__svg{
+  width:100%;
+  height:auto;
+  display:block;
+}
+
+.mh-function-map__oval{
+  fill:color-mix(in srgb,var(--chip) 45%,transparent);
+  stroke:var(--border);
+  stroke-width:2;
+}
+
+.mh-function-map__set-label,
+.mh-map-node-text{
+  fill:var(--text);
+  text-anchor:middle;
+  font-family:inherit;
+  font-weight:800;
+}
+
+.mh-function-map__set-label{
+  font-size:18px;
+}
+
+.mh-map-node{
+  fill:var(--card);
+  stroke:color-mix(in srgb,var(--accent) 55%,var(--border));
+  stroke-width:2;
+}
+
+.mh-map-node-text{
+  font-size:16px;
+}
+
+.mh-map-edge{
+  fill:none;
+  stroke-width:3;
+  stroke-linecap:round;
+  opacity:.9;
+}
+
+.mh-map-edge.is-ok{
+  stroke:#22c55e;
+}
+
+.mh-map-edge.is-bad{
+  stroke:#ef4444;
+}
+
+.mh-map-arrowhead.is-ok{
+  fill:#22c55e;
+}
+
+.mh-map-arrowhead.is-bad{
+  fill:#ef4444;
+}
+
+.mh-function-map__verdict{
+  display:grid;
+  gap:3px;
+  max-width:620px;
+  margin:8px auto 0;
+  padding:11px 13px;
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+
+.mh-function-map__verdict strong{
+  font-size:.95rem;
+}
+
+.mh-function-map__verdict span{
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.mh-function-map__verdict.is-ok{
+  border-color:color-mix(in srgb,#22c55e 55%,var(--border));
+  background:color-mix(in srgb,#22c55e 8%,transparent);
+}
+
+.mh-function-map__verdict.is-bad{
+  border-color:color-mix(in srgb,#ef4444 55%,var(--border));
+  background:color-mix(in srgb,#ef4444 7%,transparent);
+}
+
+@media (max-width:720px){
+  .mh-function-machine__head,
+  .mh-function-map__head{
+    display:grid;
+  }
+  .mh-function-machine__badge{
+    justify-self:start;
+  }
+  .mh-function-machine__grid{
+    grid-template-columns:1fr;
+  }
+  .mh-function-machine__arrow{
+    min-height:22px;
+    transform:rotate(90deg);
+  }
+  .mh-function-map__tabs{
+    justify-content:flex-start;
+  }
+}

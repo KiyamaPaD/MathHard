@@ -6126,6 +6126,7 @@ ${details}`);
 
       const html=buildLessonHTML(item);
       content.innerHTML=html;
+      if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch(()=>{});
       setTimeout(()=>{ MH_render(content); },0);
       
     if (item && item.id === 'v-reprez-nr-nat') {
