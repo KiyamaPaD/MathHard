@@ -1,3 +1,4 @@
+import { safeReadJson, safeWriteJson } from "./browser-state.js";
 import {
   buildRoadmapView,
   getRoadmapNodeIcon,
@@ -28,6 +29,46 @@ function asArray(value) {
 
 function textFor(language, ro, en) {
   return language === "en" ? en : ro;
+}
+
+const ROADMAP_UI_STORAGE_KEY = "mathhard:roadmap-ui:v1";
+
+function getRoadmapUiStorage() {
+  try {
+    return globalThis.localStorage || null;
+  } catch {
+    return null;
+  }
+}
+
+function safeStringSet(value) {
+  return new Set(
+    Array.isArray(value)
+      ? value.map((entry) => String(entry || "").trim()).filter((entry) => entry && entry.length <= 320).slice(0, 500)
+      : []
+  );
+}
+
+function loadRoadmapUiState() {
+  const saved = safeReadJson(getRoadmapUiStorage(), ROADMAP_UI_STORAGE_KEY, {}, { maxBytes: 64 * 1024 });
+  return {
+    sections: safeStringSet(saved?.sections),
+    grades: safeStringSet(saved?.grades),
+    chapters: safeStringSet(saved?.chapters)
+  };
+}
+
+function saveRoadmapUiState({ sections, grades, chapters }) {
+  return safeWriteJson(
+    getRoadmapUiStorage(),
+    ROADMAP_UI_STORAGE_KEY,
+    {
+      sections: [...sections].slice(0, 500),
+      grades: [...grades].slice(0, 500),
+      chapters: [...chapters].slice(0, 500)
+    },
+    { maxBytes: 64 * 1024 }
+  );
 }
 
 function nodeButtonTitle(state, language) {
@@ -271,9 +312,18 @@ export function createRoadmapController({
   let selectedRoadmapId = "";
   let loading = false;
   let error = null;
-  const collapsedSections = new Set();
-  const collapsedGroups = new Set();
-  const collapsedChapters = new Set();
+  const savedUiState = loadRoadmapUiState();
+  const collapsedSections = savedUiState.sections;
+  const collapsedGroups = savedUiState.grades;
+  const collapsedChapters = savedUiState.chapters;
+
+  function persistUiState() {
+    saveRoadmapUiState({
+      sections: collapsedSections,
+      grades: collapsedGroups,
+      chapters: collapsedChapters
+    });
+  }
 
   function sectionCollapseKey(section) {
     return `${selectedRoadmapId}:${section.id || section.section_key || section.position || 0}`;
@@ -337,6 +387,7 @@ export function createRoadmapController({
         if (!key) return;
         if (collapsedSections.has(key)) collapsedSections.delete(key);
         else collapsedSections.add(key);
+        persistUiState();
         render();
       });
     }
@@ -345,6 +396,7 @@ export function createRoadmapController({
       button.addEventListener("click", () => {
         const key = `${selectedRoadmapId}:${button.dataset.roadmapGradeToggle}`;
         collapsedGroups.has(key) ? collapsedGroups.delete(key) : collapsedGroups.add(key);
+        persistUiState();
         render();
       });
     }
@@ -361,6 +413,7 @@ export function createRoadmapController({
         const willCollapse = !collapsedChapters.has(key);
         if (willCollapse) collapsedChapters.add(key);
         else collapsedChapters.delete(key);
+        persistUiState();
 
         // Toggle the existing DOM instead of rebuilding the whole roadmap.
         // Re-rendering a tall chapter could move the document scroll anchor and

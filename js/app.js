@@ -82,7 +82,7 @@ import {
   validateExamPayload as mhValidateExamPayload
 } from "./admin-content-model.js";
 const roadmapRuntimePromise = Promise.all([
-  import("./roadmap-controller.js"),
+  import("./roadmap-controller.js?v=151"),
   import("./roadmap-repository.js")
 ]).then(([controllerModule, repositoryModule]) => ({
   createRoadmapController: controllerModule.createRoadmapController,
@@ -135,7 +135,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"), import("./tag-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5b1"), import("./content-batch-import-controller.js?v=5b1"), import("./practice-group-admin-controller.js")
+      import("./content-quality-admin-controller.js?v=5b2"), import("./content-batch-import-controller.js?v=5b2"), import("./practice-group-admin-controller.js")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -3206,7 +3206,7 @@ ${details}`);
     };
   }
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5b1");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5b2");
   }
   async function mountContentAuthoringController({ reportError = false } = {}) {
     if (contentAuthoringController) return contentAuthoringController;
@@ -6126,7 +6126,7 @@ ${details}`);
 
       const html=buildLessonHTML(item);
       content.innerHTML=html;
-      if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch(()=>{});
+      if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js?v=151").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch((error)=>console.error("Function intro explorer failed:",error));
       setTimeout(()=>{ MH_render(content); },0);
       
     if (item && item.id === 'v-reprez-nr-nat') {

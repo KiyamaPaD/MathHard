@@ -745,7 +745,8 @@ if (!indexHtml.includes('id="mhRoadmapAdminStudio"')) {
 }
 const usesRoadmapControllerRuntime =
   appSource.includes('from "./roadmap-controller.js"') ||
-  appSource.includes('import("./roadmap-controller.js")');
+  appSource.includes('import("./roadmap-controller.js")') ||
+  appSource.includes('import("./roadmap-controller.js?v=151")');
 if (!usesRoadmapControllerRuntime || !appSource.includes('import("./roadmap-admin-controller.js")')) {
   fail("app.js must use the extracted Phase 12 roadmap controllers, with Admin loaded on demand.");
 }

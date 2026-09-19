@@ -10,7 +10,7 @@ try { sql = readFileSync(sqlPath, "utf8"); } catch {}
 const errors = [];
 const requireToken = (source, token, message) => { if (!source.includes(token)) errors.push(message); };
 
-requireToken(index, 'data-mh-build="5b1"', "Build marker is stale");
+requireToken(index, 'data-mh-build="5b2"', "Build marker is stale");
 requireToken(index, 'id="mh_exam_problems" name="exam_problems" type="hidden"', "Legacy practice-problem exam field is still user-facing");
 requireToken(index, "Bancă de examen independentă", "Independent exam-bank policy is not visible in the editor");
 requireToken(app, "problems: normalizedItems.length ? []", "Embedded exam items do not automatically clear legacy problem links");
