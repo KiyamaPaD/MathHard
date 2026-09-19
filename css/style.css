@@ -3185,3 +3185,21 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
     gap:2px;
   }
 }
+
+/* Admin: reusable lesson practice-group manager. */
+.mh-practice-admin-card{display:grid;gap:14px}
+.mh-practice-admin-toolbar,.mh-practice-admin-group-head,.mh-practice-admin-ungrouped>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mh-practice-admin-toolbar>div:first-child,.mh-practice-admin-group-head>div:first-child{display:grid;gap:3px}
+.mh-practice-admin-toolbar span,.mh-practice-admin-group-head span{color:var(--muted);font-size:.9rem}
+.mh-practice-admin-row-actions,.mh-practice-admin-add{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mh-practice-admin-groups{display:grid;gap:12px}
+.mh-practice-admin-group{border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--card)}
+.mh-practice-admin-fields{margin:10px 0}
+.mh-practice-admin-problems{display:grid;gap:7px}
+.mh-practice-admin-problem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:rgba(148,163,184,.04)}
+.mh-practice-admin-problem>div:first-child{display:grid;gap:2px;min-width:0}
+.mh-practice-admin-problem>div:first-child strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mh-practice-admin-problem>div:first-child span{color:var(--muted);font-size:.82rem}
+.mh-practice-admin-ungrouped{display:grid;gap:8px;border-top:1px solid var(--border);padding-top:12px}
+.mh-practice-admin-ungrouped select{min-width:180px}
+@media(max-width:720px){.mh-practice-admin-toolbar,.mh-practice-admin-group-head,.mh-practice-admin-problem{align-items:flex-start;flex-direction:column}.mh-practice-admin-row-actions,.mh-practice-admin-add{width:100%}.mh-practice-admin-add select{flex:1;min-width:0}}

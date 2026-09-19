@@ -318,6 +318,7 @@ export function normalizeLesson(L){
     chapter_en: chapterEn,
 
     tags: Array.isArray(L.tags) ? L.tags : [],
+    practice_groups: Array.isArray(L.practice_groups) ? L.practice_groups : [],
     title_ro: L.title_ro || "",
     title_en: L.title_en || "",
     learn_ro: L.learn_ro || "",

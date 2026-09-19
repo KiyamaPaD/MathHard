@@ -52,7 +52,7 @@ import {
   createKeyedMutationQueue,
   mergeCanonicalProblemProgress
 } from "./mutation-queue.js";
-import { countPracticeGroups, getPracticeGroupMeta, sortProblemCatalog } from "./practice-group-model.js";
+import { buildPracticeGroupPlan, countPracticeGroups, sortProblemCatalog } from "./practice-group-model.js";
 import { SmartAnswer } from "./answer-engine.js";
 import {
   createAppProgressController,
@@ -113,7 +113,7 @@ import {
   let communityAdminController = null;
   let adminHistoryController = null, tagAdminController = null;
   let learningWorkspaceController = null;
-  let lessonQuizAdminController = null;
+  let lessonQuizAdminController = null, practiceGroupAdminController = null;
   let adminRuntime = null;
   let adminRuntimePromise = null;
   let adminControllersPromise = null;
@@ -135,7 +135,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"), import("./tag-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5b1"), import("./content-batch-import-controller.js?v=5b1")
+      import("./content-quality-admin-controller.js?v=5b1"), import("./content-batch-import-controller.js?v=5b1"), import("./practice-group-admin-controller.js")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -146,7 +146,7 @@ import {
       gamificationAdminModule,
       communityAdminModule,
       conceptAdminModule, tagAdminModule,
-      contentQualityAdminModule, contentBatchImportModule
+      contentQualityAdminModule, contentBatchImportModule, practiceGroupAdminModule
     ]) => {
       adminRuntime = {
         ...lessonQuizModule,
@@ -158,7 +158,7 @@ import {
         ...gamificationAdminModule,
         ...communityAdminModule,
         ...conceptAdminModule, ...tagAdminModule,
-        ...contentQualityAdminModule, ...contentBatchImportModule
+        ...contentQualityAdminModule, ...contentBatchImportModule, ...practiceGroupAdminModule
       };
       return adminRuntime;
     }).catch((error) => {
@@ -741,24 +741,20 @@ import {
     out = out.replace(/⊆/g, "\\subseteq ");
     out = out.replace(/∅/g, "\\varnothing ");
     out = out.replace(/\\/g, "\\setminus ");
-
     out = out.replace(/ℕ/g, "\\mathbb{N}");
     out = out.replace(/ℤ/g, "\\mathbb{Z}");
     out = out.replace(/ℚ/g, "\\mathbb{Q}");
     out = out.replace(/ℝ/g, "\\mathbb{R}");
     out = out.replace(/ℂ/g, "\\mathbb{C}");
-
     out = out.replace(/\bN\b/g, "\\mathbb{N}");
     out = out.replace(/\bZ\b/g, "\\mathbb{Z}");
     out = out.replace(/\bQ\b/g, "\\mathbb{Q}");
     out = out.replace(/\bR\b/g, "\\mathbb{R}");
     out = out.replace(/\bC\b/g, "\\mathbb{C}");
-
     out = out.replace(/\bpi\b/gi, "\\pi");
     out = out.replace(/π/g, "\\pi");
     out = out.replace(/\binf\b/gi, "\\infty");
     out = out.replace(/∞/g, "\\infty");
-
     out = out.replace(/\balpha\b/gi, "\\alpha");
     out = out.replace(/\bbeta\b/gi, "\\beta");
     out = out.replace(/\bgamma\b/gi, "\\gamma");
@@ -769,7 +765,6 @@ import {
     out = out.replace(/\bsigma\b/gi, "\\sigma");
     out = out.replace(/\bphi\b/gi, "\\phi");
     out = out.replace(/\bomega\b/gi, "\\omega");
-
     out = out.replace(/α/g, "\\alpha");
     out = out.replace(/β/g, "\\beta");
     out = out.replace(/γ/g, "\\gamma");
@@ -782,66 +777,51 @@ import {
     out = out.replace(/φ/g, "\\phi");
     out = out.replace(/ω/g, "\\omega");
     out = out.replace(/∂/g, "\\partial ");
-
     out = out.replace(/\^\(([^()]+)\)/g, (_, inner) => `^{${mhMathPreviewToLatex(inner)}}`);
     out = out.replace(/_\(([^()]+)\)/g, (_, inner) => `_{${mhMathPreviewToLatex(inner)}}`);
-
     out = out.replace(/\*/g, " \\cdot ");
-
     return out;
   }
-
   function mhFormatDiffVar(raw) {
     const s = String(raw || "").trim();
     if (!s) return "dx";
-
     if (/^d/.test(s) || /^∂/.test(s)) {
       return mhMathPreviewToLatex(s);
     }
-
     return "d" + mhMathPreviewToLatex(s);
   }
-
   function mhWrapParen(latex) {
     return `\\left(${latex}\\right)`;
   }
-
   function mhWrapBracket(latex) {
     return `\\left[${latex}\\right]`;
   }
-
   function mhWrapBrace(latex) {
     return `\\left\\{${latex}\\right\\}`;
   }
-
   function mhFunc1(latexName, arg) {
     return `${latexName}${mhWrapParen(mhMathPreviewToLatex(arg))}`;
   }
-
   function mhMathPreviewToLatex(raw) {
     let s = String(raw || "").trim();
     if (!s) return "";
-
     s = s
       .replace(/[\u2212\u2013\u2014]/g, "-")
       .replace(/⋅|·/g, "*")
       .replace(/÷/g, "/")
       .replace(/\s+/g, " ")
       .trim();
-
     if (mhIsWrappedBy(s, "{", "}")) {
       const inner = s.slice(1, -1);
       const parts = mhSplitTopLevel(inner);
       return mhWrapBrace(parts.map(mhMathPreviewToLatex).join(", "));
     }
-
     if (
       (s.startsWith("[") || s.startsWith("(")) &&
       (s.endsWith("]") || s.endsWith(")"))
     ) {
       const inner = s.slice(1, -1);
       const parts = mhSplitTopLevel(inner);
-
       if (parts.length === 2) {
         const left = mhMathPreviewToLatex(parts[0]);
         const right = mhMathPreviewToLatex(parts[1]);
@@ -2754,7 +2734,7 @@ import {
   mhRenderExamItemsDraft();
 
   function mhSetLessonEditorTab(tabName = "content") {
-    const safeTab = tabName === "quiz" ? "quiz" : "content";
+    const safeTab = ["quiz", "practice"].includes(tabName) ? tabName : "content";
     document.querySelectorAll("[data-lesson-editor-tab]").forEach((button) => {
       const active = button.dataset.lessonEditorTab === safeTab;
       button.classList.toggle("is-active", active);
@@ -2778,9 +2758,11 @@ import {
     const blockExam = document.getElementById("block-exam");
     const lessonTabs = document.getElementById("mhLessonEditorTabs");
     const quizTabButton = document.querySelector('[data-lesson-editor-tab="quiz"]');
+    const practiceTabButton = document.querySelector('[data-lesson-editor-tab="practice"]');
 
     if (lessonTabs) lessonTabs.hidden = !["lesson", "research", "history"].includes(type);
     if (quizTabButton) quizTabButton.hidden = type !== "lesson";
+    if (practiceTabButton) practiceTabButton.hidden = type !== "lesson";
     if (type !== "lesson") mhSetLessonEditorTab("content");
 
     if (blockCommon) {
@@ -2842,6 +2824,8 @@ import {
     setVal("mh_examples_ro", item.examples_ro);
     setVal("mh_examples_en", item.examples_en);
     setVal("mh_sources", Array.isArray(item.sources) ? item.sources.join("\n") : item.source || "");
+    setVal("mh_practice_groups", JSON.stringify(Array.isArray(item.practice_groups) ? item.practice_groups : []));
+    practiceGroupAdminController?.setContext(type, item.id, type === "lesson");
 
     setVal("mh_lesson_id", item.lesson_id ?? item.lessonId);
     setVal("mh_difficulty", item.difficulty ?? 1);
@@ -2908,6 +2892,7 @@ import {
       mhSetTypeBlocks(e.target.value);
       mhSetLessonEditorTab("content");
       lessonQuizAdminController?.setContext(e.target.value, "", false);
+      practiceGroupAdminController?.setContext(e.target.value, "", false);
       mhSetAdminModeCreate();
       adminDraftController?.setContext(
         { mode: "create", type: e.target.value, id: "" },
@@ -2990,6 +2975,7 @@ import {
     mhRenderExamItemsDraft();
     mhSetLessonEditorTab("content");
     lessonQuizAdminController?.setContext("lesson", "", false);
+    practiceGroupAdminController?.setContext("lesson", "", false);
     if (updateDraftContext) {
       adminDraftController?.setContext(
         { mode: "create", type: "lesson", id: "" },
@@ -3165,8 +3151,8 @@ ${details}`);
       body_en: document.getElementById("mh_body_en").value.trim(),
       examples_ro: document.getElementById("mh_examples_ro").value.trim(),
       examples_en: document.getElementById("mh_examples_en").value.trim(),
-      sources: mhLinesFromInput(document.getElementById("mh_sources").value)
-
+      sources: mhLinesFromInput(document.getElementById("mh_sources").value),
+      practice_groups: (() => { try { return JSON.parse(document.getElementById("mh_practice_groups")?.value || "[]"); } catch { return []; } })()
     };
   }
 
@@ -3382,6 +3368,15 @@ ${details}`);
         lessonQuizAdminController.setContext("lesson", "", false);
       }
 
+      if (!practiceGroupAdminController) {
+        practiceGroupAdminController = runtime.createPracticeGroupAdminController({
+          host: document.getElementById("mhPracticeGroupAdmin"), getLanguage: () => LANG, getProblems: () => DATA.problems,
+          getValue: () => document.getElementById("mh_practice_groups")?.value || "[]",
+          setValue: (groups) => { const input = document.getElementById("mh_practice_groups"); if (input) { input.value = JSON.stringify(groups); input.dispatchEvent(new Event("input", { bubbles: true })); } }
+        });
+        practiceGroupAdminController.setContext("lesson", "", false);
+      }
+
       if (!adminHistoryController) {
         adminHistoryController = runtime.createAdminHistoryController({
           root: document.getElementById("mhAdminHistoryStudio"),
@@ -3528,6 +3523,7 @@ ${details}`);
             mhSetTypeBlocks(type);
             if (type === "lesson" && MH_ADMIN_STATE.editId) {
               lessonQuizAdminController?.setContext("lesson", MH_ADMIN_STATE.editId, true);
+              practiceGroupAdminController?.setContext("lesson", MH_ADMIN_STATE.editId, true);
             }
             const status = document.getElementById("mhPublishStatus");
             if (status) status.textContent = LANG === "ro" ? "Draft local restaurat." : "Local draft restored.";
@@ -3554,6 +3550,7 @@ ${details}`);
 
       return {
         lessonQuizAdminController,
+        practiceGroupAdminController,
         adminHistoryController,
         gamificationAdminController,
         communityAdminController,
@@ -5356,7 +5353,8 @@ ${details}`);
   }
 
   function sortProblems(list){
-    return sortProblemCatalog(list, { mode: filter.problemSort || "easy-asc", lessonScoped: Boolean(filter.byLessonId), problemIndex: new Map(DATA.problems.map((problem, index) => [problem.id, index])) });
+    const lesson = filter.byLessonId ? DATA.lessons.find((entry) => entry.id === filter.byLessonId) : null;
+    return sortProblemCatalog(list, { mode: filter.problemSort || "easy-asc", lessonScoped: Boolean(filter.byLessonId), lesson, problemIndex: new Map(DATA.problems.map((problem, index) => [problem.id, index])) });
   }
 
   function renderXPOverview(){
@@ -5574,13 +5572,15 @@ ${details}`);
     }
 
     const slice = list.slice(0, page * effectivePageSize);
-    const groupedPractice = TAB === "problems" && Boolean(filter.byLessonId) && slice.some((problem) => getPracticeGroupMeta(problem));
-    const practiceGroupCounts = groupedPractice ? countPracticeGroups(list) : {};
+    const groupedLesson = TAB === "problems" && filter.byLessonId ? DATA.lessons.find((entry) => entry.id === filter.byLessonId) : null;
+    const practicePlan = groupedLesson ? buildPracticeGroupPlan(groupedLesson, list) : null;
+    const groupedPractice = Boolean(practicePlan?.hasGroups);
+    const practiceGroupCounts = groupedPractice ? countPracticeGroups(practicePlan) : {};
     let lastPracticeGroup = null;
 
     slice.forEach(item => {
     if (groupedPractice){
-      const group = getPracticeGroupMeta(item);
+      const group = practicePlan.groupByProblemId.get(item.id);
       if (group && group.key !== lastPracticeGroup){
         const header = document.createElement("div");
         header.className = `mh-practice-group-header is-${group.key}`;
