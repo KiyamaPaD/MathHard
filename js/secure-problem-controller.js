@@ -119,12 +119,12 @@ export function createSecureProblemController({
     const hasHint1 = Boolean(problem.has_hint1 ?? (problem.hint1_ro || problem.hint1_en));
     const hasHint2 = Boolean(problem.has_hint2 ?? (problem.hint2_ro || problem.hint2_en));
     const structuredAnswer = isStructuredAnswerProblem(problem);
+    const title = translated(problem, language);
+    const statement = translated(problem, language, "statement");
     const answerPreset = structuredAnswer ? inferStructuredAnswerPreset(statement,{language}) : null;
     const structuredAnswerHint = ro
       ? `Enter = rând nou · Ctrl/⌘+Enter = trimite · max. ${STRUCTURED_ANSWER_MAX_LINES} rânduri / ${STRUCTURED_ANSWER_MAX_LENGTH} caractere`
       : `Enter = new line · Ctrl/⌘+Enter = submit · max. ${STRUCTURED_ANSWER_MAX_LINES} lines / ${STRUCTURED_ANSWER_MAX_LENGTH} characters`;
-    const title = translated(problem, language);
-    const statement = translated(problem, language, "statement");
     const stars = problem.difficulty === 0 ? "0★" : "★".repeat(problem.difficulty);
     const existingAttempts = Array.isArray(attempts[problem.id])
       ? attempts[problem.id]

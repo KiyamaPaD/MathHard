@@ -12,6 +12,11 @@ const ux = read("js/structured-answer-ux.js");
 
 assert.match(ux, /id="answerPresetBtn"/);
 assert.match(controller, /inferStructuredAnswerPreset\(statement/);
+const statementDeclarationIndex = controller.indexOf('const statement = translated(problem, language, "statement")');
+const presetInferenceIndex = controller.indexOf('inferStructuredAnswerPreset(statement');
+assert.ok(statementDeclarationIndex >= 0, "Problem statement must be initialized in renderProblemReady.");
+assert.ok(presetInferenceIndex >= 0, "Structured answer preset inference must be present.");
+assert.ok(statementDeclarationIndex < presetInferenceIndex, "Problem statement must be initialized before preset inference to avoid TDZ runtime failures.");
 assert.match(controller, /bindStructuredAnswerPreset\(\{/);
 assert.match(css, /\.mh-answer-preset-row/);
 assert.match(css, /\.mh-answer-preset-btn/);
