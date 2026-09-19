@@ -3157,3 +3157,31 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
     padding:14px 14px 14px 17px;
   }
 }
+
+/* Lesson-practice grouping: scaffold -> mixed transfer -> capstone. */
+.mh-practice-group-header{
+  grid-column:1/-1;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 12px;
+  margin:6px 0 -2px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:linear-gradient(180deg, rgba(148,163,184,.08), transparent), var(--card);
+}
+.mh-practice-group-title{
+  font-weight:800;
+  letter-spacing:.01em;
+}
+.mh-practice-group-header.is-capstone{
+  border-style:dashed;
+}
+@media (max-width:640px){
+  .mh-practice-group-header{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:2px;
+  }
+}

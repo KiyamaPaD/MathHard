@@ -52,6 +52,7 @@ import {
   createKeyedMutationQueue,
   mergeCanonicalProblemProgress
 } from "./mutation-queue.js";
+import { countPracticeGroups, getPracticeGroupMeta, sortProblemCatalog } from "./practice-group-model.js";
 import { SmartAnswer } from "./answer-engine.js";
 import {
   createAppProgressController,
@@ -5355,33 +5356,7 @@ ${details}`);
   }
 
   function sortProblems(list){
-    const mode = filter.problemSort || "easy-asc";
-
-    if(mode==="easy-asc"){
-      return list.sort((a,b)=>{
-        if(a.difficulty!==b.difficulty) return a.difficulty - b.difficulty;
-        return (a.title_ro||"").localeCompare(b.title_ro||"", 'ro');
-      });
-    }
-
-    if(mode==="easy-desc"){
-      return list.sort((a,b)=>{
-        if(a.difficulty!==b.difficulty) return b.difficulty - a.difficulty;
-        return (a.title_ro||"").localeCompare(b.title_ro||"", 'ro');
-      });
-    }
-
-    const problemIndex = new Map(DATA.problems.map((p,i)=>[p.id,i]));
-
-    return list.sort((a, b) => {
-      const idxA = problemIndex.get(a.id) ?? 0;
-      const idxB = problemIndex.get(b.id) ?? 0;
-
-      const A = a.addedAt ? Date.parse(a.addedAt) : -idxA;
-      const B = b.addedAt ? Date.parse(b.addedAt) : -idxB;
-
-      return B - A;
-    });
+    return sortProblemCatalog(list, { mode: filter.problemSort || "easy-asc", lessonScoped: Boolean(filter.byLessonId), problemIndex: new Map(DATA.problems.map((problem, index) => [problem.id, index])) });
   }
 
   function renderXPOverview(){
@@ -5599,7 +5574,26 @@ ${details}`);
     }
 
     const slice = list.slice(0, page * effectivePageSize);
+    const groupedPractice = TAB === "problems" && Boolean(filter.byLessonId) && slice.some((problem) => getPracticeGroupMeta(problem));
+    const practiceGroupCounts = groupedPractice ? countPracticeGroups(list) : {};
+    let lastPracticeGroup = null;
+
     slice.forEach(item => {
+    if (groupedPractice){
+      const group = getPracticeGroupMeta(item);
+      if (group && group.key !== lastPracticeGroup){
+        const header = document.createElement("div");
+        header.className = `mh-practice-group-header is-${group.key}`;
+        const count = Number(practiceGroupCounts[group.key] || 0);
+        header.innerHTML = `
+          <div class="mh-practice-group-title">${esc(LANG === "ro" ? group.ro : group.en)}</div>
+          <div class="legend">${count} ${LANG === "ro" ? (count === 1 ? "problemă" : "probleme") : (count === 1 ? "problem" : "problems")} · ${esc(LANG === "ro" ? group.roHint : group.enHint)}</div>
+        `;
+        box.appendChild(header);
+        lastPracticeGroup = group.key;
+      }
+    }
+
     const div = document.createElement("div");
     div.className = "card";
 
