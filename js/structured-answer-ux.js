@@ -7,6 +7,116 @@ export const STRUCTURED_ANSWER_MAX_ROWS = 8;
 export const STRUCTURED_ANSWER_MAX_LINES = 16;
 export const STRUCTURED_ANSWER_MAX_NEWLINES = STRUCTURED_ANSWER_MAX_LINES - 1;
 
+const ANSWER_PRESET_MIN_LINES = 2;
+const ANSWER_PRESET_MAX_LINES = STRUCTURED_ANSWER_MAX_LINES;
+
+function statementToLines(value) {
+  return String(value ?? "")
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(?:p|li|div|section|article|h[1-6])\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&amp;/gi, "&")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function explicitLineCount(statement) {
+  const plain = statementToLines(statement).join(" ");
+  const match = plain.match(/\b(?:exact\s+)?(\d{1,2})\s*(?:r[aâ]nduri|randuri|lines?)\b/i);
+  if (!match) return 0;
+  const count = Number(match[1]);
+  return Number.isInteger(count) && count >= ANSWER_PRESET_MIN_LINES && count <= ANSWER_PRESET_MAX_LINES ? count : 0;
+}
+
+function alphaLabelsFromStatement(statement) {
+  const labels = [];
+  for (const line of statementToLines(statement)) {
+    const match = line.match(/^([a-z])\s*[.)]\s*/i);
+    if (match) labels.push(match[1].toLowerCase());
+  }
+  if (labels.length < ANSWER_PRESET_MIN_LINES) return [];
+  const unique = [...new Set(labels)];
+  if (unique.length !== labels.length) return [];
+  const sequential = unique.every((label, index) => label === String.fromCharCode(97 + index));
+  return sequential ? unique : [];
+}
+
+function orderedListCount(statement) {
+  const html = String(statement ?? "");
+  const blocks = html.match(/<ol\b[\s\S]*?<\/ol>/gi) || [];
+  let count = 0;
+  for (const block of blocks) count += (block.match(/<li\b/gi) || []).length;
+  return count >= ANSWER_PRESET_MIN_LINES && count <= ANSWER_PRESET_MAX_LINES ? count : 0;
+}
+
+export function inferStructuredAnswerPreset(statement, { language = "ro" } = {}) {
+  const alpha = alphaLabelsFromStatement(statement);
+  const count = explicitLineCount(statement);
+
+  if (alpha.length && (!count || count === alpha.length)) {
+    const labels = alpha.map((label) => `${label})`);
+    return {
+      kind: "alpha",
+      labels,
+      lineCount: labels.length,
+      text: labels.map((label) => `${label} `).join("\n"),
+      summary: `${labels[0]}–${labels.at(-1)}`
+    };
+  }
+
+  const listCount = orderedListCount(statement);
+  const numericCount = count || listCount;
+  if (numericCount >= ANSWER_PRESET_MIN_LINES && numericCount <= ANSWER_PRESET_MAX_LINES) {
+    const labels = Array.from({ length: numericCount }, (_, index) => `${index + 1})`);
+    return {
+      kind: "numeric",
+      labels,
+      lineCount: numericCount,
+      text: labels.map((label) => `${label} `).join("\n"),
+      summary: language === "en" ? `${numericCount} lines` : `${numericCount} rânduri`
+    };
+  }
+
+  return null;
+}
+
+export function canApplyStructuredAnswerPreset(currentValue) {
+  return String(currentValue ?? "").trim().length === 0;
+}
+
+export function applyStructuredAnswerPreset(textarea, preset) {
+  if (!textarea || !preset?.text || !canApplyStructuredAnswerPreset(textarea.value)) return false;
+  textarea.value = preset.text;
+  const firstLabelLength = String(preset.labels?.[0] || "").length + 1;
+  textarea.setSelectionRange?.(firstLabelLength, firstLabelLength);
+  textarea.dispatchEvent?.(new Event("input", { bubbles: true }));
+  textarea.focus?.();
+  return true;
+}
+
+export function structuredAnswerPresetMarkup(preset, { language = "ro" } = {}) {
+  if (!preset) return "";
+  const ro = language !== "en";
+  const summary = preset.summary ? ` · ${preset.summary}` : "";
+  return `<div class="mh-answer-preset-row"><button class="btn small mh-answer-preset-btn" id="answerPresetBtn" type="button">↳ ${ro ? "Inserează formatul" : "Insert answer format"}${summary}</button><span class="legend">${ro ? "Completezi doar după etichete." : "Fill in after the labels."}</span></div>`;
+}
+
+export function bindStructuredAnswerPreset({ button, textarea, preset, onApply = () => {} } = {}) {
+  if (!button || !textarea || !preset) return () => {};
+  const sync = () => { button.disabled = !canApplyStructuredAnswerPreset(textarea.value); };
+  button.addEventListener?.("click", () => {
+    if (applyStructuredAnswerPreset(textarea, preset)) onApply();
+    sync();
+  });
+  textarea.addEventListener?.("input", sync);
+  sync();
+  return sync;
+}
+
 function normalizedMode(value) {
   return String(value ?? "").trim().toLowerCase();
 }

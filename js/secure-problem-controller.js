@@ -9,7 +9,7 @@ function loadProblemRuntime() {
   return problemRuntimePromise ||= Promise.all([
     import("./problem-workspace-repository.js"),
     import("./problem-workspace-model.js"),
-    import("./structured-answer-ux.js?v=109")
+    import("./structured-answer-ux.js?v=153")
   ]);
 }
 
@@ -104,7 +104,8 @@ export function createSecureProblemController({
     const { buildProblemRecommendations, feedbackForAttempt, formatAttemptTime } = workspaceModel;
     const {
       STRUCTURED_ANSWER_MAX_LENGTH, STRUCTURED_ANSWER_MAX_LINES, STRUCTURED_ANSWER_MIN_ROWS,
-      bindStructuredAnswerTextarea, isStructuredAnswerProblem, shouldSubmitAnswerOnKeydown
+      bindStructuredAnswerPreset, bindStructuredAnswerTextarea, inferStructuredAnswerPreset,
+      isStructuredAnswerProblem, shouldSubmitAnswerOnKeydown, structuredAnswerPresetMarkup
     } = answerUx;
     host = host || document.getElementById("viewContent");
     if (!host) return;
@@ -118,6 +119,7 @@ export function createSecureProblemController({
     const hasHint1 = Boolean(problem.has_hint1 ?? (problem.hint1_ro || problem.hint1_en));
     const hasHint2 = Boolean(problem.has_hint2 ?? (problem.hint2_ro || problem.hint2_en));
     const structuredAnswer = isStructuredAnswerProblem(problem);
+    const answerPreset = structuredAnswer ? inferStructuredAnswerPreset(statement,{language}) : null;
     const structuredAnswerHint = ro
       ? `Enter = rând nou · Ctrl/⌘+Enter = trimite · max. ${STRUCTURED_ANSWER_MAX_LINES} rânduri / ${STRUCTURED_ANSWER_MAX_LENGTH} caractere`
       : `Enter = new line · Ctrl/⌘+Enter = submit · max. ${STRUCTURED_ANSWER_MAX_LINES} lines / ${STRUCTURED_ANSWER_MAX_LENGTH} characters`;
@@ -173,7 +175,7 @@ export function createSecureProblemController({
             <section class="mh-problem-card mh-answer-card">
               <h3>✍️ ${ro ? "Rezolvarea ta" : "Your solution"}</h3>
               ${structuredAnswer
-                ? `<textarea id="answerInput" rows="${STRUCTURED_ANSWER_MIN_ROWS}" maxlength="${STRUCTURED_ANSWER_MAX_LENGTH}" autocomplete="off" spellcheck="false" aria-describedby="structuredAnswerHint" placeholder="${ro ? "Răspunsul tău structurat…" : "Your structured answer…"}"></textarea>
+                ? `${structuredAnswerPresetMarkup(answerPreset, { language })}<textarea id="answerInput" rows="${STRUCTURED_ANSWER_MIN_ROWS}" maxlength="${STRUCTURED_ANSWER_MAX_LENGTH}" autocomplete="off" spellcheck="false" aria-describedby="structuredAnswerHint" placeholder="${ro ? "Răspunsul tău structurat…" : "Your structured answer…"}"></textarea>
                    <div class="legend" id="structuredAnswerHint">${escapeHtml(structuredAnswerHint)}</div>`
                 : `<input id="answerInput" autocomplete="off" placeholder="${ro ? "Răspunsul tău…" : "Your answer…"}">`}
               <div class="legend mh-problem-status" id="statusArea"></div>
@@ -259,6 +261,7 @@ export function createSecureProblemController({
     const attemptCount = host.querySelector("#attemptCount");
     const attemptStatus = host.querySelector("#attemptHistoryStatus");
     const input = host.querySelector("#answerInput");
+    const answerPresetButton = host.querySelector("#answerPresetBtn");
     const checkButton = host.querySelector("#checkBtn");
     const confirmBox = host.querySelector("#checkConfirm");
     const yesButton = host.querySelector("#confirmYes");
@@ -279,6 +282,8 @@ export function createSecureProblemController({
     const resizeStructuredAnswer = structuredAnswer
       ? bindStructuredAnswerTextarea(input)
       : () => {};
+
+    bindStructuredAnswerPreset({button:answerPresetButton,textarea:input,preset:answerPreset,onApply:()=>{resizeStructuredAnswer();syncMathPreview();}});
 
     const hintWrap1 = host.querySelector("#hintWrap1");
     const hintWrap2 = host.querySelector("#hintWrap2");

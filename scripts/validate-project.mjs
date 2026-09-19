@@ -438,7 +438,7 @@ if (!appSource.includes('from "./progress-repository.js"')) {
 if (!appSource.includes('from "./secure-evaluation-repository.js"')) {
   fail("app.js must use the Phase 11A secure learning-event repository.");
 }
-if (!appSource.includes('from "./secure-problem-controller.js?v=4j5"')) {
+if (!appSource.includes('from "./secure-problem-controller.js?v=153"')) {
   fail("app.js must use the Phase 11A secure problem controller.");
 }
 if (!appSource.includes('from "./secure-exam-repository.js"')) {
