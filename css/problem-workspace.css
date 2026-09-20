@@ -872,3 +872,8 @@
 .mh-math-quick-row::-webkit-scrollbar{display:none}
 .mh-math-quick-row .mh-math-toolbtn{flex:0 0 auto;min-width:38px;padding:6px 8px}
 @media(max-width:760px){.mh-math-quick-row{display:flex}.mh-math-toolbar-master>summary small{display:none}}
+
+/* Phase 157 — review lesson action */
+.mh-review-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mh-review-links[hidden]{display:none!important}
+.mh-review-links .mh-review-link{margin-top:0}

@@ -1,5 +1,5 @@
 const SUPPORTED = new Set([
-  "mh_body_ro","mh_body_en","mh_examples_ro","mh_examples_en",
+  "mh_learn_ro","mh_learn_en","mh_why_ro","mh_why_en","mh_body_ro","mh_body_en","mh_examples_ro","mh_examples_en",
   "mh_statement_ro","mh_statement_en","mh_hint1_ro","mh_hint1_en","mh_hint2_ro","mh_hint2_en",
   "mh_solution_ro","mh_solution_en","mh_explanation_simple_ro","mh_explanation_simple_en","mh_explanation_boss_ro","mh_explanation_boss_en"
 ]);
@@ -26,7 +26,7 @@ export function mountAdminLearningPolishAuthoring({ form, language = "ro" } = {}
     <button type="button" data-polish="anchor"># ${ro?"Anchor":"Anchor"}</button>
     <button type="button" data-polish="glossary">⌁ ${ro?"Glosar":"Glossary"}</button>
     <button type="button" data-polish="copy">⧉ ${ro?"Copy":"Copy"}</button>
-    <button type="button" data-polish="review">↗ ${ro?"Review target":"Review target"}</button>
+    <button type="button" data-polish="review">↗ ${ro?"Revizuire lecție":"Lesson review"}</button>
     <button type="button" data-polish="visual-help">? ${ro?"Ajutor vizual":"Visual help"}</button>
     <small>${ro?"Selectează textul; marker-ele nu adaugă mastery/evidence.":"Select text; markers add no mastery/evidence."}</small>`;
   form.appendChild(bar);
@@ -66,10 +66,24 @@ export function mountAdminLearningPolishAuthoring({ form, language = "ro" } = {}
       insertAtSelection(active,`<span data-mh-copyable data-mh-copy-value="${escAttr(copyValue)}">${selected}</span>`);
     }
     if(type==="review"){
-      const anchor=slugify(prompt(ro?"Anchor-ul secțiunii din lecția asociată:":"Anchor in the linked lesson:",selected||"")||"");
-      if(!anchor)return;
-      const label=prompt(ro?"Text scurt pentru buton (opțional):":"Short button label (optional):","")||"";
-      insertAtSelection(active,`<span data-mh-review-anchor="${anchor}" data-mh-review-label="${escAttr(label)}"></span>${selected}`);
+      const suggested=selected?slugify(selected):"";
+      const raw=prompt(
+        ro
+          ? "Destinația pentru «Revizuiește lecția»: anchor pentru lecția problemei sau lesson-id#anchor. Pentru maximum 2 lecții, separă cu |. Lasă gol pentru începutul lecției asociate."
+          : "Target for “Review the lesson”: anchor in the problem lesson or lesson-id#anchor. For up to 2 lessons, separate with |. Leave blank for the linked lesson start.",
+        suggested
+      );
+      if(raw===null)return;
+      const cleaned=text(raw).split("|").map((part)=>{
+        const [lessonId,anchor=""]=part.split("#",2);
+        if(part.includes("#"))return `${text(lessonId)}#${slugify(anchor)}`;
+        return slugify(part);
+      }).filter(Boolean).slice(0,2).join("|");
+      const label=prompt(ro?"Text custom pentru primul buton (opțional):":"Custom label for the first button (optional):","")||"";
+      const marker=cleaned
+        ? `<span data-mh-review-targets="${escAttr(cleaned)}" data-mh-review-label="${escAttr(label)}"></span>`
+        : `<span data-mh-review-anchor="" data-mh-review-label="${escAttr(label)}"></span>`;
+      insertAtSelection(active,`${marker}${selected}`);
     }
     if(type==="visual-help"){
       if(!selected||!/<[a-z][^>]*>/i.test(selected)){alert(ro?"Selectează tag-ul/fragmentul HTML al vizualului.":"Select the visual HTML tag/fragment.");return;}

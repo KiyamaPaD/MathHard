@@ -222,3 +222,79 @@
 .mh-learning-problem-dots button.is-current{outline:2px solid color-mix(in srgb,var(--accent) 75%,transparent);outline-offset:2px}
 .mh-learning-practice-summary{color:var(--muted);font-size:.72rem;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:760px){.mh-learning-practice-nav{font-size:.68rem}.mh-learning-problem-dots{max-width:72vw}.mh-learning-practice-summary{max-width:88vw}}
+
+/* Phase 157 — desktop polish fixes */
+.mh-lesson-mini-tools.is-collapsed{
+  display:flex;
+  width:max-content;
+  margin-left:auto;
+  padding:4px;
+  border-radius:11px;
+}
+.mh-lesson-mini-tools.is-collapsed > :not([data-mh-tools-expand]){display:none!important}
+.mh-lesson-tools-expand{width:32px;height:30px;padding:0}
+.mh-lesson-toc-popover,.mh-lesson-search-popover{
+  z-index:240;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  padding-bottom:18px;
+}
+.mh-lesson-toc-popover .mh-toc-label,
+.mh-lesson-search-popover strong{
+  min-width:0;
+  line-height:1.35;
+}
+.mh-lesson-toc-popover .katex,
+.mh-lesson-search-popover .katex,
+.mh-lesson-current .katex{font-size:.96em}
+.mh-lesson-toc-popover .katex-display,
+.mh-lesson-search-popover .katex-display,
+.mh-lesson-current .katex-display{display:inline;margin:0}
+
+/* Interactive utility controls must never cover the interactive's own tabs/toggles. */
+.mh-interactive-shell-controls{
+  position:static;
+  inset:auto;
+  z-index:auto;
+  width:max-content;
+  margin:10px 8px 0 auto;
+  display:flex;
+  gap:4px;
+  padding:3px;
+  border:1px solid color-mix(in srgb,var(--border) 78%,transparent);
+  border-radius:10px;
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  backdrop-filter:none;
+}
+.mh-interactive-shell-help{margin:6px 8px 2px}
+
+/* Generic lesson tables stay compact; only genuinely wide tables scroll. */
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll{
+  width:max-content;
+  max-width:100%;
+  margin:12px auto;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:12px;
+  scrollbar-gutter:stable;
+}
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll>table{
+  width:auto;
+  min-width:max-content;
+  margin:0;
+  border-collapse:collapse;
+}
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll>table th,
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll>table td{
+  padding:8px 14px;
+  text-align:center;
+  white-space:nowrap;
+  border-right:1px solid color-mix(in srgb,var(--border) 78%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--border) 78%,transparent);
+}
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll>table tr:last-child>*{border-bottom:0}
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll>table tr>*:last-child{border-right:0}
+.drawer.is-learning-workspace .content.viewer .mh-table-scroll>table th{
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  font-weight:850;
+}

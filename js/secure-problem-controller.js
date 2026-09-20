@@ -10,7 +10,7 @@ function loadProblemRuntime() {
     import("./problem-workspace-repository.js"),
     import("./problem-workspace-model.js"),
     import("./structured-answer-ux.js?v=153"),
-    import("./learning-polish-controller.js?v=156")
+    import("./learning-polish-controller.js?v=157")
   ]);
 }
 
@@ -258,7 +258,7 @@ export function createSecureProblemController({
     renderMath(host);
     polishUx.enhanceContextualContent(host, language);
     polishUx.mountProblemPolish({problem,lesson,problems:getProblems(),getProblemState,onOpenProblem,conceptCatalog:getConceptCatalog(),language});
-    const setReviewVisible = polishUx.mountProblemReview({host,lesson,onReviewLesson,language});
+    const setReviewVisible = polishUx.mountProblemReview({host,lesson,lessons:getLessons(),onReviewLesson,language});
     if (!isExam && !replayEligible) {
       onProblemOpened(problem.id);
       void logLearningEvent(supabase, "problem_opened", "problem", problem.id, { language }).catch((error) => console.warn("problem_opened event failed:", error));
@@ -305,6 +305,7 @@ export function createSecureProblemController({
     let workspaceLoadEpoch = 0;
     let workspaceSaveChain = Promise.resolve();
     let noteDirty=false,replayMode=false,replay=null,replayApi=null,revealedAnswer="",replaySolution=null,revealTimer=0;
+    let trackedWrongCount=Number(record.wrong||0),trackedReplayWrongCount=0;
     let solutionAccessGranted=Boolean(record.solved);
     const openExplanationModes = new Set();
     function paintReplaySummary(state = replay) {
@@ -413,6 +414,7 @@ export function createSecureProblemController({
 
     function enterReplay(nextReplay,{message=true}={}){
       replay=nextReplay;replayMode=true;revealedAnswer="";replaySolution=null;hint1Loaded=Boolean(replay?.hint1_used);hint2Loaded=Boolean(replay?.hint2_used);
+      trackedReplayWrongCount=Number(replay?.wrong_count||0);setReviewVisible(false);
       openExplanationModes.clear();
       input.value="";resizeStructuredAnswer();syncMathPreview();input.disabled=false;checkButton.disabled=false;confirmBox.style.display="none";
       const revealText = host.querySelector("#revealText");
@@ -548,21 +550,25 @@ export function createSecureProblemController({
 
       try {
         if (replayMode && replay?.replay_id) {
+          const beforeWrong = Number(replay?.wrong_count ?? trackedReplayWrongCount);
           const result = await replayApi.submitProblemReplayAnswer(supabase, replay.replay_id, value);
           replay=result?.replay||replay;renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();refreshRevealGate();
+          const afterWrong = Number(replay?.wrong_count ?? beforeWrong);
           if (result?.ok) {
             setReviewVisible(false);
             statusArea.textContent = messageFor(language, "correct", true) + " · Replay 0 XP" + gradingFeedbackText(result, language);
             input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false;
           } else {
-            setReviewVisible(result?.gradable !== false);
+            if (result?.gradable !== false && afterWrong > beforeWrong) setReviewVisible(true);
             statusArea.textContent = messageFor(language, result?.gradable === false ? "needs_format" : "wrong") + gradingFeedbackText(result, language);
             input.disabled = false; checkButton.disabled = false; input.focus();
           }
+          trackedReplayWrongCount = afterWrong;
           return;
         }
         const wasAlreadySolved = isProblemSolved(problem.id);
         const previousXp = Number(getXPRecord(problem.id)?.xp || 0);
+        const beforeWrong = Number(getXPRecord(problem.id)?.wrong ?? trackedWrongCount);
         const result = await submitProblemAnswer(supabase, problem.id, value, language);
         const ok = Boolean(result?.ok);
         if (result?.gradable !== false) pushLocalAttempt(value, ok);
@@ -584,13 +590,16 @@ export function createSecureProblemController({
             }));
           }
         } else {
-          setReviewVisible(result?.gradable !== false);
+          const afterWrong = Number(getXPRecord(problem.id)?.wrong ?? beforeWrong);
+          if (result?.gradable !== false && afterWrong > beforeWrong) setReviewVisible(true);
+          trackedWrongCount = afterWrong;
           statusArea.textContent = messageFor(language, result?.gradable === false ? "needs_format" : "wrong") + gradingFeedbackText(result, language);
           input.disabled = false;
           checkButton.disabled = false;
           input.focus();
         }
 
+        if (ok) trackedWrongCount = Number(getXPRecord(problem.id)?.wrong ?? trackedWrongCount);
         refreshHints();
         refreshXp();
         if (!replayMode) await reloadWorkspace();

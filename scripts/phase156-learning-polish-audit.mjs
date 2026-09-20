@@ -36,10 +36,10 @@ for (const [token, label] of [
 ]) requireToken(polish, token, label);
 
 for (const token of ["data-polish=\"anchor\"", "data-polish=\"glossary\"", "data-polish=\"copy\"", "data-polish=\"review\"", "data-polish=\"visual-help\""]) requireToken(admin, token, "Admin contextual authoring");
-requireToken(app, 'import("./learning-polish-controller.js?v=156")', "Lesson polish must remain lazy");
-requireToken(app, 'import("./admin-learning-polish-authoring.js?v=156")', "Admin authoring helpers must remain lazy");
-requireToken(secure, 'import("./learning-polish-controller.js?v=156")', "Problem polish must remain lazy");
-requireToken(secure, "setReviewVisible(result?.gradable !== false)", "Wrong answers expose review action without treating format errors as concept mistakes");
+requireToken(app, 'import("./learning-polish-controller.js?v=157")', "Lesson polish must remain lazy");
+requireToken(app, 'import("./admin-learning-polish-authoring.js?v=157")', "Admin authoring helpers must remain lazy");
+requireToken(secure, 'import("./learning-polish-controller.js?v=157")', "Problem polish must remain lazy");
+requireToken(secure, "afterWrong > beforeWrong", "Wrong answers expose review action without treating format errors as concept mistakes");
 requireToken(continuity, "mathhard:workspace-restored", "Resume indicator event");
 requireToken(graph, "mh-representation-point-readout", "Graph point tap/readout");
 requireToken(graph, "mathhard:interactive-reset", "Representation lab reset");
@@ -47,7 +47,7 @@ requireToken(intro, "mathhard:interactive-reset", "Function explorers reset");
 for (const token of ["mh-lesson-mini-tools", "mh-glossary-term", "mh-copyable-btn", "mh-interactive-shell-controls", "mh-learning-practice-nav", "mh-learning-problem-dots", "mh-table-scroll"]) requireToken(learningCss, token, "Learning polish CSS");
 for (const token of ["mh-review-link", "mh-math-quick-row"]) requireToken(problemCss, token, "Problem polish CSS");
 requireToken(authorCss, "mh-admin-polish-tools", "Admin authoring helper CSS");
-for (const token of ['data-mh-build="5b3"','css/learning-workspace.css?v=5b3','css/problem-workspace.css?v=5b3','css/content-authoring.css?v=5b3','/js/app.js?v=5b3']) requireToken(index, token, "Build/cache contract");
+for (const token of ['data-mh-build="5b3"','css/learning-workspace.css?v=157','css/problem-workspace.css?v=157','css/content-authoring.css?v=5b3','/js/app.js?v=5b3']) requireToken(index, token, "Build/cache contract");
 
 if (/logLearningEvent|submitProblemAnswer|replaceContentConcepts/.test(polish)) throw new Error("Instructional polish must not emit mastery/evidence or mutate content concepts.");
 

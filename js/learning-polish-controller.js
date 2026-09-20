@@ -1,5 +1,7 @@
 import { buildConceptIndex, conceptIdsForContent } from "./concept-model.js";
 import { sortProblemCatalog } from "./practice-group-model.js";
+const LESSON_TOOLS_STORAGE_KEY = "mathhard:lesson-tools:v1";
+
 const INTERACTIVE_SELECTOR = [
   "[data-mh-function-machine]",
   "[data-mh-function-mapping]",
@@ -44,6 +46,10 @@ function scrollToHeading(viewer, heading) {
   const top = Math.max(0, heading.offsetTop - 56);
   viewer.scrollTo({ top, behavior: "smooth" });
 }
+function renderMath(root) { try { globalThis.MH_render?.(root); } catch {} }
+function safeReadLessonToolsState() { try { return JSON.parse(localStorage.getItem(LESSON_TOOLS_STORAGE_KEY) || "{}"); } catch { return {}; } }
+function safeWriteLessonToolsState(value) { try { localStorage.setItem(LESSON_TOOLS_STORAGE_KEY, JSON.stringify(value)); } catch {} }
+
 function copyText(value) {
   const raw = text(value);
   if (!raw) return Promise.resolve(false);
@@ -120,6 +126,8 @@ function enhanceInteractive(host, language) {
   const ro = language !== "en";
   const controls = document.createElement("div");
   controls.className = "mh-interactive-shell-controls mh-lesson-polish-ui";
+  controls.setAttribute("role", "toolbar");
+  controls.setAttribute("aria-label", ro ? "Instrumente vizual" : "Visual tools");
   controls.innerHTML = `
     <button type="button" data-mh-interactive-reset title="${ro ? "Resetează vizualul" : "Reset visual"}" aria-label="${ro ? "Resetează vizualul" : "Reset visual"}">↺</button>
     <button type="button" data-mh-interactive-help title="${ro ? "Cum se folosește" : "How to use"}" aria-label="${ro ? "Cum se folosește" : "How to use"}">?</button>
@@ -127,8 +135,7 @@ function enhanceInteractive(host, language) {
   const help = document.createElement("div");
   help.className = "mh-interactive-shell-help mh-lesson-polish-ui";
   help.hidden = true;
-  host.prepend(controls);
-  host.appendChild(help);
+  host.append(controls, help);
   controls.querySelector("[data-mh-interactive-reset]")?.addEventListener("click", () => {
     host.dispatchEvent(new CustomEvent("mathhard:interactive-reset", { bubbles: false }));
   });
@@ -139,13 +146,8 @@ function enhanceInteractive(host, language) {
     help.hidden = !help.hidden;
   });
   controls.querySelector("[data-mh-interactive-fullscreen]")?.addEventListener("click", async () => {
-    if (document.fullscreenElement === host) {
-      await document.exitFullscreen?.();
-      return;
-    }
-    if (host.requestFullscreen) {
-      try { await host.requestFullscreen(); return; } catch {}
-    }
+    if (document.fullscreenElement === host) { await document.exitFullscreen?.(); return; }
+    if (host.requestFullscreen) { try { await host.requestFullscreen(); return; } catch {} }
     host.classList.toggle("is-mh-pseudo-fullscreen");
   });
 }
@@ -170,6 +172,7 @@ function enhanceOverflow(root) {
 
 function buildLessonTools({ root, viewer, headings, language }) {
   const ro = language !== "en";
+  const state = safeReadLessonToolsState();
   const bar = document.createElement("div");
   bar.className = "mh-lesson-mini-tools mh-lesson-polish-ui";
   bar.innerHTML = `
@@ -177,6 +180,8 @@ function buildLessonTools({ root, viewer, headings, language }) {
     <div class="mh-lesson-current" data-mh-current-section></div>
     <div class="mh-lesson-read-progress" aria-label="${ro ? "Progres de citire" : "Reading progress"}"><span data-mh-read-percent>0%</span><i><b data-mh-read-bar></b></i></div>
     <button type="button" class="mh-lesson-tool-btn mh-lesson-tool-icon" data-mh-search-toggle title="${ro ? "Caută în lecție" : "Search lesson"}" aria-label="${ro ? "Caută în lecție" : "Search lesson"}">⌕</button>
+    <button type="button" class="mh-lesson-tool-btn mh-lesson-tool-icon" data-mh-tools-collapse title="${ro ? "Ascunde instrumentele lecției" : "Hide lesson tools"}" aria-label="${ro ? "Ascunde instrumentele lecției" : "Hide lesson tools"}">×</button>
+    <button type="button" class="mh-lesson-tool-btn mh-lesson-tools-expand" data-mh-tools-expand title="${ro ? "Arată instrumentele lecției" : "Show lesson tools"}" aria-label="${ro ? "Arată instrumentele lecției" : "Show lesson tools"}" hidden>☰</button>
     <div class="mh-lesson-toc-popover" data-mh-toc-popover hidden></div>
     <div class="mh-lesson-search-popover" data-mh-search-popover hidden>
       <input type="search" data-mh-lesson-search placeholder="${ro ? "Caută în lecție…" : "Search this lesson…"}" autocomplete="off">
@@ -191,30 +196,67 @@ function buildLessonTools({ root, viewer, headings, language }) {
   const searchPanel = bar.querySelector("[data-mh-search-popover]");
   const searchInput = bar.querySelector("[data-mh-lesson-search]");
   const searchResults = bar.querySelector("[data-mh-search-results]");
+  const collapseButton = bar.querySelector("[data-mh-tools-collapse]");
+  const expandButton = bar.querySelector("[data-mh-tools-expand]");
 
-  toc.innerHTML = headings.map((heading, index) => `<button type="button" data-mh-toc-index="${index}">${text(heading.textContent)}</button>`).join("");
+  const headingHtml = (heading) => String(heading?.innerHTML || text(heading?.textContent));
+  toc.innerHTML = headings.map((heading, index) => `<button type="button" data-mh-toc-index="${index}"><span class="mh-toc-label">${headingHtml(heading)}</span></button>`).join("");
+  renderMath(toc);
+
+  const placePopover = (panel, alignRight = false) => {
+    const rect = bar.getBoundingClientRect();
+    const gap = 6;
+    const width = Math.min(460, Math.max(280, Math.min(window.innerWidth - 24, rect.width)));
+    panel.style.position = "fixed";
+    panel.style.top = `${Math.max(8, rect.bottom + gap)}px`;
+    panel.style.width = `${width}px`;
+    panel.style.left = alignRight
+      ? `${Math.max(12, Math.min(window.innerWidth - width - 12, rect.right - width))}px`
+      : `${Math.max(12, Math.min(window.innerWidth - width - 12, rect.left))}px`;
+    panel.style.maxHeight = `${Math.max(160, window.innerHeight - rect.bottom - 18)}px`;
+  };
+  const closePanels = () => { toc.hidden = true; searchPanel.hidden = true; };
+  const setCollapsed = (collapsed) => {
+    closePanels();
+    bar.classList.toggle("is-collapsed", collapsed);
+    collapseButton.hidden = collapsed;
+    expandButton.hidden = !collapsed;
+    safeWriteLessonToolsState({ ...safeReadLessonToolsState(), collapsed: Boolean(collapsed) });
+  };
+  if (state.collapsed) setCollapsed(true);
+
   toc.querySelectorAll("[data-mh-toc-index]").forEach((button) => button.addEventListener("click", () => {
     const heading = headings[Number(button.dataset.mhTocIndex)];
     toc.hidden = true;
     scrollToHeading(viewer, heading);
   }));
   bar.querySelector("[data-mh-toc-toggle]")?.addEventListener("click", () => {
-    toc.hidden = !toc.hidden;
+    const opening = toc.hidden;
     searchPanel.hidden = true;
+    toc.hidden = !opening;
+    if (opening) { placePopover(toc, false); toc.focus?.({ preventScroll: true }); }
   });
   bar.querySelector("[data-mh-search-toggle]")?.addEventListener("click", () => {
-    searchPanel.hidden = !searchPanel.hidden;
+    const opening = searchPanel.hidden;
     toc.hidden = true;
-    if (!searchPanel.hidden) searchInput?.focus();
+    searchPanel.hidden = !opening;
+    if (opening) { placePopover(searchPanel, true); searchInput?.focus(); }
   });
+  collapseButton?.addEventListener("click", () => setCollapsed(true));
+  expandButton?.addEventListener("click", () => setCollapsed(false));
+
   const closePopovers = (event) => {
     if (event?.type === "keydown" && event.key !== "Escape") return;
     if (event?.type === "click" && bar.contains(event.target)) return;
-    toc.hidden = true;
-    searchPanel.hidden = true;
+    closePanels();
+  };
+  const reposition = () => {
+    if (!toc.hidden) placePopover(toc, false);
+    if (!searchPanel.hidden) placePopover(searchPanel, true);
   };
   document.addEventListener("click", closePopovers);
   document.addEventListener("keydown", closePopovers);
+  window.addEventListener("resize", reposition, { passive: true });
 
   const searchable = headings.map((heading) => ({ heading, blob: normalize(sectionText(heading, headings)) }));
   const updateSearch = () => {
@@ -222,8 +264,9 @@ function buildLessonTools({ root, viewer, headings, language }) {
     if (!q) { searchResults.innerHTML = `<p>${ro ? "Scrie un termen sau o idee." : "Type a term or idea."}</p>`; return; }
     const matches = searchable.filter((entry) => entry.blob.includes(q)).slice(0, 8);
     searchResults.innerHTML = matches.length
-      ? matches.map((entry, index) => `<button type="button" data-mh-search-index="${searchable.indexOf(entry)}"><strong>${text(entry.heading.textContent)}</strong><span>${ro ? "Mergi la secțiune" : "Go to section"} →</span></button>`).join("")
+      ? matches.map((entry) => `<button type="button" data-mh-search-index="${searchable.indexOf(entry)}"><strong>${headingHtml(entry.heading)}</strong><span>${ro ? "Mergi la secțiune" : "Go to section"} →</span></button>`).join("")
       : `<p>${ro ? "Nicio secțiune găsită." : "No matching section."}</p>`;
+    renderMath(searchResults);
     searchResults.querySelectorAll("[data-mh-search-index]").forEach((button) => button.addEventListener("click", () => {
       const entry = searchable[Number(button.dataset.mhSearchIndex)];
       searchPanel.hidden = true;
@@ -241,11 +284,12 @@ function buildLessonTools({ root, viewer, headings, language }) {
     readBar.style.width = `${pct}%`;
     const threshold = viewer.scrollTop + 92;
     let active = headings[0];
-    for (const heading of headings) {
-      if (heading.offsetTop <= threshold) active = heading;
-      else break;
+    for (const heading of headings) { if (heading.offsetTop <= threshold) active = heading; else break; }
+    if (current.dataset.mhCurrentId !== active?.id) {
+      current.dataset.mhCurrentId = active?.id || "";
+      current.innerHTML = headingHtml(active);
+      renderMath(current);
     }
-    current.textContent = text(active?.textContent || "");
     toc.querySelectorAll("button").forEach((button, index) => button.classList.toggle("is-active", headings[index] === active));
   };
   viewer.addEventListener("scroll", update, { passive: true });
@@ -254,6 +298,7 @@ function buildLessonTools({ root, viewer, headings, language }) {
     viewer.removeEventListener("scroll", update);
     document.removeEventListener("click", closePopovers);
     document.removeEventListener("keydown", closePopovers);
+    window.removeEventListener("resize", reposition);
   };
 }
 
@@ -322,14 +367,45 @@ export function mountLessonPolish({ root, lesson, language = "ro", viewer = root
   };
 }
 
-export function mountProblemReview({ host, lesson, onReviewLesson = () => {}, language = "ro" } = {}) {
+export function mountProblemReview({ host, lesson, lessons = [], onReviewLesson = () => {}, language = "ro" } = {}) {
   const status = host?.querySelector("#statusArea");
   if (!status || !lesson?.id) return () => {};
-  const marker = host.querySelector("[data-mh-review-anchor]");
-  const button = document.createElement("button"); button.type="button"; button.className="mh-review-link"; button.hidden=true;
-  button.textContent=marker?.dataset.mhReviewLabel || (language === "en" ? "↗ Review the concept in the lesson" : "↗ Revizuiește conceptul în lecție");
-  button.addEventListener("click",()=>onReviewLesson(lesson,marker?.dataset.mhReviewAnchor||"")); status.insertAdjacentElement("afterend",button);
-  return (visible) => { button.hidden = !visible; };
+  const marker = host.querySelector("[data-mh-review-anchor],[data-mh-review-targets]");
+  const byId = new Map((lessons || []).map((entry) => [String(entry?.id || ""), entry]));
+  byId.set(String(lesson.id), lesson);
+  const rawTargets = text(marker?.dataset.mhReviewTargets);
+  const targets = [];
+  const pushTarget = (targetLesson, anchor = "") => {
+    if (!targetLesson?.id || targets.some((entry) => entry.lesson.id === targetLesson.id && entry.anchor === anchor)) return;
+    targets.push({ lesson: targetLesson, anchor: slugify(anchor || "").replace(/^sectiune$/, "") });
+  };
+  if (rawTargets) {
+    for (const part of rawTargets.split("|").map(text).filter(Boolean).slice(0, 2)) {
+      const [lessonIdRaw, anchorRaw = ""] = part.includes("#") ? part.split("#", 2) : [lesson.id, part];
+      pushTarget(byId.get(text(lessonIdRaw)) || (text(lessonIdRaw) === text(lesson.id) ? lesson : null), anchorRaw);
+    }
+  }
+  if (!targets.length) pushTarget(lesson, marker?.dataset.mhReviewAnchor || "");
+
+  const wrap = document.createElement("div");
+  wrap.className = "mh-review-links";
+  wrap.hidden = true;
+  targets.slice(0, 2).forEach((target, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mh-review-link";
+    const custom = index === 0 ? text(marker?.dataset.mhReviewLabel) : "";
+    if (custom) button.textContent = custom;
+    else if (targets.length === 1) button.textContent = language === "en" ? "↗ Review the lesson" : "↗ Revizuiește lecția";
+    else {
+      const title = language === "en" ? (target.lesson.title_en || target.lesson.title_ro) : (target.lesson.title_ro || target.lesson.title_en);
+      button.textContent = `${language === "en" ? "↗ Review" : "↗ Revizuiește"}: ${text(title)}`;
+    }
+    button.addEventListener("click", () => onReviewLesson(target.lesson, target.anchor));
+    wrap.appendChild(button);
+  });
+  status.insertAdjacentElement("afterend", wrap);
+  return (visible) => { wrap.hidden = !visible; };
 }
 
 export function enhanceAdaptiveMathToolbar(host, problem = {}, language = "ro") {
