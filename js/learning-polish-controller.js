@@ -205,14 +205,12 @@ function buildLessonTools({ root, viewer, headings, language }) {
 
   const placePopover = (panel, alignRight = false) => {
     const rect = bar.getBoundingClientRect();
-    const gap = 6;
     const width = Math.min(460, Math.max(280, Math.min(window.innerWidth - 24, rect.width)));
-    panel.style.position = "fixed";
-    panel.style.top = `${Math.max(8, rect.bottom + gap)}px`;
+    panel.style.position = "absolute";
+    panel.style.top = "calc(100% + 6px)";
     panel.style.width = `${width}px`;
-    panel.style.left = alignRight
-      ? `${Math.max(12, Math.min(window.innerWidth - width - 12, rect.right - width))}px`
-      : `${Math.max(12, Math.min(window.innerWidth - width - 12, rect.left))}px`;
+    panel.style.left = alignRight ? "auto" : "0";
+    panel.style.right = alignRight ? "0" : "auto";
     panel.style.maxHeight = `${Math.max(160, window.innerHeight - rect.bottom - 18)}px`;
   };
   const closePanels = () => { toc.hidden = true; searchPanel.hidden = true; };

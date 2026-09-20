@@ -10,7 +10,7 @@ function loadProblemRuntime() {
     import("./problem-workspace-repository.js"),
     import("./problem-workspace-model.js"),
     import("./structured-answer-ux.js?v=153"),
-    import("./learning-polish-controller.js?v=157")
+    import("./learning-polish-controller.js?v=1571")
   ]);
 }
 

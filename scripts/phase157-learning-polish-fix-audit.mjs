@@ -23,7 +23,10 @@ need(secure,"setReviewVisible(false);","review action resets on replay/correct")
 need(polish,"Revizuiește lecția","student-facing review copy");
 need(polish,"targets.slice(0, 2)","review target cap");
 need(admin,"data-mh-review-targets","Admin review target authoring");
-need(index,'css/learning-workspace.css?v=157',"learning CSS cache bust");
+need(index,'css/learning-workspace.css?v=1571',"learning CSS cache bust");
 need(index,'css/problem-workspace.css?v=157',"problem CSS cache bust");
 need(problemCss,"mh-review-links","multi-review layout");
+need(polish,'panel.style.position = "absolute"',"TOC popover stays anchored to the lesson toolbar");
+need(polish,'panel.style.top = "calc(100% + 6px)"',"TOC popover opens directly below the toolbar");
+need(css,"margin-left:0","collapsed lesson tools stay on the left");
 console.log("Phase 157 learning polish fix audit passed.");

@@ -227,7 +227,8 @@
 .mh-lesson-mini-tools.is-collapsed{
   display:flex;
   width:max-content;
-  margin-left:auto;
+  margin-left:0;
+  margin-right:auto;
   padding:4px;
   border-radius:11px;
 }
