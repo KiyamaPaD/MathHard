@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 const root = resolve(import.meta.dirname, "..");
 const read = (path) => readFileSync(resolve(root, path), "utf8");
 const index = read("index.html");
+const manifest = JSON.parse(read("deploy-manifest.json"));
+const build = String(manifest.build || manifest.appVersion || "").trim();
 const app = read("js/app.js");
 const roadmap = read("js/roadmap-controller.js");
 const explorer = read("js/function-intro-explorer.js");
@@ -22,11 +24,13 @@ const has = (source, token, message = token) => expect(source.includes(token), `
 const lacks = (source, token, message = token) => expect(!source.includes(token), `unexpected: ${message}`);
 
 // Release cache bust: Phase 150 changed app/CSS but kept the old URL. Phase 151 must force fresh assets.
+// Do not pin this historical audit to a specific later build: validate against the current deploy manifest.
+expect(Boolean(build), "deploy manifest build token is missing");
 for (const token of [
-  'data-mh-build="5b2"',
-  'name="mathhard-build" content="5b2"',
-  'href="css/style.css?v=5b2"',
-  '/js/app.js?v=5b2'
+  `data-mh-build="${build}"`,
+  `name="mathhard-build" content="${build}"`,
+  `href="css/style.css?v=${build}"`,
+  `/js/app.js?v=${build}`
 ]) has(index, token, `release cache token ${token}`);
 has(app, 'import("./roadmap-controller.js?v=151")', "fresh roadmap controller import");
 has(app, 'import("./function-intro-explorer.js?v=152")', "fresh function explorer import");
