@@ -135,7 +135,7 @@ import {
       import("./gamification-admin-controller.js"),
       import("./community-admin-controller.js?v=4g3"),
       import("./concept-admin-controller.js"), import("./tag-admin-controller.js"),
-      import("./content-quality-admin-controller.js?v=5b2"), import("./content-batch-import-controller.js?v=5b2"), import("./practice-group-admin-controller.js")
+      import("./content-quality-admin-controller.js?v=5b3"), import("./content-batch-import-controller.js?v=5b3"), import("./practice-group-admin-controller.js")
     ]).then(([
       lessonQuizModule,
       roadmapAdminModule,
@@ -262,13 +262,11 @@ import {
       console.error("Catalogul MathHard nu a putut fi încărcat:", error);
     }
   }
-  /* ===== Utils ===== */
   const esc = s => String(s)
     .replaceAll('&','&amp;').replaceAll('<','&lt;')
     .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
   const TIP_RO = '💡 Pentru a bifa o lecție: derulează până jos <b>și</b> așteaptă să se termine timerul de 1 minut.';
   const TIP_EN = '💡 To mark a lesson as learned: scroll to the bottom <b>and</b> wait for the 1-minute timer.';
-  // Texte pentru sloganul din HERO
   const HERO_VARIANTS_RO = [
   "lecții clare, cu exemple",
   "probleme mixte, de la 0 la olimpiadă",
@@ -283,7 +281,6 @@ import {
   "research topics explained simply",
   "stories from the history of math"
   ];
-  // Prag de promovare examene
   const PASS_THRESHOLD = 60;
   const MAIN_UI_TEXT = {
     ro: {
@@ -495,7 +492,6 @@ import {
   };
   function applyMainStaticTexts(){
     const ui = MAIN_UI_TEXT[LANG] || MAIN_UI_TEXT.ro;
-    // ===== header buttons =====
     const infoBtn = document.getElementById("infoBtn");
     const aboutBtn = document.getElementById("aboutBtn");
     const profileBtn = document.getElementById("profileBtn");
@@ -508,14 +504,12 @@ import {
     if (adminBtn) adminBtn.textContent = ui.header.admin_btn;
     if (closeModalBtn) closeModalBtn.textContent = ui.header.modal_close;
     if (aboutCloseBtn) aboutCloseBtn.textContent = ui.header.modal_close;
-    // ===== top counters titles =====
     const topCounters = document.querySelectorAll(".header-stats .counter");
     if (topCounters[0]) topCounters[0].title = ui.header.stats_titles[0];
     if (topCounters[1]) topCounters[1].title = ui.header.stats_titles[1];
     if (topCounters[2]) topCounters[2].title = ui.header.stats_titles[2];
     if (topCounters[3]) topCounters[3].title = ui.header.stats_titles[3];
     if (topCounters[4]) topCounters[4].title = ui.header.stats_titles[4];
-    // ===== progress cards =====
     const solvedTitle = document.querySelector("#openSolved .title");
     const solvedSub = document.querySelector("#openSolved .legend");
     const readTitle = document.querySelector("#openRead .title");
@@ -532,7 +526,6 @@ import {
     if (learnedSub) learnedSub.textContent = ui.progress_cards.learned_sub;
     if (passedTitle) passedTitle.textContent = ui.progress_cards.passed_title;
     if (passedSub) passedSub.textContent = ui.progress_cards.passed_sub;
-    // ===== about modal =====
     const aboutTitle = document.querySelector("#aboutModal .about-title");
     const aboutSubtitle = document.querySelector("#aboutModal .about-subtitle");
     const aboutPills = document.querySelectorAll("#aboutModal .about-pill");
@@ -1004,9 +997,6 @@ import {
     const line = String(rawLine || "").trim();
     if (!line) return { prefix: "", expression: "" };
 
-    // Keep exercise/list markers outside the math parser so constructs such as
-    // "a) root(2,x)" still let root(...) be recognized as a function call.
-    // Supported examples: a), B), 1), 12., (a), (3).
     const match = line.match(/^(\([A-Za-z0-9]+\)|[A-Za-z0-9]+[.)])\s*(.*)$/);
     if (!match) return { prefix: "", expression: line };
 
@@ -1255,7 +1245,6 @@ import {
   function mhApplyRoadmapBossRadarTexts(){
     const ro = (LANG === "ro");
 
-    // ===== ROADMAP =====
     const roadmapTitle = document.querySelector("#mhRoadmap .mh-section-head h2");
     const roadmapText = document.querySelector("#mhRoadmap .mh-section-head p");
     const roadmapReset = document.querySelector(".mh-roadmap-reset");
@@ -1328,7 +1317,6 @@ import {
       ro ? "🔬 Lecții de cercetare" : "🔬 Research lessons"
     );
 
-    // ===== BOSS =====
     const bossTitle = document.querySelector("#mhBoss .mh-boss-text h2");
     const bossText = document.querySelector("#mhBoss .mh-boss-text p");
     const bossMeta = document.querySelectorAll("#mhBoss .mh-boss-meta span");
@@ -1375,7 +1363,6 @@ import {
     if (bossChips[2]) bossChips[2].textContent = ro ? "Fracții" : "Fractions";
     if (bossChips[3]) bossChips[3].textContent = ro ? "Divizibilitate" : "Divisibility";
 
-    // ===== RADAR =====
     const radarTitle = document.querySelector("#mhRadar .mh-section-head h2");
     const radarText = document.querySelector("#mhRadar .mh-section-head p");
 
@@ -1530,7 +1517,6 @@ import {
     });
   }
 
-  /* LANG + THEME */
   let LANG = localStorage.getItem("mh_lang") || "ro";
   let THEME = localStorage.getItem("mh_theme") || "dark";
   if(THEME==="light") document.body.classList.add("light");
@@ -1611,7 +1597,6 @@ import {
     }
   };
 
-  // pornește textul din HERO (PRIMUL LOAD)
 
   applyMainStaticTexts();
   updateHeroText();
@@ -2010,9 +1995,8 @@ import {
     if (typeof mhScrollToMain === "function") mhScrollToMain();
   }
 
-  let scrollHandler=null, workspaceContinuityController=null;
+  let scrollHandler=null, workspaceContinuityController=null, lessonPolishCleanup=null;
 
-  /* lesson timer state */
   let lessonTimer=null, lessonSecondsLeft=0, lessonScrolled=false;
   let lessonReadingSessionId="";
   let lessonReadingLessonId="";
@@ -2020,7 +2004,6 @@ import {
   let lessonReadSaving=false;
   let bottomObserver=null;
 
-  /* ===== FOCUS MODE ===== */
 
   let FOCUS = localStorage.getItem("mh_focus") === "1";
 
@@ -2077,7 +2060,6 @@ import {
   };
   }
 
-  // theme toggle
   document.getElementById("themeBtn").onclick=()=>{
     const light = document.body.classList.toggle("light");
     THEME = light ? "light" : "dark";
@@ -2085,7 +2067,6 @@ import {
     mhUpdateHeaderStaticTexts();
   };
 
-  // language toggle
   document.getElementById("langBtn").onclick=()=>{
   LANG=(LANG==="ro"?"en":"ro"); 
   localStorage.setItem("mh_lang",LANG);
@@ -2132,7 +2113,6 @@ import {
   drawFilterBar();
   };
 
-  /* Lesson checks are loaded securely from Supabase (Phase 17C.3). */
 
   function replaceCatalogTarget(target, items, normalizer) {
     target.length = 0;
@@ -2250,7 +2230,6 @@ import {
     });
   }
 
-  /* ===== ADMIN PANEL ===== */
   const adminBtn = document.getElementById("adminBtn");
   const adminDrawer = document.getElementById("adminDrawer");
   const closeAdmin = document.getElementById("closeAdmin");
@@ -3206,7 +3185,7 @@ ${details}`);
     };
   }
   async function loadContentAuthoringRuntime() {
-    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5b2");
+    return contentAuthoringRuntimePromise ||= import("./content-authoring-bootstrap.js?v=5b3");
   }
   async function mountContentAuthoringController({ reportError = false } = {}) {
     if (contentAuthoringController) return contentAuthoringController;
@@ -3222,6 +3201,7 @@ ${details}`);
         getExamErrors: (payload, context) => mhValidateExamPayload(payload, context), getCatalog: () => DATA, getAdminMode: () => MH_ADMIN_STATE.mode, getEditId: () => MH_ADMIN_STATE.editId || "" };
       contentAuthoringController = runtime.mountContentAuthoringPreflight(options);
       contentTemplateController ||= runtime.mountContentTemplates({ host: document.getElementById("mhContentTemplateStudio"), form, getLanguage: () => LANG, getType: () => document.getElementById("mh_type")?.value || "lesson" });
+      import("./admin-learning-polish-authoring.js?v=156").then(({mountAdminLearningPolishAuthoring})=>mountAdminLearningPolishAuthoring({form,language:LANG})).catch(()=>{});
       return contentAuthoringController;
     } catch (error) {
       console.error("Content authoring bootstrap failed:", error);
@@ -3692,7 +3672,6 @@ ${details}`);
   async function refreshAdminButtonVisibility() {
     if (!adminBtn) return false;
 
-    // button after logout.
     const requestEpoch = ++adminVisibilityEpoch;
     const wasGranted = adminBtn.dataset.accessState === "granted"
       || Boolean(adminDrawer?.classList.contains("open"));
@@ -3851,7 +3830,6 @@ ${details}`);
     closeAdmin.onclick = () => adminDrawer.classList.remove("open");
   } 
 
-  // === Aliases pt. compatibilitate===
   const EXAMS = DATA.exams;            
   const TIPS = DATA.tips || {
     title_ro: "Tips",
@@ -4197,7 +4175,6 @@ ${details}`);
     }, 0);
   }
 
-  /* Persistent exam session state */
   const examSessionStore = createExamSessionStore();
   const {
     clearActiveExamLock,
@@ -4273,7 +4250,6 @@ ${details}`);
     }
   }
 
-  /* ===== Olimpiadă — detecție & nivel ===== */
   function isOlympiad(P){
     const L = DATA.lessons.find(x=>x.id===P.lessonId) || {};
     const blob = ((P.source||"")+" "+(P.title_ro||"")+" "+(P.title_en||"")+" "+[...(P.tags||[]),...(P.tag_labels||[]),...(L.tags||[]),...(L.tag_labels||[])].join(" ")).toLowerCase();
@@ -4295,7 +4271,6 @@ ${details}`);
     return "";
   }
 
-  /* ===== STATE ===== */
   function isGuestContentLocked() {
     return !MH_AUTH_USER?.id;
   }
@@ -4437,7 +4412,6 @@ ${details}`);
     bindExamLockGuard(".mh-radar-item");
   }
 
-  // ===== XP SYSTEM (doar probleme normale, nu examene / quiz lecție) =====
 
   function updateXPHeader(){
     const el = document.getElementById("xpTotalHeader");
@@ -4446,7 +4420,6 @@ ${details}`);
   updateXPHeader();
 
 
-  // probleme „de examen” (nu primesc XP)
   function isExamProblem(P){
     const L = DATA.lessons.find(x=>x.id===P.lessonId) || {};
     const g = (L.grade || "").toUpperCase();
@@ -4458,9 +4431,7 @@ ${details}`);
     return false;
   }
 
-  // acordă XP la prima rezolvare corectă
 
-  /* Local fallback attempt state. Canonical attempt history remains in Supabase. */
   const attempts = {};
 
   function problemAttemptStorageKey(user = MH_AUTH_USER) {
@@ -4552,7 +4523,7 @@ ${details}`);
     updateExamAttemptScore
   } = progressController;
 
-  window.addEventListener("mh:progress-mutated", () => void refreshCanonicalXp());
+  window.addEventListener("mh:progress-mutated", () => { void refreshCanonicalXp(); learningWorkspaceController?.refresh(); });
   window.addEventListener("mh:gamification-data", (event) => syncCanonicalXp(event?.detail || {}));
 
   window.addEventListener("mh:admin-progress-lab-changed", () => {
@@ -4647,7 +4618,6 @@ ${details}`);
     return /(olimpiad|onm|imo|jbmo|bmo|concurs|shortlist|exam)/i.test(src);
   }
 
-  /* ===== Custom chapter order  ===== */
   const CHAPTER_ORDER = {
     "V": ["Numere Naturale", "Metode aritmetice de rezolvare a problemelor", "Divizibilitatea numerelor naturale" ,"Fracții Ordinare", "Fracții Zecimale", "Elemente de geometrie", "Unități de măsură"],
     "VI": ["Mulțimi", "Divizibiliteata Numerelor Naturale", "Rapoarte Și Proporții", "Noțiuni Fundamentale Din Geometrie", "Triunghiul"]
@@ -4955,7 +4925,6 @@ ${details}`);
     }
   }
 
-  /* ===== Sidebar (super categorii) ===== */
   function isMathHardM1Lesson(lesson){
     const id = String(lesson?.id || "").toLowerCase();
     if (/^m1-(?:ix|x|xi|xii)-/.test(id)) return true;
@@ -5032,7 +5001,6 @@ ${details}`);
       });
     }
 
-    // Lecții / Curriculum
     {
       const top = document.createElement("details");
       top.open = true;
@@ -5063,7 +5031,6 @@ ${details}`);
       root.appendChild(top);
     }
 
-    // Olimpiada
     {
       const top = document.createElement("details");
       top.open = false;
@@ -5094,7 +5061,6 @@ ${details}`);
       root.appendChild(top);
     }
 
-    // Facultate
     if (byGrade["FAC"]) {
       const top = document.createElement("details");
       top.open = false;
@@ -5109,7 +5075,6 @@ ${details}`);
       root.appendChild(top);
     }
 
-    // Cercetare
     {
       const researchList = DATA.lessons.filter(L => L.chapter === "CERCETARE");
       if (researchList.length) {
@@ -5139,7 +5104,6 @@ ${details}`);
       }
     }
 
-    // Istorie
     {
       const hist = DATA.lessons.filter(L => L.chapter === "Istoria matematicii");
       if (hist.length) {
@@ -5195,7 +5159,6 @@ ${details}`);
 
   window.addEventListener("mh:curriculum-order-changed", () => { buildNestedTree(); buildTagPanel(); renderCards(); });
 
-  /* ===== Super-categoria: Tag-uri ===== */
   function buildTagPanel(){
     const host=document.getElementById("tagPanel"); if(!host)return; host.innerHTML="";
     const catalog=DATA.tagCatalog||{tags:[],mappings:[]}, mapped=new Set((catalog.mappings||[]).map(x=>x.tag_id));
@@ -5208,7 +5171,6 @@ ${details}`);
     box.appendChild(branch);host.appendChild(box);wireGlobalExamClickGuards();
   }
 
-  /* ===== Search/Filter & Cards ===== */
   function searchMatch(item){
     const q=filter.q.trim().toLowerCase(); if(!q) return true;
     const text = (
@@ -5260,7 +5222,6 @@ ${details}`);
     const srcEN = /(evaluarea\s+națională|evaluarea nationala|\ben\b)/i.test(src);
     const srcBAC = /(bacalaureat|\bbac\b)/i.test(src);
 
-    // ascundem problemele de examen din tab-ul Probleme
     const isExamLinked = ["EN","BAC","ADM"].includes(L.grade) || srcEN || srcBAC || srcAdmit;
     if(isExamLinked) return false;
 
@@ -5499,7 +5460,6 @@ ${details}`);
     const progressRow = document.getElementById("progressRow");
     const pagWrap = document.querySelector(".paginate");
 
-    // tab special: XP
     if (TAB === "xp"){
       if (progressRow) progressRow.style.display = "none";
       if (pagWrap) pagWrap.style.display = "none";
@@ -5518,7 +5478,6 @@ ${details}`);
       : TAB==="exams"   ? EXAMS.filter(passExam)    : TAB==="research" ? DATA.lessons.filter(l=>l.chapter==="CERCETARE").filter(passLesson)
       : DATA.lessons.filter(l=>l.chapter==="Istoria matematicii").filter(passLesson);
 
-    // sort lecții
     if(TAB==="lessons"){
       list = list.slice().sort((A,B)=>{
         const gA = DATA.grades.indexOf(A.grade), gB = DATA.grades.indexOf(B.grade);
@@ -5585,7 +5544,6 @@ ${details}`);
     div.className = "card";
 
     if (TAB === "lessons" || TAB === "research" || TAB === "history") {
-      // === CARD LECȚIE  ===
       const title = LANG === "ro"
         ? (item.title_ro || item.title_en || "Lecție")
         : (item.title_en || item.title_ro || "Lesson");
@@ -5606,7 +5564,6 @@ ${details}`);
       div.onclick = () => openViewer(item);
 
     } else if (TAB === "problems") {
-      // === CARD PROBLEMĂ  ===
       const title = LANG === "ro"
         ? (item.title_ro || item.title_en || "Problemă")
         : (item.title_en || item.title_ro || "Problem");
@@ -5662,7 +5619,6 @@ ${details}`);
     mhSyncContextFilterVisibility();
   }
 
-  /* ===== Filter bar ===== */
   function drawFilterBar(){
     const fb = document.getElementById("filterBar");
     const chips = [];
@@ -5731,7 +5687,6 @@ ${details}`);
     }
   }
 
-  /* ===== Viewer: Lecții / Tips ===== */
   function hasLessonVerification(lessonId){
     return LESSON_QUIZ_AVAILABILITY.has(String(lessonId || ""));
   }
@@ -5985,7 +5940,6 @@ ${details}`);
     `;
   }
 
-  /* ===== Secure lesson quiz (Supabase) ===== */
   const lessonQuizController = createLessonQuizController({
     supabase,
     getLanguage: () => LANG,
@@ -6066,6 +6020,7 @@ ${details}`);
   }
 
   function openViewer(item, forcedType = ""){
+    lessonPolishCleanup?.(); lessonPolishCleanup=null;
 
     if (isGuestContentLocked()) {
       showGuestContentMessage();
@@ -6115,6 +6070,7 @@ ${details}`);
       content.innerHTML=html;
       if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js?v=152").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch((error)=>console.error("Function intro explorer failed:",error));
       if(content.querySelector("[data-mh-function-representation-lab],[data-mh-function-vertical-test]")) import("./function-graph-explorer.js?v=155").then(({mountFunctionGraphExplorers})=>mountFunctionGraphExplorers(content)).catch((error)=>console.error("Function graph explorer failed:",error));
+      import("./learning-polish-controller.js?v=156").then(({mountLessonPolish})=>{lessonPolishCleanup=mountLessonPolish({root:content,viewer:content,lesson:item,language:LANG});}).catch((error)=>console.error("Lesson polish failed:",error));
       setTimeout(()=>{ MH_render(content); },0);
       
     if (item && item.id === 'v-reprez-nr-nat') {
@@ -6288,7 +6244,6 @@ ${details}`);
     mhUpdateLessonDrawerButtons();
     setTimeout(()=>{ MH_render(document.getElementById("viewContent")); },10);
 
-      // --- PROGRESS PE LECȚIE (SCROLL) ---
     const progressBar = document.getElementById("lessonProgressBar");
     const progressInner = document.getElementById("lesson-progress");
     const viewer = document.getElementById("viewContent");
@@ -6361,7 +6316,6 @@ ${details}`);
     }
   };
 
-  /* ===== Problems (attempts/hints/reveal + RESET) ===== */
   function problemHintsFallback(P){
     const id=P.lessonId||"";
     if(/citirea|numere|valoare/i.test(id)) return { h1:(LANG==='ro'?'Marchează perioadele (mii, milioane).':'Mark periods (thousands, millions).'), h2:(LANG==='ro'?'Gândește în \\(10^k\\).':'Think in \\(10^k\\).') };
@@ -6388,7 +6342,10 @@ ${details}`);
     getLessons: () => DATA.lessons,
     getProblems: () => DATA.problems,
     getSolvedIds: () => solvedSet,
+    getProblemState: (id) => solvedSet.has(id) ? "solved" : attemptedProblemSet.has(id) ? "attempted" : openedProblemSet.has(id) ? "opened" : "unopened",
+    getConceptCatalog: () => CONCEPT_CATALOG,
     onOpenProblem: (candidate) => openViewer(candidate, "problem"),
+    onReviewLesson: (lesson, anchor) => { if(!lesson?.id)return; openViewer(lesson,"lesson"); if(anchor)setTimeout(()=>document.getElementById(`mh-sec-${anchor}`)?.scrollIntoView({behavior:"smooth",block:"start"}),180); },
     onProblemOpened: markProblemOpened,
     onProblemAttempted: markProblemAttempted,
     isExamProblem,
@@ -6407,7 +6364,6 @@ ${details}`);
 
 
 
-  /* ===== PATCH pentru buildProblemBlock() ===== */
   window.defineCheckPatch = function(prefix, P, wrap){
     return function(){
       const inEl = wrap.querySelector(`#${prefix}-ans`);
@@ -6566,7 +6522,6 @@ ${details}`);
       }
     }
 
-      // --- CHECK (verificare) ---
     (function initCheck(){
       const doCheck = window.defineCheckPatch(prefix, P, wrap);
       const ansEl = wrap.querySelector(`#${prefix}-ans`);
@@ -6587,22 +6542,18 @@ ${details}`);
       });
     })();
 
-    // --- RESET UI ---
     wrap.querySelector(`#${prefix}-reset`).onclick = () => {
       state.resetAt = Date.now();
       saveAttempts();
 
-      // curățăm câmpul și rezultatul
       wrap.querySelector(`#${prefix}-ans`).value = "";
       wrap.querySelector(`#${prefix}-res`).innerHTML = "";
 
-      // redesenăm
       paintAttempts(false);
       paintHints();
       paintReveal();
     };
 
-    // --- la montare: desenează starea existentă ---
     paintAttempts(false);
     paintHints();
     paintReveal();
@@ -6610,7 +6561,6 @@ ${details}`);
     return wrap;
   }
 
-  /* ===== Exam viewer ===== */
   let examTimer=null;
 
 function openExam(exam){
@@ -7086,7 +7036,6 @@ function openExam(exam){
 }
 
 
-  /* ===== Inputs & Tabs ===== */
   document.getElementById("q").addEventListener("input", e=>{ filter.q=e.target.value; page=1; renderCards(); drawFilterBar(); });
   document.getElementById("loadMore").onclick=()=>{ page++; renderCards(); };
   const lessonCategorySelect = document.getElementById("lessonCategory");
@@ -7165,14 +7114,12 @@ function openExam(exam){
   document.querySelectorAll(".tab").forEach(tb => {
     tb.onclick = () => selectTab(tb.dataset.tab);
   });
-  /* sort select */
   document.getElementById("problemSort").onchange=(e)=>{ filter.problemSort=e.target.value; page=1; renderCards(); };
   document.getElementById("problemStars")?.addEventListener("change",(e)=>{
     filter.exactDifficulty=e.target.value === "" ? "" : Number(e.target.value);
     page=1; renderCards(); drawFilterBar();
   });
 
-  /* wire butoane olimpiada */
   function wireOlympControls(){
     const btn = document.getElementById("olympOnlyBtn");
     const badge = document.getElementById("olympOnlyState");
@@ -7197,7 +7144,6 @@ function openExam(exam){
     }
   }
 
-  /* ===== Help / About modal coordination ===== */
   const modal = document.getElementById("modal");
   const aboutModal = document.getElementById("aboutModal");
   const utilityModals = [modal, aboutModal].filter(Boolean);
@@ -7264,7 +7210,6 @@ function openExam(exam){
     if (openModal) closeUtilityModal(openModal);
   });
 
-  /* ===== Progress modals ===== */
   function progressModalList(items, emptyRo, emptyEn) {
     return items.length
       ? `<ul>${items.join("")}</ul>`
@@ -7320,7 +7265,6 @@ function openExam(exam){
     openUtilityModal(modal);
   };
 
-  // ===== PARTICULE PE FUNDAL =====
   function initParticles(){
   const canvas = document.createElement("canvas");
   canvas.id = "mhParticles";
@@ -7391,9 +7335,7 @@ function openExam(exam){
 
   document.addEventListener("DOMContentLoaded", initParticles);
 
-    /* About modal behavior is initialized once during the main app boot. */
 
-    /* ===== MH ROADMAP + BOSS + RADAR LOGIC + VAI DE CAPUL MEU ===== */
 
   function mhScrollToMain(){
     const wrap = document.querySelector(".wrap");
@@ -7517,7 +7459,6 @@ function openExam(exam){
     mhInitRadar();
   });
 
-  /* === CUB 3D: LEGACY */
   (function(){
   function positionCubeLayer(){
     const layer = document.querySelector(".mh-cube-layer");
@@ -7705,7 +7646,6 @@ function openExam(exam){
     console.warn("Initial roadmap load failed:", error);
   });
   
-  /* ===== BOOT SITE IMPORTANT ===== */
   mhUpdateSidebarStaticTexts();
   mhUpdateToolbarTexts();
   mhUpdateHeaderStaticTexts();
@@ -7781,14 +7721,12 @@ function openExam(exam){
       }
     });
 
-    // ===== BULLET-URI DIN STÂNGA =====
     const bullets  = Array.from(aboutModal.querySelectorAll(".story-bullet"));
     const sections = bullets.map(b => {
       const sel = b.getAttribute("data-target");
       return sel ? aboutModal.querySelector(sel) : null;
     });
 
-    // Click pe bullet
     bullets.forEach((bullet, idx) => {
       const target = sections[idx];
       bullet.addEventListener("click", (ev) => {
@@ -7804,7 +7742,6 @@ function openExam(exam){
       });
     });
 
-    // ===== Sincronizare automată =====
     if ("IntersectionObserver" in window && modalBox){
       const io = new IntersectionObserver((entries) => {
         let best = null;
@@ -7832,4 +7769,3 @@ function openExam(exam){
 
   window.MathHardLoading?.ready();
 
-///Amin!

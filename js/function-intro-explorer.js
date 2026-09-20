@@ -52,6 +52,7 @@ function mountFunctionMachine(host) {
   if (!host || host.dataset.mhMounted === "1") return;
   host.dataset.mhMounted = "1";
   const en = isEnglish();
+  host.dataset.mhInteractiveHelp = en ? "Change the input or rule and compare input, rule and output." : "Schimbă inputul sau regula și compară inputul, regula și output-ul.";
 
   host.innerHTML = `
     <section class="mh-function-machine" aria-label="${en ? "Interactive function machine" : "Mașină interactivă de funcții"}">
@@ -108,6 +109,7 @@ function mountFunctionMachine(host) {
 
   input.addEventListener("input", refresh);
   select.addEventListener("change", refresh);
+  host.addEventListener("mathhard:interactive-reset", () => { input.value = "4"; select.value = "linear"; refresh(); });
   refresh();
 }
 
@@ -153,6 +155,7 @@ function mountFunctionMapping(host) {
   host.dataset.mhMounted = "1";
   const en = isEnglish();
   const serial = ++mappingSerial;
+  host.dataset.mhInteractiveHelp = en ? "Switch between mappings and check the one-arrow-per-input rule." : "Comută între corespondențe și verifică regula: exact o săgeată din fiecare input.";
 
   host.innerHTML = `
     <section class="mh-function-map" aria-label="${en ? "Function mapping examples" : "Exemple de corespondențe"}">
@@ -186,6 +189,7 @@ function mountFunctionMapping(host) {
   };
 
   buttons.forEach((button) => button.addEventListener("click", () => show(button.dataset.mapCase)));
+  host.addEventListener("mathhard:interactive-reset", () => show("valid"));
   show("valid");
 }
 
@@ -205,6 +209,7 @@ function mountFunctionTraceExplorer(host) {
   host.dataset.mhMounted = "1";
   const en = isEnglish();
   const serial = ++mappingSerial;
+  host.dataset.mhInteractiveHelp = en ? "Choose Image or Preimage, then tap a node. The restriction toggle changes the active domain." : "Alege Imagine sau Preimagine, apoi apasă un nod. Toggle-ul de restricție schimbă domeniul activ.";
   let mode = "image";
   let restricted = false;
   let selectedLeft = "1";
@@ -330,6 +335,7 @@ function mountFunctionTraceExplorer(host) {
     render();
   }));
   restrictInput.addEventListener("change", () => { restricted = restrictInput.checked; render(); });
+  host.addEventListener("mathhard:interactive-reset", () => { mode = "image"; restricted = false; selectedLeft = "1"; selectedRight = "a"; restrictInput.checked = false; render(); });
   render();
 }
 

@@ -202,7 +202,10 @@ export function createWorkspaceContinuityController({
     restoringContent = true;
     try {
       await openContent?.(item, saved.type);
-      restoreElementScroll(document.getElementById("viewContent"), saved.scrollTop, 14);
+      const viewer = document.getElementById("viewContent");
+      restoreElementScroll(viewer, saved.scrollTop, 14);
+      if (viewer) viewer.dataset.mhRestoredScrollTop = String(Math.max(0, Number(saved.scrollTop || 0)));
+      window.dispatchEvent(new CustomEvent("mathhard:workspace-restored", { detail: { type: saved.type, id: saved.id, scrollTop: Number(saved.scrollTop || 0) } }));
       return true;
     } finally {
       setTimeout(() => { restoringContent = false; }, 0);

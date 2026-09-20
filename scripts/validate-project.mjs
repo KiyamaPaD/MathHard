@@ -880,7 +880,7 @@ if (!quickNavSource.includes('data-layout-action="expand-all"') ||
 if (!indexHtml.includes('id="mhLearningWorkspaceBar"')) {
   fail("Phase 13A learning workspace toolbar is missing from index.html.");
 }
-if (!indexHtml.includes('href="css/learning-workspace.css"') || !indexHtml.includes('href="css/roadmap-studio.css"')) {
+if (!/href="css\/learning-workspace\.css(?:\?[^"]*)?"/.test(indexHtml) || !/href="css\/roadmap-studio\.css(?:\?[^"]*)?"/.test(indexHtml)) {
   fail("Phase 13A workspace or Roadmap Studio stylesheet is missing from index.html.");
 }
 if (!appSource.includes('from "./learning-workspace-controller.js"')) {

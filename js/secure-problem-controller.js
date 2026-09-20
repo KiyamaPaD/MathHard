@@ -9,7 +9,8 @@ function loadProblemRuntime() {
   return problemRuntimePromise ||= Promise.all([
     import("./problem-workspace-repository.js"),
     import("./problem-workspace-model.js"),
-    import("./structured-answer-ux.js?v=153")
+    import("./structured-answer-ux.js?v=153"),
+    import("./learning-polish-controller.js?v=156")
   ]);
 }
 
@@ -80,7 +81,10 @@ export function createSecureProblemController({
   getLessons,
   getProblems = () => [],
   getSolvedIds = () => new Set(),
+  getProblemState = () => "unopened",
+  getConceptCatalog = () => [],
   onOpenProblem,
+  onReviewLesson = () => {},
   onProblemOpened = () => {},
   onProblemAttempted = () => {},
   isExamProblem,
@@ -99,7 +103,7 @@ export function createSecureProblemController({
   if (!supabase) throw new Error("createSecureProblemController requires Supabase.");
 
   async function renderProblemReady(problem, host) {
-    const [workspaceApi, workspaceModel, answerUx] = await loadProblemRuntime();
+    const [workspaceApi, workspaceModel, answerUx, polishUx] = await loadProblemRuntime();
     const { loadProblemWorkspace, normalizeProblemWorkspace, saveContentWorkspace } = workspaceApi;
     const { buildProblemRecommendations, feedbackForAttempt, formatAttemptTime } = workspaceModel;
     const {
@@ -252,6 +256,9 @@ export function createSecureProblemController({
     `;
 
     renderMath(host);
+    polishUx.enhanceContextualContent(host, language);
+    polishUx.mountProblemPolish({problem,lesson,problems:getProblems(),getProblemState,onOpenProblem,conceptCatalog:getConceptCatalog(),language});
+    const setReviewVisible = polishUx.mountProblemReview({host,lesson,onReviewLesson,language});
     if (!isExam && !replayEligible) {
       onProblemOpened(problem.id);
       void logLearningEvent(supabase, "problem_opened", "problem", problem.id, { language }).catch((error) => console.warn("problem_opened event failed:", error));
@@ -279,6 +286,7 @@ export function createSecureProblemController({
     const modeButtons = [...host.querySelectorAll("[data-explanation-mode]")];
     const syncMathPreview = bindMathInputEnhancements(input, host.querySelector("#answerPreviewBox")) || (() => {});
     attachMathToolbar?.(input, host.querySelector("#answerMathToolbar"));
+    polishUx.enhanceAdaptiveMathToolbar(host.querySelector("#answerMathToolbar"), problem, language);
     const resizeStructuredAnswer = structuredAnswer
       ? bindStructuredAnswerTextarea(input)
       : () => {};
@@ -543,9 +551,11 @@ export function createSecureProblemController({
           const result = await replayApi.submitProblemReplayAnswer(supabase, replay.replay_id, value);
           replay=result?.replay||replay;renderReplayHistory();paintReplaySummary(replay);refreshHints();refreshXp();refreshRevealGate();
           if (result?.ok) {
+            setReviewVisible(false);
             statusArea.textContent = messageFor(language, "correct", true) + " · Replay 0 XP" + gradingFeedbackText(result, language);
             input.disabled = true; checkButton.disabled = true; if (replayButton) replayButton.disabled = false;
           } else {
+            setReviewVisible(result?.gradable !== false);
             statusArea.textContent = messageFor(language, result?.gradable === false ? "needs_format" : "wrong") + gradingFeedbackText(result, language);
             input.disabled = false; checkButton.disabled = false; input.focus();
           }
@@ -559,6 +569,7 @@ export function createSecureProblemController({
         if (result?.progress) applyProblemProgressResult(problem.id, result.progress, ok ? "solved" : "wrong");
 
         if (ok) {
+          setReviewVisible(false);
           statusArea.textContent = messageFor(language, result?.message_key === "already_solved" ? "already_solved" : "correct", true) + gradingFeedbackText(result, language);
           if (!wasAlreadySolved && result?.progress?.solved) {
             incrementTodayProgress("problem");
@@ -573,6 +584,7 @@ export function createSecureProblemController({
             }));
           }
         } else {
+          setReviewVisible(result?.gradable !== false);
           statusArea.textContent = messageFor(language, result?.gradable === false ? "needs_format" : "wrong") + gradingFeedbackText(result, language);
           input.disabled = false;
           checkButton.disabled = false;

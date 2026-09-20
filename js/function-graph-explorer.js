@@ -68,6 +68,7 @@ function mountRepresentationLab(host) {
   if (!host || host.dataset.mhMounted === "1") return;
   host.dataset.mhMounted = "1";
   const en = isEnglish();
+  host.dataset.mhInteractiveHelp = en ? "Select an input and compare formula, table, mapping and graph. Switch the domain mode to see what changes." : "Selectează un input și compară formula, tabelul, diagrama și graficul. Schimbă modul domeniului ca să vezi diferența.";
   let mode = "finite";
   let active = new Set(finiteInputs);
   let selectedInput = 1;
@@ -137,7 +138,7 @@ function mountRepresentationLab(host) {
     tableCard.innerHTML = `<h3>${en ? "Table" : "TABEL"}</h3><div class="mh-representation-table-wrap"><table class="mh-representation-table"><tr><th>x</th>${head}</tr><tr><th>f(x)</th>${vals}</tr></table></div><p>\\(${selectedInput}\\mapsto ${fx(selectedInput)}\\)</p>`;
 
     mapCard.innerHTML = `<h3>${en ? "Mapping" : "DIAGRAMĂ"}</h3>${mappingSvg(activeInputs, selectedInput, mode)}<p>${en ? "Reached values" : "Valori atinse"}: \\(${reached}\\)</p>`;
-    graphCard.innerHTML = `<h3>${en ? "Graph" : "GRAFIC"}</h3>${graphSvg({ mode, activeInputs, selectedInput })}<p>\\[(${selectedInput},${fx(selectedInput)})\\in G_f\\]</p>`;
+    graphCard.innerHTML = `<h3>${en ? "Graph" : "GRAFIC"}</h3>${graphSvg({ mode, activeInputs, selectedInput })}<p class="mh-representation-point-readout">\\[x=${selectedInput},\\qquad f(${selectedInput})=${fx(selectedInput)},\\qquad (${selectedInput},${fx(selectedInput)})\\in G_f\\]</p>`;
 
     note.innerHTML = mode === "finite"
       ? (en ? "Only the selected domain inputs create graph points; they are not connected automatically." : "Numai inputurile selectate din domeniu produc puncte ale graficului; punctele nu se unesc automat.")
@@ -163,6 +164,7 @@ function mountRepresentationLab(host) {
     if (mode === "finite" && !active.has(selectedInput)) selectedInput = [...active][0];
     render();
   }));
+  host.addEventListener("mathhard:interactive-reset", () => { mode = "finite"; active = new Set(finiteInputs); selectedInput = 1; render(); });
   render();
 }
 
@@ -183,6 +185,7 @@ function mountVerticalTest(host) {
   if (!host || host.dataset.mhMounted === "1") return;
   host.dataset.mhMounted = "1";
   const en = isEnglish();
+  host.dataset.mhInteractiveHelp = en ? "Switch drawings and use the vertical line to test whether one x would receive more than one output." : "Comută între desene și urmărește dreapta verticală: același x nu poate primi două outputuri.";
   let selected = "curve";
   host.innerHTML = `<section class="mh-vertical-test" aria-label="${en ? "Vertical line test" : "Criteriul dreptei verticale"}">
     <div class="mh-vertical-test__head"><div><strong>${en ? "Is it a function?" : "Este funcție?"}</strong><small>${en ? "Follow the vertical line." : "Urmărește dreapta verticală."}</small></div><div class="mh-vertical-test__tabs" role="group">${Object.entries(testCases).map(([key, value]) => `<button type="button" data-vtest="${key}" class="${key === selected ? "is-active" : ""}">${en ? value.labelEn : value.labelRo}</button>`).join("")}</div></div>
@@ -200,6 +203,7 @@ function mountVerticalTest(host) {
     copy.innerHTML = `<strong class="${valid ? "is-valid" : "is-invalid"}">${en ? cfg.verdictEn : cfg.verdictRo}</strong><p>${valid ? (en ? "The shown vertical meets the curve once, and no vertical needs to meet it more than once." : "Verticala indicată întâlnește curba o singură dată, iar nicio verticală nu trebuie să o întâlnească de două ori.") : (en ? "A vertical line meets the drawing in two points: the same x would have two different outputs." : "O dreaptă verticală întâlnește desenul în două puncte: același x ar avea două outputuri diferite.")}</p>`;
   };
   tabs.forEach((button) => button.addEventListener("click", () => { selected = button.dataset.vtest; render(); }));
+  host.addEventListener("mathhard:interactive-reset", () => { selected = "curve"; render(); });
   render();
 }
 

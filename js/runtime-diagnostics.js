@@ -1,6 +1,6 @@
 const STORAGE_KEY = "mh_runtime_diagnostics_v1";
 const MAX_EVENTS = 120;
-const BUILD_LABEL = "phase-5b2-independent-exam-bank";
+const BUILD_LABEL = "phase-5b3-independent-exam-bank";
 
 function getStorage() {
   try {
