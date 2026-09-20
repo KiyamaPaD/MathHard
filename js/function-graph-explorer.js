@@ -137,7 +137,7 @@ function mountRepresentationLab(host) {
     tableCard.innerHTML = `<h3>${en ? "Table" : "TABEL"}</h3><div class="mh-representation-table-wrap"><table class="mh-representation-table"><tr><th>x</th>${head}</tr><tr><th>f(x)</th>${vals}</tr></table></div><p>\\(${selectedInput}\\mapsto ${fx(selectedInput)}\\)</p>`;
 
     mapCard.innerHTML = `<h3>${en ? "Mapping" : "DIAGRAMĂ"}</h3>${mappingSvg(activeInputs, selectedInput, mode)}<p>${en ? "Reached values" : "Valori atinse"}: \\(${reached}\\)</p>`;
-    graphCard.innerHTML = `<h3>${en ? "Graph" : "GRAFIC"}</h3>${graphSvg({ mode, activeInputs, selectedInput })}<p>\\(${selectedInput},${fx(selectedInput)}\\)\\in G_f</p>`;
+    graphCard.innerHTML = `<h3>${en ? "Graph" : "GRAFIC"}</h3>${graphSvg({ mode, activeInputs, selectedInput })}<p>\\[(${selectedInput},${fx(selectedInput)})\\in G_f\\]</p>`;
 
     note.innerHTML = mode === "finite"
       ? (en ? "Only the selected domain inputs create graph points; they are not connected automatically." : "Numai inputurile selectate din domeniu produc puncte ale graficului; punctele nu se unesc automat.")
