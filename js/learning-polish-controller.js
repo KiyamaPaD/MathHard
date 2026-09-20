@@ -178,8 +178,8 @@ function buildLessonTools({ root, viewer, headings, language }) {
   bar.innerHTML = `
     <button type="button" class="mh-lesson-tool-btn" data-mh-toc-toggle>☰ <span>${ro ? "Cuprins" : "Contents"}</span></button>
     <div class="mh-lesson-current" data-mh-current-section></div>
-    <div class="mh-lesson-read-progress" aria-label="${ro ? "Progres de citire" : "Reading progress"}"><span data-mh-read-percent>0%</span><i><b data-mh-read-bar></b></i></div>
     <button type="button" class="mh-lesson-tool-btn mh-lesson-tool-icon" data-mh-search-toggle title="${ro ? "Caută în lecție" : "Search lesson"}" aria-label="${ro ? "Caută în lecție" : "Search lesson"}">⌕</button>
+    <div class="mh-lesson-read-progress" aria-label="${ro ? "Progres de citire" : "Reading progress"}"><span data-mh-read-percent>0%</span><i><b data-mh-read-bar></b></i></div>
     <button type="button" class="mh-lesson-tool-btn mh-lesson-tool-icon" data-mh-tools-collapse title="${ro ? "Ascunde instrumentele lecției" : "Hide lesson tools"}" aria-label="${ro ? "Ascunde instrumentele lecției" : "Hide lesson tools"}">×</button>
     <button type="button" class="mh-lesson-tool-btn mh-lesson-tools-expand" data-mh-tools-expand title="${ro ? "Arată instrumentele lecției" : "Show lesson tools"}" aria-label="${ro ? "Arată instrumentele lecției" : "Show lesson tools"}" hidden>☰</button>
     <div class="mh-lesson-toc-popover" data-mh-toc-popover hidden></div>
@@ -205,13 +205,21 @@ function buildLessonTools({ root, viewer, headings, language }) {
 
   const placePopover = (panel, alignRight = false) => {
     const rect = bar.getBoundingClientRect();
+    const footer = document.querySelector("#drawer.open .lesson-actions");
+    const footerTop = footer?.getBoundingClientRect?.().top;
+    const panelRect = bar.closest(".panel")?.getBoundingClientRect?.();
+    const lowerBoundary = Number.isFinite(footerTop) && footerTop > rect.bottom
+      ? footerTop
+      : Math.min(window.innerHeight, panelRect?.bottom || window.innerHeight);
+    const available = Math.max(96, lowerBoundary - rect.bottom - 14);
     const width = Math.min(460, Math.max(280, Math.min(window.innerWidth - 24, rect.width)));
     panel.style.position = "absolute";
     panel.style.top = "calc(100% + 6px)";
     panel.style.width = `${width}px`;
     panel.style.left = alignRight ? "auto" : "0";
     panel.style.right = alignRight ? "0" : "auto";
-    panel.style.maxHeight = `${Math.max(160, window.innerHeight - rect.bottom - 18)}px`;
+    panel.style.setProperty("--mh-toc-max-height", `${available}px`);
+    panel.style.maxHeight = `${available}px`;
   };
   const closePanels = () => { toc.hidden = true; searchPanel.hidden = true; };
   const setCollapsed = (collapsed) => {
