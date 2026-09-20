@@ -6114,6 +6114,7 @@ ${details}`);
       const html=buildLessonHTML(item);
       content.innerHTML=html;
       if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js?v=152").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch((error)=>console.error("Function intro explorer failed:",error));
+      if(content.querySelector("[data-mh-function-representation-lab],[data-mh-function-vertical-test]")) import("./function-graph-explorer.js?v=155").then(({mountFunctionGraphExplorers})=>mountFunctionGraphExplorers(content)).catch((error)=>console.error("Function graph explorer failed:",error));
       setTimeout(()=>{ MH_render(content); },0);
       
     if (item && item.id === 'v-reprez-nr-nat') {
