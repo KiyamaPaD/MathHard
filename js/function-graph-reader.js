@@ -192,9 +192,61 @@ function mountZeroTouch(host){
   host.addEventListener("mathhard:interactive-reset",()=>{});renderMath(host);
 }
 
+
+
+function cleanNumeric(value){
+  if(!Number.isFinite(value)) return 0;
+  const n=Math.abs(value)<EPS?0:Math.round(value*1000000000)/1000000000;
+  return Object.is(n,-0)?0:n;
+}
+function floorValue(value){return Math.floor(cleanNumeric(value));}
+function fractionalPart(value){return cleanNumeric(value-floorValue(value));}
+function standardGraphSvg(mode,selectedX){
+  const width=680,height=360,originX=340,originY=180,sx=56,sy=56;
+  const xPx=x=>originX+x*sx,yPx=y=>originY-y*sy;
+  const ticks=[-5,-4,-3,-2,-1,0,1,2,3,4,5];
+  const gridX=ticks.map(x=>`<g><line class="mh-gr-grid" x1="${xPx(x)}" y1="18" x2="${xPx(x)}" y2="338"/><text class="mh-gr-axis-label" x="${xPx(x)}" y="${originY+21}">${x}</text></g>`).join("");
+  const gridY=[-3,-2,-1,0,1,2,3,4,5].map(y=>`<g><line class="mh-gr-grid" x1="34" y1="${yPx(y)}" x2="646" y2="${yPx(y)}"/><text class="mh-gr-axis-label" x="${originX-14}" y="${yPx(y)+4}">${y}</text></g>`).join("");
+  let graph="";
+  if(mode==="abs"){
+    graph=`<polyline class="mh-gr-primary" points="${ticks.map(x=>`${xPx(x)},${yPx(Math.abs(x))}`).join(" ")}"/>`;
+  }else if(mode==="floor"){
+    for(let n=-5;n<5;n++) graph+=`<line class="mh-gr-primary" x1="${xPx(n)}" y1="${yPx(n)}" x2="${xPx(n+1)}" y2="${yPx(n)}"/><circle class="mh-sf-closed" cx="${xPx(n)}" cy="${yPx(n)}" r="5"/><circle class="mh-sf-open" cx="${xPx(n+1)}" cy="${yPx(n)}" r="5"/>`;
+  }else{
+    for(let n=-5;n<5;n++) graph+=`<line class="mh-gr-primary" x1="${xPx(n)}" y1="${yPx(0)}" x2="${xPx(n+1)}" y2="${yPx(1)}"/><circle class="mh-sf-closed" cx="${xPx(n)}" cy="${yPx(0)}" r="5"/><circle class="mh-sf-open" cx="${xPx(n+1)}" cy="${yPx(1)}" r="5"/>`;
+  }
+  const y=mode==="abs"?Math.abs(selectedX):mode==="floor"?floorValue(selectedX):fractionalPart(selectedX);
+  const selected=`<circle class="mh-gr-selected" cx="${xPx(selectedX)}" cy="${yPx(y)}" r="8"/><text class="mh-gr-selected-label" x="${xPx(selectedX)+10}" y="${yPx(y)-11}">(${fmt(selectedX)},${fmt(y)})</text>`;
+  return `<svg class="mh-graph-reader-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${mode==='abs'?'Graficul funcției modul':mode==='floor'?'Graficul funcției parte întreagă':'Graficul funcției parte fracționară'}">${gridX}${gridY}<line class="mh-gr-axis" x1="34" y1="${originY}" x2="646" y2="${originY}"/><line class="mh-gr-axis" x1="${originX}" y1="338" x2="${originX}" y2="18"/><text class="mh-gr-axis-name" x="638" y="${originY-9}">x</text><text class="mh-gr-axis-name" x="${originX+10}" y="28">y</text>${graph}${selected}</svg>`;
+}
+function mountStandardFunctionGallery(host){
+  if(!host||host.dataset.mhMounted==="1")return;
+  host.dataset.mhMounted="1";
+  const en=isEnglish();
+  host.dataset.mhInteractiveHelp=en?"Choose a function and move x. Closed dots belong to the graph; open dots do not.":"Alege funcția și modifică valoarea lui x. Punctele pline aparțin graficului; punctele goale nu aparțin.";
+  let mode="abs",x=-2.4;
+  host.innerHTML=`<section class="mh-graph-reader mh-standard-gallery"><div class="mh-graph-reader__head"><div><strong>Function Gallery</strong><small>${en?"Three standard functions, one input.":"Trei funcții uzuale, același input."}</small></div><div class="mh-graph-reader__tabs" role="group"><button type="button" data-sf-mode="abs" class="is-active">|x|</button><button type="button" data-sf-mode="floor">⌊x⌋</button><button type="button" data-sf-mode="fractional">{x}</button></div></div><div class="mh-graph-reader__controls mh-standard-gallery__controls"><label>x = <input type="range" min="-5" max="5" step="0.1" value="-2.4" data-sf-slider></label><input type="number" min="-5" max="5" step="0.1" value="-2.4" data-sf-number aria-label="x"></div><div class="mh-graph-reader__layout"><div class="mh-graph-reader__canvas"></div><aside class="mh-graph-reader__readout"></aside></div><div class="mh-graph-reader__rule"></div></section>`;
+  const tabs=[...host.querySelectorAll("[data-sf-mode]")],slider=host.querySelector("[data-sf-slider]"),number=host.querySelector("[data-sf-number]"),canvas=host.querySelector(".mh-graph-reader__canvas"),readout=host.querySelector(".mh-graph-reader__readout"),rule=host.querySelector(".mh-graph-reader__rule");
+  function setX(raw){const n=Number(raw);if(!Number.isFinite(n))return;x=Math.max(-5,Math.min(5,cleanNumeric(n)));slider.value=String(x);number.value=String(x);render();}
+  function render(){
+    tabs.forEach(b=>b.classList.toggle("is-active",b.dataset.sfMode===mode));
+    canvas.innerHTML=standardGraphSvg(mode,x);
+    if(mode==="abs"){
+      const y=Math.abs(x);readout.innerHTML=`<strong>${en?"Absolute value":"Modul"}</strong><div>\\[|${fmt(x)}|=${fmt(y)}\\]</div><p>${en?"Point":"Punct"}: \\(${pointLatex([x,y])}\\)</p><p>${en?"Domain":"Domeniu"}: \\(\\mathbb R\\)<br>${en?"Image":"Imagine"}: \\([0,\\infty)\\)<br>${en?"Zero":"Zero"}: \\(0\\)</p>`;rule.innerHTML=`\\[|x|=\\begin{cases}x,&x\\ge0\\\\-x,&x<0\\end{cases}\\]`;
+    }else if(mode==="floor"){
+      const n=floorValue(x);readout.innerHTML=`<strong>${en?"Floor":"Partea întreagă"}</strong><div>\\[\\lfloor ${fmt(x)}\\rfloor=${n}\\]</div><p>\\[${n}\\le ${fmt(x)}<${n+1}\\]</p><p>${en?"Active step":"Treapta activă"}: \\([${n},${n+1})\\)</p>`;rule.innerHTML=`\\[\\lfloor x\\rfloor=n\\iff n\\le x<n+1\\]`;
+    }else{
+      const n=floorValue(x),f=fractionalPart(x);readout.innerHTML=`<strong>${en?"Fractional part":"Partea fracționară"}</strong><div>\\[\\lfloor ${fmt(x)}\\rfloor=${n}\\]</div><p>\\[\\{${fmt(x)}\\}=${fmt(x)}-(${n})=${fmt(f)}\\]</p><p>\\[${fmt(x)}=${n}+${fmt(f)}\\]</p>`;rule.innerHTML=`\\[\\{x\\}=x-\\lfloor x\\rfloor,\\qquad 0\\le\\{x\\}<1\\]`;
+    }
+    renderMath(host);
+  }
+  tabs.forEach(b=>b.addEventListener("click",()=>{mode=b.dataset.sfMode;render()}));slider.addEventListener("input",()=>setX(slider.value));number.addEventListener("change",()=>setX(number.value));host.addEventListener("mathhard:interactive-reset",()=>{mode="abs";x=-2.4;slider.value=number.value="-2.4";render()});render();
+}
+
 export function mountFunctionGraphReader(root=document){
   root.querySelectorAll("[data-mh-function-graph-reader]").forEach(mountGraphReader);
   root.querySelectorAll("[data-mh-function-zero-touch]").forEach(mountZeroTouch);
+  root.querySelectorAll("[data-mh-standard-function-gallery]").forEach(mountStandardFunctionGallery);
 }
 
-export const __test = { horizontalIntersections, polylineIntersections, mainPoints };
+export const __test = { horizontalIntersections, polylineIntersections, mainPoints, floorValue, fractionalPart };
