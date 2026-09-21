@@ -37,6 +37,16 @@ export function boundStatus({ values = [], upper = null, lower = null, upperAtta
   return { max, min, upperBound, lowerBound, upperHit, lowerHit, hasMaximum: upperBound && upperHit, hasMinimum: lowerBound && lowerHit };
 }
 
+const monotonicityLabel = (key, english = false) => ({
+  "strict-increasing": english ? "Strict increasing" : "Strict crescătoare",
+  increasing: english ? "Increasing" : "Crescătoare",
+  constant: english ? "Constant" : "Constantă",
+  decreasing: english ? "Decreasing" : "Descrescătoare",
+  "strict-decreasing": english ? "Strict decreasing" : "Strict descrescătoare",
+  "not-monotone": english ? "Not monotone" : "Nu este monotonă",
+  unknown: english ? "Unknown" : "Necunoscută"
+}[key] || (english ? "Unknown" : "Necunoscută"));
+
 const monotonicityPresets = {
   strictInc: {
     labelRo: "Strict crescătoare", labelEn: "Strict increasing",
@@ -153,8 +163,8 @@ function mountMonotonicityLab(host) {
     tabs.innerHTML = Object.entries(monotonicityPresets).map(([key,val]) => `<button type="button" data-mono-preset="${key}" class="${key === preset ? "is-active" : ""}">${en ? val.labelEn : val.labelRo}</button>`).join("");
     canvas.innerHTML = graphSvg({ points: cfg.points });
     const classification = classifyMonotoneValues(cfg.values);
-    readout.innerHTML = `<strong>${en ? "Classification" : "Clasificare"}</strong><p>${en ? cfg.en : cfg.ro}</p><p><code>${classification}</code></p>`;
-    rule.innerHTML = `\\[${cfg.rule}\\]`;
+    readout.innerHTML = `<strong>${en ? "Classification" : "Clasificare"}</strong><p>${en ? cfg.en : cfg.ro}</p><p><strong>${monotonicityLabel(classification, en)}</strong></p>`;
+    rule.textContent = `\\[${cfg.rule}\\]`;
     host.querySelectorAll("[data-mono-preset]").forEach((button) => button.addEventListener("click", () => { preset = button.dataset.monoPreset; render(); }));
     renderMath(host);
   }
@@ -179,7 +189,9 @@ function mountBoundsLab(host) {
     canvas.innerHTML = graphSvg(cfg);
     const state = boundStatus({ values: cfg.points.map((point) => point[1]), upper: cfg.upper, lower: cfg.lower, upperAttained: cfg.upperAttained, lowerAttained: cfg.lowerAttained });
     readout.innerHTML = `<strong>${en ? "What changes?" : "Ce se schimbă?"}</strong><p>${en ? cfg.en : cfg.ro}</p><p>\(M=${fmt(cfg.upper)}\): ${state.hasMaximum ? (en ? "maximum" : "maximum") : (en ? "upper bound only" : "doar majorant")}</p><p>\(m=${fmt(cfg.lower)}\): ${state.hasMinimum ? (en ? "minimum" : "minimum") : (en ? "lower bound only" : "doar minorant")}</p>`;
-    rule.innerHTML = `\\[\\text{extrem}=\\text{bound}+\\text{attainment}\\]`;
+    rule.textContent = en
+      ? `\\[\\text{extreme}=\\text{attained bound}\\]`
+      : `\\[\\text{extrem}=\\text{margine atinsă}\\]`;
     host.querySelectorAll("[data-bound-preset]").forEach((button) => button.addEventListener("click", () => { preset = button.dataset.boundPreset; render(); }));
     renderMath(host);
   }
@@ -192,4 +204,4 @@ export function mountFunctionPropertiesLabs(root = document) {
   root.querySelectorAll("[data-mh-function-bounds-extrema-lab]").forEach(mountBoundsLab);
 }
 
-export const __test = { monotonicityPresets, boundsPresets, classifyMonotoneValues, boundStatus };
+export const __test = { monotonicityPresets, boundsPresets, classifyMonotoneValues, monotonicityLabel, boundStatus };

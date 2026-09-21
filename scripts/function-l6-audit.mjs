@@ -9,16 +9,20 @@ const polish = read("js/learning-polish-controller.js");
 const lab = read("js/function-properties-lab.js");
 const sqlPath = "local-sql/MathHard_163_C5_L6_MONOTONICITY_BOUNDEDNESS_EXTREMA.sql";
 const postPath = "local-sql/MathHard_POST_163_CHECK.sql";
-const externalSqlAvailable = existsSync(resolve(root, sqlPath)) && existsSync(resolve(root, postPath));
+const fixSqlPath = "local-sql/MathHard_164_C5_L6_RENDER_GRADING_HARDENING.sql";
+const fixPostPath = "local-sql/MathHard_POST_164_CHECK.sql";
+const externalSqlAvailable = [sqlPath, postPath, fixSqlPath, fixPostPath].every((path) => existsSync(resolve(root, path)));
 const sql = externalSqlAvailable ? read(sqlPath) : "";
 const post = externalSqlAvailable ? read(postPath) : "";
+const fixSql = externalSqlAvailable ? read(fixSqlPath) : "";
+const fixPost = externalSqlAvailable ? read(fixPostPath) : "";
 const failures = [];
 const expect = (condition, message) => { if (!condition) failures.push(message); };
 const has = (source, token, label = token) => expect(source.includes(token), `missing: ${label}`);
 const lacks = (source, token, label = token) => expect(!source.includes(token), `unexpected: ${label}`);
 
 expect(/\[data-mh-function-monotonicity-lab\].*\[data-mh-function-bounds-extrema-lab\]/.test(app), "L6 visual labs must share one lazy gate");
-expect(/import\("\.\/function-properties-lab\.js\?v=163"\)/.test(app), "versioned function-properties lab import missing");
+expect(/import\("\.\/function-properties-lab\.js\?v=164"\)/.test(app), "versioned function-properties lab import missing");
 has(polish, "[data-mh-function-monotonicity-lab]", "learning polish selector for monotonicity lab");
 has(polish, "[data-mh-function-bounds-extrema-lab]", "learning polish selector for bounds/extrema lab");
 for (const token of ["Monotonicity Lab","Bounds &amp; Extrema Lab","mountFunctionPropertiesLabs","openInterval","closedInterval"]) has(lab, token, `L6 lab ${token}`);
@@ -33,6 +37,16 @@ const openState = __test.boundStatus({values:[-2,0,3], upper:3, lower:-2, upperA
 expect(openState.upperBound && openState.lowerBound && !openState.hasMaximum && !openState.hasMinimum, "open-bound state failed");
 const closedState = __test.boundStatus({values:[-2,0,3], upper:3, lower:-2, upperAttained:true, lowerAttained:true});
 expect(closedState.hasMaximum && closedState.hasMinimum, "closed-bound state failed");
+
+expect(__test.monotonicityLabel("strict-increasing", false) === "Strict crescătoare", "strict-increasing slug must render as Romanian label");
+expect(__test.monotonicityLabel("increasing", false) === "Crescătoare", "increasing slug must render as Romanian label");
+expect(__test.monotonicityLabel("decreasing", false) === "Descrescătoare", "decreasing slug must render as Romanian label");
+expect(__test.monotonicityLabel("strict-decreasing", false) === "Strict descrescătoare", "strict-decreasing slug must render as Romanian label");
+expect(__test.monotonicityLabel("not-monotone", false) === "Nu este monotonă", "not-monotone slug must render as Romanian label");
+lacks(lab, "<code>${classification}</code>", "raw classification slug in UI");
+has(lab, "rule.textContent", "KaTeX graph rule must use textContent");
+lacks(lab, "\\text{bound}+\\text{attainment}", "English bound+attainment rule in Romanian UI");
+has(lab, "\\text{margine atinsă}", "Romanian extrema rule");
 
 if (externalSqlAvailable) {
   const bodyStart = sql.indexOf("$mh163_body$");
@@ -95,6 +109,16 @@ if (externalSqlAvailable) {
   ]) has(sql, token, `evidence contract ${token}`);
   has(post, "all_quiz_explanations_present", "POST quiz explanation audit");
   has(post, "all_practice_feedback_present", "POST practice feedback audit");
+
+  has(fixSql, "notation='x_1<x_2\\Rightarrow f(x_1)\\le f(x_2)'", "raw concept TeX notation fix");
+  has(fixSql, "există \\(x_0\\) cu \\(f(x_0)=M\\)", "Q06 KaTeX answer delimiters");
+  has(fixSql, "canonical positive classifications only", "monotonicity parser hardening");
+  has(fixSql, "5 nu este majorant, maximum este 4", "P11 contradiction regression test");
+  lacks(fixSql, "create or replace function public.mh_grade_problem_answer", "Phase 164 must not replace dispatcher");
+  has(fixSql, "mh164_dispatcher_guard", "dispatcher immutability guard");
+  has(fixSql, "dispatcher changed unexpectedly", "dispatcher post-patch assertion");
+  has(fixPost, "negated_si_should_be_null", "POST negation audit");
+  has(fixPost, "contradiction_should_be_false", "POST P11 contradiction audit");
 }
 
 expect(app.split(/\r?\n/).length <= 7850, "app.js exceeds 7850-line architecture ceiling");
