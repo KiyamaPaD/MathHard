@@ -152,8 +152,10 @@ function mountGraphReader(host) {
       const result=horizontalIntersections(mainPoints,m); const xs=result.points.map(p=>p[0]);
       canvas.innerHTML=graphSvg({points:mainPoints,m,intersectionPoints:result.points,overlapIntervals:result.overlaps.map(o=>[o.from[0],o.to[0]])});
       const intersectionText=result.points.length?result.points.map(pointLatex).join(",\\ "):"\\varnothing";
-      const solutionText=result.overlaps.length? (en?"infinitely many on an interval":"infinit de multe pe un interval") : setLatex(xs);
-      readout.innerHTML=`<strong>${en?"Equation":"Ecuație"}</strong><div>\\[f(x)=${fmt(m)}\\]</div><p>${en?"Intersections":"Intersecții"}: \\(${intersectionText}\\)</p><p>${en?"Solutions":"Soluții"}: \\(${solutionText}\\)</p>`;
+      const solutionMarkup=result.overlaps.length
+        ? `\\(${result.overlaps.map(({from,to})=>`[${fmt(from[0])},${fmt(to[0])}]`).join("\\cup")}\\) <span>— ${en?"infinitely many solutions":"infinit de multe soluții"}</span>`
+        : `\\(${setLatex(xs)}\\)`;
+      readout.innerHTML=`<strong>${en?"Equation":"Ecuație"}</strong><div>\\[f(x)=${fmt(m)}\\]</div><p>${en?"Intersections":"Intersecții"}: \\(${intersectionText}\\)</p><p>${en?"Solutions":"Soluții"}: ${solutionMarkup}</p>`;
       rule.innerHTML=`\\[f(x)=m\\iff G_f\\cap\\{y=m\\}\\]`;
     } else {
       const cfg=graphPresets[preset]; const result=polylineIntersections(cfg.f,cfg.g);
@@ -161,9 +163,12 @@ function mountGraphReader(host) {
       canvas.innerHTML=graphSvg({points:cfg.f,second:cfg.g,intersectionPoints:result.points,overlapIntervals:result.overlaps});
       const pts=result.points.length?result.points.map(pointLatex).join(",\\ "):"\\varnothing";
       const xs=result.points.map(p=>p[0]);
-      let solutions=setLatex(xs);
-      if(result.overlaps.length){const ranges=result.overlaps.map(([a,b])=>`[${fmt(a)},${fmt(b)}]`).join("\\cup");solutions=`${ranges}\\quad(${en?"infinitely many solutions":"infinit de multe soluții"})`;}
-      readout.innerHTML=`<strong>${en?"Common domain":"Domeniu comun"}</strong><div>\\[D_f\\cap D_g=${cfg.domain}\\]</div><p>${en?"Common points":"Puncte comune"}: \\(${pts}\\)</p>${result.overlaps.length?`<p>${en?"Common portion":"Porțiune comună"}: \\(${result.overlaps.map(([a,b])=>`[${fmt(a)},${fmt(b)}]`).join("\\cup")}\\)</p>`:""}<p>${en?"Solutions":"Soluții"}: \\(${solutions}\\)</p>`;
+      let solutionMarkup=`\\(${setLatex(xs)}\\)`;
+      if(result.overlaps.length){
+        const ranges=result.overlaps.map(([a,b])=>`[${fmt(a)},${fmt(b)}]`).join("\\cup");
+        solutionMarkup=`\\(${ranges}\\) <span>— ${en?"infinitely many solutions":"infinit de multe soluții"}</span>`;
+      }
+      readout.innerHTML=`<strong>${en?"Common domain":"Domeniu comun"}</strong><div>\\[D_f\\cap D_g=${cfg.domain}\\]</div><p>${en?"Common points":"Puncte comune"}: \\(${pts}\\)</p>${result.overlaps.length?`<p>${en?"Common portion":"Porțiune comună"}: \\(${result.overlaps.map(([a,b])=>`[${fmt(a)},${fmt(b)}]`).join("\\cup")}\\)</p>`:""}<p>${en?"Solutions":"Soluții"}: ${solutionMarkup}</p>`;
       rule.innerHTML=`\\[x\\in D_f\\cap D_g,\\qquad f(x)=g(x)\\iff (x,f(x))\\in G_f\\cap G_g\\]`;
     }
     host.querySelectorAll("[data-gr-x]").forEach(b=>b.addEventListener("click",()=>{selectedX=Number(b.dataset.grX);render()}));

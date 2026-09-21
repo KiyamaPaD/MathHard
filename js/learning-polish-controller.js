@@ -87,6 +87,7 @@ function enhanceGlossary(root, language) {
     bubble.textContent = node.dataset.mhGlossary || (ro ? "Definiție contextuală" : "Contextual definition");
     node.setAttribute("aria-controls", bubble.id);
     node.appendChild(bubble);
+    renderMath(bubble);
     const toggle = (event) => {
       event?.stopPropagation?.();
       bubble.hidden = !bubble.hidden;

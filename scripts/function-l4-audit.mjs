@@ -19,9 +19,12 @@ const expect = (condition, message) => { if (!condition) failures.push(message);
 const has = (source, token, label = token) => expect(source.includes(token), `missing: ${label}`);
 const lacks = (source, token, label = token) => expect(!source.includes(token), `unexpected: ${label}`);
 
-has(app, 'import("./function-graph-reader.js?v=158")', "lazy Graph Reader import");
+has(app, 'import("./function-graph-reader.js?v=1581")', "lazy Graph Reader import");
+has(app, 'import("./learning-polish-controller.js?v=1581")', "lesson polish cache bust");
 for (const token of ["data-mh-function-graph-reader","data-mh-function-zero-touch","data-mh-c4-sequence-compare","data-mh-c4-mixed-decision"]) has(polish, token, `polish selector ${token}`);
+has(polish, "renderMath(bubble);", "glossary KaTeX render pass");
 for (const token of ["horizontalIntersections","polylineIntersections","Graph Reader","Domeniu comun","Intersecții","Soluții","infinit de multe soluții"]) has(reader, token, `Graph Reader ${token}`);
+lacks(reader, '\\\\quad(${en?', "human infinite-solutions label inside KaTeX");
 for (const token of [".mh-graph-reader",".mh-graph-reader__layout",".mh-zero-touch",".mh-gr-level",".mh-gr-overlap"]) has(css, token, `Graph Reader CSS ${token}`);
 lacks(css, ":has(", "Graph Reader must not require :has()");
 
