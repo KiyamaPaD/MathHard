@@ -6,7 +6,11 @@ const INTERACTIVE_SELECTOR = [
   "[data-mh-function-machine]",
   "[data-mh-function-mapping]",
   "[data-mh-function-representation-lab]",
-  "[data-mh-function-vertical-test]"
+  "[data-mh-function-vertical-test]",
+  "[data-mh-function-graph-reader]",
+  "[data-mh-function-zero-touch]",
+  "[data-mh-c4-sequence-compare]",
+  "[data-mh-c4-mixed-decision]"
 ].join(",");
 
 function text(value) { return String(value ?? "").trim(); }
