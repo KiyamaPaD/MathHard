@@ -10,8 +10,7 @@ const INTERACTIVE_SELECTOR = [
   "[data-mh-function-graph-reader]",
   "[data-mh-function-zero-touch]",
   "[data-mh-standard-function-gallery]",
-  "[data-mh-function-monotonicity-lab]",
-  "[data-mh-function-bounds-extrema-lab]",
+  "[data-mh-function-parity-symmetry-lab]",
   "[data-mh-c4-sequence-compare]",
   "[data-mh-c4-mixed-decision]"
 ].join(",");
