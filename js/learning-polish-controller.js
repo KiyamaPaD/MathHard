@@ -2,18 +2,7 @@ import { buildConceptIndex, conceptIdsForContent } from "./concept-model.js";
 import { sortProblemCatalog } from "./practice-group-model.js";
 const LESSON_TOOLS_STORAGE_KEY = "mathhard:lesson-tools:v1";
 
-const INTERACTIVE_SELECTOR = [
-  "[data-mh-function-machine]",
-  "[data-mh-function-mapping]",
-  "[data-mh-function-representation-lab]",
-  "[data-mh-function-vertical-test]",
-  "[data-mh-function-graph-reader]",
-  "[data-mh-function-zero-touch]",
-  "[data-mh-standard-function-gallery]",
-  "[data-mh-function-parity-symmetry-lab]",
-  "[data-mh-c4-sequence-compare]",
-  "[data-mh-c4-mixed-decision]"
-].join(",");
+const INTERACTIVE_SELECTOR=["[data-mh-function-machine]","[data-mh-function-mapping]","[data-mh-function-representation-lab]","[data-mh-function-vertical-test]","[data-mh-function-graph-reader]","[data-mh-function-zero-touch]","[data-mh-standard-function-gallery]","[data-mh-function-monotonicity-lab]","[data-mh-function-bounds-extrema-lab]","[data-mh-function-parity-symmetry-lab]","[data-mh-c4-sequence-compare]","[data-mh-c4-mixed-decision]"].join(",");
 
 function text(value) { return String(value ?? "").trim(); }
 function normalize(value) {

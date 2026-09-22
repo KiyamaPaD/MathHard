@@ -6068,10 +6068,11 @@ ${details}`);
 
       const html=buildLessonHTML(item);
       content.innerHTML=html;
-      if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js?v=152").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch((error)=>console.error("Function intro explorer failed:",error));
-      if(content.querySelector("[data-mh-function-representation-lab],[data-mh-function-vertical-test]")) import("./function-graph-explorer.js?v=155").then(({mountFunctionGraphExplorers})=>mountFunctionGraphExplorers(content)).catch((error)=>console.error("Function graph explorer failed:",error));
-      if(content.querySelector("[data-mh-function-graph-reader],[data-mh-function-zero-touch],[data-mh-standard-function-gallery]")) import("./function-graph-reader.js?v=160").then(({mountFunctionGraphReader})=>mountFunctionGraphReader(content)).catch((error)=>console.error("Function graph reader failed:",error));
-      if(content.querySelector("[data-mh-function-parity-symmetry-lab]")) import("./function-parity-explorer.js?v=163").then(({mountFunctionParityExplorers})=>mountFunctionParityExplorers(content)).catch((error)=>console.error("Function parity explorer failed:",error));
+      if(content.querySelector("[data-mh-function-machine],[data-mh-function-mapping]")) import("./function-intro-explorer.js?v=152").then(({mountFunctionIntroExplorers})=>mountFunctionIntroExplorers(content)).catch(e=>console.error("Function intro explorer failed:",e));
+      if(content.querySelector("[data-mh-function-representation-lab],[data-mh-function-vertical-test]")) import("./function-graph-explorer.js?v=155").then(({mountFunctionGraphExplorers})=>mountFunctionGraphExplorers(content));
+      if(content.querySelector("[data-mh-function-graph-reader],[data-mh-function-zero-touch],[data-mh-standard-function-gallery]")) import("./function-graph-reader.js?v=160").then(({mountFunctionGraphReader})=>mountFunctionGraphReader(content));
+      if(content.querySelector("[data-mh-function-monotonicity-lab],[data-mh-function-bounds-extrema-lab]")) import("./function-properties-lab.js?v=166").then(({mountFunctionPropertiesLabs})=>mountFunctionPropertiesLabs(content));
+      if(content.querySelector("[data-mh-function-parity-symmetry-lab]")) import("./function-parity-explorer.js?v=163").then(({mountFunctionParityExplorers})=>mountFunctionParityExplorers(content));
       import("./learning-polish-controller.js?v=160").then(({mountLessonPolish})=>{lessonPolishCleanup=mountLessonPolish({root:content,viewer:content,lesson:item,language:LANG});}).catch((error)=>console.error("Lesson polish failed:",error));
       setTimeout(()=>{ MH_render(content); },0);
       
