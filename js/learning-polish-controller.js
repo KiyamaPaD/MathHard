@@ -2,7 +2,7 @@ import { buildConceptIndex, conceptIdsForContent } from "./concept-model.js";
 import { sortProblemCatalog } from "./practice-group-model.js";
 const LESSON_TOOLS_STORAGE_KEY = "mathhard:lesson-tools:v1";
 
-const INTERACTIVE_SELECTOR=["[data-mh-function-machine]","[data-mh-function-mapping]","[data-mh-function-representation-lab]","[data-mh-function-vertical-test]","[data-mh-function-graph-reader]","[data-mh-function-zero-touch]","[data-mh-standard-function-gallery]","[data-mh-function-monotonicity-lab]","[data-mh-function-bounds-extrema-lab]","[data-mh-function-parity-symmetry-lab]","[data-mh-function-periodicity-lab]","[data-mh-c4-sequence-compare]","[data-mh-c4-mixed-decision]"].join(",");
+const INTERACTIVE_SELECTOR=["[data-mh-function-machine]","[data-mh-function-mapping]","[data-mh-function-representation-lab]","[data-mh-function-vertical-test]","[data-mh-function-graph-reader]","[data-mh-function-zero-touch]","[data-mh-standard-function-gallery]","[data-mh-function-monotonicity-lab]","[data-mh-function-bounds-extrema-lab]","[data-mh-function-parity-symmetry-lab]","[data-mh-function-periodicity-lab]","[data-mh-function-convexity-lab]","[data-mh-c4-sequence-compare]","[data-mh-c4-mixed-decision]"].join(",");
 
 function text(value) { return String(value ?? "").trim(); }
 function normalize(value) {
@@ -321,6 +321,7 @@ export function mountLessonPolish({ root, lesson, language = "ro", viewer = root
   if (!root || !lesson || root.dataset.mhLessonPolish === "1") return () => {};
   root.dataset.mhLessonPolish = "1";
   if(root.querySelector("[data-mh-function-periodicity-lab]")) import("./function-periodicity-explorer.js?v=167").then(({mountFunctionPeriodicityExplorers})=>mountFunctionPeriodicityExplorers(root));
+  if(root.querySelector("[data-mh-function-convexity-lab]")) import("./function-convexity-explorer.js?v=168").then(({mountFunctionConvexityExplorers})=>mountFunctionConvexityExplorers(root));
 
   const explicit = [...root.querySelectorAll("[data-mh-anchor]")];
   explicit.forEach((marker) => {
