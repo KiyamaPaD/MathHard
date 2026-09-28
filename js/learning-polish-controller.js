@@ -322,7 +322,7 @@ export function mountLessonPolish({ root, lesson, language = "ro", viewer = root
   root.dataset.mhLessonPolish = "1";
   if(root.querySelector("[data-mh-function-periodicity-lab]")) import("./function-periodicity-explorer.js?v=167").then(({mountFunctionPeriodicityExplorers})=>mountFunctionPeriodicityExplorers(root));
   if(root.querySelector("[data-mh-function-convexity-lab]")) import("./function-convexity-explorer.js?v=168").then(({mountFunctionConvexityExplorers})=>mountFunctionConvexityExplorers(root));
-  if(root.querySelector("[data-mh-function-operations-lab]")) import("./function-operations-explorer.js?v=169").then(({mountFunctionOperationsExplorers})=>mountFunctionOperationsExplorers(root));
+  if(root.querySelector("[data-mh-function-operations-lab]")) import("./function-operations-explorer.js?v=170").then(({mountFunctionOperationsExplorers})=>mountFunctionOperationsExplorers(root));
 
   const explicit = [...root.querySelectorAll("[data-mh-anchor]")];
   explicit.forEach((marker) => {
