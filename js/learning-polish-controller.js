@@ -315,7 +315,7 @@ export function mountLessonPolish({ root, lesson, language = "ro", viewer = root
   if(root.querySelector("[data-mh-function-periodicity-lab]")) import("./function-periodicity-explorer.js?v=167").then(({mountFunctionPeriodicityExplorers})=>mountFunctionPeriodicityExplorers(root));
   if(root.querySelector("[data-mh-function-convexity-lab]")) import("./function-convexity-explorer.js?v=168").then(({mountFunctionConvexityExplorers})=>mountFunctionConvexityExplorers(root));
   if(root.querySelector("[data-mh-function-operations-lab],[data-mh-function-composition-lab]")) import("./function-operations-explorer.js?v=171").then(({mountFunctionOperationsExplorers})=>mountFunctionOperationsExplorers(root));
-  if(root.querySelector("[data-mh-function-mapping-properties-lab]")) import("./function-mapping-properties-explorer.js?v=173").then(({mountFunctionMappingPropertiesExplorers})=>mountFunctionMappingPropertiesExplorers(root));
+  if(root.querySelector("[data-mh-function-mapping-properties-lab]")) import("./function-mapping-properties-explorer.js?v=173b").then(({mountFunctionMappingPropertiesExplorers})=>mountFunctionMappingPropertiesExplorers(root));
 
   const explicit = [...root.querySelectorAll("[data-mh-anchor]")];
   explicit.forEach((marker) => {
