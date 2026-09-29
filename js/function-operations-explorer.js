@@ -91,4 +91,4 @@ function mount(host){
  host.addEventListener('mathhard:interactive-reset',()=>{presetKey='simple';op='sum';x=0;render()});
  render();
 }
-export function mountFunctionOperationsExplorers(root=document){root.querySelectorAll('[data-mh-function-operations-lab]').forEach(mount)}
+export function mountFunctionOperationsExplorers(root=document){root.querySelectorAll('[data-mh-function-operations-lab]').forEach(mount);if(root.querySelector('[data-mh-function-composition-lab]'))import('./function-composition-explorer.js?v=171').then(({mountFunctionCompositionExplorers})=>mountFunctionCompositionExplorers(root))}

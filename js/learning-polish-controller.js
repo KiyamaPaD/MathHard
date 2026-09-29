@@ -2,7 +2,7 @@ import { buildConceptIndex, conceptIdsForContent } from "./concept-model.js";
 import { sortProblemCatalog } from "./practice-group-model.js";
 const LESSON_TOOLS_STORAGE_KEY = "mathhard:lesson-tools:v1";
 
-const INTERACTIVE_SELECTOR=["[data-mh-function-machine]","[data-mh-function-mapping]","[data-mh-function-representation-lab]","[data-mh-function-vertical-test]","[data-mh-function-graph-reader]","[data-mh-function-zero-touch]","[data-mh-standard-function-gallery]","[data-mh-function-monotonicity-lab]","[data-mh-function-bounds-extrema-lab]","[data-mh-function-parity-symmetry-lab]","[data-mh-function-periodicity-lab]","[data-mh-function-convexity-lab]","[data-mh-function-operations-lab]","[data-mh-c4-sequence-compare]","[data-mh-c4-mixed-decision]"].join(",");
+const INTERACTIVE_SELECTOR=["[data-mh-function-machine]","[data-mh-function-mapping]","[data-mh-function-representation-lab]","[data-mh-function-vertical-test]","[data-mh-function-graph-reader]","[data-mh-function-zero-touch]","[data-mh-standard-function-gallery]","[data-mh-function-monotonicity-lab]","[data-mh-function-bounds-extrema-lab]","[data-mh-function-parity-symmetry-lab]","[data-mh-function-periodicity-lab]","[data-mh-function-convexity-lab]","[data-mh-function-operations-lab]","[data-mh-function-composition-lab]","[data-mh-c4-sequence-compare]","[data-mh-c4-mixed-decision]"].join(",");
 
 function text(value) { return String(value ?? "").trim(); }
 function normalize(value) {
@@ -304,15 +304,7 @@ function buildLessonTools({ root, viewer, headings, language }) {
   };
 }
 
-function showResumeToast(root, language, top) {
-  if (Number(top || 0) < 140 || root.querySelector(".mh-resume-toast")) return;
-  const toast = document.createElement("div");
-  toast.className = "mh-resume-toast mh-lesson-polish-ui";
-  toast.textContent = language === "en" ? "Continued from where you left off" : "Ai continuat de unde ai rămas";
-  root.appendChild(toast);
-  setTimeout(() => toast.classList.add("is-visible"), 40);
-  setTimeout(() => { toast.classList.remove("is-visible"); setTimeout(() => toast.remove(), 220); }, 1900);
-}
+function showResumeToast(root,language,top){if(Number(top||0)<140||root.querySelector(".mh-resume-toast"))return;const toast=document.createElement("div");toast.className="mh-resume-toast mh-lesson-polish-ui";toast.textContent=language==="en"?"Continued from where you left off":"Ai continuat de unde ai rămas";root.appendChild(toast);setTimeout(()=>toast.classList.add("is-visible"),40);setTimeout(()=>{toast.classList.remove("is-visible");setTimeout(()=>toast.remove(),220)},1900)}
 
 export function mountLessonPolish({ root, lesson, language = "ro", viewer = root } = {}) {
   const workspaceBar=document.getElementById("mhLearningWorkspaceBar");
@@ -322,7 +314,7 @@ export function mountLessonPolish({ root, lesson, language = "ro", viewer = root
   root.dataset.mhLessonPolish = "1";
   if(root.querySelector("[data-mh-function-periodicity-lab]")) import("./function-periodicity-explorer.js?v=167").then(({mountFunctionPeriodicityExplorers})=>mountFunctionPeriodicityExplorers(root));
   if(root.querySelector("[data-mh-function-convexity-lab]")) import("./function-convexity-explorer.js?v=168").then(({mountFunctionConvexityExplorers})=>mountFunctionConvexityExplorers(root));
-  if(root.querySelector("[data-mh-function-operations-lab]")) import("./function-operations-explorer.js?v=170").then(({mountFunctionOperationsExplorers})=>mountFunctionOperationsExplorers(root));
+  if(root.querySelector("[data-mh-function-operations-lab],[data-mh-function-composition-lab]")) import("./function-operations-explorer.js?v=171").then(({mountFunctionOperationsExplorers})=>mountFunctionOperationsExplorers(root));
 
   const explicit = [...root.querySelectorAll("[data-mh-anchor]")];
   explicit.forEach((marker) => {
