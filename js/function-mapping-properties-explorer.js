@@ -11,14 +11,14 @@ const modes={
 function diagramSvg(cfg,extraCodomain){
  const left=cfg.left,right=extraCodomain?[...cfg.right,'e']:cfg.right;
  const arrows=cfg.arrows;
- const W=620,H=330,lx=130,rx=490,top=64,bottom=286;
+ const W=760,H=330,lx=140,rx=520,top=64,bottom=286;
  const ly=i=>left.length===1?(top+bottom)/2:top+i*(bottom-top)/(left.length-1);
  const ry=i=>right.length===1?(top+bottom)/2:top+i*(bottom-top)/(right.length-1);
  const incoming=new Array(right.length).fill(0);arrows.forEach(([,j])=>{if(j<incoming.length)incoming[j]++});
  const defs='<defs><marker id="mh-map-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="currentColor"/></marker></defs>';
  const arrowSvg=arrows.map(([i,j])=>`<path d="M ${lx+24} ${ly(i)} C ${lx+120} ${ly(i)}, ${rx-120} ${ry(j)}, ${rx-24} ${ry(j)}" fill="none" stroke="currentColor" stroke-width="2.4" opacity=".8" marker-end="url(#mh-map-arrow)"/>`).join('');
  const leftNodes=left.map((v,i)=>`<g><circle cx="${lx}" cy="${ly(i)}" r="22" fill="var(--bg)" stroke="var(--border)" stroke-width="2"/><text x="${lx}" y="${ly(i)+5}" text-anchor="middle" class="mh-rep-axis-name">${v}</text></g>`).join('');
- const rightNodes=right.map((v,i)=>{const n=incoming[i]||0,kind=n===0?'gol':n>1?'ciocnire':'exact una';return `<g><circle cx="${rx}" cy="${ry(i)}" r="22" fill="var(--bg)" stroke="${n===0?'var(--muted)':'var(--border)'}" stroke-width="${n>1?3:2}" ${n===0?'stroke-dasharray="4 4"':''}/><text x="${rx}" y="${ry(i)+5}" text-anchor="middle" class="mh-rep-axis-name">${v}</text><text x="${rx+34}" y="${ry(i)+5}" class="mh-rep-axis-label">${n} ${n===1?'preimagine':'preimagini'} · ${kind}</text></g>`}).join('');
+ const rightNodes=right.map((v,i)=>{const n=incoming[i]||0,kind=n===0?'gol':n>1?'ciocnire':'exact una';return `<g><circle cx="${rx}" cy="${ry(i)}" r="22" fill="var(--bg)" stroke="${n===0?'var(--muted)':'var(--border)'}" stroke-width="${n>1?3:2}" ${n===0?'stroke-dasharray="4 4"':''}/><text x="${rx}" y="${ry(i)+5}" text-anchor="middle" class="mh-rep-axis-name">${v}</text><text x="${rx+64}" y="${ry(i)+5}" class="mh-rep-axis-label">${n} ${n===1?'preimagine':'preimagini'} · ${kind}</text></g>`}).join('');
  return `<svg viewBox="0 0 ${W} ${H}" class="mh-representation-graph" role="img" aria-label="Diagramă cu săgeți între domeniu și codomeniu">${defs}<text x="${lx}" y="30" text-anchor="middle" class="mh-rep-axis-name">Domeniu A</text><text x="${rx}" y="30" text-anchor="middle" class="mh-rep-axis-name">Codomeniu B</text>${arrowSvg}${leftNodes}${rightNodes}</svg>`;
 }
 
