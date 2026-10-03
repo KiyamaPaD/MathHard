@@ -28,11 +28,12 @@ function collisionSvg(kind='collision'){
 }
 
 function graphSvg(a=1){
- const W=660,H=360,cx=330,cy=180,sx=55,sy=40;
- const X=x=>cx+x*sx,Y=y=>cy-y*sy;
- const line=(fn,x1,x2,klass)=>{const pts=[];for(let x=x1;x<=x2+1e-9;x+=.12)pts.push(`${X(x).toFixed(1)},${Y(fn(x)).toFixed(1)}`);return `<polyline points="${pts.join(' ')}" fill="none" class="${klass}" stroke-width="3"/>`};
- const fa=2*a+1,ia=(fa-1)/2;
- return `<svg viewBox="0 0 ${W} ${H}" class="mh-representation-graph" role="img" aria-label="Graficele unei funcții și inversei sale simetrice față de y egal x"><line x1="55" y1="${cy}" x2="610" y2="${cy}" class="mh-rep-axis"/><line x1="${cx}" y1="35" x2="${cx}" y2="325" class="mh-rep-axis"/><line x1="80" y1="${Y(-4.55)}" x2="580" y2="${Y(4.55)}" stroke="currentColor" stroke-width="1.7" stroke-dasharray="6 5" opacity=".55"/><text x="565" y="${Y(4.05)}" class="mh-rep-axis-label">y=x</text>${line(x=>2*x+1,-4,4,'mh-rep-real-line')}${line(x=>(x-1)/2,-4,4,'mh-rep-comparison-line')}<circle cx="${X(a)}" cy="${Y(fa)}" r="6" class="mh-rep-graph-point"/><circle cx="${X(fa)}" cy="${Y(a)}" r="6" class="mh-rep-graph-point"/><line x1="${X(a)}" y1="${Y(fa)}" x2="${X(fa)}" y2="${Y(a)}" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 4" opacity=".45"/><text x="600" y="${cy-10}" class="mh-rep-axis-name">x</text><text x="${cx+10}" y="42" class="mh-rep-axis-name">y</text></svg>`;
+ const W=660,H=400,cx=330,cy=200,s=32;
+ const X=x=>cx+x*s,Y=y=>cy-y*s;
+ const line=(fn,x1,x2,klass)=>{const pts=[];for(let x=x1;x<=x2+1e-9;x+=.08)pts.push(`${X(x).toFixed(1)},${Y(fn(x)).toFixed(1)}`);return `<polyline points="${pts.join(' ')}" fill="none" class="${klass}" stroke-width="3"/>`};
+ const fa=2*a+1;
+ const clip='mh-inv-graph-clip';
+ return `<svg viewBox="0 0 ${W} ${H}" class="mh-representation-graph" role="img" aria-label="Graficele unei funcții și inversei sale simetrice față de y egal x"><defs><clipPath id="${clip}"><rect x="55" y="35" width="555" height="330" rx="2"/></clipPath></defs><line x1="55" y1="${cy}" x2="610" y2="${cy}" class="mh-rep-axis"/><line x1="${cx}" y1="35" x2="${cx}" y2="365" class="mh-rep-axis"/><g clip-path="url(#${clip})"><line x1="${X(-5)}" y1="${Y(-5)}" x2="${X(5)}" y2="${Y(5)}" stroke="currentColor" stroke-width="1.7" stroke-dasharray="6 5" opacity=".55"/>${line(x=>2*x+1,-3,2,'mh-rep-real-line')}${line(x=>(x-1)/2,-5,6,'mh-rep-comparison-line')}<line x1="${X(a)}" y1="${Y(fa)}" x2="${X(fa)}" y2="${Y(a)}" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 4" opacity=".45"/><circle cx="${X(a)}" cy="${Y(fa)}" r="6" class="mh-rep-graph-point"/><circle cx="${X(fa)}" cy="${Y(a)}" r="6" class="mh-rep-graph-point"/></g><text x="500" y="52" class="mh-rep-axis-label">y=x</text><text x="600" y="${cy-10}" class="mh-rep-axis-name">x</text><text x="${cx+10}" y="48" class="mh-rep-axis-name">y</text></svg>`;
 }
 
 function squareSvg(restricted=true){
