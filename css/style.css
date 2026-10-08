@@ -3761,3 +3761,124 @@ body:not(.light) .drawer.is-problem-workspace .mh-solution-content b {
 .mh-function-parity__layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(220px,.65fr);gap:12px;align-items:stretch}.mh-function-parity__canvas,.mh-function-parity__readout{min-width:0;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--bg) 78%,transparent)}.mh-function-parity__canvas{padding:8px;overflow:hidden}.mh-function-parity__readout{padding:14px;display:flex;flex-direction:column;justify-content:center;gap:8px}.mh-function-parity__readout>strong{font-size:.9rem}.mh-function-parity__readout p{margin:0;color:var(--muted);line-height:1.55}
 .mh-function-parity-svg{display:block;width:100%;height:auto;max-height:350px}.mh-fp-grid{stroke:color-mix(in srgb,var(--border) 65%,transparent);stroke-width:1}.mh-fp-axis{stroke:var(--text);stroke-width:1.7}.mh-fp-tick,.mh-fp-axis-name,.mh-fp-point-label{fill:var(--muted);font-size:11px;font-family:ui-sans-serif,system-ui,sans-serif}.mh-fp-curve{fill:none;stroke:var(--accent);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.mh-fp-dot{fill:var(--accent);stroke:var(--card);stroke-width:2}.mh-fp-dot--pair{fill:var(--success,#3aa675)}.mh-fp-dot--warn{fill:var(--warning,#d29b2e)}.mh-fp-domain-missing{fill:none;stroke:var(--danger,#d95757);stroke-width:3;stroke-dasharray:4 3}
 @media(max-width:860px){.mh-function-parity__layout{grid-template-columns:1fr}.mh-function-parity__readout{min-height:120px}}@media(max-width:620px){.mh-function-parity{padding:12px;border-radius:14px}.mh-function-parity__tabs button{flex:1 1 auto}.mh-function-parity__canvas{overflow-x:auto}.mh-function-parity-svg{min-width:540px}.mh-function-parity__slider{align-items:flex-start;flex-direction:column}}
+
+/* Phase 180 — equation foundations balance visual */
+.mh-equation-balance{
+  margin:18px 0;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:color-mix(in srgb,var(--card) 92%,transparent);
+  box-shadow:0 18px 45px -34px rgba(0,0,0,.55);
+}
+.mh-equation-balance__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.mh-equation-balance__head>div{display:grid;gap:3px;min-width:0}
+.mh-equation-balance__head strong{font-size:1rem}
+.mh-equation-balance__head small{color:var(--muted);line-height:1.45}
+.mh-equation-balance__badge{
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:6px 10px;
+  background:var(--chip);
+  color:var(--chip-text);
+  font-size:.78rem;
+  font-weight:800;
+}
+.mh-equation-balance__badge.is-broken{border-color:var(--danger,#d95757)}
+.mh-equation-balance__scene{
+  --mh-balance-tilt:0deg;
+  position:relative;
+  margin:18px 0 8px;
+  min-height:205px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--bg) 78%,transparent);
+}
+.mh-equation-balance__beam{
+  position:absolute;
+  left:12%;
+  right:12%;
+  top:94px;
+  height:5px;
+  border-radius:999px;
+  background:var(--text);
+  transform:rotate(var(--mh-balance-tilt));
+  transform-origin:center;
+  transition:transform .22s ease;
+  opacity:.72;
+}
+.mh-equation-balance__pivot{
+  position:absolute;
+  top:98px;
+  width:0;
+  height:0;
+  border-left:26px solid transparent;
+  border-right:26px solid transparent;
+  border-bottom:72px solid color-mix(in srgb,var(--text) 45%,transparent);
+}
+.mh-equation-balance__pans{
+  position:relative;
+  z-index:1;
+  width:min(760px,92%);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:20px;
+  align-items:start;
+}
+.mh-equation-balance__pan{
+  min-height:108px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:10px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card);
+  box-shadow:0 12px 28px -24px rgba(0,0,0,.7);
+}
+.mh-equation-balance__pan>span{font-size:.7rem;font-weight:800;letter-spacing:.08em;color:var(--muted)}
+.mh-equation-balance__pan>strong{font-size:1.15rem}
+.mh-equation-balance__equals{align-self:center;font-size:1.8rem;font-weight:900;color:var(--muted)}
+.mh-equation-balance__controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.mh-equation-balance__controls button{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--chip);
+  color:var(--chip-text);
+  padding:8px 11px;
+  font:inherit;
+  font-size:.82rem;
+  cursor:pointer;
+}
+.mh-equation-balance__controls button:hover,
+.mh-equation-balance__controls button.is-active{border-color:var(--accent);box-shadow:0 0 0 2px var(--ring)}
+.mh-equation-balance__controls button.is-warning{border-style:dashed}
+.mh-equation-balance__equation{
+  min-height:48px;
+  display:grid;
+  place-items:center;
+  padding:8px 12px;
+  border-radius:12px;
+  background:color-mix(in srgb,var(--bg) 72%,transparent);
+}
+.mh-equation-balance__equation .katex-display{margin:.25em 0}
+.mh-equation-balance__note,.mh-equation-balance__rule{margin:10px 0 0;line-height:1.55;color:var(--muted)}
+.mh-equation-balance__rule{font-weight:700;color:var(--text)}
+@media(max-width:680px){
+  .mh-equation-balance{padding:12px;border-radius:14px}
+  .mh-equation-balance__scene{min-height:310px}
+  .mh-equation-balance__beam,.mh-equation-balance__pivot{display:none}
+  .mh-equation-balance__pans{grid-template-columns:1fr;gap:8px;padding:14px 0}
+  .mh-equation-balance__equals{justify-self:center}
+  .mh-equation-balance__controls button{flex:1 1 calc(50% - 8px)}
+}

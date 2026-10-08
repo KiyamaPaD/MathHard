@@ -6073,7 +6073,7 @@ ${details}`);
       if(content.querySelector("[data-mh-function-graph-reader],[data-mh-function-zero-touch],[data-mh-standard-function-gallery]")) import("./function-graph-reader.js?v=160").then(({mountFunctionGraphReader})=>mountFunctionGraphReader(content));
       if(content.querySelector("[data-mh-function-monotonicity-lab],[data-mh-function-bounds-extrema-lab]")) import("./function-properties-lab.js?v=166").then(({mountFunctionPropertiesLabs})=>mountFunctionPropertiesLabs(content));
       if(content.querySelector("[data-mh-function-parity-symmetry-lab]")) import("./function-parity-explorer.js?v=163").then(({mountFunctionParityExplorers})=>mountFunctionParityExplorers(content));
-      import("./learning-polish-controller.js?v=160").then(({mountLessonPolish})=>{lessonPolishCleanup=mountLessonPolish({root:content,viewer:content,lesson:item,language:LANG});}).catch((error)=>console.error("Lesson polish failed:",error));
+      import("./learning-polish-controller.js?v=180").then(({mountLessonPolish})=>{lessonPolishCleanup=mountLessonPolish({root:content,viewer:content,lesson:item,language:LANG});}).catch((error)=>console.error("Lesson polish failed:",error));
       setTimeout(()=>{ MH_render(content); },0);
       
     if (item && item.id === 'v-reprez-nr-nat') {
