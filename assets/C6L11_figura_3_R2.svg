@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="470" viewBox="0 0 760 470" role="img" aria-labelledby="l11-coi-title l11-coi-desc">
+<title id="l11-coi-title">Drepte coincidente</title>
+<desc id="l11-coi-desc">Dreapta x+y=4 coincide exact cu dreapta 2x+2y=8; ambele ecuații definesc aceeași mulțime de puncte.</desc>
+<rect width="760" height="470" rx="16" fill="#ffffff"/>
+<rect x="53" y="30" width="458" height="405" rx="8" fill="#fbfcff" stroke="#d8e1ec"/>
+<clipPath id="l11-coi-clip"><rect x="64" y="40" width="436" height="384"/></clipPath>
+<line x1="64.00" y1="40" x2="64.00" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="64.00" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">-1</text>
+<line x1="126.29" y1="40" x2="126.29" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="126.29" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">0</text>
+<line x1="188.57" y1="40" x2="188.57" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="188.57" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">1</text>
+<line x1="250.86" y1="40" x2="250.86" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="250.86" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">2</text>
+<line x1="313.14" y1="40" x2="313.14" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="313.14" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">3</text>
+<line x1="375.43" y1="40" x2="375.43" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="375.43" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">4</text>
+<line x1="437.71" y1="40" x2="437.71" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="437.71" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">5</text>
+<line x1="500.00" y1="40" x2="500.00" y2="424" stroke="#e6ebf2" stroke-width="1"/>
+<text x="500.00" y="442" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="middle">6</text>
+<line x1="64" y1="424.00" x2="500" y2="424.00" stroke="#e6ebf2"/>
+<text x="51" y="428.00" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">-2</text>
+<line x1="64" y1="381.33" x2="500" y2="381.33" stroke="#e6ebf2"/>
+<text x="51" y="385.33" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">-1</text>
+<line x1="64" y1="338.67" x2="500" y2="338.67" stroke="#e6ebf2"/>
+<text x="51" y="342.67" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">0</text>
+<line x1="64" y1="296.00" x2="500" y2="296.00" stroke="#e6ebf2"/>
+<text x="51" y="300.00" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">1</text>
+<line x1="64" y1="253.33" x2="500" y2="253.33" stroke="#e6ebf2"/>
+<text x="51" y="257.33" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">2</text>
+<line x1="64" y1="210.67" x2="500" y2="210.67" stroke="#e6ebf2"/>
+<text x="51" y="214.67" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">3</text>
+<line x1="64" y1="168.00" x2="500" y2="168.00" stroke="#e6ebf2"/>
+<text x="51" y="172.00" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">4</text>
+<line x1="64" y1="125.33" x2="500" y2="125.33" stroke="#e6ebf2"/>
+<text x="51" y="129.33" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">5</text>
+<line x1="64" y1="82.67" x2="500" y2="82.67" stroke="#e6ebf2"/>
+<text x="51" y="86.67" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">6</text>
+<line x1="64" y1="40.00" x2="500" y2="40.00" stroke="#e6ebf2"/>
+<text x="51" y="44.00" font-family="Arial,sans-serif" font-size="12" fill="#50657b" text-anchor="end">7</text>
+<line x1="64" y1="338.67" x2="508" y2="338.67" stroke="#253e56" stroke-width="2"/>
+<path d="M508 338.67 l-8 -5 v10z" fill="#253e56"/>
+<line x1="126.29" y1="424" x2="126.29" y2="32" stroke="#253e56" stroke-width="2"/>
+<path d="M126.29 32 l-5 8 h10z" fill="#253e56"/>
+<text x="516" y="342.67" font-family="Arial,sans-serif" font-weight="bold" font-size="16" fill="#253e56">x</text>
+<text x="134.29" y="28" font-family="Arial,sans-serif" font-weight="bold" font-size="16" fill="#253e56">y</text>
+<g clip-path="url(#l11-coi-clip)">
+<line x1="-496.57" y1="-258.67" x2="873.71" y2="680.00" stroke="#2059a6" stroke-width="3.5" fill="none"/>
+<line x1="-496.57" y1="-258.67" x2="873.71" y2="680.00" stroke="#ce4b2d" stroke-dasharray="14 12" stroke-width="4" fill="none"/>
+</g>
+<text x="532" y="64" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#203347">Drepte coincidente</text>
+<line x1="532" y1="106" x2="565" y2="106" stroke="#2059a6" stroke-width="4" />
+<text x="576" y="111" font-family="Arial,sans-serif" font-size="15" fill="#203347">x + y = 4</text>
+<line x1="532" y1="146" x2="565" y2="146" stroke="#ce4b2d" stroke-width="4" stroke-dasharray="10 7"/>
+<text x="576" y="151" font-family="Arial,sans-serif" font-size="15" fill="#203347">2x + 2y = 8</text>
+<rect x="527" y="216" width="208" height="110" rx="10" fill="#f0f5fb"/>
+<text x="540" y="242" font-family="Arial,sans-serif" font-size="14" fill="#203347">Ecuații proporționale</text>
+<text x="540" y="269" font-family="Arial,sans-serif" font-size="14" fill="#203347">Liniile sunt suprapuse</text>
+<text x="540" y="296" font-family="Arial,sans-serif" font-size="14" fill="#203347">S = dreapta comună</text>
+<text x="530" y="365" font-family="Arial,sans-serif" font-size="12" fill="#50657b">Culoarea punctată arată</text>
+<text x="530" y="383" font-family="Arial,sans-serif" font-size="12" fill="#50657b">aceeași dreaptă, nu alta.</text>
+</svg>
