@@ -9,9 +9,10 @@
 includes/
 legacy.php/
 
-# Dependencies / tooling
+# Dependencies / tooling / prompts
 node_modules/
 supabase/.temp/
+/prompt/
 
 # Local SQL history / backups
 /local-sql/
